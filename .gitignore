@@ -9,3 +9,6 @@ compat/private/
 .sf/
 .sfdx/
 .superpowers/
+web/dist/
+web/test-results/
+web/playwright-report/

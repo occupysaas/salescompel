@@ -2,15 +2,16 @@ openapi: 3.0.3
 info:
   title: SalesCompel initial compatibility REST contract
   version: 0.1.0
-  description: Proposed, independently authored pilot subset; no endpoints
-    implemented or Salesforce parity certified. API version must be supplied
-    explicitly.
+  description: Independently authored proposed pilot contract. Plan 2 implements
+    a bounded v65.0 candidate subset documented in docs/compat/plan-2-implementation.md;
+    Composite, collections and pagination remain unimplemented. No Salesforce
+    parity is certified. API version must be supplied explicitly.
   license:
     name: Apache-2.0
     url: https://www.apache.org/licenses/LICENSE-2.0
 servers:
   - url: http://localhost:8080
-    description: Future local candidate server; not started by Plan 1
+    description: Local Plan 2 candidate server; only its documented subset is implemented
 security:
   - bearerAuth: []
 paths:

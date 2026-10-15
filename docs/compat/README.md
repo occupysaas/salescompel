@@ -92,3 +92,9 @@ Offline checks run on hosted Node 22/24 runners. Manual live jobs require a **se
 Local runs can also set `COMPAT_RECOVERY_DIR`; otherwise journals are under ignored `compat/private`. Journal entries include create intent before the network request, known IDs afterwards, and original dedicated-user settings before modification. They contain no credentials.
 
 See [dependency audit](dependency-audit.md) for the known remaining upstream Salesforce CLI toolchain advisories.
+
+## M2 candidate
+
+See [Plan 2 setup, implemented routes and real-client checks](plan-2-implementation.md).
+The full pilot suite intentionally retains later-milestone requirements; candidate
+smoke checks do not replace reference captures or constitute parity certification.

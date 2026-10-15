@@ -199,6 +199,7 @@ Milestones are complete only when their evidence is stored and reproducible. Sco
 | --- | --- | --- | --- |
 | M0 — Target and evidence charter | First org/profile inventory, source register, clean-room responsibilities, feature matrix, scale and downtime objectives | Every required integration/customization assigned a contract owner; reference org identified; unsupported export areas explicit | None |
 | M1 — Behavior laboratory | Disposable reference fixtures, pinned clients, API capture/comparator, browser scenario format, CI evidence reports | Repeated reference runs distinguish deterministic behavior from normalization; initial CRUD, denied-access, rollback and query scenarios reproducible | M0 |
+| M1R — Complete release-history and changelog review | Inventory and review every release linked by the Salesforce previous-release-notes archive, plus linked product/API changelogs, release updates, deprecations and removals; maintain a versioned coverage ledger and trace findings into contracts | Every inventoried release/document is reviewed or explicitly blocked with owner and reason; all compatibility-relevant changes map to affected profiles/contracts/tests; unresolved required-profile gaps block certification | Starts alongside M1; initial review before M3 contract freeze, ongoing before every supported release certification |
 | M2 — Platform walking slice | Go service, tenant/auth boundary, metadata catalog, record store, first REST describe/CRUD/query endpoints and minimal Vue record workflow | A synthetic Account/Contact/custom-field slice passes client, UI, isolation and restart tests end to end | M1 |
 | M3 — Core protocol and query fidelity | Required REST/Composite/SOAP/Bulk surfaces, SOQL/SOSL, IDs, transactions, paging, error contracts and limits | Pinned client workflows pass; rollback, null/precision, locking and partial-result cases match reference | M2 |
 | M4 — Metadata and security | Custom schema, record types, layouts, permission sets/profiles, sharing, Metadata deployment and required Tooling calls | Metadata round trip preserves required semantics; access matrix has no unexpected grants; deployment failures leave correct state | M2; M3 for full certification |
@@ -208,6 +209,38 @@ Milestones are complete only when their evidence is stored and reproducible. Sco
 | M8 — Integration and event completeness | Required UI API/GraphQL/Reports/Connect surfaces, Pub/Sub/CDC/Streaming, outbound messages and external-service adapters | Every inventoried integration passes reconnect, retry and failure tests with only declared endpoint/auth changes | M3, M4, M7 as used |
 | M9 — Pilot production certification | Full migration rehearsals, load/recovery/security testing, operator runbooks, cutover and rollback rehearsal | All required contracts pass, zero unexplained reconciliation differences, zero unresolved critical/high security defects, agreed performance and recovery targets met | M5–M8 for the pilot profile |
 | M10 — Wider Salesforce coverage | Separate specs and suites for each additional cloud, package ecosystem and release | Each profile independently satisfies M9-level evidence; regressions checked against already certified profiles | M9 foundation; independent discovery can start earlier |
+
+### M1R — Salesforce release notes and changelog review
+
+Added at the user's request on 2026-10-15. Start from the official
+[previous Salesforce release notes archive](https://help.salesforce.com/s/articleView?id=release-notes.rn_previous_release_notes.htm).
+Review **all releases available through that archive**, not only the current
+release or pilot API version, and follow its relevant product/API changelog,
+release-update, retirement and known-issue links. Record the archive inventory
+and review cutoff date so “all” has an auditable boundary; unavailable historic
+material remains an explicit evidence gap, never a silently omitted release.
+DO NOT copy text or code blocks from salesforce!
+Only use salesforce material to determine which features to update or change.
+
+Deliver `docs/compat/releases/index.yaml` with one entry per release/source:
+release/API versions, URL, publication/access dates, content checksum where
+permitted, product area, reviewer, status, coverage and blockers. Deliver
+`docs/compat/releases/changes.yaml` with behavioral changes, effective versions,
+opt-in versus enforced activation, deprecations/removals, affected API/UI/security/
+metadata/automation/localization/migration contracts, required regression tests
+and compatibility decisions. Summarize sources independently; do not copy whole
+release documents. Separate documentary expectations from reference observations.
+
+Acceptance requires a reviewed entry for every inventoried document, or an
+explicit unavailable/blocked entry with an owner and resolution path; every
+relevant finding must map to a contract/test or a justified out-of-profile
+classification. Any unresolved finding required by a certified profile blocks
+that profile. Check legacy behavior still required by supported API versions,
+upgrade defaults, changed permissions/limits and export/import implications.
+Reconcile the findings before M3 contract freeze and repeat the delta review for
+each new Salesforce release before certification. This milestone is **planned,
+not completed**. The archive page could not be extracted by the web tool on
+2026-10-15; no historical-release review is claimed by adding this milestone.
 
 M7 is likely the largest technical uncertainty. Prototype Apex language/runtime feasibility, Flow execution semantics, and customer component hosting during M1; do not wait until the rest of the product is built to discover that a required customization cannot run. Managed packages with unavailable source or platform services need a supported execution strategy, vendor cooperation, or an explicit blocker.
 
