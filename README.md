@@ -1,6 +1,6 @@
 # SalesCompel
 
-An open-source, free-to-use Salesforce replacement project, currently in the planning stage.
+An open-source, free-to-use Salesforce replacement project, with an initial tenant-isolated Go/PostgreSQL candidate and Vue record workflow.
 
 See the [compatibility roadmap](docs/plans/2026-10-14-salesforce-compatibility-roadmap.md) for the proposed architecture, migration strategy, and milestones.
 
@@ -19,4 +19,10 @@ npm ci --prefix compat/clients/node --ignore-scripts
 npm --prefix compat/clients/node run check
 ```
 
-The [OpenAPI 3.0 REST contract](api/openapi.yaml) is a proposed initial subset, not a running server. Official Salesforce schema fixtures retain their own licenses; see [provenance](compat/fixtures/openapi/salesforce/provenance.json). No live Salesforce compatibility certification has been performed.
+The [OpenAPI 3.0 REST contract](api/openapi.yaml) is a proposed broader subset; the [Plan 2 implementation guide](docs/compat/plan-2-implementation.md) lists the routes served by the candidate. Official Salesforce schema fixtures retain their own licenses; see [provenance](compat/fixtures/openapi/salesforce/provenance.json). No live Salesforce compatibility certification has been performed.
+
+## Platform walking slice
+
+[Plan 2](docs/superpowers/plans/2026-10-15-plan-2-platform-walking-slice.md) implements persistent Account/Contact CRUD, describe, limited queries, external-ID upsert, provisioned bearer authentication and a localized Vue editor. See the [setup and verification guide](docs/compat/plan-2-implementation.md). The roadmap also tracks [M1R release-history review](docs/plans/2026-10-14-salesforce-compatibility-roadmap.md#m1r--salesforce-release-notes-and-changelog-review).
+
+The candidate is not production-ready or certified Salesforce-compatible. M1 reference evidence and the wider protocol/security/migration surfaces remain pending.

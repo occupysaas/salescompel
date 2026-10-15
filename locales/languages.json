@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "status": "validation-fixtures-not-product-translations",
+  "status": "candidate-product-catalogs-translations-await-human-review",
   "languages": [
     {
       "code": "en_US",
@@ -8,7 +8,7 @@
       "category": "fully",
       "direction": "ltr",
       "fallback": null,
-      "coverage": "fixture"
+      "coverage": "partial"
     },
     {
       "code": "fr",
@@ -16,7 +16,7 @@
       "category": "fully",
       "direction": "ltr",
       "fallback": "en_US",
-      "coverage": "fixture"
+      "coverage": "partial"
     },
     {
       "code": "de",
@@ -24,7 +24,7 @@
       "category": "fully",
       "direction": "ltr",
       "fallback": "en_US",
-      "coverage": "fixture"
+      "coverage": "partial"
     },
     {
       "code": "pt_BR",
@@ -32,7 +32,7 @@
       "category": "fully",
       "direction": "ltr",
       "fallback": "en_US",
-      "coverage": "fixture"
+      "coverage": "partial"
     },
     {
       "code": "iw",
@@ -40,7 +40,7 @@
       "category": "end-user",
       "direction": "rtl",
       "fallback": "en_US",
-      "coverage": "fixture"
+      "coverage": "partial"
     }
   ]
 }
