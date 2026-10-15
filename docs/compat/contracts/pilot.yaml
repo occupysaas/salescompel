@@ -1,0 +1,200 @@
+schemaVersion: 1
+contracts:
+  - id: describe
+    owner: compat-lab
+    client: jsforce
+    sources:
+      - rest
+    status: documented
+    preconditions:
+      - Disposable org with installed fixture fields
+      - Explicit API version and credentials
+      - Dedicated personas for security and locale scenarios
+    operation: describe
+    assertions:
+      - Account and Contact describe contain Id
+      - Account custom text and external ID fields exist
+    normalization:
+      - Exact owned-ID substitution only; no blanket timestamp/error
+        normalization
+    observationStatus: not_run
+  - id: crud
+    owner: compat-lab
+    client: jsforce
+    sources:
+      - rest
+    status: documented
+    preconditions:
+      - Disposable org with installed fixture fields
+      - Explicit API version and credentials
+      - Dedicated personas for security and locale scenarios
+    operation: crud
+    assertions:
+      - Create record, retrieve it, update Name, then delete
+      - Deleted record cannot be retrieved
+    normalization:
+      - Exact owned-ID substitution only; no blanket timestamp/error
+        normalization
+    observationStatus: not_run
+  - id: upsert
+    owner: compat-lab
+    client: jsforce
+    sources:
+      - rest
+    status: documented
+    preconditions:
+      - Disposable org with installed fixture fields
+      - Explicit API version and credentials
+      - Dedicated personas for security and locale scenarios
+    operation: upsert
+    assertions:
+      - Two upserts with one external ID produce one record
+      - Second value is persisted
+    normalization:
+      - Exact owned-ID substitution only; no blanket timestamp/error
+        normalization
+    observationStatus: not_run
+  - id: relationships
+    owner: compat-lab
+    client: jsforce
+    sources:
+      - rest
+    status: documented
+    preconditions:
+      - Disposable org with installed fixture fields
+      - Explicit API version and credentials
+      - Dedicated personas for security and locale scenarios
+    operation: relationships
+    assertions:
+      - Contact AccountId points to the created Account
+      - Query pagination traverses all 201 fixture contacts without duplication
+    normalization:
+      - Exact owned-ID substitution only; no blanket timestamp/error
+        normalization
+    observationStatus: not_run
+  - id: rollback
+    owner: compat-lab
+    client: jsforce
+    sources:
+      - composite
+    status: documented
+    preconditions:
+      - Disposable org with installed fixture fields
+      - Explicit API version and credentials
+      - Dedicated personas for security and locale scenarios
+    operation: rollback
+    assertions:
+      - A composite create followed by invalid field fails
+      - allOrNone leaves no committed Account
+    normalization:
+      - Exact owned-ID substitution only; no blanket timestamp/error
+        normalization
+    observationStatus: not_run
+  - id: permissions
+    owner: compat-lab
+    client: jsforce
+    sources:
+      - rest
+    status: documented
+    preconditions:
+      - Disposable org with installed fixture fields
+      - Explicit API version and credentials
+      - Dedicated personas for security and locale scenarios
+    operation: permissions
+    assertions:
+      - Admin sees the custom text field
+      - Restricted user describe omits field and explicit field query is denied
+    normalization:
+      - Exact owned-ID substitution only; no blanket timestamp/error
+        normalization
+    observationStatus: not_run
+  - id: errors
+    owner: compat-lab
+    client: jsforce
+    sources:
+      - rest
+    status: documented
+    preconditions:
+      - Disposable org with installed fixture fields
+      - Explicit API version and credentials
+      - Dedicated personas for security and locale scenarios
+    operation: errors
+    assertions:
+      - Unknown field, malformed query and missing ID return structured errors
+    normalization:
+      - Exact owned-ID substitution only; no blanket timestamp/error
+        normalization
+    observationStatus: not_run
+  - id: locale
+    owner: compat-lab
+    client: jsforce
+    sources:
+      - locale
+      - languages
+    status: documented
+    preconditions:
+      - Disposable org with installed fixture fields
+      - Explicit API version and credentials
+      - Dedicated personas for security and locale scenarios
+    operation: locale
+    assertions:
+      - Dedicated user language and locale round-trip independently
+      - Original settings restored
+    normalization:
+      - Exact owned-ID substitution only; no blanket timestamp/error
+        normalization
+    observationStatus: not_run
+  - id: cli-query
+    owner: compat-lab
+    client: salesforce-cli
+    sources:
+      - rest
+    status: documented
+    preconditions:
+      - Disposable org with installed fixture fields
+      - Explicit API version and credentials
+      - Dedicated personas for security and locale scenarios
+    operation: cli-query
+    assertions:
+      - CLI queries an owned Account with the same values
+    normalization:
+      - Exact owned-ID substitution only; no blanket timestamp/error
+        normalization
+    observationStatus: not_run
+  - id: metadata
+    owner: compat-lab
+    client: salesforce-cli
+    sources:
+      - metadata
+    status: documented
+    preconditions:
+      - Disposable org with installed fixture fields
+      - Explicit API version and credentials
+      - Dedicated personas for security and locale scenarios
+    operation: metadata
+    assertions:
+      - Deploy unique custom field via CLI
+      - Retrieve via CLI and compare field label/type/length
+      - Delete only the newly created field
+    normalization:
+      - Exact owned-ID substitution only; no blanket timestamp/error
+        normalization
+    observationStatus: not_run
+  - id: python-crud
+    owner: compat-lab
+    client: simple-salesforce
+    sources:
+      - rest
+    status: documented
+    preconditions:
+      - Disposable org with installed fixture fields
+      - Explicit API version and credentials
+      - Dedicated personas for security and locale scenarios
+    operation: python-crud
+    assertions:
+      - Independent client creates, reads, updates, queries and deletes an
+        Account
+    normalization:
+      - Exact owned-ID substitution only; no blanket timestamp/error
+        normalization
+    observationStatus: not_run

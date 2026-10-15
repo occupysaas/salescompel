@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "publisher": "Salesforce (forcedotcom)",
+  "repository": "https://github.com/forcedotcom/einstein-bot-openapi-codegen-maven-plugin",
+  "commit": "e637cb662fe93e319e09b8ede9421c4e2cb64a9c",
+  "sourceUrl": "https://raw.githubusercontent.com/forcedotcom/einstein-bot-openapi-codegen-maven-plugin/e637cb662fe93e319e09b8ede9421c4e2cb64a9c/src/test/resources/v5_0_0_api_specs.yaml",
+  "retrievedAt": "2026-10-15",
+  "file": "einstein-bot-v5.yaml",
+  "sha256": "7a47146438da4d279eef5cdb30f43dc282b3727fe088178d71642534be9ab9da",
+  "purpose": "Official Einstein Bot API schema-validation fixture; not a Sales Cloud/core REST API contract or live parity evidence",
+  "licenseFile": "LICENSE.txt",
+  "modifications": "none"
+}

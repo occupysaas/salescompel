@@ -1,0 +1,51 @@
+schemaVersion: 1
+id: pilot
+description: Synthetic Sales Cloud/core platform; no live observations yet
+apiVersion: null
+clouds:
+  - Sales Cloud
+  - core platform
+objects:
+  - Account
+  - Contact
+  - User
+fields:
+  - Account.Compat_Text__c
+  - Account.Compat_Key__c
+personas:
+  - administrator
+  - restricted-user
+requiredScenarios:
+  - describe
+  - crud
+  - upsert
+  - relationships
+  - rollback
+  - permissions
+  - errors
+  - locale
+  - cli-query
+  - metadata
+  - python-crud
+languages:
+  - en_US
+  - fr
+  - de
+  - pt_BR
+  - iw
+locales:
+  - en_US
+  - fr_FR
+timezone: America/New_York
+currency: USD
+managedPackages: []
+# Exact client versions; validate checks these against the lockfiles and the
+# installed CLI plugins, and compare requires both captures to match them.
+connectors:
+  jsforce: "3.11.0"
+  "@salesforce/cli": "2.156.0"
+  "@salesforce/plugin-data": "5.1.16"
+  "@salesforce/plugin-deploy-retrieve": "4.2.15"
+  simple-salesforce: "1.12.9"
+referenceStatus: pending
+openapi: 3.0-only

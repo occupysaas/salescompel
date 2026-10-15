@@ -1,0 +1,780 @@
+openapi: 3.0.3
+info:
+  title: SalesCompel initial compatibility REST contract
+  version: 0.1.0
+  description: Proposed, independently authored pilot subset; no endpoints
+    implemented or Salesforce parity certified. API version must be supplied
+    explicitly.
+  license:
+    name: Apache-2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+servers:
+  - url: http://localhost:8080
+    description: Future local candidate server; not started by Plan 1
+security:
+  - bearerAuth: []
+paths:
+  /services/data/v{apiVersion}/sobjects:
+    parameters:
+      - name: apiVersion
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: describeGlobal
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - sobjects
+                properties:
+                  sobjects:
+                    type: array
+                    items:
+                      type: object
+        "400":
+          description: Salesforce-shaped error array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Error"
+        "401":
+          description: Salesforce-shaped error array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Error"
+        "403":
+          description: Salesforce-shaped error array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Error"
+        "404":
+          description: Salesforce-shaped error array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Error"
+  /services/data/v{apiVersion}/sobjects/{sObject}/describe:
+    parameters:
+      - name: apiVersion
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: sObject
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: describeObject
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - name
+                  - fields
+                properties:
+                  name:
+                    type: string
+                  fields:
+                    type: array
+                    items:
+                      type: object
+        "400":
+          description: Salesforce-shaped error array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Error"
+        "401":
+          description: Salesforce-shaped error array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Error"
+        "403":
+          description: Salesforce-shaped error array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Error"
+        "404":
+          description: Salesforce-shaped error array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Error"
+  /services/data/v{apiVersion}/sobjects/{sObject}:
+    parameters:
+      - name: apiVersion
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: sObject
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: createRecord
+      responses:
+        "201":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SaveResult"
+        "400":
+          description: Salesforce-shaped error array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Error"
+        "401":
+          description: Salesforce-shaped error array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Error"
+        "403":
+          description: Salesforce-shaped error array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Error"
+        "404":
+          description: Salesforce-shaped error array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Error"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Record"
+  /services/data/v{apiVersion}/sobjects/{sObject}/{recordId}:
+    parameters:
+      - name: apiVersion
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: sObject
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: recordId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getRecord
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Record"
+        "400":
+          description: Salesforce-shaped error array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Error"
+        "401":
+          description: Salesforce-shaped error array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Error"
+        "403":
+          description: Salesforce-shaped error array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Error"
+        "404":
+          description: Salesforce-shaped error array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Error"
+    patch:
+      operationId: updateRecord
+      responses:
+        "204":
+          description: Updated
+        "400":
+          description: Salesforce-shaped error array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Error"
+        "401":
+          description: Salesforce-shaped error array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Error"
+        "403":
+          description: Salesforce-shaped error array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Error"
+        "404":
+          description: Salesforce-shaped error array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Error"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Record"
+    delete:
+      operationId: deleteRecord
+      responses:
+        "204":
+          description: Deleted
+        "400":
+          description: Salesforce-shaped error array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Error"
+        "401":
+          description: Salesforce-shaped error array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Error"
+        "403":
+          description: Salesforce-shaped error array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Error"
+        "404":
+          description: Salesforce-shaped error array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Error"
+  /services/data/v{apiVersion}/sobjects/{sObject}/{externalIdField}/{externalId}:
+    parameters:
+      - name: apiVersion
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: sObject
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: externalIdField
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: externalId
+        in: path
+        required: true
+        schema:
+          type: string
+    patch:
+      operationId: upsertRecord
+      responses:
+        "201":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SaveResult"
+        "204":
+          description: Updated
+        "400":
+          description: Salesforce-shaped error array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Error"
+        "401":
+          description: Salesforce-shaped error array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Error"
+        "403":
+          description: Salesforce-shaped error array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Error"
+        "404":
+          description: Salesforce-shaped error array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Error"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Record"
+  /services/data/v{apiVersion}/query:
+    parameters:
+      - name: apiVersion
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: query
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QueryResult"
+        "400":
+          description: Salesforce-shaped error array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Error"
+        "401":
+          description: Salesforce-shaped error array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Error"
+        "403":
+          description: Salesforce-shaped error array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Error"
+        "404":
+          description: Salesforce-shaped error array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Error"
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+  /services/data/v{apiVersion}/query/{locator}:
+    parameters:
+      - name: apiVersion
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: locator
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: queryMore
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QueryResult"
+        "400":
+          description: Salesforce-shaped error array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Error"
+        "401":
+          description: Salesforce-shaped error array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Error"
+        "403":
+          description: Salesforce-shaped error array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Error"
+        "404":
+          description: Salesforce-shaped error array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Error"
+  /services/data/v{apiVersion}/composite:
+    parameters:
+      - name: apiVersion
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: composite
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - compositeResponse
+                properties:
+                  compositeResponse:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - httpStatusCode
+                        - referenceId
+                        - body
+                      properties:
+                        httpStatusCode:
+                          type: integer
+                        referenceId:
+                          type: string
+                        body:
+                          nullable: true
+        "400":
+          description: Salesforce-shaped error array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Error"
+        "401":
+          description: Salesforce-shaped error array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Error"
+        "403":
+          description: Salesforce-shaped error array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Error"
+        "404":
+          description: Salesforce-shaped error array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Error"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - compositeRequest
+              properties:
+                allOrNone:
+                  type: boolean
+                compositeRequest:
+                  type: array
+                  minItems: 1
+                  maxItems: 25
+                  items:
+                    type: object
+                    required:
+                      - method
+                      - url
+                      - referenceId
+                    properties:
+                      method:
+                        type: string
+                      url:
+                        type: string
+                      referenceId:
+                        type: string
+                      body:
+                        $ref: "#/components/schemas/Record"
+  /services/data:
+    get:
+      operationId: listApiVersions
+      description: Version discovery. Salesforce CLI calls this to resolve the
+        maximum API version.
+      responses:
+        "200":
+          description: Supported API versions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - version
+                    - url
+                  properties:
+                    version:
+                      type: string
+                    label:
+                      type: string
+                    url:
+                      type: string
+        "401":
+          $ref: "#/components/responses/Errors"
+  /services/oauth2/userinfo:
+    get:
+      operationId: getUserInfo
+      description: Called by `sf org login access-token`, which then reads the
+        user through /services/data/v51.0/sobjects/User/{user_id} with a
+        hard-coded v51.0, independent of the configured API version.
+      responses:
+        "200":
+          description: OpenID Connect user information
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - user_id
+                  - organization_id
+                properties:
+                  user_id:
+                    type: string
+                  organization_id:
+                    type: string
+                  preferred_username:
+                    type: string
+                additionalProperties: true
+        "401":
+          $ref: "#/components/responses/Errors"
+        "403":
+          $ref: "#/components/responses/Errors"
+  /services/data/v{apiVersion}/composite/sobjects:
+    parameters:
+      - name: apiVersion
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: createRecordCollection
+      description: SObject Collections create. JSforce uses it when create() is
+        given an array (the relationships scenario).
+      responses:
+        "200":
+          description: One SaveResult per record, in request order
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SaveResult"
+        "400":
+          $ref: "#/components/responses/Errors"
+        "401":
+          $ref: "#/components/responses/Errors"
+        "403":
+          $ref: "#/components/responses/Errors"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - records
+              properties:
+                allOrNone:
+                  type: boolean
+                records:
+                  type: array
+                  minItems: 1
+                  maxItems: 200
+                  items:
+                    allOf:
+                      - $ref: "#/components/schemas/Record"
+                      - type: object
+                        required:
+                          - attributes
+                        properties:
+                          attributes:
+                            type: object
+                            required:
+                              - type
+                            properties:
+                              type:
+                                type: string
+components:
+  responses:
+    Errors:
+      description: Salesforce-shaped error array
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/Error"
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    Record:
+      type: object
+      additionalProperties: true
+      description: Fields are governed by organization metadata, not a fixed global schema.
+    SaveResult:
+      type: object
+      required:
+        - id
+        - success
+        - errors
+      properties:
+        id:
+          type: string
+          nullable: true
+        success:
+          type: boolean
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/Error"
+    Error:
+      type: object
+      required:
+        - message
+        - errorCode
+      properties:
+        message:
+          type: string
+        errorCode:
+          type: string
+        fields:
+          type: array
+          items:
+            type: string
+    QueryResult:
+      type: object
+      required:
+        - totalSize
+        - done
+        - records
+      properties:
+        totalSize:
+          type: integer
+        done:
+          type: boolean
+        nextRecordsUrl:
+          type: string
+        records:
+          type: array
+          items:
+            $ref: "#/components/schemas/Record"

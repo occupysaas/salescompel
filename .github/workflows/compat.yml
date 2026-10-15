@@ -1,0 +1,90 @@
+name: Compatibility laboratory (not parity certification)
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      target:
+        type: choice
+        options: [reference, candidate]
+        required: true
+      api_version:
+        description: Explicit Salesforce API version, for example 65.0
+        type: string
+        required: true
+      disposable:
+        description: I confirm this environment is disposable and permit fixture writes
+        type: boolean
+        required: true
+        default: false
+permissions:
+  contents: read
+jobs:
+  offline:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: ['22', '24']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: compat/clients/node/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci --prefix compat/clients/node --ignore-scripts
+      - run: |
+          python -m venv compat/clients/python/.venv
+          compat/clients/python/.venv/bin/python -m pip install -r compat/clients/python/requirements.lock
+          compat/clients/python/.venv/bin/python compat/clients/python/probe.py --version
+      - run: npm --prefix compat/clients/node run check
+  live:
+    if: github.event_name == 'workflow_dispatch'
+    needs: offline
+    # A persistent recovery directory must survive runner/job termination.
+    runs-on: [self-hosted, compat-live]
+    timeout-minutes: 30
+    environment: compat-live
+    concurrency:
+      group: compat-live-${{ inputs.target }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci --prefix compat/clients/node --ignore-scripts
+      - run: |
+          python -m venv compat/clients/python/.venv
+          compat/clients/python/.venv/bin/python -m pip install -r compat/clients/python/requirements.lock
+      - run: |
+          test -n "$COMPAT_RECOVERY_DIR"
+          test -d "$COMPAT_RECOVERY_DIR"
+          test -w "$COMPAT_RECOVERY_DIR"
+          npm --prefix compat/clients/node run capture -- --target "$CAPTURE_TARGET"
+        env:
+          COMPAT_RECOVERY_DIR: ${{ vars.COMPAT_RECOVERY_DIR }}
+          CAPTURE_TARGET: ${{ inputs.target }}
+          COMPAT_API_VERSION: ${{ inputs.api_version }}
+          COMPAT_DISPOSABLE: ${{ inputs.disposable && 'yes' || 'no' }}
+          COMPAT_REFERENCE_URL: ${{ vars.COMPAT_REFERENCE_URL }}
+          COMPAT_REFERENCE_TOKEN: ${{ secrets.COMPAT_REFERENCE_TOKEN }}
+          COMPAT_REFERENCE_RESTRICTED_TOKEN: ${{ secrets.COMPAT_REFERENCE_RESTRICTED_TOKEN }}
+          COMPAT_REFERENCE_LOCALE_USER_ID: ${{ vars.COMPAT_REFERENCE_LOCALE_USER_ID }}
+          COMPAT_CANDIDATE_URL: ${{ vars.COMPAT_CANDIDATE_URL }}
+          COMPAT_CANDIDATE_TOKEN: ${{ secrets.COMPAT_CANDIDATE_TOKEN }}
+          COMPAT_CANDIDATE_RESTRICTED_TOKEN: ${{ secrets.COMPAT_CANDIDATE_RESTRICTED_TOKEN }}
+          COMPAT_CANDIDATE_LOCALE_USER_ID: ${{ vars.COMPAT_CANDIDATE_LOCALE_USER_ID }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: compatibility-capture-${{ inputs.target }}
+          path: compat/reports/
+          retention-days: 7
+          if-no-files-found: error

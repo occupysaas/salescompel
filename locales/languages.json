@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "status": "validation-fixtures-not-product-translations",
+  "languages": [
+    {
+      "code": "en_US",
+      "bcp47": "en-US",
+      "category": "fully",
+      "direction": "ltr",
+      "fallback": null,
+      "coverage": "fixture"
+    },
+    {
+      "code": "fr",
+      "bcp47": "fr",
+      "category": "fully",
+      "direction": "ltr",
+      "fallback": "en_US",
+      "coverage": "fixture"
+    },
+    {
+      "code": "de",
+      "bcp47": "de",
+      "category": "fully",
+      "direction": "ltr",
+      "fallback": "en_US",
+      "coverage": "fixture"
+    },
+    {
+      "code": "pt_BR",
+      "bcp47": "pt-BR",
+      "category": "fully",
+      "direction": "ltr",
+      "fallback": "en_US",
+      "coverage": "fixture"
+    },
+    {
+      "code": "iw",
+      "bcp47": "he",
+      "category": "end-user",
+      "direction": "rtl",
+      "fallback": "en_US",
+      "coverage": "fixture"
+    }
+  ]
+}
