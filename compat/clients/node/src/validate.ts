@@ -167,14 +167,19 @@ export async function validateRepository(): Promise<string[]> {
     if (!l.bcp47 || canonical !== l.bcp47)
       issues.push(`Language ${l.code}: invalid BCP 47 tag ${l.bcp47}`);
   }
-  for (const path of [
-    "api/openapi.yaml",
-    "compat/fixtures/openapi/external-service.json",
-    "compat/fixtures/openapi/external-service.yaml",
-    "compat/fixtures/openapi/salesforce/einstein-bot-v5.yaml",
-  ]) {
+  // External Services fixtures and the official Salesforce document model
+  // Salesforce-side input, which SalesCompel converts to its latest version.
+  for (const [path, role] of [
+    ["api/openapi.yaml", "salescompel"],
+    ["compat/fixtures/openapi/external-service.json", "salesforce-source"],
+    ["compat/fixtures/openapi/external-service.yaml", "salesforce-source"],
+    [
+      "compat/fixtures/openapi/salesforce/einstein-bot-v5.yaml",
+      "salesforce-source",
+    ],
+  ] as const) {
     try {
-      await validateOpenApi(await readDoc(path));
+      await validateOpenApi(await readDoc(path), role);
     } catch (e) {
       issues.push(`${path}: ${String(e)}`);
     }

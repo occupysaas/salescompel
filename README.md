@@ -19,7 +19,7 @@ npm ci --prefix compat/clients/node --ignore-scripts
 npm --prefix compat/clients/node run check
 ```
 
-The [OpenAPI 3.0 REST contract](api/openapi.yaml) is a proposed broader subset; the [Plan 2 implementation guide](docs/compat/plan-2-implementation.md) lists the routes served by the candidate. Official Salesforce schema fixtures retain their own licenses; see [provenance](compat/fixtures/openapi/salesforce/provenance.json). No live Salesforce compatibility certification has been performed.
+The [OpenAPI 3.2 REST contract](api/openapi.yaml) is a proposed broader subset; the [Plan 2 implementation guide](docs/compat/plan-2-implementation.md) lists the routes served by the candidate. Official Salesforce schema fixtures retain their own licenses; see [provenance](compat/fixtures/openapi/salesforce/provenance.json). No live Salesforce compatibility certification has been performed.
 
 ## Platform walking slice
 

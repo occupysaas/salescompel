@@ -11,7 +11,11 @@ import {
 import { capture } from "./capture.ts";
 import { compare, sanitize, parseDocument, validateReport } from "./core.ts";
 import { reportOutcome, writeReport } from "./reports.ts";
-import { validateOpenApi } from "./openapi.ts";
+import {
+  validateOpenApi,
+  LATEST_OPENAPI,
+  type OpenApiRole,
+} from "./openapi.ts";
 async function main() {
   const { values, positionals } = parseArgs({
     allowPositionals: true,
@@ -22,6 +26,7 @@ async function main() {
       candidate: { type: "string" },
       first: { type: "string" },
       second: { type: "string" },
+      role: { type: "string" },
       spec: { type: "string" },
     },
   });
@@ -37,17 +42,23 @@ async function main() {
       process.exitCode = 1;
     } else
       console.log(
-        "Offline contracts, catalogs, dependencies and OpenAPI 3.0 validated. Live Salesforce verification: pending.",
+        `Offline contracts, catalogs, dependencies and OpenAPI documents (SalesCompel ${LATEST_OPENAPI}, Salesforce sources 2.0/3.0) validated. Live Salesforce verification: pending.`,
       );
     return;
   }
   if (command === "validate-openapi") {
     if (!values.spec) throw new Error("--spec path required");
+    const role = (values.role ?? "salescompel") as OpenApiRole;
+    if (!["salescompel", "salesforce-source"].includes(role))
+      throw new Error("--role must be salescompel or salesforce-source");
     await validateOpenApi(
       parseDocument(await readFile(resolve(values.spec), "utf8")),
+      role,
     );
     console.log(
-      "OpenAPI 3.0 structurally valid; no Salesforce runtime compatibility claim.",
+      role === "salescompel"
+        ? `OpenAPI ${LATEST_OPENAPI} structurally valid; no Salesforce runtime compatibility claim.`
+        : `Salesforce source document structurally valid; convert to OpenAPI ${LATEST_OPENAPI} before use.`,
     );
     return;
   }

@@ -68,20 +68,23 @@ The comparator rejects non-live evidence, missing scenarios, blocked results, AP
 
 `locales/languages.json` and separate message files are validation fixtures, not a full Salesforce language catalog or completed product translations. They demonstrate regional codes, legacy `iw` → formatter `he`, right-to-left direction and explicit fallbacks. M0 discovery must expand the version-pinned language inventory. Formatting, browser layout and tenant translations remain future milestone work as recorded in `contracts/localization.yaml`.
 
-## OpenAPI 3.0 only
+## OpenAPI: latest version
 
-`api/openapi.yaml` is SalesCompel's independently authored initial REST contract. The M2 candidate does not serve it yet (deferred to M3; see [plan-2-implementation.md](plan-2-implementation.md)). When served, it is the source of truth: each operation cites `x-source` URLs from `sources.yaml` and HTTP tests validate traffic against it. The contract is deliberately metadata-driven for records rather than inventing a fixed schema for every organization.
+`api/openapi.yaml` is SalesCompel's independently authored initial REST contract, written in the latest OpenAPI release (3.2.0). The validator's `salescompel` role rejects any other version. The M2 candidate does not serve it yet (deferred to M3; see [plan-2-implementation.md](plan-2-implementation.md)). When served, it is the source of truth: each operation cites `x-source` URLs from `sources.yaml` and HTTP tests validate traffic against it. The contract is deliberately metadata-driven for records rather than inventing a fixed schema for every organization.
 
-Synthetic JSON/YAML External Services fixtures test standards parsing, not registration or callout execution. M4/M7/M8 own registration, Named/External Credential handling and Flow/Apex actions. Salesforce's supported subset and quirks are recorded separately in `contracts/external-services.yaml`. OpenAPI 2.0 and 3.1+ are rejected as input. Salesforce-side 2.0 documents (for example existing External Service registrations) are converted to OpenAPI 3.0 during migration, never registered as 2.0 (`external-openapi2-conversion`).
+Synthetic JSON/YAML External Services fixtures test standards parsing, not registration or callout execution. M4/M7/M8 own registration, Named/External Credential handling and Flow/Apex actions. Salesforce's supported subset and quirks are recorded separately in `contracts/external-services.yaml`. Salesforce External Services accepts only OpenAPI 2.0 and 3.0, so those fixtures and the official Salesforce document are validated in the `salesforce-source` role (2.0 or 3.0.x only). Such documents are migration/deploy input: SalesCompel converts them to the latest OpenAPI version and never stores, serves or executes them as-is (`external-openapi-conversion`).
 
-An official Salesforce Einstein Bots API 3.0.0 YAML is retained under `compat/fixtures/openapi/salesforce`, with its original BSD-3-Clause license and a pinned commit/checksum. It validates our parser against a real Salesforce document; it is not the Sales Cloud/core REST contract and no requests are sent to its server URLs. The advertised Connect REST core YAML download returned HTTP 404 during research. Core sObjects specs can be generated from an eligible org; that extraction remains pending reference access.
+An official Salesforce Einstein Bots API 3.0.0 YAML (a `salesforce-source` document) is retained under `compat/fixtures/openapi/salesforce`, with its original BSD-3-Clause license and a pinned commit/checksum. It validates our parser against a real Salesforce document; it is not the Sales Cloud/core REST contract and no requests are sent to its server URLs. The advertised Connect REST core YAML download returned HTTP 404 during research. Core sObjects specs can be generated from an eligible org; that extraction remains pending reference access.
 
 Validate a bundled official or org-generated document locally:
 
 ```sh
 cd compat/clients/node
 npx --no-install tsx src/cli.ts validate-openapi --spec /absolute/spec.yaml
+npx --no-install tsx src/cli.ts validate-openapi --role salesforce-source --spec /absolute/salesforce-spec.yaml
 ```
+
+The default `salescompel` role requires OpenAPI 3.2.x; `salesforce-source` accepts 2.0 or 3.0.x and reminds you to convert. Validation uses `@seriousme/openapi-schema-validator` (official OpenAPI JSON Schemas, 2.0–3.2) plus local checks for unresolved and external references and duplicate `operationId`s.
 
 Remote/file references are disabled; bundle external references before ingestion. No server URL is contacted by schema validation. Keep source URL, API version, retrieval date, checksum, license and any redactions beside future reference artifacts.
 

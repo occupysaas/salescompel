@@ -1,4 +1,4 @@
-openapi: 3.0.3
+openapi: 3.2.0
 info:
   title: SalesCompel initial compatibility REST contract
   version: 0.1.0
@@ -540,8 +540,7 @@ paths:
                           type: integer
                         referenceId:
                           type: string
-                        body:
-                          nullable: true
+                        body: {}
         "400":
           description: Salesforce-shaped error array
           content:
@@ -740,8 +739,9 @@ components:
         - errors
       properties:
         id:
-          type: string
-          nullable: true
+          type:
+            - string
+            - "null"
         success:
           type: boolean
         errors:

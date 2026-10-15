@@ -18,9 +18,9 @@
     "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\""
   },
   "dependencies": {
-    "@apidevtools/swagger-parser": "13.1.0",
     "@formatjs/icu-messageformat-parser": "3.5.21",
     "@salesforce/cli": "2.156.0",
+    "@seriousme/openapi-schema-validator": "2.11.0",
     "ajv": "8.20.0",
     "jsforce": "3.11.0",
     "yaml": "2.9.1"

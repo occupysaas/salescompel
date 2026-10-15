@@ -97,7 +97,7 @@
       ]
     },
     "openapi": {
-      "const": "3.0-only"
+      "const": "3.2"
     },
     "clouds": {
       "type": "array",

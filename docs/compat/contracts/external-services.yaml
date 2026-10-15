@@ -6,7 +6,7 @@ sources:
   - external-examples
   - oas
   - external-registration-metadata
-openapi: 3.0-only
+openapi: "3.2"
 contracts:
   - id: external-servers-vs-named-credential
     milestone: M1/M8
@@ -21,19 +21,20 @@ contracts:
     assertions:
       - Recorded callout host and path prefix identify the effective base URL
     observationStatus: not_run
-  - id: external-openapi2-conversion
-    milestone: M0/M5/M8
-    behavior: SalesCompel accepts only OpenAPI 3.0, but Salesforce accepts 2.0
-      registrations. Migration inventories registrations by OpenAPI version
-      and converts each 2.0 document to an equivalent 3.0 document, retaining
-      the original as a customer input artifact. Constructs that cannot be
+  - id: external-openapi-conversion
+    milestone: M0/M4/M5/M8
+    behavior: SalesCompel stores, serves and executes only the latest OpenAPI
+      version (3.2). Salesforce accepts only 2.0 and 3.0 registrations, so
+      migration import and Metadata API deploy accept those as input and
+      convert each to an equivalent latest-version document, retaining the
+      original as a customer input artifact. Constructs that cannot be
       converted without changing behavior block the registration.
     preconditions:
       - Source org metadata retrieve including ExternalServiceRegistration
-      - At least one fixture registration authored in OpenAPI 2.0
+      - Fixture registrations authored in OpenAPI 2.0 and in 3.0
     assertions:
       - Each registration is reported with its source OpenAPI version
-      - The converted 3.0 document validates and registers the same operation
+      - The converted 3.2 document validates and registers the same operation
         names, Flow/Apex input/output types, parameters, media types and
         Named Credential binding as the source registration
       - Invocations through the converted registration match the reference
@@ -43,15 +44,16 @@ contracts:
     observationStatus: not_run
   - id: external-registration
     milestone: M4/M8
-    behavior: Import bundled JSON/YAML OpenAPI 3.0, register selected operations
-      and preserve metadata dependencies
+    behavior: Import bundled JSON/YAML OpenAPI 2.0/3.0 (the formats Salesforce
+      accepts), register selected operations and preserve metadata
+      dependencies
     preconditions:
       - Disposable reference org with External Services enabled
       - Bundled OpenAPI 3.0 document without external references
     assertions:
       - JSON and YAML forms of the same document register equivalent operations
-      - SalesCompel registration rejects OpenAPI 2.0 and 3.1 input; 2.0
-        documents enter only through migration conversion to 3.0
+      - Salesforce rejects 3.1/3.2 input as observed; SalesCompel accepts
+        2.0/3.0 input and natively authored 3.2, storing only 3.2
       - Registration metadata retrieves with its Named Credential dependency
     observationStatus: not_run
   - id: external-schema

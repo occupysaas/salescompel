@@ -70,8 +70,14 @@ sources:
     url: https://spec.openapis.org/oas/v3.0.3
     accessedAt: 2026-10-15
     version: OpenAPI 3.0.3 (fixed specification)
-    claim: OpenAPI 3.0 structural rules
+    claim: OpenAPI 3.0 structural rules for Salesforce-source input documents
     extraction: reverify
+  - id: oas-latest
+    url: https://spec.openapis.org/oas/v3.2.0
+    accessedAt: 2026-10-15
+    version: OpenAPI 3.2.0 (released 2025-09-19; latest at access date)
+    claim: Version used for every SalesCompel-authored and converted document
+    extraction: not-extracted
   - id: connect-spec
     url: https://developer.salesforce.com/blogs/2026/07/introducing-a-new-connect-rest-api-experience
     accessedAt: 2026-10-15
