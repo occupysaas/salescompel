@@ -1,6 +1,6 @@
 # SalesCompel Salesforce compatibility roadmap
 
-Date: 2026-10-14. Status: proposed architecture and milestone plan; Plan 1 offline laboratory implemented on 2026-10-15. No product-runtime implementation or live parity certification has occurred.
+Date: 2026-10-14. Status: proposed architecture and milestone plan; Plan 1 offline laboratory and the Plan 2 M2 candidate walking slice implemented on 2026-10-15. Plan 2 proceeded without M0/M1 reference evidence, so no milestone exit gate has passed and no live parity certification has occurred. Revised after a plan review on 2026-10-15 (see [Coverage assignments](#coverage-assignments-from-the-2026-10-15-review)).
 
 ## Objective and planning assumptions
 
@@ -10,7 +10,9 @@ SalesCompel is open source under the Apache License, Version 2.0 (SPDX: Apache-2
 
 The long-term objective is 1:1 replacement. The proposed first certification target is Sales Cloud plus the core customization platform. That sequencing is an assumption, not a reduction of the ultimate goal. Service Cloud, Experience Cloud, Revenue/CPQ, Marketing, Commerce, Data Cloud, industry products, analytics extensions, and AI products require separate inventories and certification tracks. Do not advertise universal Salesforce compatibility on the strength of a Sales Cloud pilot.
 
-The repository currently contains no application code. Team size, target org, data volumes, hosting constraints, downtime allowance, and required Salesforce versions are not yet established. Milestones below are dependency and acceptance driven, not delivery-date promises.
+The repository contains the Plan 1 laboratory and the Plan 2 candidate service (`cmd/salescompel`, `internal/platform`, `web`). Team size, target org, data volumes, hosting constraints, downtime allowance, and required Salesforce versions are not yet established. Milestones below are dependency and acceptance driven, not delivery-date promises.
+
+**Branch policy:** all work is committed directly on `main` until every milestone below is complete. Only then does the project become usable and testable by humans; until that point, plans must not require feature branches or merge-based review.
 
 ## What “drop-in” means
 
@@ -43,7 +45,7 @@ Every discovered feature has a status: unknown, documented, observed, specified,
 - Salesforce's backup export has explicit options for attachments and Files/content versions. Import must inspect what is actually present and report omissions. [Backup export](https://help.salesforce.com/s/articleView?id=admin_exportdata.htm&language=en_US&type=0).
 - Composite requests have dependency references and rollback behavior. A successful outer HTTP response does not imply every subrequest succeeded. [Composite requests](https://developer.salesforce.com/docs/platform/api-rest/guide/requests-composite.html).
 - SOQL relationship traversal is schema constrained; it is not arbitrary SQL. Bulk query supports a different query subset from ordinary query. [Relationships](https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-relationships.html), [Bulk query](https://developer.salesforce.com/docs/platform/api-asynch/guide/queries.html).
-- Current security documentation distinguishes Apex defaults before and after API version 67.0. Treat version-sensitive behavior as a contract requiring source-org verification, rather than assuming one universal security context. [Apex security](https://developer.salesforce.com/docs/platform/lwc/guide/apex-security).
+- Current security documentation distinguishes Apex defaults before and after API version 67.0. Treat version-sensitive behavior as a contract requiring source-org verification, rather than assuming one universal security context. [Apex security](https://developer.salesforce.com/docs/platform/lwc/guide/apex-security). This claim was not re-verified during the 2026-10-15 review (the page refused automated fetches); the Plan 2 candidate's API version 65.0 predates 67.0.
 - UI API and Lightning Data Service expose metadata-aware, permission-aware behavior. Recreating a few record forms does not recreate the customization runtime. [Lightning Data Service](https://developer.salesforce.com/docs/platform/lwc/guide/data-ui-api).
 - Pub/Sub replay IDs are opaque, and retained events have a documented recovery window. Migration cannot treat event replay as an unlimited backup or calculate its own Salesforce replay positions. [Event durability](https://developer.salesforce.com/docs/platform/pub-sub-api/guide/event-message-durability.html).
 
@@ -79,7 +81,7 @@ Start with a modular Go application plus separate worker and untrusted-code exec
 
 Use typed relational storage with metadata-defined fields and indexes; evaluate JSONB only where it does not sacrifice query, index, uniqueness or relationship semantics. Benchmark alternatives before locking the physical schema. Use decimal arithmetic for currency and numeric precision contracts, not binary floating point.
 
-Tenant identity must participate in every key, query, job, cache and blob authorization path. Database row isolation is defense in depth; it does not replace Salesforce sharing semantics. Execution context explicitly carries user, tenant, API/class version, privilege mode, sharing mode and transaction limits.
+Tenant identity must participate in every key, query, job, cache and blob authorization path. Database row isolation is defense in depth; it does not replace Salesforce sharing semantics. PostgreSQL row-level security for tenant isolation is an M4 deliverable (the M2 candidate relies on application-level binding only). SalesCompel's own database needs versioned, forward-only schema migrations with upgrade tests before M4 introduces dynamic schema; the M2 startup check that rejects a mismatched catalog version is not a migration mechanism. Execution context explicitly carries user, tenant, API/class version, privilege mode, sharing mode and transaction limits.
 
 Vue is the native SalesCompel UI. Imported LWC, Aura and Visualforce are distinct compatibility targets: Vue cannot execute them automatically. An isolated component/runtime bridge or independent compatible runtime must supply their required services. Any permitted OSS LWC reuse needs provenance tracking and still does not supply the entire Salesforce runtime.
 
@@ -109,11 +111,11 @@ Localization milestone gates:
 
 ## OpenAPI contract and External Services
 
-SalesCompel must publish its HTTP API contract in OpenAPI **3.0** YAML (initial revision 3.0.3). Plan 1 adds validation and initial REST contract coverage; M2 serves the versioned document and later API changes update it alongside connector tests. SOAP and gRPC retain their own WSDL/proto contracts.
+SalesCompel must publish its HTTP API contract in OpenAPI **3.0** YAML (initial revision 3.0.3). The hand-written document is the source of truth: the service serves it, each operation cites its public sources (`x-source` URLs registered in `docs/compat/sources.yaml`), and HTTP tests validate requests and responses against it. Plan 1 adds validation and initial REST contract coverage; M2 serves the versioned document and later API changes update it alongside connector tests. SOAP and gRPC retain their own WSDL/proto contracts.
 
-External Services compatibility must import OpenAPI **3.0 only**, in JSON and YAML, with Salesforce-compatible schema/operation handling, Named/External Credentials, permission checks and Flow/Apex invocation. OpenAPI 2.0 is excluded by user direction. M1 supplies schema fixtures and behavioral contracts; M4 handles registration metadata; M7/M8 implement execution and migration. Distinguish standards validity from Salesforce's supported subset and observed runtime semantics. Use official Salesforce specs as pinned test fixtures when provenance and reuse terms permit; an org-specific generated spec remains pending without a reference org.
+External Services compatibility must import OpenAPI **3.0 only**, in JSON and YAML, with Salesforce-compatible schema/operation handling, Named/External Credentials, permission checks and Flow/Apex invocation. OpenAPI 2.0 is excluded by user direction: SalesCompel uses OpenAPI 3.0 everywhere, and wherever Salesforce uses an older description format, SalesCompel replaces it with a 3.0 equivalent (the same policy as the sibling zeroauthy clean-room project). Salesforce accepts 2.0 External Service registrations, so the migration analyzer inventories registrations by OpenAPI version and **converts each 2.0 document to an equivalent OpenAPI 3.0 document** during import. The original 2.0 document is retained as a customer input artifact for provenance and round-trip comparison. Conversion must preserve registered operation names, schema-derived Flow/Apex types, parameters, media types and Named Credential binding, verified by equivalence tests against the source registration. A construct that cannot be converted without changing behavior blocks that registration's certification rather than being silently dropped. Callouts take their base endpoint from the Named Credential; the registration metadata resolves a relative `schemaUrl` against it. How a spec's `servers` entries interact with the Named Credential endpoint is unspecified in the reviewed sources and must be observed (`external-servers-vs-named-credential`). M1 supplies schema fixtures and behavioral contracts; M4 handles registration metadata; M7/M8 implement execution and migration. Distinguish standards validity from Salesforce's supported subset and observed runtime semantics. Use official Salesforce specs as pinned test fixtures when provenance and reuse terms permit; an org-specific generated spec remains pending without a reference org.
 
-Sources: [Salesforce support matrix](https://help.salesforce.com/s/articleView?id=platform.external_services_intro_openapi_2_3_support.htm&language=en_US&type=5), [Salesforce 3.0 examples](https://help.salesforce.com/s/articleView?id=platform.external_services_examples_openapi_3_0.htm&type=5), [OpenAPI 3.0.3](https://spec.openapis.org/oas/v3.0.3).
+Sources: [ExternalServiceRegistration metadata](https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_externalserviceregistration.htm), [Salesforce support matrix](https://help.salesforce.com/s/articleView?id=platform.external_services_intro_openapi_2_3_support.htm&language=en_US&type=5), [Salesforce 3.0 examples](https://help.salesforce.com/s/articleView?id=platform.external_services_examples_openapi_3_0.htm&type=5), [OpenAPI 3.0.3](https://spec.openapis.org/oas/v3.0.3).
 
 Implementation package: [Plan 1](2026-10-15-plan-1-compatibility-laboratory.md).
 
@@ -172,7 +174,7 @@ CI must run target connector tests on relevant changes and the complete supporte
 | [Salesforce CLI data plugin](https://github.com/salesforcecli/plugin-data) | Query/export/import/upsert command workflows | Verify custom endpoint/auth support with the pinned CLI; record adapters and additional discovery calls |
 | [CLI deploy/retrieve plugin](https://github.com/salesforcecli/plugin-deploy-retrieve) | Metadata round trips, validation, deployment status | Require dependency and error fidelity, not just XML parsing |
 | [Data Loader](https://github.com/forcedotcom/dataloader) | Real CSV import/export and relevant SOAP/Bulk interoperability | Run the supported GUI/CLI mode for the chosen platform |
-| [Salesforce Pub/Sub samples and proto](https://github.com/forcedotcom/pub-sub-api) | Go gRPC/Avro interoperability and replay scenarios | Repository evidence indicates archiving; verify the current official proto location before pinning. Samples are not production runtime code |
+| [Salesforce Pub/Sub samples and proto](https://github.com/forcedotcom/pub-sub-api) | Go gRPC/Avro interoperability and replay scenarios | Repository archived (read-only) on 2026-08-08 with no relocation notice. Pin the proto from the [Pub/Sub API developer guide](https://developer.salesforce.com/docs/platform/pub-sub-api/overview) or a verified successor, recording commit/checksum and license. Samples are not production runtime code |
 
 A configurable endpoint and new credentials are allowed. Rewriting a client to bypass missing discovery, authentication or API behavior does not count as unmodified-client compatibility. Where a client hardcodes Salesforce infrastructure, report the blocker separately.
 
@@ -197,15 +199,15 @@ Milestones are complete only when their evidence is stored and reproducible. Sco
 
 | Milestone | Deliverables | Exit gate | Dependencies |
 | --- | --- | --- | --- |
-| M0 — Target and evidence charter | First org/profile inventory, source register, clean-room responsibilities, feature matrix, scale and downtime objectives | Every required integration/customization assigned a contract owner; reference org identified; unsupported export areas explicit | None |
+| M0 — Target and evidence charter | First org/profile inventory (including the org-level features in the profile's `orgFeatures`), source register re-verified against extracted content, clean-room responsibilities and recorded terms-of-service decision, feature matrix, scale and downtime objectives | Every required integration/customization assigned a contract owner; reference org identified; unsupported export areas explicit | None |
 | M1 — Behavior laboratory | Disposable reference fixtures, pinned clients, API capture/comparator, browser scenario format, CI evidence reports | Repeated reference runs distinguish deterministic behavior from normalization; initial CRUD, denied-access, rollback and query scenarios reproducible | M0 |
 | M1R — Complete release-history and changelog review | Inventory and review every release linked by the Salesforce previous-release-notes archive, plus linked product/API changelogs, release updates, deprecations and removals; maintain a versioned coverage ledger and trace findings into contracts | Every inventoried release/document is reviewed or explicitly blocked with owner and reason; all compatibility-relevant changes map to affected profiles/contracts/tests; unresolved required-profile gaps block certification | Starts alongside M1; initial review before M3 contract freeze, ongoing before every supported release certification |
 | M2 — Platform walking slice | Go service, tenant/auth boundary, metadata catalog, record store, first REST describe/CRUD/query endpoints and minimal Vue record workflow | A synthetic Account/Contact/custom-field slice passes client, UI, isolation and restart tests end to end | M1 |
-| M3 — Core protocol and query fidelity | Required REST/Composite/SOAP/Bulk surfaces, SOQL/SOSL, IDs, transactions, paging, error contracts and limits | Pinned client workflows pass; rollback, null/precision, locking and partial-result cases match reference | M2 |
-| M4 — Metadata and security | Custom schema, record types, layouts, permission sets/profiles, sharing, Metadata deployment and required Tooling calls | Metadata round trip preserves required semantics; access matrix has no unexpected grants; deployment failures leave correct state | M2; M3 for full certification |
-| M5 — Migration rehearsal | All three import entry paths, files/history mappings, dependency staging, resumability, delta capture, reconciliation and export | Crash/restart/reimport is idempotent; all required rows/files reconcile; malformed/incomplete exports produce blockers rather than false success | M3, M4 |
-| M6 — Sales Cloud workflows | Leads/accounts/contacts/opportunities, products/price books, campaigns, activities, required forecasting/territory behavior, Vue lists/forms/search/reporting | Named business workflows and report results match under each tested role; customer tasks pass UI acceptance | M3, M4; M5 supplies migrated fixtures |
-| M7 — Automation and extensibility | Required formula/validation/rollup behavior, Flow/approvals, Apex execution and async jobs, LWC/Aura/Visualforce compatibility tracks | Target-org customizations execute unchanged with correct order, limits, security and failure behavior; unavailable package behavior remains a blocker | M3, M4; feasibility probes start during M1 |
+| M3 — Core protocol and query fidelity | Required REST/Composite/SOAP/Bulk surfaces, SOQL/SOSL, IDs, transactions, paging, error contracts and limits; OAuth 2.0/OpenID Connect identity surface (see [identity contracts](../compat/contracts/identity.yaml)); `/limits` and `Sforce-Limit-Info`; REST request headers; recycle bin, `queryAll`, undelete, `getUpdated`/`getDeleted`; system/audit fields; served OpenAPI document | Pinned client workflows pass; rollback, null/precision, locking and partial-result cases match reference | M2 |
+| M4 — Metadata and security | Custom schema and the full field-type inventory, record types, layouts, permission sets/profiles, sharing, Metadata deployment and required Tooling calls; development lifecycle (sandboxes, scratch orgs/Dev Hub, unlocked/2GP packages, change sets, CLI source tracking, Apex test-coverage deployment gate); org security settings (CORS, Remote Site Settings, CSP trusted sites, login IP ranges, session settings, MFA); PostgreSQL row-level security and schema migrations | Metadata round trip preserves required semantics; access matrix has no unexpected grants; deployment failures leave correct state | M2; M3 for full certification |
+| M5 — Migration rehearsal | All three import entry paths, files/history mappings, audit-field import ("Set Audit Fields upon Record Creation" semantics), field history and Setup Audit Trail provenance, dependency staging, resumability, delta capture, reconciliation and export | Crash/restart/reimport is idempotent; all required rows/files reconcile; malformed/incomplete exports produce blockers rather than false success | M3, M4 |
+| M6 — Sales Cloud workflows | Leads/accounts/contacts/opportunities (including Person Accounts when profiled), products/price books, campaigns, activities, multi-currency, required forecasting/territory behavior, email templates/sending/deliverability, Vue lists/forms/search/reporting; Salesforce mobile app and Outlook/Gmail integrations declared as certification exceptions unless a compatible path exists | Named business workflows and report results match under each tested role; customer tasks pass UI acceptance | M3, M4; M5 supplies migrated fixtures |
+| M7 — Automation and extensibility | Required formula/validation/rollup behavior, Flow/approvals, legacy Workflow Rules and Process Builder still active in source orgs, assignment/auto-response/escalation rules, Apex execution, `Messaging.sendEmail` and async jobs, LWC/Aura/Visualforce compatibility tracks | Target-org customizations execute unchanged with correct order, limits, security and failure behavior; unavailable package behavior remains a blocker | M3, M4; feasibility probes start during M1 |
 | M8 — Integration and event completeness | Required UI API/GraphQL/Reports/Connect surfaces, Pub/Sub/CDC/Streaming, outbound messages and external-service adapters | Every inventoried integration passes reconnect, retry and failure tests with only declared endpoint/auth changes | M3, M4, M7 as used |
 | M9 — Pilot production certification | Full migration rehearsals, load/recovery/security testing, operator runbooks, cutover and rollback rehearsal | All required contracts pass, zero unexplained reconciliation differences, zero unresolved critical/high security defects, agreed performance and recovery targets met | M5–M8 for the pilot profile |
 | M10 — Wider Salesforce coverage | Separate specs and suites for each additional cloud, package ecosystem and release | Each profile independently satisfies M9-level evidence; regressions checked against already certified profiles | M9 foundation; independent discovery can start earlier |
@@ -238,9 +240,40 @@ classification. Any unresolved finding required by a certified profile blocks
 that profile. Check legacy behavior still required by supported API versions,
 upgrade defaults, changed permissions/limits and export/import implications.
 Reconcile the findings before M3 contract freeze and repeat the delta review for
-each new Salesforce release before certification. This milestone is **planned,
+each new Salesforce release before certification.
+
+The archive spans roughly two decades, so the inventory stays complete but the
+review is ordered: first the releases covering every API version a profile must
+support (retired versions, such as 21.0–30.0, are inventoried and classified
+out-of-profile rather than reviewed in depth), then retirements and enforced
+release updates that affect migrated orgs, then the remaining history. This milestone is **planned,
 not completed**. The archive page could not be extracted by the web tool on
 2026-10-15; no historical-release review is claimed by adding this milestone.
+
+### Coverage assignments from the 2026-10-15 review
+
+A plan review found Salesforce surfaces that no milestone owned. Each is now
+assigned; deferred contracts live in `docs/compat/contracts/` and are validated
+offline. Every item is `not_run` until reference observation.
+
+| Area | Milestone | Contract / evidence |
+| --- | --- | --- |
+| OAuth 2.0/OIDC: token, authorize, revoke, introspect, discovery document, JWT bearer, client credentials, web-server, device and refresh flows; Connected Apps and External Client Apps; My Domain and sandbox login hosts; SOAP `login()`; SAML SSO | M3 (protocol), M4 (app/policy metadata), M5 (identity reconfiguration) | `identity.yaml` |
+| Person Accounts (org-wide, irreversible) | M0 profile; M3/M6 behavior | profile `orgFeatures.personAccounts` |
+| System/audit fields, `OwnerId` (User or Queue), audit-field import permission | M3, M5 | `rest-semantics.yaml` |
+| Recycle bin: delete, undelete, `queryAll`, `getDeleted`/`getUpdated`, Bulk hard delete, retention | M3 | `rest-semantics.yaml` |
+| Multi-currency and dated exchange rates | M0 profile; M3/M6 | profile `orgFeatures.multiCurrency` |
+| Field types: compound Address/Name/Geolocation, dependent and global picklists, multi-select, auto-number, encrypted, lookup vs. master-detail, polymorphic `WhoId`/`WhatId` | M4 | catalog inventory at M0 |
+| Legacy Workflow Rules/Process Builder, assignment/auto-response/escalation rules | M0 inventory; M7 | profile `orgFeatures.legacyAutomation` |
+| Development lifecycle and Apex coverage gate | M4 | M0 inventory of customer pipelines |
+| Email sending, templates, deliverability, Outlook/Gmail | M6/M7/M8 | M0 inventory |
+| Org security settings (CORS, Remote Site Settings, CSP, IP ranges, sessions, MFA) | M4 | M0 inventory |
+| `/limits`, `Sforce-Limit-Info`, API quotas; REST headers (`Sforce-Query-Options`, `If-Modified-Since`, ETags, `Sforce-Auto-Assign`, duplicate-rule header) | M3 | `rest-semantics.yaml` |
+| Response and error shapes, upsert outcomes, describe properties, 15/18-character IDs, case-insensitive names and comparisons, null ordering, unknown-object errors, LIMIT above 2000 | M3 (M1 observation) | `rest-semantics.yaml` |
+| Salesforce mobile app | M6 | declared certification exception |
+| Field history, Setup Audit Trail, login history | M5/M9 | migration provenance |
+| OpenAPI 2.0 External Service registrations, converted to OpenAPI 3.0 on import | M0 inventory; M5 conversion; M8 execution | profile `orgFeatures.externalServicesOpenApi2`; `external-services.yaml` (`external-openapi2-conversion`) |
+| Served OpenAPI 3.0 contract with per-operation `x-source` provenance and traffic validation in HTTP tests | M3 | `api/openapi.yaml` |
 
 M7 is likely the largest technical uncertainty. Prototype Apex language/runtime feasibility, Flow execution semantics, and customer component hosting during M1; do not wait until the rest of the product is built to discover that a required customization cannot run. Managed packages with unavailable source or platform services need a supported execution strategy, vendor cooperation, or an explicit blocker.
 
@@ -261,7 +294,7 @@ This is a program roadmap, not an approved task-by-task implementation specifica
 
 First vertical scenario: create a custom field through metadata, create an account/contact pair through a normal client, query the relationship, deny a restricted user's field access, prove a failed composite rolls back correctly, export data plus metadata, import into SalesCompel, and repeat the same client/UI assertions. This exposes dependencies between schema, records, security and migration early.
 
-Proposed product boundaries once implementation is authorized: `cmd/salescompel`, `cmd/salescompel-worker`, `cmd/salescompel-migrate`, `internal/compat`, `internal/metadata`, `internal/records`, `internal/query`, `internal/policy`, `internal/automation`, `internal/events`, `internal/migration`, and `web`. These are planning boundaries, not scaffolding created in this pass.
+Proposed product boundaries once implementation is authorized: `cmd/salescompel`, `cmd/salescompel-worker`, `cmd/salescompel-migrate`, `internal/compat`, `internal/metadata`, `internal/records`, `internal/query`, `internal/policy`, `internal/automation`, `internal/events`, `internal/migration`, and `web`. These are planning boundaries, not scaffolding created in this pass. Ruling (2026-10-15): the M2 candidate deliberately keeps catalog, records, query and HTTP adapter in one `internal/platform` package while the surface is two fixed objects; split along these boundaries when M3/M4 add protocols or dynamic schema.
 
 ## Capacity, risks and decisions
 
@@ -287,3 +320,5 @@ The linked research above supplies initial design evidence. These primary refere
 - [Salesforce CLI large-data workflows](https://developer.salesforce.com/docs/platform/sfdx-dev/guide/sfdx-dev-data-bulk.html).
 
 Review outcome required before implementation: agree the initial profile and architecture, then write and review the first subsystem specification and executable task plan. This roadmap itself does not claim that any compatibility milestone has shipped.
+
+**Critical path (2026-10-15 review):** M2 work proceeded ahead of its M1 dependency. The candidate's list of behaviors awaiting reference evidence will keep growing until a disposable Developer Edition org exists, the maintainer records the terms-of-service risk decision, and observer/implementer roles are assigned (`CLEAN_ROOM.md`). Obtain these before expanding M3 implementation.

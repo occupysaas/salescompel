@@ -1,71 +1,89 @@
 schemaVersion: 1
+# extraction values:
+#   reverify                  - listed as reviewed by an earlier pass, but the
+#                               extracted content was not recorded; Salesforce
+#                               documentation pages are often dynamic or refuse
+#                               automated fetches. Re-read by hand and record a
+#                               checksum or independent summary before relying
+#                               on the claim (M0 exit gate).
+#   not-extracted             - registered for a planned area; not yet read.
+#   dynamic-body-unavailable  - fetch returned only an application shell.
+#   documentation-reviewed    - content read and the claim confirmed.
+#   downloaded-and-validated  - artifact pinned by commit/checksum and tested.
 sources:
   - id: rest
     url: https://developer.salesforce.com/docs/platform/api-rest/guide/
     accessedAt: 2026-10-15
     version: version-sensitive; pin to reference org
     claim: REST records, describe, queries and errors
-    extraction: documentation-reviewed
+    extraction: reverify
   - id: composite
     url: https://developer.salesforce.com/docs/platform/api-rest/guide/requests-composite.html
     accessedAt: 2026-10-15
     version: version-sensitive; pin to reference org
     claim: Dependency and allOrNone semantics
-    extraction: documentation-reviewed
+    extraction: reverify
   - id: metadata
     url: https://help.salesforce.com/s/articleView?id=platform.code_tools_websvcAPI.htm&language=en_US&type=5
     accessedAt: 2026-10-15
     version: version-sensitive; pin to reference org
     claim: Customization differs from record data
-    extraction: documentation-reviewed
+    extraction: reverify
   - id: languages
     url: https://help.salesforce.com/s/articleView?id=faq_getstart_what_languages_does.htm&language=en_US
     accessedAt: 2026-10-15
     version: version-sensitive; pin to reference org
     claim: Language support categories
-    extraction: documentation-reviewed
+    extraction: reverify
   - id: locale
     url: https://help.salesforce.com/s/articleView?id=sf.admin_language_locale_currency.htm&language=en_US&type=5
     accessedAt: 2026-10-15
     version: version-sensitive; pin to reference org
     claim: Independent org/user settings
-    extraction: documentation-reviewed
+    extraction: reverify
   - id: jsforce
     url: https://jsforce.github.io/document/
     accessedAt: 2026-10-15
-    version: version-sensitive; pin to reference org
+    version: jsforce 3.11.0 (pinned in profiles/pilot.yaml)
     claim: Connector interfaces
-    extraction: documentation-reviewed
+    extraction: reverify
   - id: external-services
     url: https://help.salesforce.com/s/articleView?id=platform.external_services_intro_openapi_2_3_support.htm&language=en_US&type=5
     accessedAt: 2026-10-15
     version: version-sensitive; pin to reference org
     claim: OpenAPI 3.0 schemas, media and server-variable limitations
-    extraction: documentation-reviewed
+    extraction: reverify
   - id: external-examples
     url: https://help.salesforce.com/s/articleView?id=platform.external_services_examples_openapi_3_0.htm&type=5
     accessedAt: 2026-10-15
     version: version-sensitive; pin to reference org
     claim: User-supplied example resource; dynamic body unavailable
     extraction: dynamic-body-unavailable
+  - id: external-registration-metadata
+    url: https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_externalserviceregistration.htm
+    accessedAt: 2026-10-15
+    version: version-sensitive; pin to reference org
+    claim: ExternalServiceRegistration schemaUrl is relative to the Named
+      Credential endpoint; schemaAbsoluteUrl is a separate option
+    extraction: reverify
   - id: oas
     url: https://spec.openapis.org/oas/v3.0.3
     accessedAt: 2026-10-15
-    version: version-sensitive; pin to reference org
+    version: OpenAPI 3.0.3 (fixed specification)
     claim: OpenAPI 3.0 structural rules
-    extraction: documentation-reviewed
+    extraction: reverify
   - id: connect-spec
     url: https://developer.salesforce.com/blogs/2026/07/introducing-a-new-connect-rest-api-experience
     accessedAt: 2026-10-15
     version: version-sensitive; pin to reference org
     claim: Official per-family downloadable specs
-    extraction: documentation-reviewed
+    extraction: reverify
   - id: org-spec
     url: https://developer.salesforce.com/blogs/2021/01/learn-moar-with-spring-21-openapi-3-0-spec-for-rest-api
     accessedAt: 2026-10-15
-    version: version-sensitive; pin to reference org
+    version: Spring '21 announcement; generator behavior version-sensitive
     claim: Org-specific sObjects generator; requires reference org
-    extraction: documentation-reviewed
+    extraction: reverify
   - id: salesforce-bot-yaml
     url: https://raw.githubusercontent.com/forcedotcom/einstein-bot-openapi-codegen-maven-plugin/e637cb662fe93e319e09b8ede9421c4e2cb64a9c/src/test/resources/v5_0_0_api_specs.yaml
     accessedAt: 2026-10-15
@@ -73,3 +91,54 @@ sources:
     claim: Unmodified official Einstein Bots API OpenAPI 3.0.0 fixture; parser
       coverage only, not core Sales Cloud parity
     extraction: downloaded-and-validated
+  - id: pubsub
+    url: https://github.com/forcedotcom/pub-sub-api
+    accessedAt: 2026-10-15
+    version: archived 2026-08-08; no relocation notice
+    claim: Former proto/sample location; pin from the developer guide or a
+      verified successor instead
+    extraction: documentation-reviewed
+  - id: pubsub-guide
+    url: https://developer.salesforce.com/docs/platform/pub-sub-api/overview
+    accessedAt: 2026-10-15
+    version: version-sensitive; pin to reference org
+    claim: Pub/Sub API protocol, replay and durability
+    extraction: not-extracted
+  - id: soql
+    url: https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/
+    accessedAt: 2026-10-15
+    version: version-sensitive; pin to reference org
+    claim: SOQL/SOSL grammar, ordering, null placement, comparison semantics
+    extraction: not-extracted
+  - id: bulk
+    url: https://developer.salesforce.com/docs/platform/api-asynch/guide/
+    accessedAt: 2026-10-15
+    version: version-sensitive; pin to reference org
+    claim: Bulk API 2.0 ingest/query job lifecycle, results and hard delete
+    extraction: not-extracted
+  - id: soap
+    url: https://developer.salesforce.com/docs/platform/api/guide/
+    accessedAt: 2026-10-15
+    version: version-sensitive; pin to reference org
+    claim: SOAP API calls including login, getUpdated, getDeleted, undelete
+      and merge
+    extraction: not-extracted
+  - id: oauth
+    url: https://help.salesforce.com/s/articleView?id=xcloud.remoteaccess_authenticate.htm&type=5
+    accessedAt: 2026-10-15
+    version: version-sensitive; pin to reference org
+    claim: OAuth 2.0/OpenID Connect flows and endpoints, Connected Apps and
+      External Client Apps
+    extraction: not-extracted
+  - id: tooling
+    url: https://developer.salesforce.com/docs/atlas.en-us.api_tooling.meta/api_tooling/
+    accessedAt: 2026-10-15
+    version: version-sensitive; pin to reference org
+    claim: Tooling API objects used by CLI source tracking and deployments
+    extraction: not-extracted
+  - id: ui-api
+    url: https://developer.salesforce.com/docs/platform/ui-api/guide/
+    accessedAt: 2026-10-15
+    version: version-sensitive; pin to reference org
+    claim: Metadata- and permission-aware UI API resources
+    extraction: not-extracted

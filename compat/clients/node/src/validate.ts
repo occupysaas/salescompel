@@ -111,6 +111,8 @@ export async function validateRepository(): Promise<string[]> {
   for (const path of [
     "docs/compat/contracts/external-services.yaml",
     "docs/compat/contracts/localization.yaml",
+    "docs/compat/contracts/identity.yaml",
+    "docs/compat/contracts/rest-semantics.yaml",
   ]) {
     const doc = await readDoc(path);
     if (

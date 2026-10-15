@@ -70,9 +70,9 @@ The comparator rejects non-live evidence, missing scenarios, blocked results, AP
 
 ## OpenAPI 3.0 only
 
-`api/openapi.yaml` is SalesCompel's independently authored initial REST contract. No server serves it yet; M2 must expose it and keep implemented operations aligned. The contract is deliberately metadata-driven for records rather than inventing a fixed schema for every organization.
+`api/openapi.yaml` is SalesCompel's independently authored initial REST contract. The M2 candidate does not serve it yet (deferred to M3; see [plan-2-implementation.md](plan-2-implementation.md)). When served, it is the source of truth: each operation cites `x-source` URLs from `sources.yaml` and HTTP tests validate traffic against it. The contract is deliberately metadata-driven for records rather than inventing a fixed schema for every organization.
 
-Synthetic JSON/YAML External Services fixtures test standards parsing, not registration or callout execution. M4/M7/M8 own registration, Named/External Credential handling and Flow/Apex actions. Salesforce's supported subset and quirks are recorded separately in `contracts/external-services.yaml`. OpenAPI 2.0 and 3.1+ are rejected.
+Synthetic JSON/YAML External Services fixtures test standards parsing, not registration or callout execution. M4/M7/M8 own registration, Named/External Credential handling and Flow/Apex actions. Salesforce's supported subset and quirks are recorded separately in `contracts/external-services.yaml`. OpenAPI 2.0 and 3.1+ are rejected as input. Salesforce-side 2.0 documents (for example existing External Service registrations) are converted to OpenAPI 3.0 during migration, never registered as 2.0 (`external-openapi2-conversion`).
 
 An official Salesforce Einstein Bots API 3.0.0 YAML is retained under `compat/fixtures/openapi/salesforce`, with its original BSD-3-Clause license and a pinned commit/checksum. It validates our parser against a real Salesforce document; it is not the Sales Cloud/core REST contract and no requests are sent to its server URLs. The advertised Connect REST core YAML download returned HTTP 404 during research. Core sObjects specs can be generated from an eligible org; that extraction remains pending reference access.
 

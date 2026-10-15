@@ -59,7 +59,10 @@ Generated IDs are stable 18-character IDs with case checksum. Null is preserved;
 omitted PATCH fields remain unchanged. A blank string in an optional field is stored
 as null, so blank external IDs never collide and match `= null`. Deleting a referenced Account is rejected.
 
-The broader `api/openapi.yaml` remains a proposed contract. Composite, collections,
+The broader `api/openapi.yaml` remains a proposed contract and is **not served** by
+the candidate, although the roadmap assigned serving it to M2; this is deferred to
+M3, together with per-operation `x-source` provenance and validating HTTP test
+traffic against the document. Composite, collections,
 Metadata/SOAP, Bulk, pagination, user-setting writes, full SOQL, dynamic schema,
 Migration and production identity are **not implemented**. Unsupported routes
 return errors. Do not run the full pilot capture expecting every M3/M4 scenario
@@ -124,18 +127,21 @@ CSRF surface), sanitized storage errors, in-memory UI token and stale-state
 handling after failed refreshes.
 
 Deferred: candidate behavior that differs or may differ from Salesforce and
-needs M1 reference evidence before changing (none is claimed as parity):
+needs M1 reference evidence before changing (none is claimed as parity). Each
+row has a deferred contract in [rest-semantics.yaml](contracts/rest-semantics.yaml):
 
-| Area | Candidate behavior | Expected reference question |
-|---|---|---|
-| String equality | `WHERE Name = 'acme'` is case-sensitive | SOQL text comparison is generally case-insensitive |
-| Identifiers | Object/field names are case-sensitive | SOQL and REST names are case-insensitive |
-| Null ordering | `NULLS LAST` for both ASC and DESC | Confirm SOQL default null placement per direction |
-| Record IDs | Only the 18-character form is accepted | Salesforce also accepts the 15-character form |
-| Account delete | Rejected while Contacts reference it | Salesforce cascades Account→Contact deletes |
-| Unknown sObject | 400 `INVALID_TYPE` | Confirm status/code for unknown REST sObject |
-| Oversized body | 400 `JSON_PARSER_ERROR` above 1 MiB | Confirm limit and error contract |
-| UI list | Shows the first 2000 rows (explicit `LIMIT`) with no truncation notice | Pagination arrives in M3 |
+| Area | Candidate behavior | Expected reference question | Contract |
+|---|---|---|---|
+| String equality | `WHERE Name = 'acme'` is case-sensitive | SOQL text comparison is generally case-insensitive | `case-insensitive-comparison` |
+| Identifiers | Object/field names are case-sensitive | SOQL and REST names are case-insensitive | `case-insensitive-names` |
+| Null ordering | `NULLS LAST` for both ASC and DESC | SOQL is believed to default to nulls first; if so, ASC is wrong, not merely unconfirmed | `null-ordering` |
+| Record IDs | Only the 18-character form is accepted | Salesforce also accepts the 15-character form | `id-15-18` |
+| Account delete | Rejected while Contacts reference it | Salesforce deletes related Contacts and other children, but blocks deletion under some conditions (for example Contacts linked to cases or portal users) | `account-delete-cascade` |
+| Unknown sObject | 400 `INVALID_TYPE` | REST `/sobjects/<unknown>` is likely 404 `NOT_FOUND`, while SOQL `FROM <unknown>` is 400 `INVALID_TYPE` | `unknown-sobject` |
+| Oversized body | 400 `JSON_PARSER_ERROR` above 1 MiB | Confirm limit and error contract | `request-size-limit` |
+| LIMIT above 2000 | Rejected | Valid SOQL; REST pages results with `nextRecordsUrl` | `query-limit-above-batch` |
+| UI list | Shows the first 2000 rows (explicit `LIMIT`) with no truncation notice | Pagination arrives in M3 | `query-response-shape` |
+| Served OpenAPI | `api/openapi.yaml` not served | Roadmap assigned it to M2; now M3 | — |
 
 ## Verification record
 
@@ -152,5 +158,6 @@ Run 2026-10-15 on the `plan-2-platform-walking-slice` branch, Go 1.27.1, Node
 | `npm --prefix web run build` | vue-tsc and Vite build OK |
 | `CANDIDATE_DISPOSABLE=yes scripts/check-candidate.sh` | JSforce, simple-salesforce HTTPS CRUD, restart persistence, `sf data query` and 4 Chromium tests pass |
 
-The GitHub Actions `platform.yml` workflow has not run yet; this branch has not
-been pushed. No Salesforce org was contacted.
+The work was later committed on `main` (per the main-only branch policy in the
+roadmap). The GitHub Actions `platform.yml` workflow has not yet been observed
+running. No Salesforce org was contacted.

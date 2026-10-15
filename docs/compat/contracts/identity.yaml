@@ -1,0 +1,74 @@
+schemaVersion: 1
+status: documented-not-observed
+owner: identity
+sources:
+  - oauth
+  - soap
+contracts:
+  - id: oauth-token-endpoint
+    milestone: M3
+    behavior: /services/oauth2/token issues access tokens for the JWT bearer,
+      client credentials, web-server (authorization code with PKCE), device and
+      refresh-token grants; response carries access_token, instance_url, id,
+      token_type, issued_at and signature as observed
+    preconditions:
+      - Disposable org with a Connected App or External Client App per grant
+      - Dedicated integration user
+    assertions:
+      - Each enabled grant returns the observed response fields
+      - Disabled or unsupported grants return the observed OAuth error code
+      - Refresh tokens rotate or persist according to the app policy
+    observationStatus: not_run
+  - id: oauth-authorize-revoke-introspect
+    milestone: M3
+    behavior: authorize, revoke and introspect endpoints and the OpenID
+      Connect discovery document behave as observed; revoked tokens fail on
+      the next API call
+    preconditions:
+      - Web-server flow app with a registered callback URL
+    assertions:
+      - Discovery document lists the observed endpoints and supported values
+      - A revoked access or refresh token is rejected by REST and introspect
+    observationStatus: not_run
+  - id: login-hosts
+    milestone: M3/M5
+    behavior: Production, sandbox and My Domain login hosts route to the
+      correct org; clients configured with a custom login URL authenticate
+      without code changes
+    preconditions:
+      - Candidate configured with production-style and sandbox-style login hosts
+    assertions:
+      - JSforce, Salesforce CLI and simple-salesforce authenticate with only a
+        login URL change
+    observationStatus: not_run
+  - id: soap-login
+    milestone: M3
+    behavior: SOAP login() returns a session ID and server URL used by SOAP and
+      REST clients that still rely on it (including Data Loader modes)
+    preconditions:
+      - Integration user permitted to use SOAP login
+    assertions:
+      - Returned session works for a REST describe
+      - Invalid credentials return the observed fault code
+    observationStatus: not_run
+  - id: connected-app-policy
+    milestone: M4/M5
+    behavior: Connected App and External Client App metadata (scopes, IP
+      relaxation, refresh policy, permitted users) imports without secrets and
+      enforces the observed policy; consumer secrets are reissued, never copied
+    preconditions:
+      - Source org app metadata retrieve
+    assertions:
+      - Retrieved metadata contains no consumer secret
+      - Policy denials match the observed error
+    observationStatus: not_run
+  - id: saml-sso
+    milestone: M5/M9
+    behavior: SAML single sign-on configuration maps to the target identity
+      provider; user federation IDs are preserved
+    preconditions:
+      - Source org with a SAML SSO configuration and federated users
+    assertions:
+      - Federated users sign in after identity reconfiguration
+      - FederationIdentifier values round-trip unchanged
+    observationStatus: not_run

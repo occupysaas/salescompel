@@ -134,6 +134,8 @@ modify README, `.gitignore`, OpenAPI description and this checklist.
 - [x] Run all checks and one fresh whole-change review, fix important findings with
   regression tests, record results and mark only verified tasks complete.
 - [x] Leave changes on the local feature branch for review; do not push or merge.
+  Superseded 2026-10-15: the user directed that all work happens on `main` until
+  every roadmap milestone is complete; Plan 2 is committed on `main`.
 
 ## User steering — release-history milestone
 

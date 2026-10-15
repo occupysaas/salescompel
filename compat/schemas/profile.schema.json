@@ -18,10 +18,50 @@
     "languages",
     "locales",
     "managedPackages",
+    "orgFeatures",
     "connectors"
   ],
   "additionalProperties": false,
   "properties": {
+    "orgFeatures": {
+      "type": "object",
+      "required": [
+        "personAccounts",
+        "multiCurrency",
+        "legacyAutomation",
+        "externalServicesOpenApi2"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "personAccounts": {
+          "type": "boolean"
+        },
+        "multiCurrency": {
+          "type": "boolean"
+        },
+        "legacyAutomation": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "WorkflowRule",
+              "ProcessBuilder",
+              "AssignmentRule",
+              "AutoResponseRule",
+              "EscalationRule"
+            ]
+          }
+        },
+        "externalServicesOpenApi2": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
     "schemaVersion": {
       "const": 1
     },

@@ -1,0 +1,180 @@
+schemaVersion: 1
+status: documented-not-observed
+owner: compat-lab
+sources:
+  - rest
+  - soql
+  - soap
+  - bulk
+# Behaviors found missing from pilot.yaml in the 2026-10-15 review, including
+# every row of the candidate's "deferred" table in plan-2-implementation.md.
+# Each needs M1 reference observation before the candidate changes behavior.
+contracts:
+  - id: query-response-shape
+    milestone: M1/M3
+    behavior: Query responses carry totalSize, done, records with
+      attributes.type and attributes.url, and nextRecordsUrl when not done
+    preconditions:
+      - More owned Accounts than the default batch size
+    assertions:
+      - First page has done false and a nextRecordsUrl
+      - Following every nextRecordsUrl yields totalSize records without
+        duplication
+    observationStatus: not_run
+  - id: query-limit-above-batch
+    milestone: M1/M3
+    behavior: LIMIT values above 2000 are valid SOQL and are paged rather than
+      rejected
+    preconditions:
+      - More than 2000 owned records
+    assertions:
+      - LIMIT 5000 returns the observed page size and total
+    observationStatus: not_run
+  - id: error-shape
+    milestone: M1/M3
+    behavior: REST errors are an array of objects with message, errorCode and
+      fields (when applicable); status code per error class as observed
+    preconditions:
+      - Explicit API version
+    assertions:
+      - Validation, unknown field, malformed JSON and missing record errors
+        have the observed status, errorCode and fields
+    observationStatus: not_run
+  - id: unknown-sobject
+    milestone: M1/M3
+    behavior: Unknown sObject in a REST path versus in a SOQL FROM clause may
+      produce different status/code pairs
+    preconditions:
+      - Explicit API version
+    assertions:
+      - /sobjects/<unknown> and SELECT Id FROM <unknown> return the observed
+        status and errorCode each
+    observationStatus: not_run
+  - id: upsert-outcomes
+    milestone: M1/M3
+    behavior: External-ID upsert returns 201 on insert and the observed status
+      on update; multiple matches and an Id in the body produce observed errors
+    preconditions:
+      - Two owned records sharing a non-unique external-ID field
+    assertions:
+      - Insert and update status codes and bodies match the reference
+      - Multiple matches return the observed status (300 expected) and body
+      - Id in the request body returns the observed error
+    observationStatus: not_run
+  - id: describe-properties
+    milestone: M1/M3
+    behavior: Describe exposes keyPrefix, urls and per-field createable,
+      updateable, nillable, externalId, unique, type, soapType and length
+    preconditions:
+      - Installed fixture fields
+    assertions:
+      - Each listed property matches the reference for every fixture field
+    observationStatus: not_run
+  - id: id-15-18
+    milestone: M1/M3
+    behavior: 15-character case-sensitive IDs are accepted wherever
+      18-character IDs are, and responses return 18-character IDs
+    preconditions:
+      - One owned Account
+    assertions:
+      - Read, update and delete by 15-character ID succeed
+      - Responses use the 18-character form
+    observationStatus: not_run
+  - id: case-insensitive-names
+    milestone: M1/M3
+    behavior: Object and field API names in SOQL and REST paths are
+      case-insensitive; responses use canonical casing
+    preconditions:
+      - Installed fixture fields
+    assertions:
+      - SELECT id, name FROM account returns canonical field keys
+      - /sobjects/account/describe succeeds
+    observationStatus: not_run
+  - id: case-insensitive-comparison
+    milestone: M1/M3
+    behavior: SOQL text equality is case-insensitive
+    preconditions:
+      - Owned Account named with mixed case
+    assertions:
+      - WHERE Name = '<lowercased name>' returns the record
+    observationStatus: not_run
+  - id: null-ordering
+    milestone: M1/M3
+    behavior: Default null placement for ORDER BY ASC and DESC, and explicit
+      NULLS FIRST/LAST
+    preconditions:
+      - Owned records with and without a value in the order field
+    assertions:
+      - Null placement for ASC, DESC and each explicit option matches the
+        reference
+    observationStatus: not_run
+  - id: account-delete-cascade
+    milestone: M1/M3
+    behavior: Deleting an Account deletes related Contacts and other children
+      as observed, and is blocked under observed conditions (for example
+      Contacts linked to cases or portal users)
+    preconditions:
+      - Owned Account with Contacts; a second Account with a blocking child
+    assertions:
+      - Children of the first Account are deleted and restorable by undelete
+      - Deleting the second Account returns the observed error and changes
+        nothing
+    observationStatus: not_run
+  - id: request-size-limit
+    milestone: M1/M3
+    behavior: Oversized REST request bodies are rejected at the observed limit
+      with the observed status and errorCode
+    preconditions:
+      - Explicit API version
+    assertions:
+      - A body just above the observed limit returns the observed error
+    observationStatus: not_run
+  - id: system-audit-fields
+    milestone: M1/M3/M5
+    behavior: CreatedDate, CreatedById, LastModifiedDate, LastModifiedById,
+      SystemModstamp and IsDeleted are maintained by the platform; OwnerId may
+      reference a User or Queue; with Set Audit Fields upon Record Creation,
+      audit fields are writable on insert only
+    preconditions:
+      - Integration user with and without the audit-field permission
+      - A queue that supports Account or Lead
+    assertions:
+      - Updates change LastModifiedDate and SystemModstamp as observed
+      - Audit fields are rejected without the permission and accepted on
+        insert with it
+      - OwnerId accepts the queue where the object supports queues
+    observationStatus: not_run
+  - id: recycle-bin
+    milestone: M1/M3
+    behavior: Deleted records are visible to queryAll with IsDeleted true, are
+      restorable by undelete, are reported by getDeleted/getUpdated windows and
+      can be hard-deleted through Bulk API with the required permission
+    preconditions:
+      - Owned Account deleted during the run
+    assertions:
+      - queryAll returns the record with IsDeleted true
+      - Undelete restores it with the same Id
+      - getDeleted reports it within the window
+    observationStatus: not_run
+  - id: limits
+    milestone: M1/M3
+    behavior: /limits reports org limits and REST responses carry
+      Sforce-Limit-Info; exhausted quotas return the observed error
+    preconditions:
+      - Explicit API version
+    assertions:
+      - /limits includes DailyApiRequests with Max and Remaining
+      - Sforce-Limit-Info header format matches the reference
+    observationStatus: not_run
+  - id: request-headers
+    milestone: M1/M3
+    behavior: Sforce-Query-Options batchSize, If-Modified-Since, ETag and
+      If-Match, Sforce-Auto-Assign and the duplicate-rule header change
+      behavior as observed
+    preconditions:
+      - Owned records and an active duplicate rule fixture
+    assertions:
+      - batchSize changes page size within the observed bounds
+      - If-Modified-Since returns 304 for an unchanged record
+      - Duplicate-rule header allows a save the rule would otherwise block
+    observationStatus: not_run

@@ -39,6 +39,19 @@ locales:
 timezone: America/New_York
 currency: USD
 managedPackages: []
+# Org-level features that change platform behavior. Synthetic values; a real
+# source profile must record observed values during M0 inventory.
+orgFeatures:
+  personAccounts: false
+  multiCurrency: false
+  # Active legacy automation types still executing in the source org, e.g.
+  # WorkflowRule, ProcessBuilder, AssignmentRule, AutoResponseRule,
+  # EscalationRule.
+  legacyAutomation: []
+  # Names of External Service registrations that use OpenAPI 2.0; migration
+  # converts each to OpenAPI 3.0 (contracts/external-services.yaml,
+  # external-openapi2-conversion).
+  externalServicesOpenApi2: []
 # Exact client versions; validate checks these against the lockfiles and the
 # installed CLI plugins, and compare requires both captures to match them.
 connectors:

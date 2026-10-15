@@ -5,8 +5,42 @@ sources:
   - external-services
   - external-examples
   - oas
+  - external-registration-metadata
 openapi: 3.0-only
 contracts:
+  - id: external-servers-vs-named-credential
+    milestone: M1/M8
+    behavior: Callouts use the Named Credential endpoint as base URL and a
+      relative schemaUrl resolves against it. How the spec's servers entries
+      interact with that endpoint is unspecified; observe which wins when they
+      disagree.
+    preconditions:
+      - Registered fixture whose servers URL differs from its Named Credential
+        endpoint
+      - Disposable external endpoint that records request URLs
+    assertions:
+      - Recorded callout host and path prefix identify the effective base URL
+    observationStatus: not_run
+  - id: external-openapi2-conversion
+    milestone: M0/M5/M8
+    behavior: SalesCompel accepts only OpenAPI 3.0, but Salesforce accepts 2.0
+      registrations. Migration inventories registrations by OpenAPI version
+      and converts each 2.0 document to an equivalent 3.0 document, retaining
+      the original as a customer input artifact. Constructs that cannot be
+      converted without changing behavior block the registration.
+    preconditions:
+      - Source org metadata retrieve including ExternalServiceRegistration
+      - At least one fixture registration authored in OpenAPI 2.0
+    assertions:
+      - Each registration is reported with its source OpenAPI version
+      - The converted 3.0 document validates and registers the same operation
+        names, Flow/Apex input/output types, parameters, media types and
+        Named Credential binding as the source registration
+      - Invocations through the converted registration match the reference
+        observations for the original
+      - An unconvertible construct produces a named blocker, never a silent
+        drop
+    observationStatus: not_run
   - id: external-registration
     milestone: M4/M8
     behavior: Import bundled JSON/YAML OpenAPI 3.0, register selected operations
@@ -16,7 +50,8 @@ contracts:
       - Bundled OpenAPI 3.0 document without external references
     assertions:
       - JSON and YAML forms of the same document register equivalent operations
-      - OpenAPI 2.0 and 3.1 documents are rejected
+      - SalesCompel registration rejects OpenAPI 2.0 and 3.1 input; 2.0
+        documents enter only through migration conversion to 3.0
       - Registration metadata retrieves with its Named Credential dependency
     observationStatus: not_run
   - id: external-schema
