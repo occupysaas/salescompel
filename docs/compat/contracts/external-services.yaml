@@ -1,0 +1,67 @@
+schemaVersion: 1
+status: documented-not-observed
+owner: integration-runtime
+sources:
+  - external-services
+  - external-examples
+  - oas
+openapi: 3.0-only
+contracts:
+  - id: external-registration
+    milestone: M4/M8
+    behavior: Import bundled JSON/YAML OpenAPI 3.0, register selected operations
+      and preserve metadata dependencies
+    preconditions:
+      - Disposable reference org with External Services enabled
+      - Bundled OpenAPI 3.0 document without external references
+    assertions:
+      - JSON and YAML forms of the same document register equivalent operations
+      - OpenAPI 2.0 and 3.1 documents are rejected
+      - Registration metadata retrieves with its Named Credential dependency
+    observationStatus: not_run
+  - id: external-schema
+    milestone: M7/M8
+    behavior: Capture nested objects, arrays, additionalProperties, headers and
+      supported content types; distinguish schema validation from runtime
+      behavior
+    preconditions:
+      - Registered synthetic External Services fixture
+    assertions:
+      - Each supported construct maps to the observed Flow/Apex type
+      - Unsupported constructs produce the observed registration error
+    observationStatus: not_run
+  - id: external-server-variables
+    milestone: M8
+    behavior: Documentation says variables can register but are not substituted
+      at runtime. Observe before claiming parity; offline standards validation
+      must not pretend to certify callouts.
+    preconditions:
+      - Registered fixture whose server URL uses a variable
+      - Disposable external endpoint that records request URLs
+    assertions:
+      - Recorded callout URL shows whether the variable was substituted
+    observationStatus: not_run
+  - id: external-credentials
+    milestone: M4/M8
+    behavior: Named Credential resolves endpoint; External Credential principal
+      access gates callout. Secrets must be configured separately on import.
+    preconditions:
+      - Named and External Credential with a permission-set principal
+      - One user with and one without principal access
+    assertions:
+      - User with principal access can invoke the operation
+      - User without principal access receives the observed denial
+      - Exported metadata contains no secret values
+    observationStatus: not_run
+  - id: external-invocation
+    milestone: M7/M8
+    behavior: Flow/Apex actions map typed inputs/outputs, nulls, errors and
+      timeouts against a disposable external service
+    preconditions:
+      - Registered operation callable from Flow and Apex
+      - Disposable external endpoint with scripted success, error, null and
+        delayed responses
+    assertions:
+      - Typed outputs, nulls and HTTP errors surface as observed in Flow and Apex
+      - Timeout behavior matches the observed limit and error
+    observationStatus: not_run

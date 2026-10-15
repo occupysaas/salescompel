@@ -1,0 +1,75 @@
+schemaVersion: 1
+sources:
+  - id: rest
+    url: https://developer.salesforce.com/docs/platform/api-rest/guide/
+    accessedAt: 2026-10-15
+    version: version-sensitive; pin to reference org
+    claim: REST records, describe, queries and errors
+    extraction: documentation-reviewed
+  - id: composite
+    url: https://developer.salesforce.com/docs/platform/api-rest/guide/requests-composite.html
+    accessedAt: 2026-10-15
+    version: version-sensitive; pin to reference org
+    claim: Dependency and allOrNone semantics
+    extraction: documentation-reviewed
+  - id: metadata
+    url: https://help.salesforce.com/s/articleView?id=platform.code_tools_websvcAPI.htm&language=en_US&type=5
+    accessedAt: 2026-10-15
+    version: version-sensitive; pin to reference org
+    claim: Customization differs from record data
+    extraction: documentation-reviewed
+  - id: languages
+    url: https://help.salesforce.com/s/articleView?id=faq_getstart_what_languages_does.htm&language=en_US
+    accessedAt: 2026-10-15
+    version: version-sensitive; pin to reference org
+    claim: Language support categories
+    extraction: documentation-reviewed
+  - id: locale
+    url: https://help.salesforce.com/s/articleView?id=sf.admin_language_locale_currency.htm&language=en_US&type=5
+    accessedAt: 2026-10-15
+    version: version-sensitive; pin to reference org
+    claim: Independent org/user settings
+    extraction: documentation-reviewed
+  - id: jsforce
+    url: https://jsforce.github.io/document/
+    accessedAt: 2026-10-15
+    version: version-sensitive; pin to reference org
+    claim: Connector interfaces
+    extraction: documentation-reviewed
+  - id: external-services
+    url: https://help.salesforce.com/s/articleView?id=platform.external_services_intro_openapi_2_3_support.htm&language=en_US&type=5
+    accessedAt: 2026-10-15
+    version: version-sensitive; pin to reference org
+    claim: OpenAPI 3.0 schemas, media and server-variable limitations
+    extraction: documentation-reviewed
+  - id: external-examples
+    url: https://help.salesforce.com/s/articleView?id=platform.external_services_examples_openapi_3_0.htm&type=5
+    accessedAt: 2026-10-15
+    version: version-sensitive; pin to reference org
+    claim: User-supplied example resource; dynamic body unavailable
+    extraction: dynamic-body-unavailable
+  - id: oas
+    url: https://spec.openapis.org/oas/v3.0.3
+    accessedAt: 2026-10-15
+    version: version-sensitive; pin to reference org
+    claim: OpenAPI 3.0 structural rules
+    extraction: documentation-reviewed
+  - id: connect-spec
+    url: https://developer.salesforce.com/blogs/2026/07/introducing-a-new-connect-rest-api-experience
+    accessedAt: 2026-10-15
+    version: version-sensitive; pin to reference org
+    claim: Official per-family downloadable specs
+    extraction: documentation-reviewed
+  - id: org-spec
+    url: https://developer.salesforce.com/blogs/2021/01/learn-moar-with-spring-21-openapi-3-0-spec-for-rest-api
+    accessedAt: 2026-10-15
+    version: version-sensitive; pin to reference org
+    claim: Org-specific sObjects generator; requires reference org
+    extraction: documentation-reviewed
+  - id: salesforce-bot-yaml
+    url: https://raw.githubusercontent.com/forcedotcom/einstein-bot-openapi-codegen-maven-plugin/e637cb662fe93e319e09b8ede9421c4e2cb64a9c/src/test/resources/v5_0_0_api_specs.yaml
+    accessedAt: 2026-10-15
+    version: e637cb662fe93e319e09b8ede9421c4e2cb64a9c
+    claim: Unmodified official Einstein Bots API OpenAPI 3.0.0 fixture; parser
+      coverage only, not core Sales Cloud parity
+    extraction: downloaded-and-validated

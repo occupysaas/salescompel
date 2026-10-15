@@ -1,0 +1,56 @@
+schemaVersion: 1
+status: documented-not-observed
+owner: localization
+sources:
+  - languages
+  - locale
+contracts:
+  - id: locale-independence
+    milestone: M1
+    behavior: French UI with en_US formatting and independent timezone; preserve
+      LanguageLocaleKey, LocaleSidKey and TimeZoneSidKey
+    preconditions:
+      - Dedicated locale fixture user (pilot contract "locale")
+    assertions:
+      - Each setting changes without altering the others
+      - Original settings are restored
+    observationStatus: not_run
+  - id: language-registry
+    milestone: M0/M2
+    behavior: One file per code/variant; map legacy iw to he only for formatter
+      lookup; preserve Salesforce wire code
+    preconditions:
+      - Version-pinned language inventory for the reference org
+    assertions:
+      - Every enabled language has a registry entry and its own catalog
+      - Wire codes round-trip unchanged through API reads and writes
+    observationStatus: not_run
+  - id: language-fallback
+    milestone: M2
+    behavior: Observe fallback by support category and surface; reject cycles
+      locally
+    preconditions:
+      - One user per support category with a label lacking a translation
+    assertions:
+      - Each surface shows the observed fallback language
+    observationStatus: not_run
+  - id: rtl
+    milestone: M6
+    behavior: Browser acceptance covers Hebrew/Arabic direction, keyboard/focus,
+      mixed-script identifiers and long labels
+    preconditions:
+      - Hebrew (iw) user and a right-to-left record page fixture
+    assertions:
+      - Layout direction, focus order and mixed-script values match the reference
+    observationStatus: not_run
+  - id: translation-import
+    milestone: M4/M5
+    behavior: Namespace/tenant-isolated translations retain API names and stored
+      picklist values
+    preconditions:
+      - Custom label, field label and picklist translations in the reference org
+    assertions:
+      - Translations, CustomObjectTranslation and CustomLabels round-trip
+      - API names and stored picklist values are unchanged
+      - One tenant's overrides are not visible to another tenant
+    observationStatus: not_run

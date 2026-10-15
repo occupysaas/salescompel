@@ -1,0 +1,34 @@
+{
+  "name": "@salescompel/compat-lab",
+  "version": "0.1.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "tsx --test test/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "validate": "tsx src/cli.ts validate",
+    "capture": "tsx src/cli.ts capture",
+    "compare": "tsx src/cli.ts compare",
+    "repeatability": "tsx src/cli.ts repeatability",
+    "check": "npm run typecheck && npm run format:check && npm test && npm run validate",
+    "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\""
+  },
+  "dependencies": {
+    "@apidevtools/swagger-parser": "13.1.0",
+    "@formatjs/icu-messageformat-parser": "3.5.21",
+    "@salesforce/cli": "2.156.0",
+    "ajv": "8.20.0",
+    "jsforce": "3.11.0",
+    "yaml": "2.9.1"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.5",
+    "prettier": "3.9.10",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2"
+  }
+}

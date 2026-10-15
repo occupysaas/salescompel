@@ -1,6 +1,6 @@
 # SalesCompel Salesforce compatibility roadmap
 
-Date: 2026-10-14. Status: proposed architecture and milestone plan for review; no implementation or live parity certification has occurred.
+Date: 2026-10-14. Status: proposed architecture and milestone plan; Plan 1 offline laboratory implemented on 2026-10-15. No product-runtime implementation or live parity certification has occurred.
 
 ## Objective and planning assumptions
 
@@ -106,6 +106,16 @@ Localization milestone gates:
 - **M4/M5:** support org/user language settings and translation metadata; migrate and round-trip translations without changing API identifiers or leaking tenant overrides.
 - **M6:** complete the category-appropriate translations and localized workflows for every language advertised by the release; review pluralization, accessibility and visual layout.
 - **M9/M10:** require locale-specific acceptance for the certified profile and run regression checks when Salesforce's inventory or formatting behavior changes. A required language gap blocks that profile's certification.
+
+## OpenAPI contract and External Services
+
+SalesCompel must publish its HTTP API contract in OpenAPI **3.0** YAML (initial revision 3.0.3). Plan 1 adds validation and initial REST contract coverage; M2 serves the versioned document and later API changes update it alongside connector tests. SOAP and gRPC retain their own WSDL/proto contracts.
+
+External Services compatibility must import OpenAPI **3.0 only**, in JSON and YAML, with Salesforce-compatible schema/operation handling, Named/External Credentials, permission checks and Flow/Apex invocation. OpenAPI 2.0 is excluded by user direction. M1 supplies schema fixtures and behavioral contracts; M4 handles registration metadata; M7/M8 implement execution and migration. Distinguish standards validity from Salesforce's supported subset and observed runtime semantics. Use official Salesforce specs as pinned test fixtures when provenance and reuse terms permit; an org-specific generated spec remains pending without a reference org.
+
+Sources: [Salesforce support matrix](https://help.salesforce.com/s/articleView?id=platform.external_services_intro_openapi_2_3_support.htm&language=en_US&type=5), [Salesforce 3.0 examples](https://help.salesforce.com/s/articleView?id=platform.external_services_examples_openapi_3_0.htm&type=5), [OpenAPI 3.0.3](https://spec.openapis.org/oas/v3.0.3).
+
+Implementation package: [Plan 1](2026-10-15-plan-1-compatibility-laboratory.md).
 
 ## Export/import contract
 
