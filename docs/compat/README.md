@@ -19,7 +19,7 @@ The Node lockfile pins JSforce, Salesforce CLI and its bundled data/deploy-retri
 
 ## Live setup (pending a disposable organization)
 
-Use a Developer Edition/sandbox reserved for these tests. Supply a dedicated administrator/integration user, a restricted user that can read Account but cannot see Compat_Text__c, and a dedicated user whose language/locale can be temporarily changed. Permission sets cannot remove existing access: verify the restricted profile has no field grant from another source. Enable French and the required locale settings.
+Use an authorized disposable trial, Developer Edition org or sandbox reserved for these tests. Supply a dedicated administrator/integration user, a restricted user that can read Account but cannot see Compat_Text__c, and a dedicated user whose language/locale can be temporarily changed. Permission sets cannot remove existing access: verify the restricted profile has no field grant from another source. Enable French and the required locale settings.
 
 Inspect `compat/fixtures/salesforce` before deploying. The fixed Compat_Text__c and Compat_Key__c fields must not already contain real business data. Deploy these fixtures once using the pinned local `sf project deploy start --source-dir force-app --target-org <your-disposable-alias> --api-version <explicit-version>` from that fixture project. Assign Compat_Admin to the administrator. Do not assign it to the restricted user. The harness does not create users or alter profiles automatically.
 
@@ -123,21 +123,22 @@ Maintainer sequence:
 
 1. Identify an authorized disposable org. Pin its actual API version and inventory
    in `profiles/pilot.yaml`, retaining every required scenario and client pin.
-2. Record the terms-review decision and explicit observation authorization in
-   `implementation-log.md` under a dedicated Markdown heading. Assign separate
-   observer and implementer aliases with controlled access. A plan approval is
-   not a terms-review decision.
+2. Use the maintainer authorization already recorded in `implementation-log.md`
+   for `velocity-innovation-8559`. For a different environment or expanded scope,
+   record its authorization under a dedicated heading. Attribute the test operator;
+   the implementer may be the same person/session or null. No extra terms-review
+   attestation or role separation is required.
 3. Compute `sha256sum docs/compat/profiles/pilot.yaml` from the repository root.
    Fill in `reference-readiness.yaml`: exact profile ID/hash/API, reference alias,
-   decision status/maintainer/date/logAnchor, explicit authorization, separate
-   roles and scenario scope. The anchor is the lowercase hyphenated heading,
+   decision status/maintainer/date/logAnchor, explicit authorization, operator
+   attribution and scenario scope. The anchor is the lowercase hyphenated heading,
    without a URL or `#`. Do not put endpoints, org/user IDs or credentials here.
 4. Have the authorized observer prepare the existing fixtures and administrator,
    restricted and locale personas, then record the fixture attestations. Supply
    runtime credentials using the existing private environment variables. Do not
    mark an attestation true before the work is done.
 
-The separate observer then uses a private directory outside the checkout and
+The test operator then uses a private directory outside the checkout and
 checks outstanding recovery journals before running the following commands:
 
 ```sh
@@ -159,7 +160,8 @@ and must remain private. Neither command creates approved observation notes.
 Write independent behavior summaries and have them reviewed for sanitization.
 Register notes and reciprocal contract links as described in
 [observations/README.md](observations/README.md), then run the offline checks.
-The implementer consumes reviewed notes, not raw capture reports. Tool validation
+The same operator may analyze private captures and implement behavior; published
+notes must still undergo sanitization review. Tool validation
 checks the attestation and references; it cannot prove the truth of a human
 attestation. Do not change profile bytes while registering evidence.
 
@@ -168,7 +170,6 @@ reports go to unique owner-only directories beneath COMPAT_RECOVERY_DIR, survive
 checkout and remain private; only candidate reports are uploaded automatically.
 No reference secrets, reports or journals belong in public artifacts.
 
-Remaining external inputs: disposable org/profile, maintainer decision and
-explicit authorization, separate observer assignment, prepared personas and
-private credentials. M0 inventory, M1R release-history review, expanded CLI
+Remaining external inputs for the authorized tenant: verified profile, prepared
+personas and private credentials. M0 inventory, M1R release-history review, expanded CLI
 runners/proxy and future M3 protocol implementation remain separate obligations.

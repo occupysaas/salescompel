@@ -314,3 +314,17 @@ test("obvious credentials are rejected regardless of capitalization", () => {
     assert.ok(observationIssues(n, schema, context, readiness).length, text);
   }
 });
+
+test("observations allow optional role separation but require the recorded operator", () => {
+  for (const implementer of [readiness.observer, null]) {
+    const attribution = { ...readiness, implementer };
+    assert.deepEqual(
+      observationIssues(note(), schema, context, attribution),
+      [],
+    );
+    const wrongOperator = { ...note(), observer: "unrecorded-operator" };
+    assert.ok(
+      observationIssues(wrongOperator, schema, context, attribution).length,
+    );
+  }
+});

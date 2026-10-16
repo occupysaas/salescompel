@@ -41,3 +41,8 @@ maintainer record contains a date rather than a timestamp, the observer must
 also verify that authorization preceded capture within that day. Obvious secret
 patterns are checked without regard to capitalization; identifier detection is
 heuristic and deliberately does not reject ordinary words solely for their length.
+
+Under the current [black-box policy](../../../CLEAN_ROOM.md), the recorded operator
+may also implement behavior and review sanitization. `implementer` may be null;
+observation operator attribution must still match readiness. Review must actually
+occur, regardless of whether a separate reviewer participates.

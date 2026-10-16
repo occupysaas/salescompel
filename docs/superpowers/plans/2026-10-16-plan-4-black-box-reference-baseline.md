@@ -12,6 +12,41 @@
 
 **Status:** Written for review. No implementation or live tests have been performed by writing this plan.
 
+## Next milestone decision — 2026-10-16
+
+This is the next executable work package: close the pilot reference-evidence gap
+before expanding the M3 candidate. Repository inspection at `9628797` confirms
+that readiness is unbound, fixture flags are false, and executable checks still
+require separate observer/implementer identities. The existing M2 candidate is
+useful for comparison but cannot supply evidence of reference behavior.
+
+Execute the four tasks sequentially using the existing native execution preference.
+Work remains on main. The deliverables and stopping conditions are:
+
+| Order | Deliverable | Acceptance evidence |
+| --- | --- | --- |
+| 1 | Policy-aligned readiness and evidence checks | Same-actor and null-implementer regressions pass; unauthorized, stale-bound and missing-operator runs still fail; full offline check passes. |
+| 2 | Bound pilot profile and verified synthetic personas | Actual profile hash/API recorded, every fixture flag verified, restricted credentials demonstrate positive Account access and denied custom-field access, reference preflight exits 0. |
+| 3 | Repeatable reference baseline | Two sequential full captures pass all eleven scenarios; repeatability and pair verification pass; cleanup and temporary-setting restoration succeed for both runs. |
+| 4 | Reviewed observations and candidate gap report | All eleven pilot contracts link reciprocally to validated sanitized evidence; the handoff distinguishes observed behavior, candidate behavior and unobserved dimensions. |
+
+If credentials or setup block Task 2, finish Task 1 and retain truthful setup
+progress, then report the specific missing action. If any scenario or cleanup
+fails, investigate and retain the failure evidence; Tasks 3–4 remain incomplete.
+There is no calendar estimate because persona authentication and live behavior
+are not yet verified. Progress is measured by these gates.
+
+The following product slice is **M3 REST/query foundation**, scoped to pagination,
+15/18-character IDs, name/text/null semantics, error shapes and served OpenAPI.
+Its detailed implementation decisions depend on this handoff and focused evidence
+for the currently unobserved contracts. Reconcile M1R findings before freezing
+those contracts. SOAP, Bulk, identity flows and the other M3 obligations need
+subsequent work packages; this first slice cannot close the whole M3 milestone.
+
+This plan closes only the pilot baseline. Outstanding M0 inventory, broader M1
+CLI/plugin runners and routing, and the M1R archive review retain their existing
+roadmap acceptance gates.
+
 ## Current state and intended outcome
 
 Plan 2 provides the Account/Contact candidate. Plan 3 provides readiness and
@@ -84,12 +119,11 @@ license, purpose, modifications and required notices in THIRD_PARTY_NOTICES.md.
 Keep required legal notices and preserve existing dependency/fixture notices.
 Do not reverse-engineer CLI/plugin implementation code under this permission.
 
-Clarification requested: “without keeping authors” may mean either no obligation
-to involve the original authors, with required notices acceptable, or a strict
-no-attribution requirement. Do not select or copy code that relies on an answer
-until the maintainer clarifies. This does not block behavioral tests or independent
-implementation. Ask the maintainer whenever source eligibility or usage rights
-are unclear. No third-party code reuse is planned for this work package.
+The current policy resolves the earlier attribution question: **only
+no-attribution licenses qualify** for new source reuse. Preserve existing
+dependency/fixture notices and any applicable legal notices. Ask the maintainer
+only when the eligibility or provenance of a specific proposed source is unclear.
+No third-party code reuse is planned for this work package.
 
 ## Review focus
 
@@ -168,7 +202,7 @@ if (!r || n.observer !== r.observer) {
 - [ ] Add the maintainer's prohibition on reverse-engineering CLI/plugin code to
   CLEAN_ROOM.md if not already present. Preserve the new source-selection policy:
   behavior observations first, exact-license review and documented reuse only.
-  Resolve attribution ambiguity with the maintainer before any affected reuse.
+  Apply the current no-attribution license requirement to any proposed new reuse.
   Update current runbook/follow-up/roadmap instructions to refer to
   authorized tenant testing, optional role separation and the already recorded
   authorization. Mark the old trial-type blocker as superseded in a new log entry;

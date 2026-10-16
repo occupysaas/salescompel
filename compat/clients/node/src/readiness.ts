@@ -61,12 +61,9 @@ export function readinessDecisionIssues(
     !r.referenceAlias ||
     !r.decision.maintainer ||
     !r.decision.logAnchor ||
-    !r.observer ||
-    !r.implementer
+    !r.observer
   )
-    issues.push("Reference decision and role assignments are incomplete");
-  if (r.observer?.trim().toLowerCase() === r.implementer?.trim().toLowerCase())
-    issues.push("Observer and implementer must be separate");
+    issues.push("Reference decision and operator attribution are incomplete");
   const date = r.decision.recordedAt;
   if (
     !date ||

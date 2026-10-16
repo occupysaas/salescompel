@@ -143,3 +143,18 @@ licenses, but does not establish restricted-persona authentication or complete
 profile readiness. Private inventory/auth files remain outside the checkout in
 an owner-only observer directory. No pilot contract is marked observed and no
 sanitization review is claimed.
+
+## Plan 4 policy alignment — 2026-10-16
+
+- Current black-box policy supersedes the earlier disposable-trial blocker and
+  mandatory separated roles. Existing named-tenant testing authorization stands;
+  no additional terms-review approval is required.
+- The executing operator is `platform-implementer`, also implementing this work.
+  Readiness remains unbound and fixture flags false until verified live.
+- Added regressions for same-operator/null-implementer acceptance and continued
+  rejection of unauthorized captures and mismatched observation attribution.
+  Both new tests failed against the old role restrictions before the fix.
+- Historical Plan 3 documents retain their history with a supersession notice.
+- Verification: full compatibility check passes (48 passed, 1 optional candidate
+  integration test skipped), including TypeScript, formatting and repository
+  validation; no live observations registered.

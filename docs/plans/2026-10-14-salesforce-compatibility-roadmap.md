@@ -51,11 +51,11 @@ Every discovered feature has a status: unknown, documented, observed, specified,
 
 These are initial findings, not an exhaustive reading of all Salesforce documentation. Dynamic documentation pages sometimes returned only an iframe shell; those pages are indexed below as follow-up resources, not treated as extracted evidence.
 
-## Clean-room research and specification process
+## Black-box research and specification process
 
 Maintain a provenance register for public documentation, official release notes, help articles, Trailhead exercises, public reference applications, API descriptions/WSDLs, and authorized observations from disposable test organizations. Public examples generate test scenarios; they are not proof of undocumented behavior.
 
-Keep behavioral specifications separate from implementation. Researchers record inputs, preconditions, visible results, and reproducible observations; implementers work from those specifications. A strict organizational clean-room process additionally requires assigning separate research and implementation personnel and controlling their access; simply naming folders “clean-room” does not establish that separation.
+Record inputs, preconditions, visible results and reproducible observations independently. The same person/session may test and implement under `CLEAN_ROOM.md`; personnel separation is optional. Keep sensitive captures private and publish only reviewed, sanitized notes.
 
 Do not use proprietary Salesforce implementation source or copy product branding/assets into SalesCompel. Record licenses and provenance for any deliberately reused open-source client, protocol definition, framework, or test fixture. Customer-owned code imported for execution remains an input artifact, not a source for copying Salesforce internals.
 
@@ -235,7 +235,7 @@ Milestones are complete only when their evidence is stored and reproducible. Sco
 
 | Milestone | Deliverables | Exit gate | Dependencies |
 | --- | --- | --- | --- |
-| M0 — Target and evidence charter | First org/profile inventory (including the org-level features in the profile's `orgFeatures` and the Salesforce CLI plugins and commands in the customer's pipelines), source register re-verified against extracted content, clean-room responsibilities and recorded terms-of-service decision, feature matrix, scale and downtime objectives | Every required integration/customization assigned a contract owner; reference org identified; unsupported export areas explicit | None |
+| M0 — Target and evidence charter | First org/profile inventory (including the org-level features in the profile's `orgFeatures` and the Salesforce CLI plugins and commands in the customer's pipelines), source register re-verified against extracted content, operator attribution and recorded testing authorization, feature matrix, scale and downtime objectives | Every required integration/customization assigned a contract owner; reference org identified; unsupported export areas explicit | None |
 | M1 — Behavior laboratory | Disposable reference fixtures, pinned clients, API capture/comparator, browser scenario format, CI evidence reports; sandboxed CLI plugin runner with isolated CLI home, signature verification and pinned JIT plugins; digest-pinned Salesforce CLI Docker runner and the host-routing reverse proxy with fail-closed egress | Repeated reference runs distinguish deterministic behavior from normalization; initial CRUD, denied-access, rollback and query scenarios reproducible | M0 |
 | M1R — Complete release-history and changelog review | Inventory and review every release linked by the Salesforce previous-release-notes archive, plus linked product/API changelogs, release updates, deprecations and removals; maintain a versioned coverage ledger and trace findings into contracts | Every inventoried release/document is reviewed or explicitly blocked with owner and reason; all compatibility-relevant changes map to affected profiles/contracts/tests; unresolved required-profile gaps block certification | Starts alongside M1; initial review before M3 contract freeze, ongoing before every supported release certification |
 | M2 — Platform walking slice | Go service, tenant/auth boundary, metadata catalog, record store, first REST describe/CRUD/query endpoints and minimal Vue record workflow | A synthetic Account/Contact/custom-field slice passes client, UI, isolation and restart tests end to end | M1 |
@@ -340,7 +340,7 @@ Treat full ecosystem parity as a multi-year platform program until measured work
 
 Estimate M2 onward after M1 using measured contract complexity and scenario throughput, separately for each subsystem. Budget permanent capacity for release drift and regression testing. Do not use endpoint count alone as a completion metric.
 
-Key decisions for the next review are the first target organization/cloud, permitted migration reconfiguration, required API/class versions, mandatory managed packages, clean-room personnel separation, UI visual-fidelity expectations, hosting and scale objectives, and downtime/recovery targets. Current defaults are a Sales Cloud/core-platform pilot, endpoint/auth changes allowed, source IDs preserved externally, Vue native UI, and compatibility exceptions blocking a 1:1 claim.
+Key decisions for the next review are the first target organization/cloud, permitted migration reconfiguration, required API/class versions, mandatory managed packages, test-operator attribution, UI visual-fidelity expectations, hosting and scale objectives, and downtime/recovery targets. Current defaults are a Sales Cloud/core-platform pilot, endpoint/auth changes allowed, source IDs preserved externally, Vue native UI, and compatibility exceptions blocking a 1:1 claim.
 
 ## Additional source register
 
@@ -359,4 +359,4 @@ The linked research above supplies initial design evidence. These primary refere
 
 Review outcome required before implementation: agree the initial profile and architecture, then write and review the first subsystem specification and executable task plan. This roadmap itself does not claim that any compatibility milestone has shipped.
 
-**Critical path (2026-10-15 review):** M2 work proceeded ahead of its M1 dependency. The candidate's list of behaviors awaiting reference evidence will keep growing until a disposable Developer Edition org exists, the maintainer records the terms-of-service risk decision, and observer/implementer roles are assigned (`CLEAN_ROOM.md`). Obtain these before expanding M3 implementation.
+**Critical path (2026-10-16 policy update):** M2 work proceeded ahead of its M1 dependency. Complete [Plan 4](../superpowers/plans/2026-10-16-plan-4-black-box-reference-baseline.md) against the already authorized disposable tenant: align executable policy checks, verify profile/personas, obtain repeatable captures and register reviewed evidence before expanding M3. Trial edition and same-person execution are valid under `CLEAN_ROOM.md`; fixture, authorization and evidence-integrity checks still apply.

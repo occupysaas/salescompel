@@ -1,5 +1,7 @@
 # Plan 3 — Reference-evidence readiness and first observations
 
+> Policy update (2026-10-16): [CLEAN_ROOM.md](../../../CLEAN_ROOM.md) supersedes this historical document's mandatory role separation, edition restrictions and extra terms-review gates. Use [Plan 4](../plans/2026-10-16-plan-4-black-box-reference-baseline.md) for current execution. Authorization, fixture readiness and evidence integrity remain required.
+
 Date: 2026-10-15. Status: proposed design for review; implementation and live
 observation have not started.
 

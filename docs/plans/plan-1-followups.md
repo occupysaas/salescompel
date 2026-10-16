@@ -28,7 +28,7 @@ Deferred findings from the Plan 1 review (2026-10-15). Items under
 
 | Before | Item |
 |---|---|
-| First live observation | Maintainer reviews Salesforce terms and records the risk decision and observer/implementer assignment required by `CLEAN_ROOM.md`. |
+| First live observation | Use the recorded authorization for the named tenant and verify profile/persona readiness under `CLEAN_ROOM.md`; role separation and extra terms-review approval are not required. |
 | First live observation | Confirm the deleted-record error code and the `metadata` scenario against the reference org; narrow `MISSING_RECORD_CODES` if one code is observed consistently. |
 | First live observation | Run `repeatability` on two reference captures and add normalization only for fields it proves nondeterministic. |
 | M2 candidate runs | `sf org login access-token` reads `/services/data/v51.0/sobjects/User/{id}` with a hard-coded v51.0, regardless of the configured API version. The candidate must serve it or the CLI scenarios block. |

@@ -117,12 +117,8 @@ export function observationIssues(
     !isDeepStrictEqual(n.connectors, context.connectors)
   )
     issues.push("Observation profile/API/connector binding differs");
-  if (
-    !r ||
-    n.observer !== r.observer ||
-    n.observer.trim().toLowerCase() === r.implementer?.trim().toLowerCase()
-  )
-    issues.push("Observation role assignment differs");
+  if (!r || n.observer !== r.observer)
+    issues.push("Observation operator differs from the readiness record");
   if (
     !validTime(n.review.reviewedAt) ||
     Date.parse(n.review.reviewedAt) > Date.now() ||

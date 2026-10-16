@@ -1,5 +1,7 @@
 # Plan 3 Reference Evidence Implementation Plan
 
+> Policy update (2026-10-16): [CLEAN_ROOM.md](../../../CLEAN_ROOM.md) supersedes this historical document's mandatory role separation, edition restrictions and extra terms-review gates. Use [Plan 4](../plans/2026-10-16-plan-4-black-box-reference-baseline.md) for current execution. Authorization, fixture readiness and evidence integrity remain required.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans for native execution or superpowers:subagent-driven-development if the user selects delegation. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Make reference capture fail closed until authorized, and accept reviewed, reproducible observations without confusing them with candidate parity.

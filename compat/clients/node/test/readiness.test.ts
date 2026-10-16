@@ -63,7 +63,7 @@ test("readiness accepts complete authorization and rejects stale or incomplete s
     (r: any) => (r.decision.status = "pending"),
     (r: any) => (r.decision.status = "rejected"),
     (r: any) => (r.decision.observationAuthorized = false),
-    (r: any) => (r.observer = " IMPLEMENTER "),
+    (r: any) => (r.observer = null),
     (r: any) => (r.profileHash = "b".repeat(64)),
     (r: any) => (r.apiVersion = "64.0"),
     (r: any) => (r.scenarios = []),
@@ -130,5 +130,15 @@ test("preflight safely handles files and requires a real decision anchor", async
     assert.deepEqual(await referencePreflight(root, context, env), []);
   } finally {
     await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("readiness permits the same operator or no implementer without granting authorization", () => {
+  for (const implementer of ["observer", null]) {
+    const r = approved();
+    r.implementer = implementer;
+    assert.deepEqual(readinessIssues(r, schema, context, env), []);
+    r.decision.observationAuthorized = false;
+    assert.ok(readinessIssues(r, schema, context, env).length);
   }
 });
