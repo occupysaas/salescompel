@@ -148,3 +148,35 @@ sources:
     version: version-sensitive; pin to reference org
     claim: Metadata- and permission-aware UI API resources
     extraction: not-extracted
+  - id: cli-install
+    url: https://developer.salesforce.com/docs/platform/sfdx-setup/guide/sfdx-setup-install-cli.html
+    accessedAt: 2026-10-15
+    version: CLI-version-sensitive; pin to profile salesforceCli
+    claim: Salesforce CLI install channels (npm, installers, tarballs, Docker)
+    extraction: dynamic-body-unavailable
+  - id: cli-docker
+    url: https://developer.salesforce.com/docs/atlas.en-us.sfdx_setup.meta/sfdx_setup/sfdx_setup_docker.htm
+    accessedAt: 2026-10-15
+    version: CLI-version-sensitive; pin image by version tag and digest
+    claim: salesforce/cli images, slim (tarball) and full (npm on Node LTS)
+      flavors, version and release-candidate tags
+    extraction: reverify
+  - id: cli-plugin-install
+    url: https://developer.salesforce.com/docs/platform/sfdx-setup/guide/sfdx-setup-install-plugin.html
+    accessedAt: 2026-10-15
+    version: CLI-version-sensitive; pin to profile cliPlugins
+    claim: sf plugins install sources, signature verification and JIT plugins
+    extraction: dynamic-body-unavailable
+  - id: cli-plugin-allowlist
+    url: https://developer.salesforce.com/docs/atlas.en-us.sfdx_setup.meta/content/sfdx_setup_allowlist.htm
+    accessedAt: 2026-10-15
+    version: CLI-version-sensitive
+    claim: unsignedPluginAllowList.json location and format for trusted
+      unsigned plugins
+    extraction: reverify
+  - id: cli-login-web
+    url: https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference_org_login_web.html
+    accessedAt: 2026-10-15
+    version: CLI-version-sensitive
+    claim: org login --instance-url overrides sfdcLoginUrl in sfdx-project.json
+    extraction: reverify

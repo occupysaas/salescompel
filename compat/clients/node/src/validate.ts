@@ -68,6 +68,30 @@ export async function validateRepository(): Promise<string[]> {
   } catch (e) {
     issues.push(`Connector versions unavailable: ${String(e)}`);
   }
+  // Every plugin command must be a profiled CLI command, and a plugin also
+  // pinned under connectors must carry the same version.
+  for (const plugin of p.cliPlugins ?? []) {
+    if (
+      p.connectors?.[plugin.name] &&
+      p.connectors[plugin.name] !== plugin.version
+    )
+      issues.push(`CLI plugin ${plugin.name} version differs from connectors`);
+    for (const command of plugin.commands ?? [])
+      if (!p.salesforceCli?.commands?.includes(command))
+        issues.push(
+          `CLI plugin ${plugin.name} command ${command} is not profiled`,
+        );
+  }
+  if (
+    p.salesforceCli?.endpoint === "native" &&
+    p.salesforceCli.proxiedHosts?.length
+  )
+    issues.push("Native CLI endpoint profile lists proxied hosts");
+  if (
+    p.salesforceCli?.endpoint === "proxy" &&
+    !p.salesforceCli.proxiedHosts?.length
+  )
+    issues.push("Proxied CLI endpoint profile names no proxied hosts");
   const sources = (await readDoc("docs/compat/sources.yaml")).sources;
   if (!Array.isArray(sources)) throw new Error("Invalid source registry");
   const sourceIds = new Set(sources.map((s: any) => s.id));
@@ -113,6 +137,7 @@ export async function validateRepository(): Promise<string[]> {
     "docs/compat/contracts/localization.yaml",
     "docs/compat/contracts/identity.yaml",
     "docs/compat/contracts/rest-semantics.yaml",
+    "docs/compat/contracts/cli-plugins.yaml",
   ]) {
     const doc = await readDoc(path);
     if (

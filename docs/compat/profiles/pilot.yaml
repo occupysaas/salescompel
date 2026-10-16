@@ -60,6 +60,39 @@ connectors:
   "@salesforce/plugin-data": "5.1.16"
   "@salesforce/plugin-deploy-retrieve": "4.2.15"
   simple-salesforce: "1.12.9"
+# Salesforce CLI as a drop-in client (roadmap "Salesforce CLI as a drop-in
+# client"). commands lists what the customer's pipelines invoke; the pilot
+# lists what the laboratory harness runs. endpoint is native unless a
+# hardcoded host forces the host-routing proxy; proxiedHosts records each one.
+salesforceCli:
+  channels:
+    - npm
+  endpoint: native
+  proxiedHosts: []
+  commands:
+    - org login access-token
+    - org display
+    - data query
+    - project deploy start
+    - project retrieve start
+# CLI plugins the customer's pipelines use. Versions must match connectors
+# when the plugin is also pinned there.
+cliPlugins:
+  - name: "@salesforce/plugin-data"
+    version: "5.1.16"
+    source: core
+    signature: bundled
+    license: Apache-2.0
+    commands:
+      - data query
+  - name: "@salesforce/plugin-deploy-retrieve"
+    version: "4.2.15"
+    source: core
+    signature: bundled
+    license: Apache-2.0
+    commands:
+      - project deploy start
+      - project retrieve start
 referenceStatus: pending
 # SalesCompel documents use the latest OpenAPI release; older Salesforce
 # documents are converted to it.

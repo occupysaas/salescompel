@@ -1,0 +1,78 @@
+schemaVersion: 1
+status: documented-not-observed
+owner: verification-operations
+sources:
+  - cli-install
+  - cli-docker
+  - cli-plugin-install
+  - cli-plugin-allowlist
+  - cli-login-web
+contracts:
+  - id: cli-native-endpoint
+    milestone: M1/M3
+    behavior: The unmodified Salesforce CLI reaches SalesCompel through its own
+      endpoint settings (org login --instance-url, sfdcLoginUrl). Later calls
+      follow the instance_url and absolute URLs SalesCompel returns. Record
+      which settings each profiled command honors in the pinned CLI version.
+    preconditions:
+      - Pinned CLI from each profiled install channel with an isolated CLI home
+      - Network egress restricted to the SalesCompel endpoint
+    assertions:
+      - Every profiled command completes without contacting a Salesforce host
+      - org display reports the SalesCompel instance URL
+      - Exit codes, --json structure and stderr match the reference capture
+    observationStatus: not_run
+  - id: cli-routing-proxy
+    milestone: M1/M3/M4
+    behavior: Where a CLI command or plugin hardcodes a Salesforce host, a
+      host-routing reverse proxy with a deployment-owned CA sends that host to
+      SalesCompel. The proxy never rewrites paths, headers or bodies, never
+      forwards to Salesforce and refuses unknown hosts.
+    preconditions:
+      - CLI environment resolving the hardcoded host to the proxy
+      - Proxy CA trusted by the CLI Node runtime
+    assertions:
+      - Each proxied host is logged and matches profile proxiedHosts
+      - Requests reach SalesCompel byte-identical apart from TLS termination
+      - An unlisted Salesforce host fails closed and is reported as a blocker
+    observationStatus: not_run
+  - id: cli-install-channels
+    milestone: M1/M9
+    behavior: npm, installer/tarball and Docker slim/full channels bundle
+      different Node runtimes and plugin sets; each profiled channel is pinned
+      by lockfile, checksum or image digest and certified separately.
+    preconditions:
+      - Profile salesforceCli.channels and CLI version
+    assertions:
+      - Resolved CLI and bundled plugin versions match the profile
+      - Profiled command scenarios pass on every listed channel
+    observationStatus: not_run
+  - id: cli-plugin-install-trust
+    milestone: M1
+    behavior: Profiled plugins install through sf plugins install at their
+      pinned version with signature verification; unsigned plugins are
+      trusted only through a per-run unsignedPluginAllowList.json generated
+      from the profile; JIT plugins are pre-installed; auto-update is off.
+    preconditions:
+      - Fresh CLI home per run
+      - Profile cliPlugins with source and signature status
+    assertions:
+      - Installed versions, integrity hashes and signature results are
+        recorded and match the profile
+      - No interactive trust prompt is answered and no plugin installs
+        implicitly during a scenario
+      - Linked or patched plugins are rejected for certification runs
+    observationStatus: not_run
+  - id: cli-plugin-commands
+    milestone: M3/M4/M9
+    behavior: Each profiled plugin command runs unmodified against the
+      reference org and SalesCompel; extra discovery calls it makes are
+      recorded and assigned to milestones.
+    preconditions:
+      - Sandboxed runner holding only disposable tenant credentials
+    assertions:
+      - Captured HTTP traffic, exit codes, --json output, generated files and
+        resulting org state match the reference
+      - The per-plugin matrix records plugin, version, CLI version, signature
+        status, commands, outcome, blocker and evidence date
+    observationStatus: not_run
