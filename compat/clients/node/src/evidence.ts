@@ -152,3 +152,60 @@ export function observationIssues(
     );
   return issues;
 }
+
+export function observationLinkIssues(
+  contracts: {
+    id: string;
+    observationStatus: string;
+    observationIds?: string[];
+  }[],
+  notes: unknown[],
+  schema: unknown,
+  context: EvidenceContext,
+  readiness: unknown,
+): string[] {
+  const issues: string[] = [];
+  const byId = new Map<string, Observation>();
+  for (const note of notes) {
+    const invalid = observationIssues(note, schema, context, readiness);
+    issues.push(...invalid);
+    if (invalid.length) continue;
+    const n = note as Observation;
+    if (byId.has(n.id)) issues.push("Duplicate observation ID");
+    byId.set(n.id, n);
+  }
+  for (const c of contracts) {
+    if (!["not_run", "observed"].includes(c.observationStatus)) {
+      issues.push("Unsupported observation status");
+      continue;
+    }
+    const ids = c.observationIds ?? [];
+    if (
+      !Array.isArray(ids) ||
+      ids.some((id) => typeof id !== "string") ||
+      new Set(ids).size !== ids.length
+    ) {
+      issues.push("Invalid observation links");
+      continue;
+    }
+    if (c.observationStatus === "not_run" && ids.length)
+      issues.push("Unobserved contract has evidence links");
+    if (
+      c.observationStatus === "observed" &&
+      (!ids.length || ids.some((id) => !byId.get(id)?.contracts.includes(c.id)))
+    )
+      issues.push("Observed contract lacks matching reviewed evidence");
+  }
+  for (const n of byId.values())
+    for (const id of n.contracts) {
+      const c = contracts.find((c) => c.id === id);
+      if (
+        !c ||
+        c.observationStatus !== "observed" ||
+        !Array.isArray(c.observationIds) ||
+        !c.observationIds.includes(n.id)
+      )
+        issues.push("Observation claim lacks reciprocal contract link");
+    }
+  return issues;
+}

@@ -6,6 +6,7 @@ import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { resolve, dirname } from "node:path";
 import {
   validateRepository,
+  observationSummary,
   ROOT,
   profile,
   SCENARIOS,
@@ -113,10 +114,12 @@ async function main() {
     if (issues.length) {
       console.error(issues.join("\n"));
       process.exitCode = 1;
-    } else
+    } else {
+      const coverage = await observationSummary();
       console.log(
-        `Offline contracts, catalogs, dependencies and OpenAPI documents (SalesCompel ${LATEST_OPENAPI}, Salesforce sources 2.0/3.0) validated. Live Salesforce verification: pending.`,
+        `Offline contracts, catalogs, dependencies and OpenAPI documents (SalesCompel ${LATEST_OPENAPI}, Salesforce sources 2.0/3.0) validated. Reviewed pilot observations: ${coverage.observed}; not_run: ${coverage.notRun}. Not parity certification.`,
       );
+    }
     return;
   }
   if (command === "validate-openapi") {

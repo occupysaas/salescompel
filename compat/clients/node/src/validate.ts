@@ -1,3 +1,10 @@
+import { observationLinkIssues } from "./evidence.ts";
+import {
+  readReadiness,
+  readinessStructureIssues,
+  readinessDecisionIssues,
+  decisionAnchorIssues,
+} from "./readiness.ts";
 import { Ajv } from "ajv";
 import { readFile, readdir } from "node:fs/promises";
 import { resolve } from "node:path";
@@ -120,7 +127,7 @@ export async function validateRepository(): Promise<string[]> {
       !c.preconditions?.length ||
       !c.assertions?.length ||
       !c.normalization?.length ||
-      c.observationStatus !== "not_run"
+      !["not_run", "observed"].includes(c.observationStatus)
     )
       issues.push(`Incomplete contract ${id}`);
   }
@@ -131,6 +138,48 @@ export async function validateRepository(): Promise<string[]> {
       c.sources.some((s: string) => !sourceIds.has(s))
     )
       issues.push(`Invalid contract references ${c.id}`);
+  try {
+    const { record, schema, log } = await readReadiness(ROOT);
+    issues.push(...readinessStructureIssues(record, schema));
+    const context = {
+      profile: p.id,
+      profileHash: (await profile()).hash,
+      apiVersion: p.apiVersion,
+      requiredScenarios: SCENARIOS,
+      connectors: p.connectors,
+      cleanupScenarios: CLEANUP_SCENARIOS,
+    };
+    const notes: unknown[] = [];
+    for (const filename of await readdir(
+      resolve(ROOT, "docs/compat/observations"),
+    )) {
+      if (!filename.endsWith(".yaml")) continue;
+      const note = await readDoc(`docs/compat/observations/${filename}`);
+      if (filename !== `${note?.id}.yaml`)
+        issues.push("Observation filename differs from its ID");
+      notes.push(note);
+    }
+    issues.push(
+      ...observationLinkIssues(
+        contracts,
+        notes,
+        await readDoc("compat/schemas/observation.schema.json"),
+        context,
+        record,
+      ),
+    );
+    if (
+      notes.length ||
+      contracts.some((c: any) => c.observationStatus === "observed")
+    ) {
+      issues.push(
+        ...readinessDecisionIssues(record, schema, context),
+        ...decisionAnchorIssues(record, log),
+      );
+    }
+  } catch {
+    issues.push("Readiness or observation files are missing or malformed");
+  }
   // Deferred-milestone contracts: documented only, still source-checked.
   for (const path of [
     "docs/compat/contracts/external-services.yaml",
@@ -239,4 +288,18 @@ export async function validateRepository(): Promise<string[]> {
       issues.push(`Dependency not exactly locked: ${name}`);
   }
   return issues;
+}
+
+export async function observationSummary(): Promise<{
+  observed: number;
+  notRun: number;
+}> {
+  const contracts = (await readDoc("docs/compat/contracts/pilot.yaml"))
+    .contracts;
+  return {
+    observed: contracts.filter((c: any) => c.observationStatus === "observed")
+      .length,
+    notRun: contracts.filter((c: any) => c.observationStatus === "not_run")
+      .length,
+  };
 }

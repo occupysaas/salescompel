@@ -4,9 +4,14 @@ import { spawnSync } from "node:child_process";
 import { mkdtemp, readFile, writeFile, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
-import { verifyCapturePair, observationIssues } from "../src/evidence.ts";
+import {
+  verifyCapturePair,
+  observationIssues,
+  observationLinkIssues,
+} from "../src/evidence.ts";
 import {
   readDoc,
+  validateRepository,
   profile,
   SCENARIOS,
   CLEANUP_SCENARIOS,
@@ -183,4 +188,74 @@ test("verify-evidence CLI blocks malformed private input without copying it to o
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
+});
+
+test("contract links require unique reciprocal reviewed evidence", () => {
+  const pending = SCENARIOS.map((id) => ({ id, observationStatus: "not_run" }));
+  const observed = SCENARIOS.map((id) => ({
+    id,
+    observationStatus: "observed",
+    observationIds: ["pilot-first"],
+  }));
+  assert.deepEqual(
+    observationLinkIssues(pending, [], schema, context, readiness),
+    [],
+  );
+  assert.deepEqual(
+    observationLinkIssues(observed, [note()], schema, context, readiness),
+    [],
+  );
+  assert.ok(
+    observationLinkIssues(observed, [], schema, context, readiness).length,
+  );
+  assert.ok(
+    observationLinkIssues(pending, [note()], schema, context, readiness).length,
+  );
+  assert.ok(
+    observationLinkIssues(
+      observed,
+      [note(), note()],
+      schema,
+      context,
+      readiness,
+    ).length,
+  );
+  assert.ok(
+    observationLinkIssues(
+      observed.map((c) => ({ ...c, observationIds: ["missing"] })),
+      [note()],
+      schema,
+      context,
+      readiness,
+    ).length,
+  );
+  assert.ok(
+    observationLinkIssues(
+      observed.map((c) => ({
+        ...c,
+        observationIds: ["pilot-first", "pilot-first"],
+      })),
+      [note()],
+      schema,
+      context,
+      readiness,
+    ).length,
+  );
+  const bad = note();
+  bad.review.sanitized = false;
+  assert.ok(
+    observationLinkIssues(observed, [bad], schema, context, readiness).length,
+  );
+  const stale = note();
+  stale.profileHash = "c".repeat(64);
+  assert.ok(
+    observationLinkIssues(observed, [stale], schema, context, readiness).length,
+  );
+});
+test("repository validation does not rewrite profile bytes or fabricate observations", async () => {
+  const before = await profile();
+  assert.deepEqual(await validateRepository(), []);
+  const after = await profile();
+  assert.equal(after.hash, before.hash);
+  assert.deepEqual(after.data, before.data);
 });
