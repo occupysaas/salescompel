@@ -1,3 +1,5 @@
+import { referencePreflight } from "./readiness.ts";
+import { validateRecoveryDirectory } from "./fixtures.ts";
 import { parseArgs } from "node:util";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { resolve, dirname } from "node:path";
@@ -9,7 +11,13 @@ import {
   CLEANUP_SCENARIOS,
 } from "./validate.ts";
 import { capture } from "./capture.ts";
-import { compare, sanitize, parseDocument, validateReport } from "./core.ts";
+import {
+  compare,
+  sanitize,
+  parseDocument,
+  validateReport,
+  checkConfig,
+} from "./core.ts";
 import { reportOutcome, writeReport } from "./reports.ts";
 import {
   validateOpenApi,
@@ -33,8 +41,38 @@ async function main() {
   const command = positionals[0];
   if (positionals.length !== 1)
     throw new Error(
-      "Specify one command: validate, capture, compare, repeatability or validate-openapi",
+      "Specify one command: validate, preflight, capture, compare, repeatability or validate-openapi",
     );
+  if (command === "preflight") {
+    if (values.target !== "reference" && values.target !== "candidate")
+      throw new Error("--target reference|candidate required");
+    const p = await profile();
+    const issues =
+      values.target === "reference"
+        ? await referencePreflight(
+            ROOT,
+            {
+              profile: p.data.id,
+              profileHash: p.hash,
+              apiVersion: p.data.apiVersion,
+              requiredScenarios: SCENARIOS,
+              connectors: p.data.connectors,
+              cleanupScenarios: CLEANUP_SCENARIOS,
+            },
+            process.env,
+          )
+        : checkConfig("candidate", process.env);
+    if (process.env.COMPAT_RECOVERY_DIR) {
+      const issue = await validateRecoveryDirectory(
+        process.env.COMPAT_RECOVERY_DIR,
+        ROOT,
+      );
+      if (issue) issues.push(issue);
+    }
+    console.log("Offline readiness; no observation performed.");
+    if (issues.length) throw new Error(issues.join("; "));
+    return;
+  }
   if (command === "validate") {
     const issues = await validateRepository();
     if (issues.length) {
@@ -137,7 +175,7 @@ async function main() {
     return;
   }
   throw new Error(
-    "Unknown command; use validate, capture, compare, repeatability or validate-openapi",
+    "Unknown command; use validate, preflight, capture, compare, repeatability or validate-openapi",
   );
 }
 main().catch((e) => {

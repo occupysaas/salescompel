@@ -1,9 +1,10 @@
+import { referencePreflight } from "./readiness.ts";
 import { randomBytes } from "node:crypto";
 import { mkdir } from "node:fs/promises";
 import { resolve } from "node:path";
 import { Connection } from "jsforce";
 import { checkConfig, sanitize, type Report, type Result } from "./core.ts";
-import { ROOT, profile, SCENARIOS } from "./validate.ts";
+import { ROOT, profile, SCENARIOS, CLEANUP_SCENARIOS } from "./validate.ts";
 import { FixtureTracker, validateRecoveryDirectory } from "./fixtures.ts";
 import { jsScenarios, Blocked, type Context } from "./scenarios.ts";
 import { cliQuery, metadata, pythonProbe } from "./process-clients.ts";
@@ -33,6 +34,21 @@ export async function capture(
     cleanup: [],
   };
   const issues = checkConfig(target, env);
+  if (target === "reference")
+    issues.push(
+      ...(await referencePreflight(
+        ROOT,
+        {
+          profile: p.data.id,
+          profileHash: p.hash,
+          apiVersion: p.data.apiVersion,
+          requiredScenarios: SCENARIOS,
+          connectors: p.data.connectors,
+          cleanupScenarios: CLEANUP_SCENARIOS,
+        },
+        env,
+      )),
+    );
   if (env.COMPAT_RECOVERY_DIR) {
     const recoveryIssue = await validateRecoveryDirectory(
       env.COMPAT_RECOVERY_DIR,

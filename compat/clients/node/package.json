@@ -15,7 +15,8 @@
     "compare": "tsx src/cli.ts compare",
     "repeatability": "tsx src/cli.ts repeatability",
     "check": "npm run typecheck && npm run format:check && npm test && npm run validate",
-    "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\""
+    "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\"",
+    "preflight": "tsx src/cli.ts preflight"
   },
   "dependencies": {
     "@formatjs/icu-messageformat-parser": "3.5.21",
