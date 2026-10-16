@@ -211,3 +211,27 @@ sanitization review is claimed.
   read, zero Compat_Text__c grants, and no Account write/view-all/modify-all
   grants. These are configuration checks, not restricted-session observations;
   readiness flags remain conservative until independent authentication is tested.
+
+### Plan 4 verified reference readiness — 2026-10-16
+
+- Both dedicated users completed independent CLI web authorization. Live identity
+  checks confirm the expected distinct users in the authorized tenant. Admin
+  Account describe includes Compat_Text__c; restricted describe omits it, its
+  explicit field query returns INVALID_FIELD, and Account Name query succeeds.
+- The dedicated locale fixture is active and readable by the test administrator;
+  its original language/locale/timezone are journaled privately. Required French,
+  US locale and America/New_York values are available.
+- Bound API 65.0 and the exact updated pilot profile hash. Installed package names
+  and complete versions are recorded as environment context, without claiming
+  package parity. Active Flow inventory has no Workflow/InvocableProcess types;
+  earlier queries found no WorkflowRule or ExternalServiceRegistration records.
+- Ruling: remove synthetic `iw` from the live profile because User describe does
+  not offer it. The legacy-code offline catalog/contract remains unchanged and
+  unobserved; all eleven live scenarios and connector pins are retained. This
+  profile records supported test settings rather than inventing tenant support.
+- Readiness flags now reflect verified setup. Profile currency remains the pilot's
+  synthetic USD fixture setting; multi-currency is absent and currency semantics
+  are outside these eleven scenarios. Active packaged/platform flows and installed
+  packages are not certified by this baseline.
+- Verification: full offline check passes (48 passed, 1 optional candidate test
+  skipped); bound reference preflight exits 0 with private runtime configuration.

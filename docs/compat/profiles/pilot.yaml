@@ -1,7 +1,7 @@
 schemaVersion: 1
 id: pilot
-description: Synthetic Sales Cloud/core platform; no live observations yet
-apiVersion: null
+description: Authorized disposable trial; synthetic Sales Cloud/core pilot; observations pending
+apiVersion: "65.0"
 clouds:
   - Sales Cloud
   - core platform
@@ -32,15 +32,16 @@ languages:
   - fr
   - de
   - pt_BR
-  - iw
 locales:
   - en_US
   - fr_FR
 timezone: America/New_York
 currency: USD
-managedPackages: []
-# Org-level features that change platform behavior. Synthetic values; a real
-# source profile must record observed values during M0 inventory.
+managedPackages:
+  - "Sales Insights 1.0.0.1"
+  - "Salesforce Standard Data Model 1.132.0.1"
+# Org-level feature inventory for this disposable reference tenant.
+# Installed packages are environment context, not certified package coverage.
 orgFeatures:
   personAccounts: false
   multiCurrency: false

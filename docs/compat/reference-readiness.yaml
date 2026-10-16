@@ -1,9 +1,9 @@
-# Authorization recorded; profile binding and fixtures remain pending verification.
+# Bound to verified disposable fixtures and independently authenticated personas.
 schemaVersion: 1
 referenceAlias: velocity-innovation-8559
 profile: pilot
-profileHash: null
-apiVersion: null
+profileHash: df4eb5a63037cd9bdff953cff393661c1c7bc1c741983a88180138d017a27e98
+apiVersion: "65.0"
 decision:
   status: approved
   maintainer: project-maintainer
@@ -26,7 +26,7 @@ scenarios:
   - python-crud
 fixtures:
   disposable: true
-  administrator: false
-  restricted: false
-  locale: false
+  administrator: true
+  restricted: true
+  locale: true
   deployed: true
