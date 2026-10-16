@@ -123,3 +123,23 @@ coverage assertion allows observations to progress. No runtime gate was relaxed.
 The failure was reproduced before the test-fixture change. Full check after
 fix: 46 passed, 1 optional candidate test skipped; TypeScript, formatting and
 repository validation passed.
+
+
+## Reference setup scope check 2026-10-16
+
+The separately assigned `plan3-observer` used the saved CLI authorization and
+bounded, documented API inventory requests. The supplied disposable reference
+reports Base Edition, is not a sandbox, and has a trial expiration date. It does
+not satisfy the Developer Edition/sandbox restriction in CLEAN_ROOM.md and the
+approved reference-evidence design. Observation authorization does not implicitly
+amend that restriction. No fixture deployment, user creation, settings mutation
+or full scenario capture was performed.
+
+Setup is blocked pending either a disposable Developer Edition/sandbox alias or
+an explicit maintainer decision extending the authorized environment scope to
+this disposable trial. The profile remains unbound and fixture attestations
+remain false. Inventory confirms API 65.0 availability and spare Salesforce user
+licenses, but does not establish restricted-persona authentication or complete
+profile readiness. Private inventory/auth files remain outside the checkout in
+an owner-only observer directory. No pilot contract is marked observed and no
+sanitization review is claimed.

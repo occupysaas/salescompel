@@ -7,7 +7,7 @@ apiVersion: null
 decision:
   status: approved
   maintainer: project-maintainer
-  recordedAt: 2026-10-16
+  recordedAt: "2026-10-16"
   logAnchor: reference-observation-authorization-2026-10-16
   observationAuthorized: true
 observer: plan3-observer
