@@ -58,12 +58,7 @@ notices. Preserve all applicable license, copyright and attribution obligations;
 never remove a notice merely to make material appear independently authored.
 Existing dependency and fixture notices remain intact.
 
-The maintainer's phrase “without keeping authors” needs clarification: whether
-required attribution/copyright notices are acceptable or only no-attribution
-licenses qualify. Until resolved, make no new code-reuse selection that depends
-on that interpretation. Behavior testing and independent implementation can
-continue. Ask the maintainer when license eligibility, provenance or permission
-is unclear rather than assuming permission.
+Only no-attribution licenses qualify. Behavior testing and independent implementation can continue. Ask the maintainer when license eligibility, provenance or permission is unclear rather than assuming permission.
 
 Do not reverse-engineer Salesforce CLI or plugin implementation code. Treat them
 as unmodified black-box clients, using documented commands and their external
