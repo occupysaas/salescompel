@@ -1,0 +1,32 @@
+# Pending attestations are not authorization. See CLEAN_ROOM.md and the runbook.
+schemaVersion: 1
+referenceAlias: null
+profile: pilot
+profileHash: null
+apiVersion: null
+decision:
+  status: pending
+  maintainer: null
+  recordedAt: null
+  logAnchor: null
+  observationAuthorized: false
+observer: null
+implementer: null
+scenarios:
+  - describe
+  - crud
+  - upsert
+  - relationships
+  - rollback
+  - permissions
+  - errors
+  - locale
+  - cli-query
+  - metadata
+  - python-crud
+fixtures:
+  disposable: false
+  administrator: false
+  restricted: false
+  locale: false
+  deployed: false
