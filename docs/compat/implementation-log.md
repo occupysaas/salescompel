@@ -189,3 +189,25 @@ sanitization review is claimed.
 - Task 1 independent review found no actionable issues and reran all thirteen
   readiness/evidence tests successfully. Tasks 2–4 remain incomplete; no captures,
   repeatability result or reviewed pilot observations are claimed.
+
+### Plan 4 dedicated personas — 2026-10-16
+
+- Created three dedicated synthetic users using maintainer-supplied private
+  inboxes: administrator, restricted API reader and locale fixture. Each has a
+  unique synthetic username; no existing user account was repurposed or changed.
+- Administrator uses System Administrator plus the existing Compat_Admin fixture
+  permission set. Restricted and locale users use Minimum Access - Salesforce;
+  the restricted user receives a dedicated permission set with API access and
+  Account read, without a custom-field grant or write/admin permissions.
+- Salesforce accepted password-reset/activation requests for the two new users
+  requiring independent sessions. User completion of password setup and private
+  CLI web login remains pending. Email addresses, usernames, user IDs and
+  activation responses remain outside the repository.
+- One supplied inbox may also belong to the maintainer's primary account.
+  Provisioning and activation targeted only the newly created synthetic IDs;
+  the primary account and its credentials/permissions were not changed.
+- Read-back checks confirmed all three users active with the configured inboxes.
+  Restricted profile/permission-set inspection confirms API access and Account
+  read, zero Compat_Text__c grants, and no Account write/view-all/modify-all
+  grants. These are configuration checks, not restricted-session observations;
+  readiness flags remain conservative until independent authentication is tested.
