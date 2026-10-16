@@ -39,6 +39,37 @@ not require a personnel-separated clean-room process.
   may inform contracts. Record source provenance and preserve required licenses
   and notices for reused third-party material.
 
+## Source selection and code reuse
+
+Prefer observable behavior tests and independent implementation. Avoid copying
+third-party implementation code when the behavior can be established without it.
+Open-source material may be considered when its actual license permits copying,
+modification and commercial use/distribution and its obligations can be met.
+
+The [Salesforce repository directory](https://github.com/orgs/salesforce/repositories)
+is a discovery source, not blanket permission to reuse its contents. Verify the
+license of the exact repository, revision and files, including vendored material
+and exceptions; public visibility alone is not an open-source license.
+
+For each deliberately reused code fragment or file, document in
+`THIRD_PARTY_NOTICES.md` its upstream URL, pinned revision, original and destination
+paths, applicable license, why reuse was needed, modifications and required
+notices. Preserve all applicable license, copyright and attribution obligations;
+never remove a notice merely to make material appear independently authored.
+Existing dependency and fixture notices remain intact.
+
+The maintainer's phrase “without keeping authors” needs clarification: whether
+required attribution/copyright notices are acceptable or only no-attribution
+licenses qualify. Until resolved, make no new code-reuse selection that depends
+on that interpretation. Behavior testing and independent implementation can
+continue. Ask the maintainer when license eligibility, provenance or permission
+is unclear rather than assuming permission.
+
+Do not reverse-engineer Salesforce CLI or plugin implementation code. Treat them
+as unmodified black-box clients, using documented commands and their external
+outputs. This specific restriction remains in force even when a client is
+published under an open-source license.
+
 ## Excluded methods
 
 - Do not use proprietary Salesforce implementation source, decompile server

@@ -52,8 +52,10 @@ finish every M0/M1 obligation, or perform the M1R release-history review.
   behavior. Invoke documented commands unmodified and inspect their external
   outputs. Published command documentation, `--help`, `--version` and package
   version/license metadata may establish invocation and provenance only.
-- Apply the same black-box principle to other Salesforce client implementations;
-  do not mine client internals as a substitute for observed service contracts.
+- Prefer behavior observations and independent implementation over reading or
+  copying third-party implementations. Other open-source material may be used
+  only under the source-selection rules below; the specific CLI/plugin restriction
+  remains in force.
 - Use public documented APIs and synthetic fixtures. Do not change unrelated
   business records, existing users' permissions or organization-wide features.
 - Keep credentials and raw reports private, outside the checkout where practical,
@@ -67,6 +69,27 @@ finish every M0/M1 obligation, or perform the M1R release-history review.
 - A missing authentication factor or login that only the user can complete is a
   real dependency. Ask for that concrete action, without requesting token strings
   in chat or manufacturing a broader approval requirement.
+
+## Source selection and reuse requirements
+
+The maintainer permits consideration of sources licensed for copying,
+modification and commercial use/distribution, including projects discovered at
+https://github.com/orgs/salesforce/repositories. Prefer behavior observations;
+avoid code reuse when independent implementation is feasible. A repository's
+public visibility or organization membership does not establish permission.
+
+Before any new reuse, inspect the exact license and file-level exceptions at a
+pinned revision. Record the upstream URL/revision, source and destination paths,
+license, purpose, modifications and required notices in THIRD_PARTY_NOTICES.md.
+Keep required legal notices and preserve existing dependency/fixture notices.
+Do not reverse-engineer CLI/plugin implementation code under this permission.
+
+Clarification requested: “without keeping authors” may mean either no obligation
+to involve the original authors, with required notices acceptable, or a strict
+no-attribution requirement. Do not select or copy code that relies on an answer
+until the maintainer clarifies. This does not block behavioral tests or independent
+implementation. Ask the maintainer whenever source eligibility or usage rights
+are unclear. No third-party code reuse is planned for this work package.
 
 ## Review focus
 
@@ -143,7 +166,10 @@ if (!r || n.observer !== r.observer) {
   malformed date, stale profile, missing credentials, unknown-field, no-transport,
   chronology, reciprocal-link and sanitizer tests unchanged.
 - [ ] Add the maintainer's prohibition on reverse-engineering CLI/plugin code to
-  CLEAN_ROOM.md. Update current runbook/follow-up/roadmap instructions to refer to
+  CLEAN_ROOM.md if not already present. Preserve the new source-selection policy:
+  behavior observations first, exact-license review and documented reuse only.
+  Resolve attribution ambiguity with the maintainer before any affected reuse.
+  Update current runbook/follow-up/roadmap instructions to refer to
   authorized tenant testing, optional role separation and the already recorded
   authorization. Mark the old trial-type blocker as superseded in a new log entry;
   preserve historical records rather than pretending the blocker never happened.
