@@ -1,0 +1,186 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { mkdtemp, readFile, writeFile, rm, stat } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { resolve } from "node:path";
+import { verifyCapturePair, observationIssues } from "../src/evidence.ts";
+import {
+  readDoc,
+  profile,
+  SCENARIOS,
+  CLEANUP_SCENARIOS,
+} from "../src/validate.ts";
+import type { Report } from "../src/core.ts";
+const schema = await readDoc("compat/schemas/observation.schema.json");
+const p = await profile();
+const context = {
+  profile: p.data.id,
+  profileHash: p.hash,
+  apiVersion: "65.0",
+  connectors: p.data.connectors,
+  requiredScenarios: SCENARIOS,
+  cleanupScenarios: CLEANUP_SCENARIOS,
+};
+const readiness = { observer: "observer", implementer: "implementer" };
+function report(second = false): Report {
+  return {
+    schemaVersion: 1,
+    target: "reference",
+    profile: "pilot",
+    profileHash: context.profileHash,
+    apiVersion: "65.0",
+    provenance: "live",
+    startedAt: second ? "2026-01-02T00:00:00Z" : "2026-01-01T00:00:00Z",
+    finishedAt: second ? "2026-01-02T00:01:00Z" : "2026-01-01T00:01:00Z",
+    connectors: context.connectors,
+    requiredScenarios: SCENARIOS,
+    results: SCENARIOS.map((id) => ({
+      id,
+      client: "jsforce",
+      outcome: "passed",
+      assertions: [{ name: "expected behavior", passed: true }],
+      observations: { status: 200 },
+      identities: {},
+    })),
+    cleanup: CLEANUP_SCENARIOS.map((scenario) => ({
+      scenario,
+      resource: "synthetic",
+      outcome: "passed",
+    })),
+  };
+}
+function note(): any {
+  return {
+    schemaVersion: 1,
+    id: "pilot-first",
+    profile: "pilot",
+    profileHash: context.profileHash,
+    apiVersion: "65.0",
+    connectors: context.connectors,
+    contracts: SCENARIOS,
+    captures: [
+      {
+        sha256: "a".repeat(64),
+        startedAt: "2026-01-01T00:00:00Z",
+        finishedAt: "2026-01-01T00:01:00Z",
+      },
+      {
+        sha256: "b".repeat(64),
+        startedAt: "2026-01-02T00:00:00Z",
+        finishedAt: "2026-01-02T00:01:00Z",
+      },
+    ],
+    observer: "observer",
+    review: {
+      reviewer: "reviewer",
+      reviewedAt: "2026-01-03T00:00:00Z",
+      sanitized: true,
+    },
+    repeatability: "passed",
+    cleanup: "passed",
+    notes: SCENARIOS.map((contract) => ({
+      contract,
+      summary: "Synthetic test note; never registered as evidence.",
+    })),
+  };
+}
+test("capture pair accepts distinct sequential repeatable reports and rejects invalid evidence", () => {
+  const a = JSON.stringify(report()),
+    b = JSON.stringify(report(true));
+  const result = verifyCapturePair(a, b, context);
+  assert.equal(result.outcome, "passed");
+  assert.equal(result.captures.length, 2);
+  assert.equal(verifyCapturePair(a, a, context).outcome, "blocked");
+  for (const mutate of [
+    (r: any) => (r.provenance = "synthetic"),
+    (r: any) => (r.target = "candidate"),
+    (r: any) => (r.startedAt = "2026-01-01T00:00:10Z"),
+    (r: any) => (r.finishedAt = "2026-02-30T00:00:00Z"),
+    (r: any) => (r.cleanup = []),
+    (r: any) => (r.cleanup[0].outcome = "failed"),
+    (r: any) => r.results.pop(),
+    (r: any) => (r.apiVersion = "64.0"),
+    (r: any) => (r.connectors = { jsforce: "0.0.0" }),
+  ]) {
+    const r = report(true);
+    mutate(r);
+    const result = verifyCapturePair(a, JSON.stringify(r), context);
+    assert.notEqual(result.outcome, "passed");
+    assert.deepEqual(result.captures, []);
+  }
+  const changed = report(true);
+  changed.results[0].observations = { status: 400 };
+  assert.equal(
+    verifyCapturePair(a, JSON.stringify(changed), context).outcome,
+    "failed",
+  );
+  assert.equal(
+    verifyCapturePair("secret-invalid-json", b, context).outcome,
+    "blocked",
+  );
+  assert.ok(
+    !JSON.stringify(
+      verifyCapturePair("secret-invalid-json", b, context),
+    ).includes("secret-invalid-json"),
+  );
+});
+test("observation requires complete reviewed sanitized bindings", () => {
+  assert.deepEqual(observationIssues(note(), schema, context, readiness), []);
+  for (const mutate of [
+    (n: any) => (n.review.sanitized = false),
+    (n: any) => (n.review.reviewer = " "),
+    (n: any) => (n.review.reviewedAt = "2025-01-01T00:00:00Z"),
+    (n: any) => (n.review.reviewedAt = "2999-01-01T00:00:00Z"),
+    (n: any) => (n.profileHash = "b".repeat(64)),
+    (n: any) => (n.observer = "implementer"),
+    (n: any) => (n.contracts = ["unknown"]),
+    (n: any) => n.notes.pop(),
+    (n: any) => n.notes.push(n.notes[0]),
+    (n: any) => (n.captures[1].sha256 = n.captures[0].sha256),
+    (n: any) => (n.captures[1].startedAt = "2026-01-01T00:00:00Z"),
+    (n: any) => (n.secret = "bad"),
+    (n: any) => (n.notes[0].summary = "access_token=bad"),
+    (n: any) => (n.notes[0].summary = "User 005000000000001AAA"),
+  ]) {
+    const n = note();
+    mutate(n);
+    assert.ok(
+      observationIssues(n, schema, context, readiness).length,
+      JSON.stringify(n),
+    );
+  }
+});
+test("verify-evidence CLI blocks malformed private input without copying it to output", async () => {
+  const dir = await mkdtemp(resolve(tmpdir(), "evidence-"));
+  try {
+    const first = resolve(dir, "first.json"),
+      second = resolve(dir, "second.json"),
+      out = resolve(dir, "result.json");
+    await writeFile(first, "secret-invalid-json");
+    await writeFile(second, JSON.stringify(report(true)));
+    const r = spawnSync(
+      process.execPath,
+      [
+        "--import",
+        "tsx",
+        "src/cli.ts",
+        "verify-evidence",
+        "--first",
+        first,
+        "--second",
+        second,
+        "--out",
+        out,
+      ],
+      { encoding: "utf8" },
+    );
+    assert.equal(r.status, 2);
+    const result = await readFile(out, "utf8");
+    assert.ok(!result.includes("secret-invalid-json"));
+    assert.equal(JSON.parse(result).outcome, "blocked");
+    assert.equal((await stat(out)).mode & 0o777, 0o600);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});

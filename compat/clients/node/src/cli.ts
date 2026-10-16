@@ -1,3 +1,4 @@
+import { verifyCapturePair } from "./evidence.ts";
 import { referencePreflight } from "./readiness.ts";
 import { validateRecoveryDirectory } from "./fixtures.ts";
 import { parseArgs } from "node:util";
@@ -41,8 +42,42 @@ async function main() {
   const command = positionals[0];
   if (positionals.length !== 1)
     throw new Error(
-      "Specify one command: validate, preflight, capture, compare, repeatability or validate-openapi",
+      "Specify one command: validate, preflight, capture, compare, repeatability, verify-evidence or validate-openapi",
     );
+  if (command === "verify-evidence") {
+    if (
+      !values.first ||
+      !values.second ||
+      !values.out ||
+      !values.out.endsWith(".json")
+    )
+      throw new Error("--first, --second and --out path.json required");
+    const p = await profile();
+    const result = verifyCapturePair(
+      await readFile(resolve(values.first), "utf8"),
+      await readFile(resolve(values.second), "utf8"),
+      {
+        profile: p.data.id,
+        profileHash: p.hash,
+        apiVersion: p.data.apiVersion,
+        requiredScenarios: SCENARIOS,
+        connectors: p.data.connectors,
+        cleanupScenarios: CLEANUP_SCENARIOS,
+      },
+    );
+    const out = resolve(values.out);
+    await mkdir(dirname(out), { recursive: true, mode: 0o700 });
+    await writeFile(out, JSON.stringify(result, null, 2) + "\n", {
+      mode: 0o600,
+      flag: "wx",
+    });
+    console.log(
+      `${result.outcome}: private pair verification; not a reviewed observation`,
+    );
+    process.exitCode =
+      result.outcome === "passed" ? 0 : result.outcome === "failed" ? 1 : 2;
+    return;
+  }
   if (command === "preflight") {
     if (values.target !== "reference" && values.target !== "candidate")
       throw new Error("--target reference|candidate required");
@@ -175,7 +210,7 @@ async function main() {
     return;
   }
   throw new Error(
-    "Unknown command; use validate, preflight, capture, compare, repeatability or validate-openapi",
+    "Unknown command; use validate, preflight, capture, compare, repeatability, verify-evidence or validate-openapi",
   );
 }
 main().catch((e) => {
