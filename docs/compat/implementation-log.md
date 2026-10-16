@@ -89,3 +89,26 @@ Execution decisions and limitations:
   is heuristic and does not replace human sanitization review.
 
 No minor findings were deferred by the final reviewer.
+
+
+## Reference observation authorization 2026-10-16
+
+The project maintainer confirmed in this session that they reviewed the
+applicable Salesforce terms and authorized a separate observer session to run
+the planned synthetic reference tests in the newly created disposable org.
+The maintainer supplied the local CLI alias `velocity-innovation-8559`; local
+CLI authorization is saved. No credentials or org/user identifiers are recorded
+here.
+
+Assigned roles: `plan3-observer` performs documented-API reference setup and
+observations; `platform-implementer` (the existing implementation session)
+consumes only reviewed, sanitized notes. Raw captures and auth material stay
+private to the observer workflow and are not returned to the implementation
+session. Scope is the existing eleven pilot scenarios, their synthetic fixtures,
+necessary test-persona preparation and cleanup. No production testing,
+undocumented API access, load tests or Salesforce UI capture is authorized.
+
+This records authorization, not fixture readiness or compatibility evidence.
+The observer must verify and bind the actual profile/API version, prepare the
+required personas and pass preflight before full captures. Missing prerequisites
+remain explicit blockers; no gate or required scenario may be removed to pass.

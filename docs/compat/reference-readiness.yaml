@@ -1,17 +1,17 @@
-# Pending attestations are not authorization. See CLEAN_ROOM.md and the runbook.
+# Authorization recorded; profile binding and fixtures remain pending verification.
 schemaVersion: 1
-referenceAlias: null
+referenceAlias: velocity-innovation-8559
 profile: pilot
 profileHash: null
 apiVersion: null
 decision:
-  status: pending
-  maintainer: null
-  recordedAt: null
-  logAnchor: null
-  observationAuthorized: false
-observer: null
-implementer: null
+  status: approved
+  maintainer: project-maintainer
+  recordedAt: 2026-10-16
+  logAnchor: reference-observation-authorization-2026-10-16
+  observationAuthorized: true
+observer: plan3-observer
+implementer: platform-implementer
 scenarios:
   - describe
   - crud
