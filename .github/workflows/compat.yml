@@ -67,7 +67,14 @@ jobs:
           test -n "$COMPAT_RECOVERY_DIR"
           test -d "$COMPAT_RECOVERY_DIR"
           test -w "$COMPAT_RECOVERY_DIR"
-          npm --prefix compat/clients/node run capture -- --target "$CAPTURE_TARGET"
+          npm --prefix compat/clients/node run preflight -- --target "$CAPTURE_TARGET"
+          if [ "$CAPTURE_TARGET" = reference ]; then
+            umask 077
+            reference_report_dir=$(mktemp -d "$COMPAT_RECOVERY_DIR/reference-reports.XXXXXXXX")
+            npm --prefix compat/clients/node run capture -- --target reference --out "$reference_report_dir/capture.json"
+          else
+            npm --prefix compat/clients/node run capture -- --target candidate
+          fi
         env:
           COMPAT_RECOVERY_DIR: ${{ vars.COMPAT_RECOVERY_DIR }}
           CAPTURE_TARGET: ${{ inputs.target }}
@@ -82,7 +89,7 @@ jobs:
           COMPAT_CANDIDATE_RESTRICTED_TOKEN: ${{ secrets.COMPAT_CANDIDATE_RESTRICTED_TOKEN }}
           COMPAT_CANDIDATE_LOCALE_USER_ID: ${{ vars.COMPAT_CANDIDATE_LOCALE_USER_ID }}
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: always() && inputs.target == 'candidate'
         with:
           name: compatibility-capture-${{ inputs.target }}
           path: compat/reports/

@@ -90,7 +90,7 @@ Remote/file references are disabled; bundle external references before ingestion
 
 ## CI recovery and ownership
 
-Offline checks run on hosted Node 22/24 runners. Manual live jobs require a **self-hosted runner labeled `compat-live`** and a protected GitHub environment of the same name. Configure `COMPAT_RECOVERY_DIR` to an owner-only, persistent absolute directory **outside the checkout**. It must survive cancellation, runner restart, and subsequent checkouts. The workflow refuses writes without this directory. Administrators review and recover outstanding journals before another run. Journals are not uploaded as public artifacts; sanitized capture reports are retained for seven days. Configure environment approval/access controls before supplying credentials.
+Offline checks run on hosted Node 22/24 runners. Manual live jobs require a **self-hosted runner labeled `compat-live`** and a protected GitHub environment of the same name. Configure `COMPAT_RECOVERY_DIR` to an owner-only, persistent absolute directory **outside the checkout**. It must survive cancellation, runner restart, and subsequent checkouts. The workflow refuses writes without this directory. Administrators review and recover outstanding journals before another run. Journals are not uploaded as public artifacts; candidate capture reports are retained for seven days. Reference reports stay in the private recovery directory and are not uploaded. Configure environment approval/access controls before supplying credentials.
 
 Local runs can also set `COMPAT_RECOVERY_DIR`; otherwise journals are under ignored `compat/private`. Journal entries include create intent before the network request, known IDs afterwards, and original dedicated-user settings before modification. They contain no credentials.
 
@@ -101,3 +101,74 @@ See [dependency audit](dependency-audit.md) for the known remaining upstream Sal
 See [Plan 2 setup, implemented routes and real-client checks](plan-2-implementation.md).
 The full pilot suite intentionally retains later-milestone requirements; candidate
 smoke checks do not replace reference captures or constitute parity certification.
+
+
+## Plan 3 reference authorization and evidence
+
+The readiness tooling is implemented; reference evidence is still pending. The
+committed `reference-readiness.yaml` intentionally does not authorize any run.
+Offline validation accepts a structurally valid pending record. Reference
+preflight and capture both reject it before creating clients or journals.
+
+```sh
+npm --prefix compat/clients/node run preflight -- --target reference
+```
+
+Exit 2 is expected until the maintainer supplies the real decision and setup.
+Preflight checks local records/configuration only; it does not contact the org,
+verify permissions or demonstrate that credentials work. Candidate preflight
+uses its own configuration without requiring a reference authorization.
+
+Maintainer sequence:
+
+1. Identify an authorized disposable org. Pin its actual API version and inventory
+   in `profiles/pilot.yaml`, retaining every required scenario and client pin.
+2. Record the terms-review decision and explicit observation authorization in
+   `implementation-log.md` under a dedicated Markdown heading. Assign separate
+   observer and implementer aliases with controlled access. A plan approval is
+   not a terms-review decision.
+3. Compute `sha256sum docs/compat/profiles/pilot.yaml` from the repository root.
+   Fill in `reference-readiness.yaml`: exact profile ID/hash/API, reference alias,
+   decision status/maintainer/date/logAnchor, explicit authorization, separate
+   roles and scenario scope. The anchor is the lowercase hyphenated heading,
+   without a URL or `#`. Do not put endpoints, org/user IDs or credentials here.
+4. Have the authorized observer prepare the existing fixtures and administrator,
+   restricted and locale personas, then record the fixture attestations. Supply
+   runtime credentials using the existing private environment variables. Do not
+   mark an attestation true before the work is done.
+
+The separate observer then uses a private directory outside the checkout and
+checks outstanding recovery journals before running the following commands:
+
+```sh
+npm --prefix compat/clients/node run preflight -- --target reference
+npm --prefix compat/clients/node run capture -- --target reference --out /private/reference-1.json
+# Inspect cleanup and recover any failed cleanup before continuing.
+npm --prefix compat/clients/node run capture -- --target reference --out /private/reference-2.json
+npm --prefix compat/clients/node run repeatability -- --first /private/reference-1.json --second /private/reference-2.json --out /private/repeatability.json
+npm --prefix compat/clients/node run verify-evidence -- --first /private/reference-1.json --second /private/reference-2.json --out /private/pair.json
+```
+
+Replace `/private` with an owner-only directory accessible to the observer. Run
+captures sequentially. `verify-evidence` requires a new output filename; it will
+not overwrite an existing file. It returns 0 for a valid repeatable pair, 1 for
+behavioral differences and 2 for blocked/invalid evidence. It outputs safe
+metadata only. The ordinary repeatability report can contain private differences
+and must remain private. Neither command creates approved observation notes.
+
+Write independent behavior summaries and have them reviewed for sanitization.
+Register notes and reciprocal contract links as described in
+[observations/README.md](observations/README.md), then run the offline checks.
+The implementer consumes reviewed notes, not raw capture reports. Tool validation
+checks the attestation and references; it cannot prove the truth of a human
+attestation. Do not change profile bytes while registering evidence.
+
+The protected live CI job uses this same preflight and capture gate. Reference
+reports go to unique owner-only directories beneath COMPAT_RECOVERY_DIR, survive
+checkout and remain private; only candidate reports are uploaded automatically.
+No reference secrets, reports or journals belong in public artifacts.
+
+Remaining external inputs: disposable org/profile, maintainer decision and
+explicit authorization, separate observer assignment, prepared personas and
+private credentials. M0 inventory, M1R release-history review, expanded CLI
+runners/proxy and future M3 protocol implementation remain separate obligations.

@@ -34,3 +34,29 @@ A review of the roadmap, Plans 1–2 and the contracts against Salesforce docume
 - Unowned Salesforce areas were assigned to milestones in the roadmap's "Coverage assignments" table; new deferred contracts are in `contracts/identity.yaml` and `contracts/rest-semantics.yaml`, and `orgFeatures` was added to the profile.
 - Source register: entries previously marked `documentation-reviewed` without recorded extracted content are now `reverify`. Automated fetches of developer.salesforce.com returned HTTP 403 during the review, so those claims (including the Apex API 67.0 security change and SOQL null ordering) remain unconfirmed. The Pub/Sub repository was confirmed archived on 2026-08-08.
 - Process: M2 ran ahead of M1. A disposable reference org, the terms-of-service decision and observer/implementer assignment are now the critical path.
+
+## Plan 3 reference-evidence tooling — 2026-10-15
+
+- Implemented readiness schema/record, reference preflight and a direct capture
+  gate before client creation. The real record remains pending and unauthorized.
+- Added private capture-pair verification, closed observation schema and reciprocal
+  contract links. Offline validation reports 0 observed / 11 not_run; no notes or
+  risk decision were fabricated. Candidate authentication behavior is unchanged.
+- Protected live CI runs shared preflight. Reference reports stay in unique
+  owner-only directories under the persistent recovery directory; only candidate
+  reports are uploaded. The observer runbook explains setup, repeatability,
+  sanitization review and contract registration.
+- Verification: Node compatibility check passes (43 tests passed, 1 optional
+  candidate test skipped), TypeScript/formatting/repository validation pass,
+  git diff --check clean. Real pending reference preflight exits 2 as intended.
+- Ruling: keep raw-byte profile hashes stable when registering observations;
+  contract coverage is authoritative for this phase. Editing the profile requires
+  newly bound authorization and captures.
+- Ruling: pair-verification output uses a new filename with exclusive creation,
+  so it cannot overwrite a private input or follow an existing output symlink.
+- Live observation not performed. Required inputs remain the authorized disposable
+  org/profile, actual maintainer terms decision and explicit authorization,
+  separately assigned observer, prepared personas and private credentials.
+- M0 completion, M1R, expanded CLI distribution/plugin runners and routing proxy,
+  and M3 protocol expansion remain outstanding; tooling completion certifies none
+  of those milestones.
