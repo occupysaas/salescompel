@@ -112,3 +112,14 @@ This records authorization, not fixture readiness or compatibility evidence.
 The observer must verify and bind the actual profile/API version, prepare the
 required personas and pass preflight before full captures. Missing prerequisites
 remain explicit blockers; no gate or required scenario may be removed to pass.
+
+### Authorization transition regression check
+
+Recording actual authorization exposed a test that assumed the committed
+readiness record would always remain pending. Negative capture and CLI tests
+now use an isolated temporary repository with a synthetic pending record;
+readiness tests no longer depend on the real decision, and the offline CLI
+coverage assertion allows observations to progress. No runtime gate was relaxed.
+The failure was reproduced before the test-fixture change. Full check after
+fix: 46 passed, 1 optional candidate test skipped; TypeScript, formatting and
+repository validation passed.

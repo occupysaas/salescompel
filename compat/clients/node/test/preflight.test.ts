@@ -4,7 +4,8 @@ import { spawnSync } from "node:child_process";
 import childProcess from "node:child_process";
 import { syncBuiltinESMExports } from "node:module";
 import { Connection } from "jsforce";
-import { capture } from "../src/capture.ts";
+import { pendingRepository } from "./helpers/pending-repository.ts";
+import { pathToFileURL } from "node:url";
 import { SCENARIOS } from "../src/validate.ts";
 const env = {
   COMPAT_REFERENCE_URL: "https://reference.invalid",
@@ -15,6 +16,10 @@ const env = {
   COMPAT_DISPOSABLE: "yes",
 };
 test("direct reference capture blocks pending authorization before clients or requests", async (t) => {
+  const fixture = await pendingRepository();
+  const { capture } = (await import(
+    pathToFileURL(`${fixture.nodeDir}/src/capture.ts`).href
+  )) as typeof import("../src/capture.ts");
   let calls = 0;
   const reject = () => {
     calls++;
@@ -35,37 +40,47 @@ test("direct reference capture blocks pending authorization before clients or re
   } finally {
     t.mock.restoreAll();
     syncBuiltinESMExports();
+    await fixture.dispose();
   }
 });
-test("CLI preflight reports reference blockers but candidate needs no reference decision", () => {
-  const run = (target: string, e: NodeJS.ProcessEnv) =>
-    spawnSync(
-      process.execPath,
-      ["--import", "tsx", "src/cli.ts", "preflight", "--target", target],
-      { encoding: "utf8", env: { ...process.env, ...e } },
-    );
-  const r = run("reference", env);
-  assert.equal(r.status, 2);
-  assert.match(r.stdout + r.stderr, /not authorized/);
-  assert.ok(!(r.stdout + r.stderr).includes("synthetic-secret"));
-  const c = run("candidate", {
-    COMPAT_CANDIDATE_URL: "http://127.0.0.1:8080",
-    COMPAT_CANDIDATE_TOKEN: "candidate-secret",
-    COMPAT_API_VERSION: "65.0",
-    COMPAT_DISPOSABLE: "yes",
-  });
-  assert.equal(c.status, 0, c.stderr);
-  assert.match(c.stdout, /no observation performed/);
+test("CLI preflight reports reference blockers but candidate needs no reference decision", async () => {
+  const fixture = await pendingRepository();
+  try {
+    const run = (target: string, e: NodeJS.ProcessEnv) =>
+      spawnSync(
+        process.execPath,
+        ["--import", "tsx", "src/cli.ts", "preflight", "--target", target],
+        {
+          encoding: "utf8",
+          cwd: fixture.nodeDir,
+          env: { ...process.env, ...e },
+        },
+      );
+    const r = run("reference", env);
+    assert.equal(r.status, 2);
+    assert.match(r.stdout + r.stderr, /not authorized/);
+    assert.ok(!(r.stdout + r.stderr).includes("synthetic-secret"));
+    const c = run("candidate", {
+      COMPAT_CANDIDATE_URL: "http://127.0.0.1:8080",
+      COMPAT_CANDIDATE_TOKEN: "candidate-secret",
+      COMPAT_API_VERSION: "65.0",
+      COMPAT_DISPOSABLE: "yes",
+    });
+    assert.equal(c.status, 0, c.stderr);
+    assert.match(c.stdout, /no observation performed/);
+  } finally {
+    await fixture.dispose();
+  }
 });
 
-test("pending repository validates offline with explicit observation coverage", () => {
+test("repository validates offline with explicit observation coverage", () => {
   const r = spawnSync(
     process.execPath,
     ["--import", "tsx", "src/cli.ts", "validate"],
     { encoding: "utf8" },
   );
   assert.equal(r.status, 0, r.stderr);
-  assert.match(r.stdout, /observations: 0; not_run: 11/);
+  assert.match(r.stdout, /observations: \d+; not_run: \d+/);
 });
 
 test("live CI stops before capture when shared preflight blocks", async () => {

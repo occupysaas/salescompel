@@ -90,8 +90,10 @@ test("readiness accepts complete authorization and rejects stale or incomplete s
       .length,
   );
 });
-test("pending repository record is structurally valid but cannot authorize capture", async () => {
-  const r = await readDoc("docs/compat/reference-readiness.yaml");
+test("pending record is structurally valid but cannot authorize capture", () => {
+  const r = approved();
+  r.decision.status = "pending";
+  r.decision.observationAuthorized = false;
   assert.deepEqual(readinessStructureIssues(r, schema), []);
   assert.ok(readinessIssues(r, schema, context, env).length);
 });
