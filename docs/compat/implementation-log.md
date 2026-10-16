@@ -158,3 +158,34 @@ sanitization review is claimed.
 - Verification: full compatibility check passes (48 passed, 1 optional candidate
   integration test skipped), including TypeScript, formatting and repository
   validation; no live observations registered.
+
+### Plan 4 partial tenant setup — 2026-10-16
+
+- Authenticated documented API inventory confirmed API 65.0, a disposable trial,
+  Account/Contact/User availability, no Person Accounts or multi-currency, and
+  nine unused Salesforce licenses. Required French language, US locale and
+  America/New_York timezone picklist values are available.
+- Checked both custom-field names and Compat_Admin for collisions: none existed.
+  Deployed the two existing synthetic fields and permission set through the
+  pinned CLI. Deployment completed successfully with three components and zero
+  component errors. These persistent test fixtures are retained for the baseline;
+  their ownership/setup journal is private. No business records or user settings
+  were changed, and no new users have been created.
+- Discovery found two installed packages and active flows. The synthetic profile
+  is not yet a verified representation of this tenant; package dependencies and
+  relevant flow effects must be resolved before binding it. No WorkflowRule or
+  ExternalServiceRegistration records were returned by the inventory queries.
+- No dedicated administrator, restricted or locale test users were present in
+  the active-user inventory. Requested a contact email for creating these users;
+  restricted-user authentication/MFA will also need a private login. Do not
+  substitute the current administrator token for restricted-user credentials.
+- Readiness attests only disposable=true and deployed=true. Profile/API binding
+  and the remaining persona flags remain unset. Reference preflight exits 2,
+  correctly identifying incomplete bindings/personas/runtime configuration.
+- CLI org display returns a redacted access-token placeholder in this pinned
+  version. Its documented org auth show-access-token command supplies the actual
+  token privately. Initial direct REST failures were INVALID_AUTH_HEADER from
+  that placeholder, not an expired session. No CLI source was inspected.
+- Task 1 independent review found no actionable issues and reran all thirteen
+  readiness/evidence tests successfully. Tasks 2–4 remain incomplete; no captures,
+  repeatability result or reviewed pilot observations are claimed.
