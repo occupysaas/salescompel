@@ -27,7 +27,11 @@ const context = {
   requiredScenarios: SCENARIOS,
   cleanupScenarios: CLEANUP_SCENARIOS,
 };
-const readiness = { observer: "observer", implementer: "implementer" };
+const readiness = {
+  observer: "observer",
+  implementer: "implementer",
+  decision: { recordedAt: "2025-12-31" },
+};
 function report(second = false): Report {
   return {
     schemaVersion: 1,
@@ -258,4 +262,55 @@ test("repository validation does not rewrite profile bytes or fabricate observat
   const after = await profile();
   assert.equal(after.hash, before.hash);
   assert.deepEqual(after.data, before.data);
+});
+
+test("evidence taken before authorization cannot mark contracts observed", () => {
+  const laterApproval = {
+    ...readiness,
+    decision: { recordedAt: "2026-10-01" },
+  };
+  assert.ok(observationIssues(note(), schema, context, laterApproval).length);
+  assert.ok(
+    observationLinkIssues(
+      SCENARIOS.map((id) => ({
+        id,
+        observationStatus: "observed",
+        observationIds: ["pilot-first"],
+      })),
+      [note()],
+      schema,
+      context,
+      laterApproval,
+    ).length,
+  );
+  const sameDay = { ...readiness, decision: { recordedAt: "2026-01-01" } };
+  assert.deepEqual(observationIssues(note(), schema, context, sameDay), []);
+});
+test("ordinary prose remains valid while Salesforce-shaped identifiers are rejected", () => {
+  const n = note();
+  n.notes[0].summary = "An acknowledgement is returned.";
+  assert.deepEqual(observationIssues(n, schema, context, readiness), []);
+  for (const id of [
+    "005000000000001AAA",
+    "001000000000001",
+    "00D000000000001EAA",
+    "a0B000000000001",
+  ]) {
+    n.notes[0].summary = `Reference identifier ${id}`;
+    assert.ok(observationIssues(n, schema, context, readiness).length, id);
+  }
+});
+test("obvious credentials are rejected regardless of capitalization", () => {
+  for (const text of [
+    "ACCESS_TOKEN=synthetic-secret",
+    "bearer synthetic-secret",
+    "bAsIc c3ludGhldGlj",
+    "Refresh_Token: synthetic-secret",
+    "PASSWORD=synthetic-secret",
+    "Authorization: synthetic-secret",
+  ]) {
+    const n = note();
+    n.notes[0].summary = text;
+    assert.ok(observationIssues(n, schema, context, readiness).length, text);
+  }
 });

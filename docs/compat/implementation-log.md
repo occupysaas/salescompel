@@ -60,3 +60,32 @@ A review of the roadmap, Plans 1–2 and the contracts against Salesforce docume
 - M0 completion, M1R, expanded CLI distribution/plugin runners and routing proxy,
   and M3 protocol expansion remain outstanding; tooling completion certifies none
   of those milestones.
+
+### Plan 3 final independent review
+
+The independent reviewer found three important issues: capture dates could
+precede authorization, ordinary 15-letter prose could be mistaken for IDs, and
+credential detection was case-sensitive. Each was reproduced with a failing
+regression test, fixed, and verified. Final full compatibility check: **46 passed,
+1 optional candidate integration test skipped**, with TypeScript, formatting and
+repository validation passing. No live Salesforce observation was performed.
+
+Execution decisions and limitations:
+
+- Work stayed on main per the recorded user policy; no branch or worktree was
+  created. A different integration preference would require relocating commits.
+- Profile bytes remain unchanged when notes are registered; downstream readers
+  must use validated contract coverage rather than profile.referenceStatus.
+- Pair-verification output requires a new filename; callers cannot reuse an old
+  output path. This prevents overwriting input evidence and existing symlinks.
+- Private capture authenticity and role identities remain human attestations,
+  as designed. Automated validation cannot prove those attestations true.
+- Live behavior, permissions and actual cleanup remain unverified until the
+  authorized observer supplies evidence. Offline tests cannot close that gate.
+- The existing comparator's scenario-level cleanup coverage is retained; it does
+  not prove resource-level completeness beyond the recorded cleanup evidence.
+- Authorization chronology is checked at UTC date precision. The observer must
+  ensure approval precedes capture within that day. Secret/identifier scanning
+  is heuristic and does not replace human sanitization review.
+
+No minor findings were deferred by the final reviewer.

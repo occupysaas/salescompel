@@ -141,12 +141,23 @@ export function observationIssues(
     issues.push(
       "Observation notes must cover exactly the claimed known contracts",
     );
-  const text = n.notes.map((note) => note.summary).join("\n");
+  // The decision records a UTC calendar date, not a time of day. The
+  // maintainer/observer remain responsible for ordering within that date.
+  const authorizedAt = `${r?.decision?.recordedAt}T00:00:00Z`;
   if (
-    /\b(?:Bearer|Basic)\s+\S+|(?:access[_-]?token|refresh[_-]?token|password|client[_-]?secret|authorization)\s*[=:]|\b[a-zA-Z0-9]{15}(?:[a-zA-Z0-9]{3})?\b/.test(
-      text,
-    )
+    !validTime(authorizedAt) ||
+    n.captures.some((c) => Date.parse(c.startedAt) < Date.parse(authorizedAt))
   )
+    issues.push("Capture predates the recorded authorization date");
+  const text = n.notes.map((note) => note.summary).join("\n");
+  const credential =
+    /\b(?:Bearer|Basic)\s+\S+|(?:access[_-]?token|refresh[_-]?token|password|client[_-]?secret|authorization)\s*[=:]/i;
+  // A digit in the three-character key prefix distinguishes common standard
+  // and custom Salesforce IDs from ordinary 15/18-letter prose. This is only
+  // a heuristic; the required human review still owns complete sanitization.
+  const identifier =
+    /\b(?=[A-Za-z0-9]{0,2}[0-9])[A-Za-z0-9]{15}(?:[A-Za-z0-9]{3})?\b/;
+  if (credential.test(text) || identifier.test(text))
     issues.push(
       "Observation notes contain potential credentials or identifiers; review privately",
     );

@@ -35,3 +35,9 @@ Summaries must not contain credentials, org/user IDs, personal data or copied
 messages. Automated checks catch some obvious secrets/ID-shaped values only;
 they do not replace the reviewer's inspection. Keep raw reports and journals
 private. No synthetic test record belongs in this directory.
+
+Capture dates cannot precede the readiness decision's UTC date. Because the
+maintainer record contains a date rather than a timestamp, the observer must
+also verify that authorization preceded capture within that day. Obvious secret
+patterns are checked without regard to capitalization; identifier detection is
+heuristic and deliberately does not reject ordinary words solely for their length.
