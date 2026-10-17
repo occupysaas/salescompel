@@ -1,7 +1,8 @@
 # Plan 5 — REST/query foundation design
 
-Date: 2026-10-17. Status: design written following conversational approval;
-written-spec review is pending. This is not an implementation or evidence report.
+Date: 2026-10-17. Status: written spec approved by the maintainer, with the
+explicit requirement to retain the same routes for one-to-one drop-in use.
+This is not an implementation or evidence report.
 
 ## Intent and success criteria
 
@@ -36,6 +37,24 @@ continues to apply; missing login factors are concrete setup dependencies only.
 Work stays on main under the recorded maintainer preference.
 
 ## Scope and alternatives
+
+### One-to-one route compatibility
+
+The maintainer explicitly requires the same routes for drop-in use. For every
+supported operation preserve the Salesforce HTTP method, versioned path, path
+parameter placement, query parameter names, header semantics and response-link
+shape. Clients may change instance origin and credentials; they must not need
+SalesCompel-specific paths, parameter rewrites, SDK patches or pagination adapters.
+Retain existing discovery and own-user routes, including the narrow v51.0 CLI
+discovery compatibility path. Do not imply general v51.0 support from that alias.
+
+Continuation uses the observed `/services/data/v65.0/query/{queryLocator}` route
+family through `nextRecordsUrl`, not a new `/cursor` route or a custom page token
+parameter. Locator values are opaque and independently generated. Preserve URL
+escaping, including encoded external-ID slashes; do not redirect writes or rewrite
+resource names merely to fit internal package boundaries. Capture route-level
+request fixtures and replay them against both origins to verify this requirement.
+Unsupported operations remain explicit gaps, not substitute custom endpoints.
 
 The selected approach combines focused evidence with implementation in reviewable
 slices. Pagination-only would deliver earlier but leave the handoff's related
@@ -168,8 +187,10 @@ Preserve failed-write atomicity, body/time bounds and unsupported-route failures
 Do not equate an operational candidate bound with a measured Salesforce limit.
 
 Serve a reproducible, embedded implemented-surface document at
-`/services/data/v65.0/openapi.json`, using the existing bearer authentication
-boundary and advertising it through version discovery. Cover implemented methods,
+`/openapi.json`, using the existing bearer authentication boundary. This additive
+SalesCompel documentation endpoint stays outside the Salesforce resource namespace
+and is never required by an existing client workflow. Do not add a discovery key
+that alters the reference contract. Cover implemented methods,
 parameters, authentication, success and error bodies, continuation and selected
 headers. Mark the document as SalesCompel's contract, not a reference endpoint.
 Retain the broader proposal separately and label it clearly.
@@ -216,6 +237,7 @@ release-history work retains its broader obligations; security and resource boun
 cannot be waived by parity testing. No product code or live reference operations
 were performed while writing this design.
 
-After the maintainer reviews this written spec, use the writing-plans skill to
-produce the implementation plan. The recorded native sequential execution
+The maintainer approved this written spec and clarified route compatibility. Use
+the writing-plans skill to produce the implementation plan with that requirement.
+The recorded native sequential execution
 preference remains applicable; writing this spec does not start implementation.
