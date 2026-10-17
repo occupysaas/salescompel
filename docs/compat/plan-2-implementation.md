@@ -3,9 +3,10 @@
 Implementation and verification record for the [plan](../superpowers/plans/2026-10-15-plan-2-platform-walking-slice.md)
 and [design](../superpowers/specs/2026-10-15-plan-2-platform-design.md).
 
-This is an M2 candidate walking slice. M1 live reference observations remain
-pending, so the M2 roadmap exit gate is not certified. No Salesforce org was
-accessed. Product translations are drafts requiring human review.
+This is an M2 candidate walking slice. The later [Plan 4 baseline](plan-4-reference-baseline.md)
+records pilot reference observations, but full candidate parity and the M2 roadmap
+exit gate are not certified. No Salesforce org was accessed during Plan 2.
+Product translations are drafts requiring human review.
 
 ## Local setup
 

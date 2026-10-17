@@ -1,0 +1,96 @@
+schemaVersion: 1
+id: pilot-black-box-baseline
+profile: pilot
+profileHash: df4eb5a63037cd9bdff953cff393661c1c7bc1c741983a88180138d017a27e98
+apiVersion: "65.0"
+connectors:
+  jsforce: 3.11.0
+  "@salesforce/cli": 2.156.0
+  "@salesforce/plugin-data": 5.1.16
+  "@salesforce/plugin-deploy-retrieve": 4.2.15
+  simple-salesforce: 1.12.9
+contracts:
+  - describe
+  - crud
+  - upsert
+  - relationships
+  - rollback
+  - permissions
+  - errors
+  - locale
+  - cli-query
+  - metadata
+  - python-crud
+captures:
+  - sha256: 3b079259298e8c28b3d493717f9fb6c7334ffe54430d9eacebc851eb86aa279c
+    startedAt: 2026-10-16T21:40:39.510Z
+    finishedAt: 2026-10-16T21:42:13.685Z
+  - sha256: fe6f874390ea95ee50c93059f7244cfec998772127f3c5082c596f67aa1d2e99
+    startedAt: 2026-10-17T03:43:09.098Z
+    finishedAt: 2026-10-17T03:44:39.802Z
+observer: platform-implementer
+review:
+  reviewer: platform-implementer
+  reviewedAt: 2026-10-17T03:45:44.766Z
+  sanitized: true
+repeatability: passed
+cleanup: passed
+notes:
+  - contract: describe
+    summary: Account and Contact describe expose Id. The two synthetic Account
+      fields are strings; the key field is an external ID and the text field is
+      not. The captured projection does not establish the full describe property
+      contract.
+  - contract: crud
+    summary: An owned Account was created and read, its name was updated and read
+      back, and deletion succeeded. A later read returned NOT_FOUND through
+      JSforce. The client observation did not preserve that error’s HTTP status.
+  - contract: upsert
+    summary: The first upsert by the synthetic external key created an Account. The
+      second upsert reported an update and succeeded. A query by that key
+      returned one record with the final name. HTTP response status and
+      ambiguous-match cases were not captured.
+  - contract: relationships
+    summary: The fixture contained 201 Contacts related to one owned Account. With a
+      requested batch size of 200, traversal used two pages and returned all 201
+      distinct contacts with matching parent identifiers. Default batch size,
+      larger LIMIT values and cursor lifecycle were not tested.
+  - contract: rollback
+    summary: "An all-or-none composite request combined an Account create with an
+      invalid-field operation. Both subresponses had HTTP status 400: the create
+      reported PROCESSING_HALTED and the invalid operation reported
+      INVALID_FIELD. A query by the owned external key found zero committed
+      Accounts."
+  - contract: permissions
+    summary: Administrator describe included the synthetic text field. The
+      independently authenticated restricted user could describe/query Account
+      Name, but its describe omitted the text field and its explicit text-field
+      query returned INVALID_FIELD. The client observation did not preserve that
+      error’s HTTP status.
+  - contract: errors
+    summary: Unknown-field, malformed-query and deleted-record probes returned
+      INVALID_FIELD, MALFORMED_QUERY and NOT_FOUND respectively. JSforce
+      reported null statusCode for these captured errors, so this evidence
+      supports client-visible codes without establishing wire-level HTTP
+      statuses or full error bodies.
+  - contract: locale
+    summary: The dedicated fixture user accepted French language with US locale and
+      America/New_York timezone, and those settings read back independently.
+      Cleanup restored the original settings; a separate post-run read verified
+      restoration. Currency and language fallback were not exercised.
+  - contract: cli-query
+    summary: The pinned unmodified Salesforce CLI authenticated to the configured
+      reference endpoint and queried an owned Account by ID. The returned
+      identity and generated fixture name matched the created record. This
+      covers the npm CLI query workflow only.
+  - contract: metadata
+    summary: The pinned unmodified CLI deployed a uniquely named synthetic Account
+      text field of length 80. Metadata API read and CLI retrieval confirmed its
+      type and length. Cleanup deleted that owned field; a later metadata read
+      confirmed it was no longer active. This does not establish general
+      metadata round-trip support.
+  - contract: python-crud
+    summary: The pinned simple-salesforce client independently performed HTTPS
+      Account creation, read, update, query and deletion. The query returned the
+      updated fixture record and cleanup succeeded. The report confirmed the
+      locked client version.

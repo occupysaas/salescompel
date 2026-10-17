@@ -17,7 +17,9 @@ contracts:
     normalization:
       - Exact owned-ID substitution only; no blanket timestamp/error
         normalization
-    observationStatus: not_run
+    observationStatus: observed
+    observationIds:
+      - pilot-black-box-baseline
   - id: crud
     owner: compat-lab
     client: jsforce
@@ -35,7 +37,9 @@ contracts:
     normalization:
       - Exact owned-ID substitution only; no blanket timestamp/error
         normalization
-    observationStatus: not_run
+    observationStatus: observed
+    observationIds:
+      - pilot-black-box-baseline
   - id: upsert
     owner: compat-lab
     client: jsforce
@@ -53,7 +57,9 @@ contracts:
     normalization:
       - Exact owned-ID substitution only; no blanket timestamp/error
         normalization
-    observationStatus: not_run
+    observationStatus: observed
+    observationIds:
+      - pilot-black-box-baseline
   - id: relationships
     owner: compat-lab
     client: jsforce
@@ -71,7 +77,9 @@ contracts:
     normalization:
       - Exact owned-ID substitution only; no blanket timestamp/error
         normalization
-    observationStatus: not_run
+    observationStatus: observed
+    observationIds:
+      - pilot-black-box-baseline
   - id: rollback
     owner: compat-lab
     client: jsforce
@@ -89,7 +97,9 @@ contracts:
     normalization:
       - Exact owned-ID substitution only; no blanket timestamp/error
         normalization
-    observationStatus: not_run
+    observationStatus: observed
+    observationIds:
+      - pilot-black-box-baseline
   - id: permissions
     owner: compat-lab
     client: jsforce
@@ -107,7 +117,9 @@ contracts:
     normalization:
       - Exact owned-ID substitution only; no blanket timestamp/error
         normalization
-    observationStatus: not_run
+    observationStatus: observed
+    observationIds:
+      - pilot-black-box-baseline
   - id: errors
     owner: compat-lab
     client: jsforce
@@ -124,7 +136,9 @@ contracts:
     normalization:
       - Exact owned-ID substitution only; no blanket timestamp/error
         normalization
-    observationStatus: not_run
+    observationStatus: observed
+    observationIds:
+      - pilot-black-box-baseline
   - id: locale
     owner: compat-lab
     client: jsforce
@@ -143,7 +157,9 @@ contracts:
     normalization:
       - Exact owned-ID substitution only; no blanket timestamp/error
         normalization
-    observationStatus: not_run
+    observationStatus: observed
+    observationIds:
+      - pilot-black-box-baseline
   - id: cli-query
     owner: compat-lab
     client: salesforce-cli
@@ -160,7 +176,9 @@ contracts:
     normalization:
       - Exact owned-ID substitution only; no blanket timestamp/error
         normalization
-    observationStatus: not_run
+    observationStatus: observed
+    observationIds:
+      - pilot-black-box-baseline
   - id: metadata
     owner: compat-lab
     client: salesforce-cli
@@ -179,7 +197,9 @@ contracts:
     normalization:
       - Exact owned-ID substitution only; no blanket timestamp/error
         normalization
-    observationStatus: not_run
+    observationStatus: observed
+    observationIds:
+      - pilot-black-box-baseline
   - id: python-crud
     owner: compat-lab
     client: simple-salesforce
@@ -197,4 +217,6 @@ contracts:
     normalization:
       - Exact owned-ID substitution only; no blanket timestamp/error
         normalization
-    observationStatus: not_run
+    observationStatus: observed
+    observationIds:
+      - pilot-black-box-baseline

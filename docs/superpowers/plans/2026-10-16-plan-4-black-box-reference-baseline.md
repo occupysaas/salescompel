@@ -10,7 +10,9 @@
 
 **Spec:** [Plan 3 reference-evidence design](../specs/2026-10-15-plan-3-reference-evidence-design.md), as superseded by [the black-box testing policy](../../../CLEAN_ROOM.md) and the maintainer's 2026-10-16 instructions: observation and behavior testing against their own tenant are authorized; do not reverse-engineer Salesforce CLI code. The superseded design's mandatory separated roles, Developer Edition/sandbox restriction and extra terms-review approval gates do not apply.
 
-**Status:** Written for review. No implementation or live tests have been performed by writing this plan.
+**Status:** Executed. All four tasks completed; see [baseline results and M3 handoff](../../compat/plan-4-reference-baseline.md). Two full reference captures, repeatability and cleanup passed. This completes the pilot work package, not the broader roadmap milestones.
+
+The planning-time current-state descriptions below are retained as history; the linked result and implementation log are authoritative for execution status.
 
 ## Next milestone decision — 2026-10-16
 

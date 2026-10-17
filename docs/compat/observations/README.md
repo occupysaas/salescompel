@@ -1,6 +1,6 @@
 # Observations
 
-No live reference observations exist yet. Synthetic unit fixtures and the official OpenAPI document are not API captures. Reviewed observations must identify profile hash, API version, connector versions, capture time, contract IDs, sanitization and the reproducible fixture setup. Keep raw reports and journals out of version control.
+The [pilot baseline](pilot-black-box-baseline.yaml) records two repeatable live reference captures covering all eleven pilot contracts. Deferred contracts remain unobserved. Synthetic unit fixtures and the official OpenAPI document are not API captures. Reviewed observations must identify profile hash, API version, connector versions, capture time, contract IDs, sanitization and the reproducible fixture setup. Keep raw reports and journals out of version control.
 
 ## Reviewed records (Plan 3)
 

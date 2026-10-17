@@ -235,3 +235,39 @@ sanitization review is claimed.
   packages are not certified by this baseline.
 - Verification: full offline check passes (48 passed, 1 optional candidate test
   skipped); bound reference preflight exits 0 with private runtime configuration.
+
+### Plan 4 repeatable pilot evidence accepted — 2026-10-16 (America/New_York)
+
+- Both sequential reference captures passed all eleven scenarios and all reported
+  cleanup. Repeatability and capture-pair verification passed without adding any
+  normalization or reducing coverage. Exact UTC times, digests and bindings are
+  recorded in observations/pilot-black-box-baseline.yaml.
+- Independently verified 414 owned Account/Contact records absent from normal
+  queries, both locale restorations and both run-specific metadata removals.
+  Persistent setup fixtures remain intentionally available; recycle-bin purge
+  is not claimed. Private reports and ownership journals remain outside git.
+- Reviewed independently authored summaries for credentials, identities, personal
+  data and copied messages, then registered reciprocal links for eleven pilot
+  contracts. No deferred REST/identity contract was marked observed. JSforce's
+  null statusCode observations do not establish HTTP status parity.
+- Existing candidate smoke passed: JSforce, Python HTTPS CRUD, restart persistence,
+  CLI query and four browser tests. This does not compare the full pilot against
+  the candidate, which still lacks mandatory Composite/Metadata/locale surfaces.
+- Handoff: plan-4-reference-baseline.md lists concrete M3 gaps, evidence limits and
+  remaining focused probes. M0/M1 runner obligations and M1R remain outstanding.
+- During independent cleanup inspection an expired API session was refreshed
+  through its saved CLI authorization; the same verified personas were retained.
+  A transient read connection reset was retried without repeating any writes.
+- Final verification: full compatibility check passes (48 passed, 1 optional
+  candidate integration test skipped); repository validation reports eleven
+  observed pilot contracts and zero pending pilot contracts. Independent final
+  review found no actionable issues, verified profile/readiness/evidence hashes
+  and reciprocal links, and confirmed the documented limits. No minor findings
+  were deferred.
+- Execution decisions: used main and optional role separation under recorded
+  policy; kept the profile unbound until actual persona/discovery verification;
+  used the documented token-export command rather than the redacted display;
+  removed only unavailable synthetic iw from the live profile while retaining
+  its offline contract; retained the shared harness's broader deleted-record
+  code allowance while recording NOT_FOUND for this profile. A different profile
+  or broader claim requires new evidence, not reinterpretation of these captures.

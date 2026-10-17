@@ -1,6 +1,6 @@
 # SalesCompel Salesforce compatibility roadmap
 
-Date: 2026-10-14. Status: proposed architecture and milestone plan; Plan 1 offline laboratory and the Plan 2 M2 candidate walking slice implemented on 2026-10-15. Plan 2 proceeded without M0/M1 reference evidence, so no milestone exit gate has passed and no live parity certification has occurred. Revised after a plan review on 2026-10-15 (see [Coverage assignments](#coverage-assignments-from-the-2026-10-15-review)).
+Date: 2026-10-14. Status: proposed architecture and milestone plan; Plan 1 offline laboratory and the Plan 2 M2 candidate walking slice implemented on 2026-10-15. Plan 2 proceeded without M0/M1 reference evidence, so no milestone exit gate has passed and no live parity certification has occurred. Revised after a plan review on 2026-10-15 (see [Coverage assignments](#coverage-assignments-from-the-2026-10-15-review)). Update 2026-10-16: [Plan 4](../compat/plan-4-reference-baseline.md) completed the eleven-scenario pilot reference baseline with two repeatable captures; full M0/M1 obligations and candidate parity remain open.
 
 ## Objective and planning assumptions
 
@@ -359,4 +359,4 @@ The linked research above supplies initial design evidence. These primary refere
 
 Review outcome required before implementation: agree the initial profile and architecture, then write and review the first subsystem specification and executable task plan. This roadmap itself does not claim that any compatibility milestone has shipped.
 
-**Critical path (2026-10-16 policy update):** M2 work proceeded ahead of its M1 dependency. Complete [Plan 4](../superpowers/plans/2026-10-16-plan-4-black-box-reference-baseline.md) against the already authorized disposable tenant: align executable policy checks, verify profile/personas, obtain repeatable captures and register reviewed evidence before expanding M3. Trial edition and same-person execution are valid under `CLEAN_ROOM.md`; fixture, authorization and evidence-integrity checks still apply.
+**Critical path (2026-10-16 baseline update):** M2 work proceeded ahead of its M1 dependency. [Plan 4](../compat/plan-4-reference-baseline.md) now supplies the repeatable pilot baseline. Next, obtain focused evidence for the remaining REST/query contracts and reconcile M1R findings before freezing the M3 foundation. Broader M0 inventory, M1 CLI/plugin runners and routing remain open. Trial edition and same-person execution are valid under `CLEAN_ROOM.md`; fixture, authorization and evidence-integrity checks still apply.

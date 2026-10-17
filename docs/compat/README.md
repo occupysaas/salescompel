@@ -17,7 +17,7 @@ The Node lockfile pins JSforce, Salesforce CLI and its bundled data/deploy-retri
 
 `check` validates TypeScript, runs synthetic unit tests and validates the profile/contracts, catalog fixtures and OpenAPI documents. It requires no Salesforce credentials and does not connect to Salesforce. Green offline CI means the laboratory passes its own checks, not that the product is compatible.
 
-## Live setup (pending a disposable organization)
+## Live setup
 
 Use an authorized disposable trial, Developer Edition org or sandbox reserved for these tests. Supply a dedicated administrator/integration user, a restricted user that can read Account but cannot see Compat_Text__c, and a dedicated user whose language/locale can be temporarily changed. Permission sets cannot remove existing access: verify the restricted profile has no field grant from another source. Enable French and the required locale settings.
 
@@ -54,7 +54,7 @@ Reference and candidate captures use the same scenario code. Live tests do not m
 
 ## Evidence and recovery
 
-Observation follows the [clean-room policy](../../CLEAN_ROOM.md); its risk decision is a prerequisite for the first live run. Contracts in `contracts/pilot.yaml` describe expected behavior but are marked not_run until independently reviewed live observations are committed. Raw/private journals are ignored. The capture format is version 1: target, profile and SHA-256, API version, connector versions, provenance, start/end timestamps, required scenarios, scenario assertions/observations/identity maps, and cleanup outcomes.
+Observation follows the [black-box testing policy](../../CLEAN_ROOM.md) and the recorded tenant authorization. All eleven `contracts/pilot.yaml` contracts now link to reviewed live observations from Plan 4; deferred contracts remain not_run. Raw/private journals are ignored. The capture format is version 1: target, profile and SHA-256, API version, connector versions, provenance, start/end timestamps, required scenarios, scenario assertions/observations/identity maps, and cleanup outcomes.
 
 Each scenario receives unique record identifiers. Only those recorded IDs are deleted, child before parent. Temporary locale settings are restored; metadata tests use a random field name, verify absence first, retrieve into a locally cleared file and remove the created field. Field existence and properties are checked with Metadata API `read`, because a newly deployed field has no field-level security and is hidden from `describe`. Fixed setup fields remain for future runs.
 
@@ -170,6 +170,16 @@ reports go to unique owner-only directories beneath COMPAT_RECOVERY_DIR, survive
 checkout and remain private; only candidate reports are uploaded automatically.
 No reference secrets, reports or journals belong in public artifacts.
 
-Remaining external inputs for the authorized tenant: verified profile, prepared
-personas and private credentials. M0 inventory, M1R release-history review, expanded CLI
+The authorized tenant now has a verified profile and prepared personas; private
+credentials remain operator-managed. See the [Plan 4 baseline](plan-4-reference-baseline.md)
+for accepted evidence and reproduction details. M0 inventory, M1R release-history review, expanded CLI
 runners/proxy and future M3 protocol implementation remain separate obligations.
+
+## Plan 4 pilot baseline
+
+[Two live reference captures](plan-4-reference-baseline.md) passed all eleven
+pilot scenarios, repeatability and cleanup verification. Reviewed notes and
+reciprocal contract links are registered; deferred contracts remain unobserved.
+This completes the pilot baseline, not the full M0/M1 gates or candidate parity.
+The next product work package is the evidence-led M3 REST/query foundation;
+focused observations and M1R reconciliation precede its contract freeze.
