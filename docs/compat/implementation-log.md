@@ -333,3 +333,17 @@ sanitization review is claimed.
   locale attestation apply; the focused suite does not mutate locale settings.
 - Bound foundation readiness to its unchanged profile hash. This records setup
   readiness only; live observation and release-review gates remain separate.
+
+## Plan 5 first focused capture — 2026-10-17
+
+- First live run finished: six scenarios passed; the cursor scenario has 28 passing
+  assertions but remains blocked on unmeasured expiry after sixteen minutes.
+- All 2,418 cleanup actions passed. Independent exact-ID REST queries confirmed
+  zero active owned records remain. Private report and verification files retain
+  the full evidence; the decision note records the report digest and provisional
+  findings without publishing tenant/user/record identifiers.
+- Started the second capture only after independent cleanup verification. The
+  suite/profile are unchanged. No repeatability or complete evidence-pair claim
+  has been made, and product routes/behavior remain unchanged.
+- Tried release-pinned Winter 26 API/REST/SOQL HTML pages; responses were a loading
+  shell or unavailable. This does not close the release-content review blocker.
