@@ -213,3 +213,8 @@ message prose. Describe/discovery probes compare only selected supported-version
 and fixture-field dimensions; they do not certify the whole Salesforce catalog.
 The null-equality probe requests IDs and retains only membership of owned null
 fixtures; unrelated IDs are discarded. Reports and fixture journals remain private.
+
+## UI navigation inventory
+
+[Field notes on the reference UI's apps, navigation items and default list views](ui/navigation-inventory.md)
+scope the Vue navigation model. They are a functional inventory, not a design source.
