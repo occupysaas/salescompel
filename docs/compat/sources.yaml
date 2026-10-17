@@ -180,3 +180,51 @@ sources:
     version: CLI-version-sensitive
     claim: org login --instance-url overrides sfdcLoginUrl in sfdx-project.json
     extraction: reverify
+  - id: lightning-navigation
+    url: https://trailhead.salesforce.com/content/learn/modules/lightning-experience-for-salesforce-classic-users/navigate-around
+    accessedAt: 2026-10-17
+    version: version-sensitive; pin to reference org
+    claim: Apps, App Launcher, navigation bar items, item menus, list views and personalization limits
+    extraction: documentation-reviewed
+  - id: starter-suite-overview
+    url: https://trailhead.salesforce.com/content/learn/modules/salesforce-easy-quick-look/get-started-with-salesforce-easy
+    accessedAt: 2026-10-17
+    version: version-sensitive; pin to reference org
+    claim: Starter Suite areas (Home, Sales, Service, Marketing, Commerce) and their purposes
+    extraction: documentation-reviewed
+  - id: starter-email-marketing
+    url: https://trailhead.salesforce.com/content/learn/modules/email-marketing-with-salesforce-starter/send-a-single-promotional-email
+    accessedAt: 2026-10-17
+    version: version-sensitive; pin to reference org
+    claim: Promotional email requires recipient consent status
+    extraction: reverify
+  - id: starter-pro-comparison
+    url: https://dbservices.com/blog/salesforce-starter-suite-pro-suite
+    accessedAt: 2026-10-17
+    version: third-party summary; not authoritative
+    claim: Pro Suite adds custom apps/objects, personalized navigation, flows, quotes and forecasts
+    extraction: reverify
+  - id: starter-storefronts
+    url: https://www.salesforce.com/news/stories/smb-ecommerce-storefronts-announcement/
+    accessedAt: 2026-10-17
+    version: announcement dated 2024-10-16
+    claim: Commerce Storefronts in Starter/Pro Suite with product, order, customer, pricing and promotion workspaces
+    extraction: reverify
+  - id: pay-now
+    url: https://www.salesforce.com/commerce/online-payment-solution/
+    accessedAt: 2026-10-17
+    version: marketing page; not authoritative
+    claim: Pay Now payment links included with Starter, Pro and Foundations
+    extraction: reverify
+  - id: paymentlink-object
+    url: https://developer.salesforce.com/docs/atlas.en-us.object_reference.meta/object_reference/sforce_api_objects_paymentlink.htm
+    accessedAt: 2026-10-17
+    version: version-sensitive; pin to reference org
+    claim: PaymentLink object requires a Salesforce Payments license
+    extraction: reverify
+  - id: actionable-lists
+    url: https://trailhead.salesforce.com/content/learn/modules/sales-innovations-for-prospect-management/manage-actionable-lists
+    accessedAt: 2026-10-17
+    version: version-sensitive; pin to reference org
+    claim: Actionable lists built from data-platform segments with prospect status tracking
+    extraction: reverify

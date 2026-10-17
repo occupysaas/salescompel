@@ -35,15 +35,68 @@ Interpretation of the notes below (observations first, then inference):
   shows the same sub-entries everywhere it appears.
 - **Observed:** the horizontal menus are configurable — any item from the
   [available item list](#available-navigation-items) can be added to any area.
-- **Inference:** top-level areas correspond to the documented *app* concept
-  (`CustomApplication` metadata), horizontal items to its navigation items/tabs
-  (`CustomTab` and standard object tabs), and most sub-entries to list views
-  (`ListView` metadata) or record-creation actions. "Recently Viewed" appears to be
-  a built-in list rather than a stored list view. Confirm against Metadata API
-  retrieval before relying on this.
+- **Documented** (see below): top-level areas are *apps*, horizontal items are
+  *navigation items*, and sub-entries are the item menu's list views, recent records
+  and "New" actions.
+- **Inference:** these correspond to `CustomApplication`, `CustomTab` and `ListView`
+  metadata. "Recently Viewed" appears to be a built-in list rather than a stored
+  list view. Confirm by retrieving the metadata before relying on this.
 - **Inference:** because navigation is item-based and reusable, SalesCompel should
   implement a metadata-driven app/navigation model that can import these
   definitions, rather than hard-coding a fixed menu.
+
+## What the documentation says
+
+Summarized independently from public documentation read on 2026-10-17. The
+`sources.yaml` IDs are given in brackets. Secondary or third-party sources are marked;
+re-check them before they inform a contract.
+
+**How navigation works** [`lightning-navigation`]
+
+- An *app* is a collection of items for a particular kind of work. The navigation
+  bar (our "horizontal menu") shows the app's name, optional branding and the items
+  the admin assigned to it. Items that don't fit go under *More*.
+- The *App Launcher* lists every app the user can open (*All Apps*) and every item
+  they have permission to use (*All Items*), with search across both.
+- *Navigation items* are standard and custom objects plus other pages such as
+  reports, dashboards and Chatter. Object items have an *item menu* (our "expander")
+  with shortcuts: create a new record, recent records and list views. The menu
+  differs by item; for example Tasks and Notes show no recent records, while Reports
+  and Dashboards show only recent records.
+- *List views* are saved, filtered views of records. "All Contacts", "My Contacts",
+  "Today's Leads" and similar entries are list views, which explains why the same
+  sub-menu appears wherever an item is placed: it belongs to the object, not the app.
+- Users can personalize an app's bar: add objects, list views, records or pages,
+  reorder by dragging and remove their own additions. They cannot rename or remove
+  admin-defined items. Each app's bar holds at most 50 items. *Favorites* (up to
+  200) are separate personal shortcuts; an object's three most-used favorites also
+  appear in its item menu.
+
+**Which product this org appears to be** [`starter-suite-overview`]
+
+Starter Suite (and the higher Pro Suite tier) is Salesforce's small-business bundle
+combining sales, service, marketing and commerce in one org. Its documented areas
+match the observed top-level areas, so the reference org is probably one of these
+suites. *Inference:* confirm the edition from Company Information. A full Enterprise
+org organizes apps differently, so this inventory isn't the general Salesforce layout.
+Pro Suite adds custom apps and objects, personalized navigation and layouts, flow
+automation, quotes and forecasts [`starter-pro-comparison`, third-party].
+
+| Area | Documented purpose |
+| --- | --- |
+| Home | Start-of-day page linking to the main areas, with recommended action cards. A *Guidance Center* panel in the header covers setup tasks: import data, invite users, create first records [`starter-suite-overview`]. |
+| Sales | Leads and opportunities to track deals, sales paths (stage guidance) and revenue reports [`starter-suite-overview`]. |
+| Service | Cases and a knowledge base for customer support, with AI help drafting replies and summarizing interactions [`starter-suite-overview`]. |
+| Marketing | Lists and segments to target audiences, email templates and automated sends, branded landing pages and lead-capture forms. Sending promotional email requires recorded consent for every recipient [`starter-suite-overview`, `starter-email-marketing`]. |
+| Products (Commerce) | *Commerce Storefronts*: a direct-to-consumer online store with a setup assistant, product import, a store template, and workspaces for products, pricing, customers, buyer groups, promotions and orders [`starter-storefronts`]. *Pay Now* stores send payment links that customers pay on a hosted page; links can be one-off or reusable and attached to any record. They require a Salesforce Payments license [`pay-now`, `paymentlink-object`]. |
+| Automation | The *Automation* app (introduced Summer '24) lets flow admins create, open and monitor flows. Its list views show recently modified flows and flows with errors. It is enabled in Process Automation Settings [secondary; no official page found yet]. |
+| Account | Probably the vendor's in-app subscription and billing area ("Your Account"). Not a CRM function. |
+
+Item-level notes: *Actionable Lists* are lists built from data-platform segments for
+sales follow-up, with per-prospect status tracking [`actionable-lists`]. The search
+found no documentation for Marketing *Briefs* or *List Sends*. Quick Text, Messaging
+Sessions, Knowledge and Price Books are standard objects with their own reference
+pages; look them up when they come into scope.
 
 ## Top-level areas and their items
 
