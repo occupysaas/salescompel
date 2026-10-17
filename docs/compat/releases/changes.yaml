@@ -1,0 +1,27 @@
+schemaVersion: 1
+cutoff: '2026-10-17'
+profile: rest-query-foundation
+status: blocked
+reviewer: platform-implementer
+findings: []
+# An empty findings list means no reviewed findings, not no relevant changes.
+blockers:
+  - id: release-content-unavailable
+    owner: platform-implementer
+    affectedContracts:
+      - query-response-shape
+      - query-limit-above-batch
+      - id-15-18
+      - case-insensitive-names
+      - case-insensitive-comparison
+      - null-ordering
+      - error-shape
+      - unknown-sobject
+    reason: Archive links were inventoried, but linked official PDFs could not be retrieved for content review.
+    resolution: Retrieve release-pinned official HTML or PDFs, review supported-version behavior and enforced updates, and map findings to contracts and regression tests.
+    blocksContractFreeze: true
+  - id: linked-changelog-expansion
+    owner: platform-implementer
+    reason: Product/API changelogs and release-update links inside unread documents have not been inventoried.
+    resolution: Expand the inventory as source content becomes accessible; retain missing-source owners and never claim complete M1R review from the archive link list.
+    blocksFullM1R: true

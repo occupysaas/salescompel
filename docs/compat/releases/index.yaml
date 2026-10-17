@@ -1,0 +1,1288 @@
+{
+  "schemaVersion": 1,
+  "cutoff": "2026-10-17",
+  "archiveUrl": "https://help.salesforce.com/s/articleView?id=release-notes.rn_previous_release_notes.htm&language=en_US&type=5",
+  "inventoryScope": "All 71 document links in the archive body; linked product changelogs and current-release sources remain to be expanded.",
+  "archiveInventoryComplete": true,
+  "reviewComplete": false,
+  "documents": [
+    {
+      "id": "salesforce-summer26-release-notes",
+      "url": "https://resources.docs.salesforce.com/rel1/doc/en-us/static/pdf/salesforce_summer26_release_notes.pdf",
+      "release": "Summer ’26",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-spring26-release-notes",
+      "url": "https://resources.docs.salesforce.com/rel1/doc/en-us/static/pdf/salesforce_spring26_release_notes.pdf",
+      "release": "Spring ’26",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-winter26-release-notes",
+      "url": "https://resources.docs.salesforce.com/rel1/doc/en-us/static/pdf/salesforce_winter26_release_notes.pdf",
+      "release": "Winter ’26",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-summer25-release-notes",
+      "url": "https://resources.docs.salesforce.com/rel1/doc/en-us/static/pdf/salesforce_summer25_release_notes.pdf",
+      "release": "Summer ’25",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-spring25-release-notes",
+      "url": "https://resources.docs.salesforce.com/rel1/doc/en-us/static/pdf/salesforce_spring25_release_notes.pdf",
+      "release": "Spring ’25",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-winter25-release-notes",
+      "url": "https://resources.docs.salesforce.com/252/latest/en-us/sfdc/pdf/salesforce_winter25_release_notes.pdf",
+      "release": "Winter ’25",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-summer24-release-notes",
+      "url": "https://resources.docs.salesforce.com/250/latest/en-us/sfdc/pdf/salesforce_summer24_release_notes.pdf",
+      "release": "Summer ’24",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-spring24-release-notes",
+      "url": "https://resources.docs.salesforce.com/248/latest/en-us/sfdc/pdf/salesforce_spring24_release_notes.pdf",
+      "release": "Spring ’24",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-winter24-release-notes",
+      "url": "https://resources.docs.salesforce.com/246/latest/en-us/sfdc/pdf/salesforce_winter24_release_notes.pdf",
+      "release": "Winter ’24",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-summer23-release-notes",
+      "url": "https://resources.docs.salesforce.com/244/latest/en-us/sfdc/pdf/salesforce_summer23_release_notes.pdf",
+      "release": "Summer ’23",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-spring23-release-notes",
+      "url": "https://resources.docs.salesforce.com/242/latest/en-us/sfdc/pdf/salesforce_spring23_release_notes.pdf",
+      "release": "Spring ’23",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-winter23-release-notes",
+      "url": "https://resources.docs.salesforce.com/240/latest/en-us/sfdc/pdf/salesforce_winter23_release_notes.pdf",
+      "release": "Winter ’23",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-summer22-release-notes",
+      "url": "https://resources.docs.salesforce.com/238/latest/en-us/sfdc/pdf/salesforce_summer22_release_notes.pdf",
+      "release": "Summer ’22",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-spring22-release-notes",
+      "url": "https://resources.docs.salesforce.com/236/latest/en-us/sfdc/pdf/salesforce_spring22_release_notes.pdf",
+      "release": "Spring ’22",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-winter22-release-notes",
+      "url": "https://resources.docs.salesforce.com/234/latest/en-us/sfdc/pdf/salesforce_winter22_release_notes.pdf",
+      "release": "Winter ’22",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-summer21-release-notes",
+      "url": "https://resources.docs.salesforce.com/232/latest/en-us/sfdc/pdf/salesforce_summer21_release_notes.pdf",
+      "release": "Summer ’21",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-spring21-release-notes",
+      "url": "https://resources.docs.salesforce.com/230/latest/en-us/sfdc/pdf/salesforce_spring21_release_notes.pdf",
+      "release": "Spring ’21",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-winter21-release-notes",
+      "url": "https://resources.docs.salesforce.com/228/latest/en-us/sfdc/pdf/salesforce_winter21_release_notes.pdf",
+      "release": "Winter ’21",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-summer20-release-notes",
+      "url": "https://resources.docs.salesforce.com/226/latest/en-us/sfdc/pdf/salesforce_summer20_release_notes.pdf",
+      "release": "Summer ’20",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-spring20-release-notes",
+      "url": "https://resources.docs.salesforce.com/224/latest/en-us/sfdc/pdf/salesforce_spring20_release_notes.pdf",
+      "release": "Spring ’20",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-winter20-release-notes",
+      "url": "https://resources.docs.salesforce.com/222/latest/en-us/sfdc/pdf/salesforce_winter20_release_notes.pdf",
+      "release": "Winter ’20",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-summer19-release-notes",
+      "url": "https://resources.docs.salesforce.com/220/latest/en-us/sfdc/pdf/salesforce_summer19_release_notes.pdf",
+      "release": "Summer ’19",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-spring19-release-notes",
+      "url": "https://resources.docs.salesforce.com/218/latest/en-us/sfdc/pdf/salesforce_spring19_release_notes.pdf",
+      "release": "Spring ’19",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-winter19-release-notes",
+      "url": "https://resources.docs.salesforce.com/216/latest/en-us/sfdc/pdf/salesforce_winter19_release_notes.pdf",
+      "release": "Winter ’19",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-summer18-release-notes",
+      "url": "https://resources.docs.salesforce.com/214/latest/en-us/sfdc/pdf/salesforce_summer18_release_notes.pdf",
+      "release": "Summer ’18",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-spring18-release-notes",
+      "url": "https://resources.docs.salesforce.com/212/latest/en-us/sfdc/pdf/salesforce_spring18_release_notes.pdf",
+      "release": "Spring ’18",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-winter18-release-notes",
+      "url": "https://resources.docs.salesforce.com/210/latest/en-us/sfdc/pdf/salesforce_winter18_release_notes.pdf",
+      "release": "Winter ’18",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-summer17-release-notes",
+      "url": "https://resources.docs.salesforce.com/208/latest/en-us/sfdc/pdf/salesforce_summer17_release_notes.pdf",
+      "release": "Summer ’17",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-spring17-release-notes",
+      "url": "https://resources.docs.salesforce.com/206/latest/en-us/sfdc/pdf/salesforce_spring17_release_notes.pdf",
+      "release": "Spring ’17",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-winter17-release-notes",
+      "url": "https://resources.docs.salesforce.com/204/latest/en-us/sfdc/pdf/salesforce_winter17_release_notes.pdf",
+      "release": "Winter ’17",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-summer16-release-notes",
+      "url": "https://resources.docs.salesforce.com/202/latest/en-us/sfdc/pdf/salesforce_summer16_release_notes.pdf",
+      "release": "Summer ’16",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-spring16-release-notes",
+      "url": "https://resources.docs.salesforce.com/200/latest/en-us/sfdc/pdf/salesforce_spring16_release_notes.pdf",
+      "release": "Spring ’16",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-winter16-release-notes",
+      "url": "https://resources.docs.salesforce.com/198/latest/en-us/sfdc/pdf/salesforce_winter16_release_notes.pdf",
+      "release": "Winter ’16",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-summer15-release-notes",
+      "url": "https://resources.docs.salesforce.com/196/latest/en-us/sfdc/pdf/salesforce_summer15_release_notes.pdf",
+      "release": "Summer ’15",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-spring15-release-notes",
+      "url": "https://resources.docs.salesforce.com/194/latest/en-us/sfdc/pdf/salesforce_spring15_release_notes.pdf",
+      "release": "Spring ’15",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-winter15-release-notes",
+      "url": "https://resources.docs.salesforce.com/192/latest/en-us/sfdc/pdf/salesforce_winter15_release_notes.pdf",
+      "release": "Winter ’15",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-summer14-release-notes",
+      "url": "https://resources.docs.salesforce.com/190/latest/en-us/sfdc/pdf/salesforce_summer14_release_notes.pdf",
+      "release": "Summer ’14",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-spring14-release-notes",
+      "url": "https://resources.docs.salesforce.com/188/latest/en-us/sfdc/pdf/salesforce_spring14_release_notes.pdf",
+      "release": "Spring ’14",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-winter14-release-notes",
+      "url": "https://resources.docs.salesforce.com/186/latest/en-us/sfdc/pdf/salesforce_winter14_release_notes.pdf",
+      "release": "Winter ’14",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-summer13-release-notes",
+      "url": "https://resources.docs.salesforce.com/184/latest/en-us/sfdc/pdf/salesforce_summer13_release_notes.pdf",
+      "release": "Summer ’13",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-spring13-release-notes",
+      "url": "https://resources.docs.salesforce.com/182/latest/en-us/sfdc/pdf/salesforce_spring13_release_notes.pdf",
+      "release": "Spring ’13",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-winter13-release-notes",
+      "url": "https://resources.docs.salesforce.com/180/latest/en-us/sfdc/pdf/salesforce_winter13_release_notes.pdf",
+      "release": "Winter ’13",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-summer12-release-notes",
+      "url": "https://resources.docs.salesforce.com/178/latest/en-us/sfdc/pdf/salesforce_summer12_release_notes.pdf",
+      "release": "Summer ’12",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-spring12-release-notes",
+      "url": "https://resources.docs.salesforce.com/176/latest/en-us/sfdc/pdf/salesforce_spring12_release_notes.pdf",
+      "release": "Spring ’12",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-winter12-release-notes",
+      "url": "https://resources.docs.salesforce.com/174/latest/en-us/sfdc/pdf/salesforce_winter12_release_notes.pdf",
+      "release": "Winter ’12",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-summer11-release-notes",
+      "url": "https://resources.docs.salesforce.com/172/latest/en-us/sfdc/pdf/salesforce_summer11_release_notes.pdf",
+      "release": "Summer ’11",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-spring11-release-notes",
+      "url": "https://resources.docs.salesforce.com/170/latest/en-us/sfdc/pdf/salesforce_spring11_release_notes.pdf",
+      "release": "Spring ’11",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-winter11-release-notes",
+      "url": "https://resources.docs.salesforce.com/168/latest/en-us/sfdc/pdf/salesforce_winter11_release_notes.pdf",
+      "release": "Winter ’11",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-summer10-release-notes",
+      "url": "https://resources.docs.salesforce.com/166/latest/en-us/sfdc/pdf/salesforce_summer10_release_notes.pdf",
+      "release": "Summer ’10",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-spring10-release-notes",
+      "url": "https://resources.docs.salesforce.com/164/latest/en-us/sfdc/pdf/salesforce_spring10_release_notes.pdf",
+      "release": "Spring ’10",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-winter10-release-notes",
+      "url": "https://resources.docs.salesforce.com/162/latest/en-us/sfdc/pdf/salesforce_winter10_release_notes.pdf",
+      "release": "Winter ’10",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-summer09-release-notes",
+      "url": "https://resources.docs.salesforce.com/160/latest/en-us/sfdc/pdf/salesforce_summer09_release_notes.pdf",
+      "release": "Summer ’09",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-spring09-release-notes",
+      "url": "https://resources.docs.salesforce.com/158/latest/en-us/sfdc/pdf/salesforce_spring09_release_notes.pdf",
+      "release": "Spring ’09",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-winter09-release-notes",
+      "url": "https://resources.docs.salesforce.com/156/latest/en-us/sfdc/pdf/salesforce_winter09_release_notes.pdf",
+      "release": "Winter ’09",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-summer08-release-notes",
+      "url": "https://resources.docs.salesforce.com/154/latest/en-us/sfdc/pdf/salesforce_summer08_release_notes.pdf",
+      "release": "Summer ’08",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-spring08-release-notes",
+      "url": "https://resources.docs.salesforce.com/152/latest/en-us/sfdc/pdf/salesforce_spring08_release_notes.pdf",
+      "release": "Spring ’08",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-winter08-release-notes",
+      "url": "https://resources.docs.salesforce.com/150/latest/en-us/sfdc/pdf/salesforce_winter08_release_notes.pdf",
+      "release": "Winter ’08",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-summer07-release-notes",
+      "url": "https://resources.docs.salesforce.com/148/latest/en-us/sfdc/pdf/salesforce_summer07_release_notes.pdf",
+      "release": "Summer ’07",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-spring07-release-notes",
+      "url": "https://resources.docs.salesforce.com/146/latest/en-us/sfdc/pdf/salesforce_spring07_release_notes.pdf",
+      "release": "Spring ’07",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-axm-7.0-release-notes",
+      "url": "https://resources.docs.salesforce.com/146/latest/en-us/sfdc/pdf/salesforce_axm_7.0_release_notes.pdf",
+      "release": "Lightning Platform Mobile 7.0 for BlackBerry",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "legacy-mobile",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-axm-wm5-release-notes",
+      "url": "https://resources.docs.salesforce.com/146/latest/en-us/sfdc/pdf/salesforce_axm_wm5_release_notes.pdf",
+      "release": "Lightning Platform Mobile 6.1 for Windows Mobile 5",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "legacy-mobile",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-winter07-release-notes",
+      "url": "https://resources.docs.salesforce.com/144/latest/en-us/sfdc/pdf/salesforce_winter07_release_notes.pdf",
+      "release": "Winter ’07",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-summer06-release-notes",
+      "url": "https://resources.docs.salesforce.com/142/latest/en-us/sfdc/pdf/salesforce_summer06_release_notes.pdf",
+      "release": "Summer ’06",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-winter06-release-notes",
+      "url": "https://resources.docs.salesforce.com/142/latest/en-us/sfdc/pdf/salesforce_winter06_release_notes.pdf",
+      "release": "Winter ’06",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-axm-6.0-release-notes",
+      "url": "https://resources.docs.salesforce.com/146/latest/en-us/sfdc/pdf/salesforce_axm_6.0_release_notes.pdf",
+      "release": "Lightning Platform Mobile 6.0",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "legacy-mobile",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-summer05-release-notes",
+      "url": "https://resources.docs.salesforce.com/142/latest/en-us/sfdc/pdf/salesforce_summer05_release_notes.pdf",
+      "release": "Summer ’05",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-winter05-release-notes",
+      "url": "https://resources.docs.salesforce.com/142/latest/en-us/sfdc/pdf/salesforce_winter05_release_notes.pdf",
+      "release": "Winter ’05",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-summer04-release-notes",
+      "url": "https://resources.docs.salesforce.com/142/latest/en-us/sfdc/pdf/salesforce_summer04_release_notes.pdf",
+      "release": "Summer ’04",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-spring04-release-notes",
+      "url": "https://resources.docs.salesforce.com/142/latest/en-us/sfdc/pdf/salesforce_spring04_release_notes.pdf",
+      "release": "Spring ’04",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "salesforce-winter04-release-notes",
+      "url": "https://resources.docs.salesforce.com/142/latest/en-us/sfdc/pdf/salesforce_winter04_release_notes.pdf",
+      "release": "Winter ’04",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "platform",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    },
+    {
+      "id": "workdotcom-rn",
+      "url": "https://resources.docs.salesforce.com/rel1/doc/en-us/static/pdf/workdotcom_rn.pdf",
+      "release": "Work.com (2020–2023)",
+      "apiVersion": null,
+      "publicationDate": null,
+      "accessedAt": "2026-10-17",
+      "checksum": null,
+      "productArea": "work-com",
+      "reviewer": "platform-implementer",
+      "status": "blocked",
+      "coverage": "Archive link inventoried; document content not retrieved or reviewed.",
+      "blocker": {
+        "owner": "platform-implementer",
+        "reason": "Official PDF fetch failed in web tool; source content unavailable for review.",
+        "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
+      }
+    }
+  ]
+}

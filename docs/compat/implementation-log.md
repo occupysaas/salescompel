@@ -305,3 +305,19 @@ sanitization review is claimed.
   traversal bounds produce explicit gaps rather than successful partial captures.
 - Foundation readiness remains unbound/unverified, and focused contracts remain
   not_run. Existing pilot profile and accepted baseline are unchanged.
+
+## Plan 5 evidence gate and probe review — 2026-10-17
+
+- Corrected three independently reviewed probe defects: repeated text variants no
+  longer create duplicate identities, discovery query/sobjects links survive
+  normalization, and each name/duplicate-key PATCH has its own state readback.
+  Each correction has a regression test that failed before the correction.
+- Fresh offline verification: 66 passed, one optional candidate test skipped;
+  typecheck, formatting and repository validation passed. YAML parsing and archive
+  URL uniqueness checks passed. These checks do not establish reference parity.
+- Inventoried 71 distinct direct official release-archive document links. Source
+  bodies were unavailable, so content review and linked-changelog expansion remain
+  incomplete. The inventory and changes ledger explicitly record these blockers.
+- The fresh same-administrator alias remains absent. No focused live captures or
+  fixture writes have run. Contract decisions remain unfrozen; Tasks 4–8 await
+  the approved Task 3 evidence gate. Existing product routes remain unchanged.
