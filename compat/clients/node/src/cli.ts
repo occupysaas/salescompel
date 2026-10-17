@@ -1,6 +1,6 @@
 import { suite } from "./suites.ts";
 import { verifyCapturePair } from "./evidence.ts";
-import { referencePreflight } from "./readiness.ts";
+import { referencePreflight, foundationSessionIssues } from "./readiness.ts";
 import { validateRecoveryDirectory } from "./fixtures.ts";
 import { parseArgs } from "node:util";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
@@ -102,6 +102,8 @@ async function main() {
             selected.id,
           )
         : checkConfig("candidate", process.env);
+    if (selected.id === "rest-query-foundation")
+      issues.push(...foundationSessionIssues(values.target, process.env));
     if (process.env.COMPAT_RECOVERY_DIR) {
       const issue = await validateRecoveryDirectory(
         process.env.COMPAT_RECOVERY_DIR,

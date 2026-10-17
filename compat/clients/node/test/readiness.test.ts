@@ -142,3 +142,19 @@ test("readiness permits the same operator or no implementer without granting aut
     assert.ok(readinessIssues(r, schema, context, env).length);
   }
 });
+
+test("foundation reference readiness does not require an unused locale-user credential", () => {
+  const r = approved();
+  r.profile = "rest-query-foundation";
+  const e = { ...env };
+  delete (e as any).COMPAT_REFERENCE_LOCALE_USER_ID;
+  assert.deepEqual(
+    readinessIssues(r, schema, { ...context, profile: r.profile }, e),
+    [],
+  );
+  assert.ok(
+    readinessIssues(approved(), schema, context, e).some((x) =>
+      x.includes("LOCALE_USER_ID"),
+    ),
+  );
+});

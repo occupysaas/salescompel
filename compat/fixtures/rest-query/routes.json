@@ -1,0 +1,19 @@
+{
+  "description": "Independent request templates; substitute only owned IDs, query values, locators, origin and credentials. No method/path adapters.",
+  "routes": [
+    {"method":"GET","path":"/services/data"},
+    {"method":"GET","path":"/services/data/v65.0"},
+    {"method":"GET","path":"/services/data/v65.0/sobjects"},
+    {"method":"GET","path":"/services/data/v65.0/sobjects/Account/describe"},
+    {"method":"POST","path":"/services/data/v65.0/sobjects/Account"},
+    {"method":"GET","path":"/services/data/v65.0/sobjects/Account/{recordId}"},
+    {"method":"PATCH","path":"/services/data/v65.0/sobjects/Account/{recordId}"},
+    {"method":"DELETE","path":"/services/data/v65.0/sobjects/Account/{recordId}"},
+    {"method":"PATCH","path":"/services/data/v65.0/sobjects/Account/Compat_Key__c/{encodedExternalId}"},
+    {"method":"GET","path":"/services/data/v65.0/query?q={encodedQuery}","headers":{"Sforce-Query-Options":"batchSize=200"}},
+    {"method":"GET","path":"/services/data/v65.0/query/{queryLocator}"},
+    {"method":"GET","path":"/services/oauth2/userinfo"},
+    {"method":"GET","path":"/services/data/v65.0/sobjects/User/{ownUserId}"},
+    {"method":"GET","path":"/services/data/v51.0/sobjects/User/{ownUserId}"}
+  ]
+}

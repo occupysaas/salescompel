@@ -287,3 +287,21 @@ sanitization review is claimed.
 - Observation contract IDs are distinct from execution scenario IDs for the focused
   suite; registered contract scope and reciprocal links remain required. Broader
   request-header contracts are not promoted by scoped batch-size coverage.
+
+## Plan 5 focused probe implementation — 2026-10-17
+
+- Implemented seven focused handlers for routes, paging, cursor lifecycle, IDs,
+  name handling, text/null semantics and HTTP errors, plus same-origin wire capture.
+- Offline verification: 63 passed, one optional candidate test skipped; typecheck,
+  formatting and repository validation passed. Local HTTP tests verify redirect
+  rejection, escaped paths, response/time bounds and cleanup after a failed create.
+- Reference administrator and restricted sessions both passed read-only userinfo
+  checks. Tokens and identities remain in an owner-only external directory.
+- An independent same-administrator session is needed for the cursor probe; the
+  maintainer was asked to log in privately with alias salescompel-reference-admin-fresh.
+  No focused live capture, fixture write or candidate semantic change occurred yet.
+- Discovery/describe measurement is limited to supported-version and fixture-field
+  dimensions. Null equality retains only owned-record membership. Fixed expiry and
+  traversal bounds produce explicit gaps rather than successful partial captures.
+- Foundation readiness remains unbound/unverified, and focused contracts remain
+  not_run. Existing pilot profile and accepted baseline are unchanged.

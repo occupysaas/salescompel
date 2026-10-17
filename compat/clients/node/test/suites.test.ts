@@ -135,3 +135,28 @@ test("CLI comparison and pair verification reject reports bound to another suite
     assert.equal(JSON.parse(await readFile(out, "utf8")).outcome, "blocked");
   }
 });
+
+test("foundation candidate capture requires independent cursor sessions before any requests", async (t) => {
+  let calls = 0;
+  const server = createServer((_req, res) => {
+    calls++;
+    res.writeHead(500);
+    res.end("{}");
+  });
+  await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
+  t.after(() => server.close());
+  const r = await capture(
+    "candidate",
+    {
+      COMPAT_CANDIDATE_URL: `http://127.0.0.1:${(server.address() as any).port}`,
+      COMPAT_CANDIDATE_TOKEN: "synthetic-primary",
+      COMPAT_API_VERSION: "65.0",
+      COMPAT_DISPOSABLE: "yes",
+    },
+    foundation,
+  );
+  assert.equal(calls, 0);
+  assert.equal(r.provenance, "none");
+  assert.ok(r.results.every((x) => x.outcome === "blocked"));
+  assert.match(r.results[0].reason!, /FRESH_TOKEN/);
+});

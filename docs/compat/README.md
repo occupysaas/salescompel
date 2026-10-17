@@ -183,3 +183,33 @@ reciprocal contract links are registered; deferred contracts remain unobserved.
 This completes the pilot baseline, not the full M0/M1 gates or candidate parity.
 The next product work package is the evidence-led M3 REST/query foundation;
 focused observations and M1R reconciliation precede its contract freeze.
+
+## Plan 5 REST/query foundation suite
+
+Use `--suite rest-query-foundation` consistently with preflight, capture, compare,
+repeatability and verify-evidence. Omitting it retains the eleven-scenario pilot.
+The separate profile and readiness file must be verified and hash-bound before
+reference capture. Existing tenant authorization applies; new fixture attestations
+remain false until checked. No focused reference observations are registered yet.
+
+In addition to the ordinary target URL/token, provide the target-specific
+`COMPAT_REFERENCE_FRESH_TOKEN` (or `COMPAT_CANDIDATE_FRESH_TOKEN`) for a distinct
+session of the same administrator, and the corresponding `*_RESTRICTED_TOKEN`.
+The fresh token must differ from the primary token; the cursor probe verifies the
+same user and organization. The focused suite does not use the pilot's locale-user
+credential. An absolute external `COMPAT_RECOVERY_DIR` is mandatory. Keep all
+credentials private; obtain them through documented CLI commands, not chat.
+
+The suite creates roughly 2500 owned Accounts plus small supporting fixtures and
+uses public CRUD for setup/cleanup. One cursor is checked after 16 idle minutes;
+continued validity at that bound is reported as blocked expiry evidence. Two
+complete runs are necessary for repeatability. URL transport rejects redirects
+and off-origin continuation links, preserves encoded external IDs, and bounds
+responses at 8 MiB with a 15-second request timeout. Query traversal is bounded
+at 32 pages. These are probe limits, not claimed Salesforce limits.
+
+Error observations retain status, code, fields and message type without copying
+message prose. Describe/discovery probes compare only selected supported-version
+and fixture-field dimensions; they do not certify the whole Salesforce catalog.
+The null-equality probe requests IDs and retains only membership of owned null
+fixtures; unrelated IDs are discarded. Reports and fixture journals remain private.

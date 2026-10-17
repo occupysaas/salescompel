@@ -104,7 +104,9 @@ export function readinessIssues(
     issues.push("Runtime API version differs from the pinned profile");
   for (const key of [
     "COMPAT_REFERENCE_RESTRICTED_TOKEN",
-    "COMPAT_REFERENCE_LOCALE_USER_ID",
+    ...(context.profile === "rest-query-foundation"
+      ? []
+      : ["COMPAT_REFERENCE_LOCALE_USER_ID"]),
   ])
     if (!env[key]?.trim()) issues.push(`Missing ${key}`);
   return issues;
@@ -154,4 +156,22 @@ export async function referencePreflight(
   } catch {
     return ["Reference readiness files are missing or malformed"];
   }
+}
+
+export function foundationSessionIssues(
+  target: "reference" | "candidate",
+  env: NodeJS.ProcessEnv,
+): string[] {
+  const prefix = `COMPAT_${target.toUpperCase()}`;
+  const issues: string[] = [];
+  for (const key of [`${prefix}_FRESH_TOKEN`, `${prefix}_RESTRICTED_TOKEN`])
+    if (!env[key]?.trim()) issues.push(`Missing ${key}`);
+  if (
+    env[`${prefix}_FRESH_TOKEN`] &&
+    env[`${prefix}_FRESH_TOKEN`] === env[`${prefix}_TOKEN`]
+  )
+    issues.push("FRESH_TOKEN must be a distinct session for the same user");
+  if (!env.COMPAT_RECOVERY_DIR)
+    issues.push("COMPAT_RECOVERY_DIR required for foundation fixture writes");
+  return issues;
 }

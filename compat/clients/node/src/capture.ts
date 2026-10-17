@@ -1,5 +1,6 @@
+import { foundationScenarios } from "./foundation.ts";
 import { suite } from "./suites.ts";
-import { referencePreflight } from "./readiness.ts";
+import { referencePreflight, foundationSessionIssues } from "./readiness.ts";
 import { randomBytes } from "node:crypto";
 import { mkdir } from "node:fs/promises";
 import { resolve } from "node:path";
@@ -41,8 +42,7 @@ export async function capture(
   const issues = checkConfig(target, env);
   if (env.COMPAT_API_VERSION !== p.data.apiVersion)
     issues.push("Runtime API version differs from the pinned profile");
-  if (suiteId !== "pilot")
-    issues.push("Foundation scenario implementations are not yet registered");
+  if (suiteId !== "pilot") issues.push(...foundationSessionIssues(target, env));
   if (target === "reference")
     issues.push(
       ...(await referencePreflight(
@@ -121,7 +121,9 @@ export async function capture(
     };
     try {
       report.provenance = "live";
-      if (result.id === "cli-query") await cliQuery(ctx);
+      if (suiteId === "rest-query-foundation")
+        await foundationScenarios[result.id](ctx);
+      else if (result.id === "cli-query") await cliQuery(ctx);
       else if (result.id === "metadata") await metadata(ctx);
       else if (result.id === "python-crud") await pythonProbe(ctx, journal);
       else await jsScenarios[result.id](ctx);
