@@ -3,8 +3,21 @@ cutoff: '2026-10-17'
 profile: rest-query-foundation
 status: blocked
 reviewer: platform-implementer
-findings: []
-# An empty findings list means no reviewed findings, not no relevant changes.
+findings:
+  - id: winter23-query-cursor-retention
+    status: reviewed-source-awaiting-live-reconciliation
+    source: https://help.salesforce.com/s/articleView?id=release-notes.rn_api_improved_query_limits.htm&language=en_US&release=240&type=5
+    corroboration: https://developer.salesforce.com/docs/platform/salesforce-app-limits-cheatsheet/guide/salesforce-app-limits-platform-apicursors.html
+    release: Winter 23
+    introducedApiVersion: '56.0'
+    appliesTo: All API versions, including the selected REST API version.
+    accessedAt: '2026-10-17'
+    affectedContracts:
+      - query-locator-lifecycle
+    finding: Query results have a documented two-day availability window; the former ten-cursor and fifteen-minute inactivity constraints were removed.
+    implication: The current sixteen-minute live probe can establish continued validity but cannot measure full expiry. Do not derive a fifteen-minute candidate lifetime from it.
+    resolution: Retain the live bound as partial evidence and design a separately journaled long-duration expiry observation before freezing expiry semantics.
+    blocksContractFreeze: true
 blockers:
   - id: release-content-unavailable
     owner: platform-implementer

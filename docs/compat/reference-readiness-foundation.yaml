@@ -1,8 +1,9 @@
-# Existing authorization applies; expanded fixtures and profile binding are unverified.
+# Existing authorization applies; sessions and deployed field permissions verified.
+# Locale fixture attestation retained from pilot; foundation does not mutate locale.
 schemaVersion: 1
 referenceAlias: velocity-innovation-8559
 profile: rest-query-foundation
-profileHash: null
+profileHash: 99d90e50fc63573f08f5a48da878eb9c129b7d660eb9ed5d600306b9706bd8f8
 apiVersion: "65.0"
 decision:
   status: approved
@@ -21,8 +22,8 @@ scenarios:
   - foundation-text-null
   - foundation-errors
 fixtures:
-  disposable: false
-  administrator: false
-  restricted: false
-  locale: false
-  deployed: false
+  disposable: true
+  administrator: true
+  restricted: true
+  locale: true
+  deployed: true

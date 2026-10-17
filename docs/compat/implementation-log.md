@@ -321,3 +321,15 @@ sanitization review is claimed.
 - The fresh same-administrator alias remains absent. No focused live captures or
   fixture writes have run. Contract decisions remain unfrozen; Tasks 4–8 await
   the approved Task 3 evidence gate. Existing product routes remain unchanged.
+
+## Plan 5 foundation session and fixture readiness — 2026-10-17
+
+- Verified two distinct live sessions for the exact same reference administrator
+  and organization using public userinfo. Preserved the primary session separately
+  before exporting the fresh session. Restricted identity remains distinct.
+- Verified administrator Account create/delete, writable Compat_Text__c, external
+  Compat_Key__c and Contact create permissions; restricted Account query access
+  excludes Compat_Text__c. Existing disposable-tenant authorization and pilot
+  locale attestation apply; the focused suite does not mutate locale settings.
+- Bound foundation readiness to its unchanged profile hash. This records setup
+  readiness only; live observation and release-review gates remain separate.

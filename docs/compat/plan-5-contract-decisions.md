@@ -1,6 +1,6 @@
 # Plan 5 contract decision gate
 
-Status: **not frozen**. No focused reference capture has run. Candidate semantic
+Status: **not frozen**. The first focused reference capture is in progress; no complete capture pair exists. Candidate semantic
 implementation (Tasks 4–8) remains pending the evidence gate in the approved plan.
 
 ## Current evidence
@@ -9,13 +9,15 @@ implementation (Tasks 4–8) remains pending the evidence gate in the approved p
   profile bytes and all eleven accepted pilot observations are unchanged.
 - The saved administrator and restricted sessions passed public userinfo checks.
   Private credentials are retained outside the repository; no fixture writes ran.
-- The fresh administrator alias `salescompel-reference-admin-fresh` is absent.
-  The required second distinct same-user session cannot be substituted with the
-  existing token or restricted session. The maintainer has been asked to complete
-  the documented CLI web login; the primary token was retained privately first.
+- Two distinct same-administrator sessions now pass public userinfo checks in the
+  same organization. Restricted-user identity and field exclusion were verified.
+  Readiness is profile-bound; the first capture is in progress with private journals.
 - The archive's 71 direct document links are inventoried in releases/index.yaml.
-  Document bodies could not be retrieved. Product changelog expansion and review
-  remain incomplete; releases/changes.yaml records the freeze blocker.
+  PDF bodies remain unavailable; archive content review is incomplete. A focused
+  official Winter 23 HTML release note was retrieved and reviewed separately:
+  releases/changes.yaml records the two-day query-result retention change.
+- The current sixteen-minute cursor probe cannot establish the documented expiry
+  boundary. Continued validity must remain partial evidence, not an expiry pass.
 
 ## Decisions that remain evidence-dependent
 
