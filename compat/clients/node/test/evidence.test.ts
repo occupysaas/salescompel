@@ -328,3 +328,26 @@ test("observations allow optional role separation but require the recorded opera
     );
   }
 });
+
+test("focused evidence can claim registered contracts independently of scenario IDs", () => {
+  const c = {
+    ...context,
+    profile: "rest-query-foundation",
+    requiredScenarios: ["foundation-ids"],
+    contractIds: ["id-15-18"],
+  };
+  const n = note();
+  n.profile = c.profile;
+  n.contracts = ["id-15-18"];
+  n.notes = [
+    {
+      contract: "id-15-18",
+      summary: "Synthetic test note; never registered as evidence.",
+    },
+  ];
+  assert.deepEqual(observationIssues(n, schema, c, readiness), []);
+  n.contracts = ["request-headers"];
+  n.notes[0].contract = "request-headers";
+  assert.ok(observationIssues(n, schema, c, readiness).length);
+  assert.ok(observationIssues(note(), schema, c, readiness).length);
+});

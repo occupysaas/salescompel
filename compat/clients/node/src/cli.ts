@@ -1,3 +1,4 @@
+import { suite } from "./suites.ts";
 import { verifyCapturePair } from "./evidence.ts";
 import { referencePreflight } from "./readiness.ts";
 import { validateRecoveryDirectory } from "./fixtures.ts";
@@ -9,8 +10,6 @@ import {
   observationSummary,
   ROOT,
   profile,
-  SCENARIOS,
-  CLEANUP_SCENARIOS,
 } from "./validate.ts";
 import { capture } from "./capture.ts";
 import {
@@ -31,6 +30,7 @@ async function main() {
     allowPositionals: true,
     options: {
       target: { type: "string" },
+      suite: { type: "string" },
       out: { type: "string" },
       reference: { type: "string" },
       candidate: { type: "string" },
@@ -40,6 +40,9 @@ async function main() {
       spec: { type: "string" },
     },
   });
+  const selected = suite(values.suite ?? "pilot");
+  const { requiredScenarios: SCENARIOS, cleanupScenarios: CLEANUP_SCENARIOS } =
+    selected;
   const command = positionals[0];
   if (positionals.length !== 1)
     throw new Error(
@@ -53,7 +56,7 @@ async function main() {
       !values.out.endsWith(".json")
     )
       throw new Error("--first, --second and --out path.json required");
-    const p = await profile();
+    const p = await profile(selected.id);
     const result = verifyCapturePair(
       await readFile(resolve(values.first), "utf8"),
       await readFile(resolve(values.second), "utf8"),
@@ -82,7 +85,7 @@ async function main() {
   if (command === "preflight") {
     if (values.target !== "reference" && values.target !== "candidate")
       throw new Error("--target reference|candidate required");
-    const p = await profile();
+    const p = await profile(selected.id);
     const issues =
       values.target === "reference"
         ? await referencePreflight(
@@ -96,6 +99,7 @@ async function main() {
               cleanupScenarios: CLEANUP_SCENARIOS,
             },
             process.env,
+            selected.id,
           )
         : checkConfig("candidate", process.env);
     if (process.env.COMPAT_RECOVERY_DIR) {
@@ -148,7 +152,7 @@ async function main() {
     if (!out.endsWith(".json")) throw new Error("--out must end in .json");
     const issues = await validateRepository();
     if (issues.length) throw new Error(issues.join("; "));
-    const r = await capture(values.target, process.env);
+    const r = await capture(values.target, process.env, selected.id);
     validateReport(r);
     await writeReport(out, r);
     console.log(`${reportOutcome(r)}: ${out}`);
@@ -173,7 +177,7 @@ async function main() {
       );
     const r = JSON.parse(await readFile(resolve(first), "utf8")),
       c = JSON.parse(await readFile(resolve(second), "utf8"));
-    const p = await profile();
+    const p = await profile(selected.id);
     const comparison = compare(
       r,
       c,

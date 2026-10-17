@@ -271,3 +271,19 @@ sanitization review is claimed.
   its offline contract; retained the shared harness's broader deleted-record
   code allowance while recording NOT_FOUND for this profile. A different profile
   or broader claim requires new evidence, not reinterpretation of these captures.
+
+## Plan 5 foundation suite setup — 2026-10-17
+
+- The maintainer approved the design and implementation plan, explicitly requiring
+  identical Salesforce routes for drop-in clients, then authorized continuation.
+- Restored the implementation plan after workspace I/O errors; the temporary copy
+  disappeared, while the route amendment survived. Work continues on main.
+- Added a separate foundation suite/profile/readiness path. Existing pilot defaults,
+  profile bytes, eleven-scenario manifest and reviewed observations are retained.
+- Foundation readiness carries existing authorization but has no bound profile hash
+  or verified expanded fixture flags. It cannot authorize a reference capture yet.
+- Focused scenario implementations are pending; capture fails closed until registered.
+  Suite selection is applied to preflight, capture, comparison and pair verification.
+- Observation contract IDs are distinct from execution scenario IDs for the focused
+  suite; registered contract scope and reciprocal links remain required. Broader
+  request-header contracts are not promoted by scoped batch-size coverage.

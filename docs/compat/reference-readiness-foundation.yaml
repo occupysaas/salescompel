@@ -1,0 +1,28 @@
+# Existing authorization applies; expanded fixtures and profile binding are unverified.
+schemaVersion: 1
+referenceAlias: velocity-innovation-8559
+profile: rest-query-foundation
+profileHash: null
+apiVersion: "65.0"
+decision:
+  status: approved
+  maintainer: project-maintainer
+  recordedAt: 2026-10-16
+  logAnchor: reference-observation-authorization-2026-10-16
+  observationAuthorized: true
+observer: platform-implementer
+implementer: platform-implementer
+scenarios:
+  - foundation-routes
+  - foundation-pagination
+  - foundation-cursors
+  - foundation-ids
+  - foundation-names
+  - foundation-text-null
+  - foundation-errors
+fixtures:
+  disposable: false
+  administrator: false
+  restricted: false
+  locale: false
+  deployed: false

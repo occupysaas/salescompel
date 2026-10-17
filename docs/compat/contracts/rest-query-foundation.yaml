@@ -1,0 +1,47 @@
+schemaVersion: 1
+status: documented-not-observed
+owner: compat-lab
+sources:
+  - rest
+  - soql
+contracts:
+  - id: query-batch-header
+    milestone: M1/M3
+    behavior: Sforce-Query-Options batchSize changes query page size with observed
+      bounds and errors
+    preconditions:
+      - Authorized focused profile and owned synthetic fixtures
+    assertions:
+      - Wire status, selected response properties and resulting state match two
+        repeated captures
+    observationStatus: not_run
+  - id: query-locator-lifecycle
+    milestone: M1/M3
+    behavior: Query locators preserve observed replay, expiry, ownership and
+      concurrent mutation behavior
+    preconditions:
+      - Authorized focused profile and owned synthetic fixtures
+    assertions:
+      - Wire status, selected response properties and resulting state match two
+        repeated captures
+    observationStatus: not_run
+  - id: rest-route-parity
+    milestone: M1/M3
+    behavior: Supported requests and response links use unchanged Salesforce route
+      templates and URL escaping
+    preconditions:
+      - Authorized focused profile and owned synthetic fixtures
+    assertions:
+      - Wire status, selected response properties and resulting state match two
+        repeated captures
+    observationStatus: not_run
+  - id: duplicate-canonical-fields
+    milestone: M1/M3
+    behavior: Duplicate JSON field aliases follow observed validation without
+      bypassing field permissions
+    preconditions:
+      - Authorized focused profile and owned synthetic fixtures
+    assertions:
+      - Wire status, selected response properties and resulting state match two
+        repeated captures
+    observationStatus: not_run

@@ -14,35 +14,14 @@ import { parseDocument, validateCatalogs } from "./core.ts";
 import { validateOpenApi } from "./openapi.ts";
 import { ROOT, connectorVersions } from "./versions.ts";
 export { ROOT };
-export const SCENARIOS = [
-  "describe",
-  "crud",
-  "upsert",
-  "relationships",
-  "rollback",
-  "permissions",
-  "errors",
-  "locale",
-  "cli-query",
-  "metadata",
-  "python-crud",
-];
-// Scenarios that create or modify remote state and must report cleanup.
-export const CLEANUP_SCENARIOS = [
-  "crud",
-  "upsert",
-  "relationships",
-  "errors",
-  "locale",
-  "cli-query",
-  "metadata",
-  "python-crud",
-];
+import { suite, SUITE_IDS } from "./suites.ts";
+export const SCENARIOS = suite().requiredScenarios;
+export const CLEANUP_SCENARIOS = suite().cleanupScenarios;
 export const readDoc = async (path: string) =>
   parseDocument(await readFile(resolve(ROOT, path), "utf8"));
-export async function profile() {
+export async function profile(suiteId: string = "pilot") {
   const text = await readFile(
-    resolve(ROOT, "docs/compat/profiles/pilot.yaml"),
+    resolve(ROOT, suite(suiteId).profilePath),
     "utf8",
   );
   return {
@@ -138,47 +117,18 @@ export async function validateRepository(): Promise<string[]> {
       c.sources.some((s: string) => !sourceIds.has(s))
     )
       issues.push(`Invalid contract references ${c.id}`);
-  try {
-    const { record, schema, log } = await readReadiness(ROOT);
-    issues.push(...readinessStructureIssues(record, schema));
-    const context = {
-      profile: p.id,
-      profileHash: (await profile()).hash,
-      apiVersion: p.apiVersion,
-      requiredScenarios: SCENARIOS,
-      connectors: p.connectors,
-      cleanupScenarios: CLEANUP_SCENARIOS,
-    };
-    const notes: unknown[] = [];
-    for (const filename of await readdir(
-      resolve(ROOT, "docs/compat/observations"),
-    )) {
-      if (!filename.endsWith(".yaml")) continue;
-      const note = await readDoc(`docs/compat/observations/${filename}`);
-      if (filename !== `${note?.id}.yaml`)
-        issues.push("Observation filename differs from its ID");
-      notes.push(note);
-    }
-    issues.push(
-      ...observationLinkIssues(
-        contracts,
-        notes,
-        await readDoc("compat/schemas/observation.schema.json"),
-        context,
-        record,
-      ),
-    );
-    if (
-      notes.length ||
-      contracts.some((c: any) => c.observationStatus === "observed")
-    ) {
-      issues.push(
-        ...readinessDecisionIssues(record, schema, context),
-        ...decisionAnchorIssues(record, log),
-      );
-    }
-  } catch {
-    issues.push("Readiness or observation files are missing or malformed");
+  const allContracts = [...contracts];
+  const notes: any[] = [];
+  for (const filename of await readdir(
+    resolve(ROOT, "docs/compat/observations"),
+  )) {
+    if (!filename.endsWith(".yaml")) continue;
+    const note = await readDoc(`docs/compat/observations/${filename}`);
+    if (filename !== `${note?.id}.yaml`)
+      issues.push("Observation filename differs from its ID");
+    if (!SUITE_IDS.includes(note?.profile))
+      issues.push("Observation has unknown profile");
+    notes.push(note);
   }
   // Deferred-milestone contracts: documented only, still source-checked.
   for (const path of [
@@ -187,6 +137,7 @@ export async function validateRepository(): Promise<string[]> {
     "docs/compat/contracts/identity.yaml",
     "docs/compat/contracts/rest-semantics.yaml",
     "docs/compat/contracts/cli-plugins.yaml",
+    "docs/compat/contracts/rest-query-foundation.yaml",
   ]) {
     const doc = await readDoc(path);
     if (
@@ -205,6 +156,7 @@ export async function validateRepository(): Promise<string[]> {
       new Set(doc.contracts.map((c: any) => c.id)).size !== doc.contracts.length
     )
       issues.push(`${path}: duplicate contracts`);
+    allContracts.push(...doc.contracts);
     for (const c of doc.contracts)
       if (
         !c.id ||
@@ -212,9 +164,83 @@ export async function validateRepository(): Promise<string[]> {
         !c.milestone ||
         !c.preconditions?.length ||
         !c.assertions?.length ||
-        c.observationStatus !== "not_run"
+        !["not_run", "observed"].includes(c.observationStatus)
       )
         issues.push(`${path}: incomplete contract ${c.id}`);
+  }
+  if (new Set(allContracts.map((c) => c.id)).size !== allContracts.length)
+    issues.push("Duplicate contract IDs across files");
+  const ownedContracts = new Set<string>();
+  for (const id of SUITE_IDS) {
+    const selected = suite(id);
+    const loaded = await profile(id);
+    const data = loaded.data;
+    await schemaCheck(
+      "compat/schemas/profile.schema.json",
+      data,
+      `${id} profile`,
+    );
+    if (
+      data.id !== id ||
+      !isDeepStrictEqual(data.requiredScenarios, selected.requiredScenarios)
+    )
+      issues.push(`${id}: profile scenario coverage differs from registry`);
+    if (!isDeepStrictEqual(data.connectors, connectorVersions()))
+      issues.push(
+        `${id}: profile connector versions differ from installed clients`,
+      );
+    const scoped = allContracts.filter((c) =>
+      selected.contractIds.includes(c.id),
+    );
+    if (scoped.length !== selected.contractIds.length)
+      issues.push(`${id}: missing registered contracts`);
+    for (const c of scoped) {
+      if (ownedContracts.has(c.id))
+        issues.push("Contract assigned to multiple suites");
+      ownedContracts.add(c.id);
+    }
+    try {
+      const { record, schema, log } = await readReadiness(ROOT, id);
+      issues.push(...readinessStructureIssues(record, schema));
+      const context = {
+        profile: data.id,
+        profileHash: loaded.hash,
+        apiVersion: data.apiVersion,
+        requiredScenarios: selected.requiredScenarios,
+        connectors: data.connectors,
+        cleanupScenarios: selected.cleanupScenarios,
+        contractIds: selected.contractIds,
+      };
+      const scopedNotes = notes.filter((n) => n?.profile === id);
+      issues.push(
+        ...observationLinkIssues(
+          scoped,
+          scopedNotes,
+          await readDoc("compat/schemas/observation.schema.json"),
+          context,
+          record,
+        ),
+      );
+      if (
+        scopedNotes.length ||
+        scoped.some((c) => c.observationStatus === "observed")
+      )
+        issues.push(
+          ...readinessDecisionIssues(record, schema, context),
+          ...decisionAnchorIssues(record, log),
+        );
+    } catch {
+      issues.push(
+        `${id}: readiness or observation files are missing or malformed`,
+      );
+    }
+  }
+  for (const c of allContracts) {
+    if (
+      !ownedContracts.has(c.id) &&
+      (c.observationStatus !== "not_run" || c.observationIds?.length)
+    )
+      issues.push(`Unregistered evidence scope for ${c.id}`);
   }
   const registry = await readDoc("locales/languages.json");
   await schemaCheck(

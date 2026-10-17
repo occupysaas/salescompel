@@ -1,3 +1,4 @@
+import { suite } from "./suites.ts";
 import { Ajv } from "ajv";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
@@ -10,6 +11,7 @@ export interface EvidenceContext {
   requiredScenarios: string[];
   connectors: Record<string, string>;
   cleanupScenarios: string[];
+  contractIds?: string[];
 }
 export interface Readiness {
   schemaVersion: 1;
@@ -109,9 +111,10 @@ export function readinessIssues(
 }
 export async function readReadiness(
   root: string,
+  suiteId: string = "pilot",
 ): Promise<{ record: unknown; schema: unknown; log: string }> {
   const [record, schema, log] = await Promise.all([
-    readFile(resolve(root, "docs/compat/reference-readiness.yaml"), "utf8"),
+    readFile(resolve(root, suite(suiteId).readinessPath), "utf8"),
     readFile(
       resolve(root, "compat/schemas/reference-readiness.schema.json"),
       "utf8",
@@ -140,9 +143,10 @@ export async function referencePreflight(
   root: string,
   context: EvidenceContext,
   env: NodeJS.ProcessEnv,
+  suiteId: string = "pilot",
 ): Promise<string[]> {
   try {
-    const { record, schema, log } = await readReadiness(root);
+    const { record, schema, log } = await readReadiness(root, suiteId);
     return [
       ...readinessIssues(record, schema, context, env),
       ...decisionAnchorIssues(record, log),

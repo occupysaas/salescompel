@@ -128,7 +128,9 @@ export function observationIssues(
   )
     issues.push("Invalid observation review date");
   if (
-    n.contracts.some((id) => !context.requiredScenarios.includes(id)) ||
+    n.contracts.some(
+      (id) => !(context.contractIds ?? context.requiredScenarios).includes(id),
+    ) ||
     !isDeepStrictEqual(
       [...n.contracts].sort(),
       n.notes.map((note) => note.contract).sort(),

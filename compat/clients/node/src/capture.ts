@@ -1,10 +1,11 @@
+import { suite } from "./suites.ts";
 import { referencePreflight } from "./readiness.ts";
 import { randomBytes } from "node:crypto";
 import { mkdir } from "node:fs/promises";
 import { resolve } from "node:path";
 import { Connection } from "jsforce";
 import { checkConfig, sanitize, type Report, type Result } from "./core.ts";
-import { ROOT, profile, SCENARIOS, CLEANUP_SCENARIOS } from "./validate.ts";
+import { ROOT, profile } from "./validate.ts";
 import { FixtureTracker, validateRecoveryDirectory } from "./fixtures.ts";
 import { jsScenarios, Blocked, type Context } from "./scenarios.ts";
 import { cliQuery, metadata, pythonProbe } from "./process-clients.ts";
@@ -12,8 +13,12 @@ import { connectorVersions } from "./versions.ts";
 export async function capture(
   target: "reference" | "candidate",
   env: NodeJS.ProcessEnv,
+  suiteId: string = "pilot",
 ): Promise<Report> {
-  const p = await profile();
+  const selected = suite(suiteId);
+  const { requiredScenarios: SCENARIOS, cleanupScenarios: CLEANUP_SCENARIOS } =
+    selected;
+  const p = await profile(suiteId);
   const startedAt = new Date().toISOString();
   const prefix = `COMPAT_${target.toUpperCase()}`;
   const report: Report = {
@@ -34,6 +39,10 @@ export async function capture(
     cleanup: [],
   };
   const issues = checkConfig(target, env);
+  if (env.COMPAT_API_VERSION !== p.data.apiVersion)
+    issues.push("Runtime API version differs from the pinned profile");
+  if (suiteId !== "pilot")
+    issues.push("Foundation scenario implementations are not yet registered");
   if (target === "reference")
     issues.push(
       ...(await referencePreflight(
@@ -47,6 +56,7 @@ export async function capture(
           cleanupScenarios: CLEANUP_SCENARIOS,
         },
         env,
+        suiteId,
       )),
     );
   if (env.COMPAT_RECOVERY_DIR) {

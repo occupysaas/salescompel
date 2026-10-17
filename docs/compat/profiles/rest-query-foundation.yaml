@@ -1,0 +1,79 @@
+schemaVersion: 1
+id: rest-query-foundation
+description: Focused REST/query foundation; setup and observations pending.
+  Separate from the eleven-scenario pilot.
+apiVersion: "65.0"
+clouds:
+  - Sales Cloud
+  - core platform
+objects:
+  - Account
+  - Contact
+  - User
+fields:
+  - Account.Compat_Text__c
+  - Account.Compat_Key__c
+personas:
+  - administrator
+  - restricted-user
+requiredScenarios:
+  - foundation-routes
+  - foundation-pagination
+  - foundation-cursors
+  - foundation-ids
+  - foundation-names
+  - foundation-text-null
+  - foundation-errors
+languages:
+  - en_US
+  - fr
+  - de
+  - pt_BR
+locales:
+  - en_US
+  - fr_FR
+timezone: America/New_York
+currency: USD
+managedPackages:
+  - Sales Insights 1.0.0.1
+  - Salesforce Standard Data Model 1.132.0.1
+orgFeatures:
+  personAccounts: false
+  multiCurrency: false
+  legacyAutomation: []
+  externalServicesOpenApi2: []
+connectors:
+  jsforce: 3.11.0
+  "@salesforce/cli": 2.156.0
+  "@salesforce/plugin-data": 5.1.16
+  "@salesforce/plugin-deploy-retrieve": 4.2.15
+  simple-salesforce: 1.12.9
+salesforceCli:
+  channels:
+    - npm
+  endpoint: native
+  proxiedHosts: []
+  commands:
+    - org login access-token
+    - org display
+    - data query
+    - project deploy start
+    - project retrieve start
+cliPlugins:
+  - name: "@salesforce/plugin-data"
+    version: 5.1.16
+    source: core
+    signature: bundled
+    license: Apache-2.0
+    commands:
+      - data query
+  - name: "@salesforce/plugin-deploy-retrieve"
+    version: 4.2.15
+    source: core
+    signature: bundled
+    license: Apache-2.0
+    commands:
+      - project deploy start
+      - project retrieve start
+referenceStatus: pending
+openapi: "3.2"
