@@ -9,7 +9,8 @@ by the maintainer while browsing the authorized disposable reference org. It rec
 | Captured | 2026-10-17 (single manual pass, not repeated) |
 | Method | Manual browsing as administrator; no automation, screenshots or DOM capture |
 | Environment | Authorized reference tenant recorded in `../implementation-log.md` |
-| Release / edition / licenses | Not recorded — the visible apps depend on enabled licenses and features |
+| Edition | Pro Suite trial (confirmed by the maintainer) |
+| Release / licenses | Not recorded — the visible apps depend on enabled licenses and features |
 | Status | Unreviewed field notes; not a contract or acceptance evidence |
 
 ## Policy fit
@@ -72,15 +73,15 @@ re-check them before they inform a contract.
   200) are separate personal shortcuts; an object's three most-used favorites also
   appear in its item menu.
 
-**Which product this org appears to be** [`starter-suite-overview`]
+**Which product this org is** [`starter-suite-overview`]
 
-Starter Suite (and the higher Pro Suite tier) is Salesforce's small-business bundle
-combining sales, service, marketing and commerce in one org. Its documented areas
-match the observed top-level areas, so the reference org is probably one of these
-suites. *Inference:* confirm the edition from Company Information. A full Enterprise
-org organizes apps differently, so this inventory isn't the general Salesforce layout.
-Pro Suite adds custom apps and objects, personalized navigation and layouts, flow
-automation, quotes and forecasts [`starter-pro-comparison`, third-party].
+The reference org is a **Pro Suite trial**. Starter Suite and its higher Pro Suite
+tier are Salesforce's small-business bundle, which combines sales, service, marketing
+and commerce in one org. This explains the observed top-level areas. A full
+Enterprise org organizes apps differently, so this inventory reflects the Pro Suite
+layout rather than Salesforce in general. Pro Suite adds custom apps and objects,
+personalized navigation and layouts, flow automation, quotes and forecasts
+[`starter-pro-comparison`, third-party].
 
 | Area | Documented purpose |
 | --- | --- |
@@ -163,6 +164,10 @@ Labels are recorded as seen; a few obvious typos in the field notes were correct
 Open questions for a later pass: the sub-entries of items that expanded but were not
 recorded (Invoices, Video Calls, Cases, Quick Text, Messaging Sessions, Segments,
 Flows), and which areas/items depend on specific licenses.
+
+Gaps are expected. Undocumented, unrecorded or unimplemented areas stay listed here
+as known gaps until we decide whether and how to implement them. They don't block
+the parts already in scope.
 
 ## Available navigation items
 
