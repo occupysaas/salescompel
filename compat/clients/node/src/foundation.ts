@@ -86,6 +86,8 @@ function summary(c: Context, value: any): any {
     }
     if (
       [
+        "query",
+        "sobjects",
         "totalSize",
         "done",
         "records",
@@ -511,6 +513,7 @@ export const foundationScenarios: Record<
     await observe(c, "lower-json", path(c, "Account", id), "PATCH", {
       compat_text__c: "lower",
     });
+    await observe(c, "after-lower-json", path(c, "Account", id));
     await observe(
       c,
       "duplicate-alias",
@@ -518,6 +521,7 @@ export const foundationScenarios: Record<
       "PATCH",
       '{"Compat_Text__c":"first","compat_text__c":"second"}',
     );
+    await observe(c, "after-duplicate-alias", path(c, "Account", id));
     await observe(
       c,
       "duplicate-raw",
@@ -525,6 +529,7 @@ export const foundationScenarios: Record<
       "PATCH",
       '{"Compat_Text__c":"first","Compat_Text__c":"second"}',
     );
+    await observe(c, "after-duplicate-raw", path(c, "Account", id));
     const beforeDenied = await observe(
       c,
       "after-duplicates",
@@ -608,7 +613,8 @@ export const foundationScenarios: Record<
         ["upper", value.toUpperCase()],
         ["decomposed", value.normalize("NFD")],
       ]) {
-        c.result.identities[`comparison:${label}:${variant}`] = v;
+        if (!Object.values(c.result.identities).includes(v))
+          c.result.identities[`comparison:${label}:${variant}`] = v;
         await observe(
           c,
           `${label}:${variant}`,

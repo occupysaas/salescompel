@@ -145,3 +145,174 @@ test("a failed second fixture create leaves the first journaled and cleanable", 
     "/services/data/v65.0/sobjects/Account/001000000000001AAA",
   ]);
 });
+
+test("text equality probe produces a valid identity map even when case and normalization variants coincide", async (t) => {
+  const { createServer } = await import("node:http");
+  const { Connection } = await import("jsforce");
+  const { FixtureTracker } = await import("../src/fixtures.ts");
+  const { mkdtemp, rm } = await import("node:fs/promises");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const dir = await mkdtemp(join(tmpdir(), "foundation-identities-"));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  let count = 0;
+  const server = createServer((req, res) => {
+    res.setHeader("content-type", "application/json");
+    if (req.method === "POST") {
+      res.writeHead(201);
+      res.end(
+        JSON.stringify({
+          id: `001${String(++count).padStart(12, "0")}AAA`,
+          success: true,
+          errors: [],
+        }),
+      );
+    } else if (req.url!.includes("/query?"))
+      res.end(JSON.stringify({ totalSize: 0, done: true, records: [] }));
+    else
+      res.end(
+        JSON.stringify({ Id: "001000000000001AAA", Compat_Text__c: null }),
+      );
+  });
+  await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
+  t.after(() => server.close());
+  const url = `http://127.0.0.1:${(server.address() as any).port}`;
+  const c = {
+    conn: new Connection({
+      instanceUrl: url,
+      accessToken: "synthetic",
+      version: "65.0",
+    }),
+    tracker: new FixtureTracker(join(dir, "journal")),
+    env: {
+      COMPAT_API_VERSION: "65.0",
+      COMPAT_CANDIDATE_URL: url,
+      COMPAT_CANDIDATE_TOKEN: "synthetic",
+    },
+    prefix: "COMPAT_CANDIDATE",
+    runId: "offline",
+    result: {
+      id: "foundation-text-null",
+      client: "wire",
+      outcome: "not_run",
+      assertions: [],
+      observations: {},
+      identities: {},
+    },
+    cleanup: [],
+  } as Context;
+  await foundationScenarios["foundation-text-null"](c);
+  const values = Object.values(c.result.identities);
+  assert.equal(
+    new Set(values).size,
+    values.length,
+    "identity normalization must be one-to-one",
+  );
+});
+
+test("discovery link changes remain visible to comparison", () => {
+  const a = { result: { identities: {}, observations: {} } } as Context;
+  const b = { result: { identities: {}, observations: {} } } as Context;
+  recordWireObservation(a, "resources", {
+    status: 200,
+    headers: {},
+    body: {
+      query: "/services/data/v65.0/query",
+      sobjects: "/services/data/v65.0/sobjects",
+    },
+  });
+  recordWireObservation(b, "resources", {
+    status: 200,
+    headers: {},
+    body: { query: "/cursor", sobjects: "/custom" },
+  });
+  assert.notDeepEqual(a.result.observations, b.result.observations);
+});
+
+test("name probe records state after each potentially overwriting PATCH", async (t) => {
+  const { createServer } = await import("node:http");
+  const { Connection } = await import("jsforce");
+  const { FixtureTracker } = await import("../src/fixtures.ts");
+  const { mkdtemp, rm } = await import("node:fs/promises");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const dir = await mkdtemp(join(tmpdir(), "names-state-"));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  let value: any = null;
+  const id = "001000000000001AAA";
+  const server = createServer(async (req, res) => {
+    res.setHeader("content-type", "application/json");
+    const restricted = req.headers.authorization === "Bearer restricted";
+    if (req.method === "POST") {
+      res.writeHead(201);
+      res.end(JSON.stringify({ id, success: true, errors: [] }));
+      return;
+    }
+    if (
+      restricted &&
+      (req.method === "PATCH" ||
+        decodeURIComponent(req.url!).includes("compat_text__c"))
+    ) {
+      res.writeHead(400);
+      res.end('[{"errorCode":"INVALID_FIELD"}]');
+      return;
+    }
+    if (req.method === "PATCH") {
+      let raw = "";
+      for await (const chunk of req) raw += chunk;
+      const b = JSON.parse(raw);
+      value = b.compat_text__c ?? b.Compat_Text__c;
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+    if (req.url!.includes("/query?")) {
+      res.end(
+        JSON.stringify({
+          done: true,
+          totalSize: 1,
+          records: [{ Id: id, Name: "fixture" }],
+        }),
+      );
+      return;
+    }
+    if (req.url!.endsWith("/describe")) {
+      res.end('{"name":"Account","fields":[]}');
+      return;
+    }
+    res.end(JSON.stringify({ Id: id, Compat_Text__c: value }));
+  });
+  await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
+  t.after(() => server.close());
+  const url = `http://127.0.0.1:${(server.address() as any).port}`;
+  const c = {
+    conn: new Connection({
+      instanceUrl: url,
+      accessToken: "synthetic",
+      version: "65.0",
+    }),
+    tracker: new FixtureTracker(join(dir, "journal")),
+    env: {
+      COMPAT_API_VERSION: "65.0",
+      COMPAT_CANDIDATE_URL: url,
+      COMPAT_CANDIDATE_TOKEN: "synthetic",
+      COMPAT_CANDIDATE_RESTRICTED_TOKEN: "restricted",
+    },
+    prefix: "COMPAT_CANDIDATE",
+    runId: "offline",
+    result: {
+      id: "foundation-names",
+      client: "wire",
+      outcome: "not_run",
+      assertions: [],
+      observations: {},
+      identities: {},
+    },
+    cleanup: [],
+  } as Context;
+  await foundationScenarios["foundation-names"](c);
+  const o = c.result.observations as any;
+  assert.equal(o["after-lower-json"]?.body.Compat_Text__c, "lower");
+  assert.equal(o["after-duplicate-alias"]?.body.Compat_Text__c, "second");
+  assert.equal(o["after-duplicate-raw"]?.body.Compat_Text__c, "second");
+});
