@@ -101,8 +101,8 @@ func TestDeclaredMetadataDoesNotActivatePermissionsOrChangeCatalog(t *testing.T)
 	if string(before) != string(after) {
 		t.Fatal("declaration lookup changed persisted catalog")
 	}
-	// Existing candidate length and visibility behavior are not silently migrated.
-	if err := Validate(p, "Account", map[string]any{"Compat_Key__c": strings.Repeat("x", 81)}, false); err != nil {
-		t.Fatal("existing key access changed", err)
+	// Lookup remains passive; Plan 8 explicitly activates the 80-character bound.
+	if err := Validate(p, "Account", map[string]any{"Compat_Key__c": strings.Repeat("x", 81)}, false); err == nil {
+		t.Fatal("active length bound not enforced")
 	}
 }

@@ -6,7 +6,6 @@ import (
 	"crypto/sha256"
 	_ "embed"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
@@ -52,16 +51,8 @@ func Open(ctx context.Context, url string) (*Store, error) {
 	if _, err = tx.Exec(ctx, schema); err != nil {
 		return nil, err
 	}
-	definition, _ := json.Marshal(catalog)
-	if _, err = tx.Exec(ctx, "INSERT INTO platform_catalog(singleton,version,definition) VALUES(true,1,$1) ON CONFLICT DO NOTHING", definition); err != nil {
+	if err = ensureCatalog(ctx, tx); err != nil {
 		return nil, err
-	}
-	var matches bool
-	if err = tx.QueryRow(ctx, "SELECT version=1 AND definition=$1::jsonb FROM platform_catalog WHERE singleton", definition).Scan(&matches); err != nil {
-		return nil, err
-	}
-	if !matches {
-		return nil, errors.New("database catalog version mismatch")
 	}
 	if err = tx.Commit(ctx); err != nil {
 		return nil, err

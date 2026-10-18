@@ -1,0 +1,96 @@
+{
+  "Account": [
+    {
+      "name": "Id",
+      "label": "",
+      "type": "id",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "externalId": false,
+      "length": 0,
+      "referenceTo": null
+    },
+    {
+      "name": "Name",
+      "label": "",
+      "type": "string",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "externalId": false,
+      "length": 255,
+      "referenceTo": null
+    },
+    {
+      "name": "Compat_Text__c",
+      "label": "",
+      "type": "string",
+      "nillable": true,
+      "createable": false,
+      "updateable": false,
+      "externalId": false,
+      "length": 255,
+      "referenceTo": null
+    },
+    {
+      "name": "Compat_Key__c",
+      "label": "",
+      "type": "string",
+      "nillable": true,
+      "createable": false,
+      "updateable": false,
+      "externalId": true,
+      "length": 255,
+      "referenceTo": null
+    }
+  ],
+  "Contact": [
+    {
+      "name": "Id",
+      "label": "",
+      "type": "id",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "externalId": false,
+      "length": 0,
+      "referenceTo": null
+    },
+    {
+      "name": "FirstName",
+      "label": "",
+      "type": "string",
+      "nillable": true,
+      "createable": false,
+      "updateable": false,
+      "externalId": false,
+      "length": 255,
+      "referenceTo": null
+    },
+    {
+      "name": "LastName",
+      "label": "",
+      "type": "string",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "externalId": false,
+      "length": 255,
+      "referenceTo": null
+    },
+    {
+      "name": "AccountId",
+      "label": "",
+      "type": "reference",
+      "nillable": true,
+      "createable": false,
+      "updateable": false,
+      "externalId": false,
+      "length": 18,
+      "referenceTo": [
+        "Account"
+      ]
+    }
+  ]
+}

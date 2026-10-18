@@ -45,9 +45,33 @@ type Object struct {
 	Queryable  bool    `json:"queryable"`
 }
 
-var catalog = map[string][]Field{
-	"Account": {{Name: "Id", Type: "id", Column: "id"}, {Name: "Name", Type: "string", Column: "name", Length: 255}, {Name: "Compat_Text__c", Type: "string", Column: "compat_text", Nillable: true, Length: 255}, {Name: "Compat_Key__c", Type: "string", Column: "compat_key", Nillable: true, ExternalID: true, Length: 255}},
-	"Contact": {{Name: "Id", Type: "id", Column: "id"}, {Name: "FirstName", Type: "string", Column: "first_name", Nillable: true, Length: 255}, {Name: "LastName", Type: "string", Column: "last_name", Length: 255}, {Name: "AccountId", Type: "reference", Column: "account_id", Nillable: true, Length: 18, ReferenceTo: []string{"Account"}}},
+var catalog = func() map[string][]Field {
+	c, err := buildCatalog()
+	if err != nil {
+		panic(err)
+	}
+	return c
+}()
+
+func buildCatalog() (map[string][]Field, error) { return buildCatalogWith(DeclaredCustomField) }
+
+func buildCatalogWith(lookup func(string) (CustomFieldDeclaration, bool)) (map[string][]Field, error) {
+	c := map[string][]Field{
+		"Account": {{Name: "Id", Type: "id", Column: "id"}, {Name: "Name", Type: "string", Column: "name", Length: 255}, {Name: "Compat_Text__c", Type: "string", Column: "compat_text", Nillable: true, Length: 255}, {Name: "Compat_Key__c", Type: "string", Column: "compat_key", Nillable: true, ExternalID: true, Length: 255}},
+		"Contact": {{Name: "Id", Type: "id", Column: "id"}, {Name: "FirstName", Type: "string", Column: "first_name", Nillable: true, Length: 255}, {Name: "LastName", Type: "string", Column: "last_name", Length: 255}, {Name: "AccountId", Type: "reference", Column: "account_id", Nillable: true, Length: 18, ReferenceTo: []string{"Account"}}},
+	}
+	for index, f := range c["Account"] {
+		if f.Name != "Compat_Text__c" && f.Name != "Compat_Key__c" {
+			continue
+		}
+		fullName := "Account." + f.Name
+		declaration, known := lookup(fullName)
+		if !known || declaration.FullName != fullName || declaration.Type != "Text" || declaration.Length != 80 {
+			return nil, fmt.Errorf("invalid required custom-field declaration: %s", fullName)
+		}
+		c["Account"][index].Length = declaration.Length
+	}
+	return c, nil
 }
 
 func allowed(p Principal, object, name string) bool {

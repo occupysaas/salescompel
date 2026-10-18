@@ -1,3 +1,4 @@
+-- Bootstrap retains v1 bounds; ensureCatalog validates and atomically upgrades to v2.
 CREATE TABLE IF NOT EXISTS platform_catalog (
  singleton boolean PRIMARY KEY DEFAULT true CHECK(singleton), version integer NOT NULL, definition jsonb NOT NULL
 );
