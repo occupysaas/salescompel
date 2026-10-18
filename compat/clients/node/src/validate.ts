@@ -37,6 +37,12 @@ export async function validateRepository(): Promise<string[]> {
     )
   )
     issues.push("Invalid metadata inventory schema");
+  if (
+    !new Ajv().validateSchema(
+      await readDoc("compat/schemas/external-id-contract.schema.json"),
+    )
+  )
+    issues.push("Invalid external-ID schema");
   const ajv = new Ajv({ allErrors: true });
   async function schemaCheck(schemaPath: string, data: unknown, label: string) {
     const check = ajv.compile(await readDoc(schemaPath));

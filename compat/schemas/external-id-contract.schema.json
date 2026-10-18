@@ -1,0 +1,279 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "kind": {
+      "const": "external-id-contract"
+    },
+    "config": {
+      "$ref": "#/$defs/config"
+    },
+    "manifestHash": {
+      "type": "string",
+      "maxLength": 64
+    },
+    "connectors": {
+      "type": "object",
+      "minProperties": 1,
+      "maxProperties": 30,
+      "additionalProperties": {
+        "type": "string",
+        "maxLength": 100
+      }
+    },
+    "runId": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{24}$"
+    },
+    "startedAt": {
+      "type": "string",
+      "maxLength": 40
+    },
+    "finishedAt": {
+      "type": "string",
+      "maxLength": 40
+    },
+    "identityVerified": {
+      "type": "boolean"
+    },
+    "collection": {
+      "enum": [
+        "complete",
+        "incomplete",
+        "blocked"
+      ]
+    },
+    "cleanup": {
+      "enum": [
+        "clean",
+        "pending",
+        "blocked"
+      ]
+    },
+    "operations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "caseId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "method": {
+            "enum": [
+              "create",
+              "upsert",
+              "update",
+              "native"
+            ]
+          },
+          "key": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "bodyKey": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 255
+          },
+          "state": {
+            "enum": [
+              "observed",
+              "unavailable"
+            ]
+          },
+          "status": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 100,
+            "maximum": 599
+          },
+          "bodyPresent": {
+            "type": "boolean"
+          },
+          "body": {},
+          "records": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "Id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 255
+                },
+                "Name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 255
+                },
+                "Compat_Key__c": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "maxLength": 255
+                },
+                "Compat_Text__c": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "maxLength": 255
+                }
+              },
+              "required": [
+                "Id",
+                "Name",
+                "Compat_Key__c",
+                "Compat_Text__c"
+              ]
+            },
+            "maxItems": 80
+          },
+          "stateVerified": {
+            "type": "boolean"
+          },
+          "artifact": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^([a-f0-9]{64})?$"
+          }
+        },
+        "required": [
+          "id",
+          "caseId",
+          "method",
+          "key",
+          "bodyKey",
+          "state",
+          "status",
+          "bodyPresent",
+          "body",
+          "records",
+          "stateVerified",
+          "artifact",
+          "sha256"
+        ]
+      },
+      "maxItems": 160
+    },
+    "aliases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "alias": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          }
+        },
+        "required": [
+          "id",
+          "alias"
+        ]
+      },
+      "maxItems": 80
+    },
+    "reasons": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 100
+      },
+      "maxItems": 100
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "kind",
+    "config",
+    "manifestHash",
+    "connectors",
+    "runId",
+    "startedAt",
+    "finishedAt",
+    "identityVerified",
+    "collection",
+    "cleanup",
+    "operations",
+    "aliases",
+    "reasons"
+  ],
+  "$defs": {
+    "config": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "apiVersion": {
+          "const": "65.0"
+        },
+        "profileHash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "origin": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "administrator": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "user": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255
+            },
+            "org": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255
+            }
+          },
+          "required": [
+            "user",
+            "org"
+          ]
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "apiVersion",
+        "profileHash",
+        "origin",
+        "administrator"
+      ]
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}
