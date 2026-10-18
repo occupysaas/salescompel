@@ -83,11 +83,18 @@ test("malformed or entity-bearing XML is not successful retrieval", async (t) =>
 test("failed retrieval cannot reuse stale input files", async (t) => {
   const dir = await mkdtemp(join(tmpdir(), "metadata-partial-"));
   t.after(() => rm(dir, { recursive: true, force: true }));
-  await assert.rejects(
-    retrieveInSession(async () => {
-      throw new Error("private failure");
-    }, dir),
-  );
+  const result = await retrieveInSession(async () => {
+    await files(join(dir, "force-app/main/default"));
+    await rm(join(dir, "force-app/main/default", paths[1]));
+    await rm(join(dir, "force-app/main/default", paths[2]));
+    throw new Error("private failure");
+  }, dir);
+  assert.equal(result.outcome, "incomplete");
+  assert.equal(result.members.length, 1);
+  assert.deepEqual(result.missing, [
+    "CustomField:Account.Compat_Key__c",
+    "PermissionSet:Compat_Admin",
+  ]);
   assert.deepEqual(
     await readFile(join(dir, "sfdx-project.json"), "utf8")
       .then(JSON.parse)

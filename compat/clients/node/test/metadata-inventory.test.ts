@@ -78,3 +78,17 @@ test("preserveFalseVersusMissing and rejectMalformedInventory", async () => {
   bad.facts[0].sourceRef = "missing";
   assert.throws(() => validateInventory(bad));
 });
+
+test("truncated inventories cannot claim complete coverage", async () => {
+  const inv = newInventory(parseDiscoveryConfig(await config()));
+  inv.identityVerified = { initial: true, final: true };
+  inv.outcome = "complete";
+  inv.operations.push({
+    id: "describe:administrator:Account",
+    kind: "describe",
+    persona: "administrator",
+    component: "Account",
+    state: "observed",
+  });
+  assert.throws(() => validateInventory(inv), /coverage/);
+});

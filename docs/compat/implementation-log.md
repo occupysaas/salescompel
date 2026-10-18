@@ -366,3 +366,27 @@ sanitization review is claimed.
   not-before checks. Earliest checkpoint is October 19 at 21:54 UTC; both are due
   after 23:21 UTC. No background job is scheduled. Product behavior/routes remain
   unchanged and Task 3 does not yet meet its completion gate.
+
+## Plan 6 read-only metadata discovery — 2026-10-18
+
+- Implemented strict inventory/config validation, bounded JSforce reads, repeated
+  distinct-persona identity checks, isolated native CLI retrieval, private output,
+  capability matrix compilation and guarded stability comparison.
+- A live CLI retrieve emitted an empty Account object container; added a failing
+  regression before allowing only that exact empty container. Extra metadata,
+  symlinks, DTD/entities and size violations remain rejected.
+- Two sequential reviewed collections each retained 112 facts, 21 gaps and nine
+  artifacts. Matrices and artifact hashes matched without conflicts. Both runs
+  remain incomplete, so formal stability comparison correctly returned blocked.
+- Recorded omitted grants and unavailable restricted describe evidence without
+  interpreting them as effective access. Optional scopes remain unrequested.
+- Final Node check: 88 passed, one optional candidate skip, zero failed; typecheck,
+  formatting and repository validation passed. CLI temporary homes were removed.
+  Existing profile bytes and product routes/code remain unchanged.
+- See [Plan 6 results](plan-6-metadata-discovery.md) for time/digest bindings,
+  blockers and the narrow proposed field-metadata/grants slice. No M4 or Plan 5
+  completion claim is made; no expiry background job is scheduled.
+- Fresh review found two Important issues, both fixed with failing-then-passing
+  regressions: retain partial retrieval members on execution failure, and require
+  full operation/property coverage before accepting completion. No deferred
+  findings remain. Successful collection semantics and live blockers are unchanged.

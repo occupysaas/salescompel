@@ -218,3 +218,43 @@ fixtures; unrelated IDs are discarded. Reports and fixture journals remain priva
 
 [Field notes on the reference UI's apps, navigation items and default list views](ui/navigation-inventory.md)
 scope the Vue navigation model. They are a functional inventory, not a design source.
+
+## Plan 6 read-only metadata discovery
+
+`discover-metadata` is an inventory command, separate from compatibility capture
+and certification. It uses API 65.0, the foundation profile hash and existing
+administrator/restricted tokens; no second administrator session is needed.
+
+Create a mode-0600 JSON config in an existing owner-only directory outside the
+checkout. It contains `schemaVersion: 1`, `apiVersion: "65.0"`,
+`profile: "rest-query-foundation"`, the SHA-256 of that profile file, and `origin`
+(the exact HTTPS origin, without trailing slash). Optional `profiles` and
+`permissionSets` arrays contain exact component fullNames, at most 20 each;
+wildcards are rejected. Credentials never belong in the config.
+
+Set `COMPAT_REFERENCE_URL`, `COMPAT_REFERENCE_TOKEN` and
+`COMPAT_REFERENCE_RESTRICTED_TOKEN` privately. From `compat/clients/node` run:
+
+```sh
+node --import tsx src/cli.ts discover-metadata --config "$DISCOVERY_CONFIG" --out "$DISCOVERY_OUTPUT"
+```
+
+The output must be a new `.json` file in an existing owner-only directory outside
+the checkout. A sibling `.artifacts` directory retains private read JSON and
+retrieved XML with digests. Keep both private. The command performs identity,
+describe, Metadata read and exact synthetic CLI retrieval operations only. It
+never deploys components, changes permissions or extracts records. A native empty
+Account XML container is validated but is not counted as a retrieved component.
+
+Exit 0 means the bounded inventory is complete; 2 means input/setup is blocked or
+collection is incomplete; 1 reports an internal output failure. Missing properties
+are gaps, explicit false values remain facts, and describe visibility does not
+establish effective permission enforcement. CLI authentication/project files are
+removed after the operation, including failure paths. Existing saved aliases and
+Plan 5's session files are not overwritten by this command.
+
+For programmatic review, `compileMetadataMatrix` and
+`compareMetadataInventories` are exported from `src/metadata-matrix.ts`. Only
+complete, distinct sequential inventories with matching bindings can report
+`stable`. A blocked pair may have equal observed facts; that does not close its
+missing-evidence gaps. See [Plan 6 results](plan-6-metadata-discovery.md).

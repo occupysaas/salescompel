@@ -197,6 +197,136 @@ function validValue(v: unknown): v is Value {
       v.every((x) => !Array.isArray(x) && validValue(x)))
   );
 }
+// Completion requires every fixed operation and every required projected property.
+// Incomplete inventories may retain any safely collected subset for diagnosis.
+function hasCompleteCoverage(i: Inventory): boolean {
+  const operation = (kind: Area, persona: Persona, component: string) =>
+    i.operations.find(
+      (o) =>
+        o.kind === kind &&
+        o.persona === persona &&
+        o.component === component &&
+        o.state === "observed",
+    );
+  const facts = (
+    o: Operation | undefined,
+    component: string,
+    properties: string[],
+  ) =>
+    !!o &&
+    properties.every((property) =>
+      i.facts.some(
+        (f) =>
+          f.sourceRef === o.id &&
+          f.area === o.kind &&
+          f.persona === o.persona &&
+          f.component === component &&
+          f.property === property,
+      ),
+    );
+  for (const persona of ["administrator", "restricted"] as const) {
+    for (const [object, fields] of Object.entries(FIELDS)) {
+      const o = operation("describe", persona, object);
+      if (
+        !facts(o, object, [
+          "queryable",
+          "createable",
+          "updateable",
+          "deletable",
+        ])
+      )
+        return false;
+      for (const field of fields)
+        if (
+          !facts(o, `${object}.${field}`, [
+            "type",
+            "length",
+            "nillable",
+            "externalId",
+            "referenceTo",
+            "createable",
+            "updateable",
+          ])
+        )
+          return false;
+    }
+  }
+  const groups = {
+    CustomField: MEMBERS.CustomField,
+    PermissionSet: [
+      ...new Set([...MEMBERS.PermissionSet, ...i.scope.permissionSets]),
+    ],
+    Profile: i.scope.profiles,
+  };
+  for (const area of ["metadata", "retrieve"] as const) {
+    for (const type of ["CustomField", "PermissionSet", "Profile"] as const) {
+      const names =
+        area === "metadata"
+          ? groups[type]
+          : type === "Profile"
+            ? []
+            : MEMBERS[type];
+      for (const name of names) {
+        const o = operation(
+          area,
+          "administrator",
+          area === "retrieve" ? "synthetic" : `${type}:${name}`,
+        );
+        if (type === "CustomField") {
+          if (
+            !facts(o, name, [
+              "type",
+              "length",
+              "required",
+              "externalId",
+              "unique",
+            ])
+          )
+            return false;
+        } else {
+          for (const [object, fields] of Object.entries(FIELDS)) {
+            if (
+              !facts(o, `${type}:${name}:${object}`, [
+                "allowRead",
+                "allowCreate",
+                "allowEdit",
+                "allowDelete",
+                "viewAllRecords",
+                "modifyAllRecords",
+              ])
+            )
+              return false;
+            for (const field of fields)
+              if (
+                !facts(o, `${type}:${name}:${object}.${field}`, [
+                  "readable",
+                  "editable",
+                ])
+              )
+                return false;
+          }
+        }
+      }
+    }
+  }
+  for (const [type, names] of [
+    ["Profile", i.scope.profiles],
+    ["PermissionSet", i.scope.permissionSets],
+  ] as const) {
+    if (!names.length) {
+      const o = operation("metadata", "administrator", `optional-${type}`);
+      if (
+        !o ||
+        !i.gaps.some(
+          (g) =>
+            g.sourceRef === o.id && g.state === "unrequested" && !g.required,
+        )
+      )
+        return false;
+    }
+  }
+  return true;
+}
 export function validateInventory(value: unknown): asserts value is Inventory {
   if (!inventoryValidator(value)) throw new Error("Invalid metadata inventory");
   const i = value as Inventory,
@@ -213,6 +343,8 @@ export function validateInventory(value: unknown): asserts value is Inventory {
     i.startedAt > i.finishedAt
   )
     throw new Error("Invalid inventory timestamps");
+  if (i.outcome === "complete" && !hasCompleteCoverage(i))
+    throw new Error("Incomplete inventory coverage");
   if (
     i.outcome === "complete" &&
     (!i.identityVerified.initial ||
@@ -228,7 +360,8 @@ export function finishInventory(i: Inventory) {
   i.outcome =
     !i.identityVerified.initial || !i.identityVerified.final
       ? "blocked"
-      : i.operations.some((x) => x.state !== "observed") ||
+      : !hasCompleteCoverage(i) ||
+          i.operations.some((x) => x.state !== "observed") ||
           i.gaps.some((x) => x.required)
         ? "incomplete"
         : "complete";

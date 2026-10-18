@@ -203,23 +203,29 @@ export async function retrieveInSession(
     `<?xml version="1.0" encoding="UTF-8"?><Package xmlns="${namespace}"><types><members>Account.Compat_Text__c</members><members>Account.Compat_Key__c</members><name>CustomField</name></types><types><members>Compat_Admin</members><name>PermissionSet</name></types><version>65.0</version></Package>`,
     { flag: "wx", mode: 0o600 },
   );
-  const response = await run([
-    "project",
-    "retrieve",
-    "start",
-    "--manifest",
-    join(dir, "package.xml"),
-    "--target-org",
-    "compat-fixture",
-    "--api-version",
-    "65.0",
-    "--wait",
-    "5",
-  ]);
+  let response: any;
+  try {
+    response = await run([
+      "project",
+      "retrieve",
+      "start",
+      "--manifest",
+      join(dir, "package.xml"),
+      "--target-org",
+      "compat-fixture",
+      "--api-version",
+      "65.0",
+      "--wait",
+      "5",
+    ]);
+  } catch {
+    // The fresh isolated project can contain valid partial output even on timeout.
+    response = undefined;
+  }
   const result = await scanRetrievedMetadata(
     join(dir, "force-app/main/default"),
   );
-  if (response.success !== true || response.status !== "Succeeded")
+  if (response?.success !== true || response?.status !== "Succeeded")
     result.outcome = "incomplete";
   return result;
 }
