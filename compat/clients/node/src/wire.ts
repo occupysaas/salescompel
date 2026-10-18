@@ -2,6 +2,7 @@ export interface WireResponse {
   status: number;
   headers: Record<string, string>;
   body: unknown;
+  bodyPresent?: boolean;
 }
 // The response is private evidence. Never publish message text from this value.
 export async function wire(
@@ -73,5 +74,10 @@ export async function wire(
     const value = response.headers.get(key);
     if (value !== null) selected[key] = value;
   }
-  return { status: response.status, headers: selected, body };
+  return {
+    status: response.status,
+    headers: selected,
+    body,
+    bodyPresent: raw.length > 0,
+  };
 }
