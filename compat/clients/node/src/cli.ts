@@ -31,6 +31,7 @@ async function main() {
     options: {
       target: { type: "string" },
       suite: { type: "string" },
+      config: { type: "string" },
       out: { type: "string" },
       reference: { type: "string" },
       candidate: { type: "string" },
@@ -48,6 +49,23 @@ async function main() {
     throw new Error(
       "Specify one command: validate, preflight, capture, compare, repeatability, verify-evidence or validate-openapi",
     );
+  if (command === "discover-metadata") {
+    if (Object.keys(values).some((k) => !["config", "out"].includes(k)))
+      throw new Error("Discovery accepts only --config and --out");
+    if (!values.config || !values.out)
+      throw new Error("--config and --out private files required");
+    const { discoverMetadataCommand } = await import("./metadata-command.ts");
+    const inventory = await discoverMetadataCommand(
+      values.config,
+      values.out,
+      process.env,
+    );
+    console.log(
+      `${inventory.outcome}: ${inventory.facts.length} facts, ${inventory.gaps.length} gaps; private inventory ${resolve(values.out)}`,
+    );
+    process.exitCode = inventory.outcome === "complete" ? 0 : 2;
+    return;
+  }
   if (command === "verify-evidence") {
     if (
       !values.first ||
@@ -228,5 +246,5 @@ main().catch((e) => {
     .map(([, v]) => v!)
     .filter(Boolean);
   console.error(sanitize(e.message ?? String(e), secrets));
-  process.exitCode = 2;
+  process.exitCode = e.exitCode === 1 ? 1 : 2;
 });

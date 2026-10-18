@@ -1,3 +1,7 @@
+import { mkdir, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+import { createHash } from "node:crypto";
+import { privateDirectory } from "./metadata-files.ts";
 import { wire } from "./wire.ts";
 import { readWithClient } from "./metadata-read-process.ts";
 import {
@@ -116,6 +120,10 @@ export async function collectMetadata(
   validateDiscoveryEnv(c, env);
   reader ??= discoveryReader(c, env);
   const i = newInventory(c);
+  const artifactDir = env.DISCOVERY_ARTIFACT_DIR
+    ? await privateDirectory(env.DISCOVERY_ARTIFACT_DIR)
+    : undefined;
+  if (artifactDir) await mkdir(join(artifactDir, "raw"), { mode: 0o700 });
   const tokens = [
     env.COMPAT_REFERENCE_TOKEN,
     env.COMPAT_REFERENCE_RESTRICTED_TOKEN,
@@ -145,6 +153,23 @@ export async function collectMetadata(
     i.operations.push(op);
     try {
       const data = await read();
+      if (artifactDir) {
+        const raw = JSON.stringify(data);
+        if (Buffer.byteLength(raw) > 8 * 1024 * 1024)
+          throw new Error("Read evidence bound");
+        const path =
+          "raw/" + createHash("sha256").update(id).digest("hex") + ".json";
+        await writeFile(join(artifactDir, path), raw, {
+          flag: "wx",
+          mode: 0o600,
+        });
+        i.artifacts.push({
+          path,
+          bytes: Buffer.byteLength(raw),
+          sha256: createHash("sha256").update(raw).digest("hex"),
+          component,
+        });
+      }
       project(data, id);
     } catch {
       op.state = "unavailable";

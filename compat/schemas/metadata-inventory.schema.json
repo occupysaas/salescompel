@@ -254,7 +254,7 @@
     },
     "artifacts": {
       "type": "array",
-      "maxItems": 10,
+      "maxItems": 100,
       "items": {
         "type": "object",
         "additionalProperties": false,

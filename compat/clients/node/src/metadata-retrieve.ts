@@ -1,3 +1,5 @@
+import { privateDirectory } from "./metadata-files.ts";
+export { privateDirectory } from "./metadata-files.ts";
 import {
   mkdir,
   writeFile,
@@ -53,23 +55,6 @@ export interface RetrievalResult {
   members: RetrievedMember[];
   artifacts: Artifact[];
   missing: string[];
-}
-export async function privateDirectory(dir: string) {
-  if (!isAbsolute(dir)) throw new Error("Private directory must be absolute");
-  const actual = await realpath(dir),
-    root = await realpath(ROOT),
-    rel = relative(root, actual),
-    info = await stat(actual);
-  if (
-    (!rel.startsWith(".." + (process.platform === "win32" ? "\\" : "/")) &&
-      !isAbsolute(rel)) ||
-    actual !== resolve(dir) ||
-    !info.isDirectory() ||
-    (info.mode & 0o077) !== 0 ||
-    (process.getuid && info.uid !== process.getuid())
-  )
-    throw new Error("Directory must be private, external and not symlinked");
-  return actual;
 }
 export async function scanRetrievedMetadata(
   root: string,

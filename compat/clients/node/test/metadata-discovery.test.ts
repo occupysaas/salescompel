@@ -187,3 +187,22 @@ test("read process deadline and response bound fail closed", async (t) => {
     /READ_TIMEOUT/,
   );
 });
+
+test("raw read evidence is retained only in a private external directory", async (t) => {
+  const { mkdtemp, rm, readdir, stat } = await import("node:fs/promises");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const dir = await mkdtemp(join(tmpdir(), "metadata-raw-"));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  const i = await collectMetadata(
+    await config(),
+    { ...env, DISCOVERY_ARTIFACT_DIR: dir },
+    reader([]),
+  );
+  assert.equal(i.artifacts.length, 7);
+  assert.equal((await readdir(join(dir, "raw"))).length, 7);
+  for (const a of i.artifacts) {
+    assert.match(a.sha256, /^[a-f0-9]{64}$/);
+    assert.equal((await stat(join(dir, a.path))).mode & 0o077, 0);
+  }
+});
