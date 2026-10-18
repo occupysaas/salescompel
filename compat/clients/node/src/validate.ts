@@ -31,6 +31,12 @@ export async function profile(suiteId: string = "pilot") {
 }
 export async function validateRepository(): Promise<string[]> {
   const issues: string[] = [];
+  if (
+    !new Ajv().validateSchema(
+      await readDoc("compat/schemas/metadata-inventory.schema.json"),
+    )
+  )
+    issues.push("Invalid metadata inventory schema");
   const ajv = new Ajv({ allErrors: true });
   async function schemaCheck(schemaPath: string, data: unknown, label: string) {
     const check = ajv.compile(await readDoc(schemaPath));
