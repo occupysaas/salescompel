@@ -347,3 +347,22 @@ sanitization review is claimed.
   has been made, and product routes/behavior remain unchanged.
 - Tried release-pinned Winter 26 API/REST/SOQL HTML pages; responses were a loading
   shell or unavailable. This does not close the release-content review blocker.
+
+## Plan 5 second capture and ordering corrections — 2026-10-17
+
+- Second capture repeated six passes and the expiry gap. Independent queries
+  confirmed all 2,418 journaled records absent after successful cleanup.
+- Repeatability and pair verification returned blocked. Diagnostic comparison
+  found unordered limited-query membership differences, unordered name-equality
+  row-order differences, and equal-key cursor order/page-partition differences.
+- Added explicit unique fixture-text ordering to the first two probes, preserving
+  projection and supported grammar. A local HTTP regression failed for each
+  missing ORDER BY before both corrections passed. Raw captures stay untouched;
+  tied-row comparisons remain unresolved and require an explicit evidence rule.
+- Updated the CLI test to check a missing fresh session rather than assume that
+  real readiness will stay unbound forever. Full check: 67 passed, one optional
+  candidate skip; typecheck, formatting and repository validation passed.
+- Prepared a private read-only expiry follow-up with digest, identity, route and
+  not-before checks. Earliest checkpoint is October 19 at 21:54 UTC; both are due
+  after 23:21 UTC. No background job is scheduled. Product behavior/routes remain
+  unchanged and Task 3 does not yet meet its completion gate.

@@ -15,7 +15,7 @@ test("selected foundation profile cannot fall back to pilot", async () => {
 test("unregistered suite is rejected rather than interpreted as a path", async () => {
   await assert.rejects(profile("../../private"), /suite/i);
 });
-test("foundation capture blocks unbound readiness before transport with its own manifest", async (t) => {
+test("foundation capture blocks incomplete session setup before transport with its own manifest", async (t) => {
   let requests = 0;
   const server = createServer((_req, res) => {
     requests++;
@@ -62,11 +62,12 @@ test("CLI suite selection reaches foundation readiness rather than rejecting its
         ...process.env,
         COMPAT_REFERENCE_TOKEN: "",
         COMPAT_REFERENCE_URL: "",
+        COMPAT_REFERENCE_FRESH_TOKEN: "",
       },
     },
   );
   assert.equal(r.status, 2);
-  assert.match(r.stdout + r.stderr, /current profile|not ready/);
+  assert.match(r.stdout + r.stderr, /Missing COMPAT_REFERENCE_FRESH_TOKEN/);
   assert.doesNotMatch(r.stderr, /Unknown option/);
 });
 

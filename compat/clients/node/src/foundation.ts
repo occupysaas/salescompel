@@ -351,7 +351,7 @@ export const foundationScenarios: Record<
       "no-id",
       query(
         c,
-        `SELECT Name FROM Account WHERE Name = '${literal(name)}' LIMIT 201`,
+        `SELECT Name FROM Account WHERE Name = '${literal(name)}' ORDER BY Compat_Text__c LIMIT 201`,
       ),
       { "Sforce-Query-Options": "batchSize=200" },
     );
@@ -633,7 +633,10 @@ export const foundationScenarios: Record<
       await observe(
         c,
         `name-equality:${variant}`,
-        query(c, `SELECT Id FROM Account WHERE Name = '${literal(value)}'`),
+        query(
+          c,
+          `SELECT Id FROM Account WHERE Name = '${literal(value)}' ORDER BY Compat_Text__c`,
+        ),
       );
     await account(c, name, "null", { Compat_Text__c: null });
     await account(c, name, "blank", { Compat_Text__c: "" });

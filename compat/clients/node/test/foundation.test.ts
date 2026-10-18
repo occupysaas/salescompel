@@ -316,3 +316,70 @@ test("name probe records state after each potentially overwriting PATCH", async 
   assert.equal(o["after-duplicate-alias"]?.body.Compat_Text__c, "second");
   assert.equal(o["after-duplicate-raw"]?.body.Compat_Text__c, "second");
 });
+
+test("projection and name-equality probes request deterministic fixture ordering", async (t) => {
+  const { createServer } = await import("node:http");
+  for (const scenario of ["foundation-pagination", "foundation-text-null"]) {
+    let selected = "";
+    const server = createServer((req, res) => {
+      const q = new URL(req.url!, "http://localhost").searchParams.get("q")!;
+      const target =
+        scenario === "foundation-pagination"
+          ? q.startsWith("SELECT Name FROM")
+          : q.startsWith("SELECT Id FROM Account WHERE Name");
+      res.setHeader("content-type", "application/json");
+      if (target) {
+        selected = q;
+        res.writeHead(500);
+        res.end("{}");
+        return;
+      }
+      const records =
+        scenario === "foundation-pagination"
+          ? Array.from({ length: 2001 }, (_, i) => ({ Id: String(i) }))
+          : [];
+      res.end(
+        JSON.stringify({ totalSize: records.length, done: true, records }),
+      );
+    });
+    await new Promise<void>((resolve) =>
+      server.listen(0, "127.0.0.1", resolve),
+    );
+    t.after(() => server.close());
+    let created = 0;
+    const c = {
+      conn: {
+        sobject: () => ({
+          create: async () => ({
+            success: true,
+            id: `001${String(++created).padStart(12, "0")}AAA`,
+          }),
+        }),
+      },
+      tracker: { intent: async () => {}, add: async () => {} },
+      env: {
+        COMPAT_API_VERSION: "65.0",
+        COMPAT_CANDIDATE_URL: `http://127.0.0.1:${(server.address() as any).port}`,
+        COMPAT_CANDIDATE_TOKEN: "synthetic",
+      },
+      prefix: "COMPAT_CANDIDATE",
+      runId: "ordering",
+      result: {
+        id: scenario,
+        identities: {},
+        observations: {},
+        assertions: [],
+      },
+      cleanup: [],
+    } as unknown as Context;
+    await assert.rejects(
+      foundationScenarios[scenario](c),
+      /bounded JSON HTTP response/,
+    );
+    assert.match(
+      selected,
+      /ORDER BY Compat_Text__c(?: LIMIT 201)?$/,
+      "unique fixture text values must determine order before comparing identities",
+    );
+  }
+});
