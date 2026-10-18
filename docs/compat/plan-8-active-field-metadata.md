@@ -70,3 +70,28 @@ permission and error evidence remain separate; no M4 completion claim is made.
 Execution used the approved native branch workflow. Catalog construction uses a
 narrow internal lookup seam to test invalid declarations. Schema-isolated migration
 tests keep unrelated databases untouched. No substantive plan deviations were needed.
+
+## Final review and disposition
+
+Fresh read-only review of `57184e5..97c6236` found no Critical or Important issues.
+One Minor test improvement is deferred: add simultaneous startup against a wholly
+empty schema; current concurrency coverage exercises populated v1 upgrade. The
+review confirmed the advisory lock precedes bootstrap DDL, so no defect was observed.
+The race-enabled Go suite also passed with PostgreSQL, and the actual old binary
+refused the upgraded database with `database catalog version mismatch`.
+
+Review exclusions were ruled on explicitly:
+
+- Salesforce Unicode/error parity, effective permissions and uniqueness/case
+  behavior remain outside this length-only slice. Existing candidate semantics
+  are preserved; the cost of extending the claim would be unsupported parity.
+- Mixed-version rolling operation and automatic downgrade remain unsupported.
+  Stop old instances and use verified backup restoration; ignoring this boundary
+  risks rejected operations or loss of post-backup writes during rollback.
+- General schema reconciliation remains outside this bounded migration. Only
+  the two custom-column bounds are verified at v2; other schema drift is not
+  automatically repaired and requires separate operator diagnosis.
+
+No production changes or push were performed. The approved native local workflow
+was retained, and the implementation's disposable PostgreSQL container was removed
+at completion. The deferred Minor does not block this reviewed release slice.
