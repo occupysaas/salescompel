@@ -25,7 +25,15 @@ test(
     const key = `m2-${crypto.randomUUID()}`;
     try {
       const d = await conn.sobject("Account").describe();
-      assert.ok(d.fields.some((f) => f.name === "Compat_Text__c"));
+      for (const name of ["Compat_Text__c", "Compat_Key__c"]) {
+        const f = d.fields.find((f) => f.name === name);
+        assert.ok(f);
+        assert.equal(f.length, 80);
+        assert.equal(f.type, "string");
+        assert.equal(f.nillable, true);
+        assert.equal(f.externalId, name === "Compat_Key__c");
+        assert.deepEqual(f.referenceTo, []);
+      }
       assert.ok(
         !(await restricted.sobject("Account").describe()).fields.some(
           (f) => f.name === "Compat_Text__c",

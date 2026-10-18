@@ -151,3 +151,69 @@ func TestHTTPRejectsUndeliverablePathsAndListings(t *testing.T) {
 		}
 	}
 }
+
+func TestHTTPCustomFieldLengths(t *testing.T) {
+	s := testStore(t)
+	a, _ := principals(t, s)
+	h := NewHandler(s, "")
+	base := "/services/data/v65.0/sobjects/Account"
+	request := func(method, path string, data any) *httptest.ResponseRecorder {
+		t.Helper()
+		body, _ := json.Marshal(data)
+		r := httptest.NewRequest(method, path, strings.NewReader(string(body)))
+		r.Header.Set("Authorization", "Bearer token-"+a.Tenant)
+		r.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, r)
+		return w
+	}
+	d := request("GET", base+"/describe", nil)
+	if d.Code != 200 {
+		t.Fatal(d.Code, d.Body.String())
+	}
+	var obj Object
+	if e := json.Unmarshal(d.Body.Bytes(), &obj); e != nil {
+		t.Fatal(e)
+	}
+	for _, name := range []string{"Compat_Text__c", "Compat_Key__c"} {
+		found := false
+		for _, f := range obj.Fields {
+			if f.Name == name {
+				found = true
+				if f.Length != 80 || f.Type != "string" || !f.Nillable || f.ExternalID != (name == "Compat_Key__c") || f.ReferenceTo == nil || len(f.ReferenceTo) != 0 {
+					t.Fatal(f)
+				}
+			}
+		}
+		if !found {
+			t.Fatal("missing", name)
+		}
+		bad := request("POST", base, map[string]any{"Name": "oversized", name: strings.Repeat("x", 81)})
+		if bad.Code != 400 || !strings.Contains(bad.Body.String(), "STRING_TOO_LONG") {
+			t.Fatal(bad.Code, bad.Body.String())
+		}
+		good := request("POST", base, map[string]any{"Name": "boundary", name: strings.Repeat("x", 80)})
+		if good.Code != 201 {
+			t.Fatal(good.Code, good.Body.String())
+		}
+		var created struct {
+			ID string `json:"id"`
+		}
+		json.Unmarshal(good.Body.Bytes(), &created)
+		path := base + "/" + created.ID
+		before := request("GET", path, nil).Body.String()
+		bad = request("PATCH", path, map[string]any{"Name": "must not change", name: strings.Repeat("x", 81)})
+		if bad.Code != 400 || !strings.Contains(bad.Body.String(), "STRING_TOO_LONG") {
+			t.Fatal(bad.Code, bad.Body.String())
+		}
+		if after := request("GET", path, nil).Body.String(); before != after {
+			t.Fatal("rejected write changed record")
+		}
+		if w := request("PATCH", path, map[string]any{name: strings.Repeat("é", 80)}); w.Code != 204 {
+			t.Fatal(w.Code, w.Body.String())
+		}
+		if w := request("DELETE", path, nil); w.Code != 204 {
+			t.Fatal(w.Code, w.Body.String())
+		}
+	}
+}

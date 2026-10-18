@@ -47,6 +47,8 @@ start_server
 curl --silent --show-error --fail --cacert "$scratch/cert.pem" -H "Authorization: Bearer $CANDIDATE_TOKEN" "$CANDIDATE_URL/services/data/v65.0/sobjects/Account/$record_id" > "$scratch/read.json"
 python3 -c 'import json,sys;assert json.load(open(sys.argv[1]))["Name"]=="Restart probe"' "$scratch/read.json"
 curl --silent --show-error --fail --cacert "$scratch/cert.pem" -X DELETE -H "Authorization: Bearer $CANDIDATE_TOKEN" "$CANDIDATE_URL/services/data/v65.0/sobjects/Account/$record_id"
+# Verify native describe again after an actual process restart.
+RUN_CANDIDATE=1 npm --prefix compat/clients/node exec -- tsx --test compat/clients/node/test/candidate.test.ts
 # Isolate Salesforce CLI credential files to the disposable test directory.
 export SF_STATE_FOLDER="$scratch/sf" SF_ACCESS_TOKEN="$CANDIDATE_TOKEN"
 compat/clients/node/node_modules/.bin/sf org login access-token --instance-url "$CANDIDATE_URL" --alias m2-candidate --no-prompt --json > "$scratch/cli-login.json"

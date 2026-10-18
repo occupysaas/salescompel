@@ -404,3 +404,17 @@ sanitization review is claimed.
 - This is an internal representation slice. Existing routes and describe/write
   behavior remain unchanged. [Plan 7 details](plan-7-declared-metadata.md) explain
   evidence and the migration/enforcement dependencies for future activation.
+
+## Plan 8 active field metadata — 2026-10-18
+
+- Activated observed length 80 for both synthetic Account custom fields using the
+  declaration model; existing describe route and Field JSON properties preserved.
+- Added exact-v1 recognition and transactional catalog v2 migration, with table
+  locks, oversized-data refusal, rollback, idempotent reopen and physical checks.
+- PostgreSQL-backed Go tests and vet passed; Node check passed (88 plus one optional
+  candidate skip). The separate native candidate gate passed JSforce before/after
+  restart, Python, CLI and four browser tests. Old binary failed the new describe
+  assertion at 255, confirming the regression test detects the change.
+- See [Plan 8 upgrade guide](plan-8-active-field-metadata.md) for operator actions,
+  non-destructive refusal and rollback limits. No production/reference mutations
+  or compatibility promotion; Plan 5 remains separate.
