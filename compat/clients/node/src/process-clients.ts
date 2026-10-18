@@ -22,7 +22,14 @@ const exec = promisify(execFile);
 export async function withCli<T>(
   c: Context,
   action: (run: (args: string[]) => Promise<any>, dir: string) => Promise<T>,
+  limits = { timeoutMs: 360_000 },
 ): Promise<T> {
+  if (
+    !Number.isSafeInteger(limits.timeoutMs) ||
+    limits.timeoutMs < 1 ||
+    limits.timeoutMs > 360_000
+  )
+    throw new Error("Invalid CLI timeout");
   const dir = await mkdtemp(join(tmpdir(), "salescompel-cli-"));
   const alias = "compat-fixture";
   const env = {
@@ -42,14 +49,20 @@ export async function withCli<T>(
       const { stdout } = await exec(
         process.execPath,
         [SF_BIN, ...args, "--json"],
-        { cwd: dir, env, timeout: 360_000, maxBuffer: 8 * 1024 * 1024 },
+        {
+          cwd: dir,
+          env,
+          timeout: limits.timeoutMs,
+          maxBuffer: 8 * 1024 * 1024,
+        },
       );
       const data = JSON.parse(stdout);
       if (data.status !== 0) throw new Error(`CLI status ${data.status}`);
       return data.result;
     } catch (e: any) {
       // Never include child command/environment/stdout in error messages.
-      let code = "CLI_PROCESS_FAILED";
+      let code =
+        e.killed && e.signal ? "CLI_PROCESS_TIMEOUT" : "CLI_PROCESS_FAILED";
       try {
         code = JSON.parse(e.stdout).name ?? code;
       } catch {}
