@@ -76,12 +76,31 @@ export async function scanRetrievedMetadata(
         continue;
       }
       const name = relative(root, path).split("\\").join("/");
-      if (!s.isFile() || !expected.some((x) => x.path === name))
+      const container = name === "objects/Account/Account.object-meta.xml";
+      if (!s.isFile() || (!container && !expected.some((x) => x.path === name)))
         throw new Error("Unexpected retrieved member");
       total += s.size;
       if (s.size > 8 * 1024 * 1024 || total > 32 * 1024 * 1024)
         throw new Error("Retrieval size bound");
-      found.set(name, await readFile(path));
+      const contents = await readFile(path);
+      if (container) {
+        const xml = contents.toString("utf8");
+        if (/<!DOCTYPE|<!ENTITY/i.test(xml))
+          throw new Error("Unsafe XML container");
+        const parsed = await parseStringPromise(xml, {
+          explicitArray: false,
+          strict: true,
+        });
+        const body = parsed?.CustomObject;
+        if (
+          !body ||
+          Object.keys(parsed).length !== 1 ||
+          Object.keys(body).length !== 1 ||
+          body.$?.xmlns !== namespace ||
+          Object.keys(body.$).length !== 1
+        )
+          throw new Error("Unexpected metadata in container");
+      } else found.set(name, contents);
     }
   }
   try {

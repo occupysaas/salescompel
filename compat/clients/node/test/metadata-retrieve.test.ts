@@ -135,3 +135,20 @@ test("timeoutRemovesAuthHome without using shared aliases", async (t) => {
     syncBuiltinESMExports();
   }
 });
+
+test("native CLI empty Account container is accepted but extra metadata is rejected", async (t) => {
+  const dir = await mkdtemp(join(tmpdir(), "metadata-container-"));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  await files(dir);
+  const path = join(dir, "objects/Account/Account.object-meta.xml");
+  await writeFile(
+    path,
+    '<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"/>',
+  );
+  assert.equal((await scanRetrievedMetadata(dir)).outcome, "complete");
+  await writeFile(
+    path,
+    '<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Unexpected metadata</label></CustomObject>',
+  );
+  await assert.rejects(scanRetrievedMetadata(dir), /container/);
+});
