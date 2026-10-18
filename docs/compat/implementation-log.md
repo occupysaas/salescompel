@@ -390,3 +390,17 @@ sanitization review is claimed.
   regressions: retain partial retrieval members on execution failure, and require
   full operation/property coverage before accepting completion. No deferred
   findings remain. Successful collection semantics and live blockers are unchanged.
+
+## Plan 7 synthetic declaration model — 2026-10-18
+
+- Added internal immutable-value lookups for the two observed custom fields and
+  their Compat_Admin declared grants. Unknown names/properties remain unknown;
+  declared grants do not activate effective access.
+- Verified synthetic values in both Plan 6 inventories and both read/retrieve
+  sources; no live requests, raw capture publication or compatibility promotion.
+- Regression tests failed before implementation and then passed. `go test ./...`
+  and `go vet ./...` passed; database integration tests skipped without
+  TEST_DATABASE_URL. No database/schema or existing runtime files changed.
+- This is an internal representation slice. Existing routes and describe/write
+  behavior remain unchanged. [Plan 7 details](plan-7-declared-metadata.md) explain
+  evidence and the migration/enforcement dependencies for future activation.
