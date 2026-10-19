@@ -13,6 +13,7 @@ export interface CleanupAbsenceEvidence {
   captureSha256: string;
   checkedAt: string;
   identityVerified: boolean;
+  identityDigest: string;
   unresolvedJournals: number;
   resources: { resource: string; absent: boolean }[];
 }
@@ -250,6 +251,7 @@ function sidecarIssues(
     "assumptionId",
     "source",
     "captureSha256",
+    "identityDigest",
     "startedAt",
     "finishedAt",
     "publishedAt",
@@ -276,6 +278,7 @@ function sidecarIssues(
       issues.push(`Policy ${key} differs from current binding`);
   if (
     sidecar.captureSha256 !== sha(bytes) ||
+    !/^[0-9a-f]{64}$/.test(sidecar.identityDigest) ||
     sidecar.startedAt !== report.startedAt ||
     sidecar.finishedAt !== report.finishedAt
   )
@@ -292,11 +295,13 @@ function cleanupIssues(
   report: Report,
   evidence: CleanupAbsenceEvidence,
   digest: string,
+  identityDigest: string,
 ): string[] {
   if (
     !evidence ||
     evidence.schemaVersion !== 1 ||
     evidence.captureSha256 !== digest ||
+    evidence.identityDigest !== identityDigest ||
     !evidence.identityVerified ||
     evidence.unresolvedJournals !== 0 ||
     !validTime(evidence.checkedAt) ||
@@ -348,9 +353,10 @@ export function assessFoundationPair(
   const releaseIssues = releaseFindings
     .filter((f) => f.relevant && !f.resolved)
     .map((f) => f.id);
-  const dimensions: FoundationAssessment["dimensions"] = {
-    "cursor-expiry": "assumed",
-  };
+  const dimensions: FoundationAssessment["dimensions"] = Object.fromEntries([
+    ["cursor-expiry", "blocked"],
+    ...Object.keys(foundationCoverage()).map((id) => [id, "blocked"]),
+  ]);
   const captures: FoundationAssessment["captures"] = [];
   const reports: Report[] = [];
   for (const [i, bytes, sidecar, absence] of [
@@ -393,9 +399,12 @@ export function assessFoundationPair(
         ...coverageIssues(report).map((x) => `capture ${i + 1}: ${x}`),
       );
       pairIssues.push(
-        ...cleanupIssues(report, absence, sha(bytes)).map(
-          (x) => `capture ${i + 1}: ${x}`,
-        ),
+        ...cleanupIssues(
+          report,
+          absence,
+          sha(bytes),
+          sidecar?.identityDigest,
+        ).map((x) => `capture ${i + 1}: ${x}`),
       );
     } catch {
       pairIssues.push(`capture ${i + 1}: malformed private report`);
@@ -410,6 +419,7 @@ export function assessFoundationPair(
   const tieDiagnostics: string[] = [];
   let tiePayloadDrift = false;
   if (reports.length === 2 && pairIssues.length === 0) {
+    dimensions["cursor-expiry"] = "assumed";
     for (const id of Object.keys(foundationCoverage())) {
       const a = reports[0].results.find((r) => r.id === id)!;
       const b = reports[1].results.find((r) => r.id === id)!;

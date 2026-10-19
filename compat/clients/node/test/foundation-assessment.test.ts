@@ -147,6 +147,7 @@ function fixture(start: string, end: string) {
     assumptionId: "foundation-query-result-lifetime",
     source,
     captureSha256: hash(bytes),
+    identityDigest: "d".repeat(64),
     startedAt: start,
     finishedAt: end,
     publishedAt: end,
@@ -156,6 +157,7 @@ function fixture(start: string, end: string) {
     captureSha256: hash(bytes),
     checkedAt: end,
     identityVerified: true,
+    identityDigest: "d".repeat(64),
     unresolvedJournals: 0,
     resources: cleanup.map((c) => ({ resource: c.resource, absent: true })),
   };
@@ -189,14 +191,21 @@ test("complete measured pair is ready only with named assumption", () => {
 
 test("binding, freshness, coverage and cleanup gaps block", () => {
   const [a, b] = pair();
-  assert.equal(
-    assess({ ...a, sidecar: undefined as any }, b).outcome,
-    "blocked",
-  );
+  const missingSidecar = assess({ ...a, sidecar: undefined as any }, b);
+  assert.equal(missingSidecar.outcome, "blocked");
+  assert.equal(missingSidecar.dimensions["foundation-routes"], "blocked");
+  assert.equal(missingSidecar.dimensions["cursor-expiry"], "blocked");
   assert.equal(assess({ ...a, bytes: a.bytes + " " }, b).outcome, "blocked");
   assert.equal(
     assess(a, { ...b, absence: { ...b.absence, unresolvedJournals: 1 } })
       .outcome,
+    "blocked",
+  );
+  assert.equal(
+    assess(a, {
+      ...b,
+      absence: { ...b.absence, identityDigest: "e".repeat(64) },
+    }).outcome,
     "blocked",
   );
   const bad = structuredClone(b.report);

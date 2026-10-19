@@ -151,6 +151,17 @@ proceed with this one named assumption is a separate decision. The existing
 `release-content-unavailable` and `linked-changelog-expansion` blockers retain
 their owners and next actions; the focused recheck does not complete M1R.
 
+## Plan 10 implementation gate — 2026-10-19
+
+The assumption-aware lab path is implemented, but no corrected foundation
+capture pair was collected. The current process has no reference sessions,
+API/disposable runtime setting or private recovery directory; offline preflight
+exited 2 before any reference request. Therefore the assumption-aware assessment
+has no capture, sidecar or absence evidence to consume, and the development
+decision is blocked. See [Plan 10 decision](plan-10-foundation-decision.md) for
+the exact evidence gate and next product boundary. Historical blocked captures
+and accepted profiles remain unchanged.
+
 This policy supersedes the earlier live-expiry acceptance requirement in Plan 5.
 The next design must provide a distinct assumption-aware development decision;
 existing observed-evidence validators must not silently treat assumptions as passes.

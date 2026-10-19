@@ -10,6 +10,7 @@ import {
 import { validateRepository, ROOT } from "./validate.ts";
 import { referencePreflight, foundationSessionIssues } from "./readiness.ts";
 import { suite } from "./suites.ts";
+import { foundationLivePreflight } from "./foundation-live.ts";
 
 export async function runAssumedFoundationCapture(
   path: string,
@@ -40,6 +41,7 @@ export async function runAssumedFoundationCapture(
   );
   if (env.COMPAT_RECOVERY_DIR) await privateDirectory(env.COMPAT_RECOVERY_DIR);
   if (issues.length) throw new Error(issues.join("; "));
+  const identityDigest = await foundationLivePreflight(env);
   const output = await open(target, "wx", 0o600);
   try {
     const report = await capture(
@@ -66,7 +68,12 @@ export async function runAssumedFoundationCapture(
       report,
       ...(eligible
         ? {
-            sidecar: await writeFoundationSidecar(target, report, binding),
+            sidecar: await writeFoundationSidecar(
+              target,
+              report,
+              binding,
+              identityDigest,
+            ),
           }
         : {}),
     };

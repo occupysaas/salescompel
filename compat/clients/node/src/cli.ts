@@ -43,6 +43,8 @@ async function main() {
       "second-policy": { type: "string" },
       "first-cleanup": { type: "string" },
       "second-cleanup": { type: "string" },
+      capture: { type: "string" },
+      policy: { type: "string" },
     },
   });
   const selected = suite(values.suite ?? "pilot");
@@ -108,6 +110,29 @@ async function main() {
         : result.outcome === "drift"
           ? 1
           : 2;
+    return;
+  }
+  if (command === "verify-foundation-cleanup") {
+    if (
+      !values.capture ||
+      !values.policy ||
+      !values.out ||
+      Object.keys(values).some(
+        (key) => !["capture", "policy", "out"].includes(key),
+      )
+    )
+      throw new Error(
+        "Foundation cleanup verification requires --capture, --policy and --out private JSON paths",
+      );
+    const { verifyFoundationCleanupFiles } =
+      await import("./foundation-cleanup-command.ts");
+    await verifyFoundationCleanupFiles(
+      values.capture,
+      values.policy,
+      values.out,
+      process.env,
+    );
+    console.log(`verified absence: private output ${resolve(values.out)}`);
     return;
   }
   if (command === "probe-external-id" || command === "recover-external-id") {

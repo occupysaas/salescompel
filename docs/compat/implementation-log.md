@@ -433,3 +433,16 @@ sanitization review is claimed.
 - Product routes, catalog and accepted profiles remain unchanged. This is M1
   evidence supporting M3; product upsert semantics are not fixed by this plan.
   See [Plan 9 evidence and implementation boundary](plan-9-external-id-contract.md).
+
+## Plan 10 foundation evidence follow-ups — 2026-10-19
+
+- Added a fixed assumption-aware cursor collection policy, immutable private
+  capture sidecar, exact coverage and tied-traversal comparison, separate pair
+  assessment, live identity preflight and read-only exact-ID cleanup verifier.
+- Focused official-source recheck corroborated documented two-day cursor/result
+  availability at API 65.0; the release-pinned Winter 23 Help page remained
+  unreadable. Relevant release findings retain their blocker status.
+- No Plan 10 live capture ran: the process lacks all required reference session
+  settings and the private recovery directory. Offline foundation preflight exited
+  2 before reference requests or fixture writes. The decision remains blocked;
+  see [Plan 10 decision](plan-10-foundation-decision.md).

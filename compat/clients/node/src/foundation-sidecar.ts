@@ -28,6 +28,7 @@ export interface FoundationSidecar extends FoundationBinding {
   policy: "documented-two-day-assumption";
   source: string;
   captureSha256: string;
+  identityDigest: string;
   startedAt: string;
   finishedAt: string;
   publishedAt: string;
@@ -103,7 +104,10 @@ export async function writeFoundationSidecar(
     "profile" | "profileHash" | "connectors" | "startedAt" | "finishedAt"
   > & { apiVersion: string | null },
   binding: FoundationBinding,
+  identityDigest: string,
 ): Promise<string> {
+  if (!/^[0-9a-f]{64}$/.test(identityDigest))
+    throw new Error("Foundation identity digest required");
   if (!capturePath.endsWith(".json")) throw new Error("Capture must be JSON");
   const bytes = await privateFileBytes(capturePath);
   const actual = JSON.parse(bytes.toString("utf8"));
@@ -133,6 +137,7 @@ export async function writeFoundationSidecar(
     assumptionId: FOUNDATION_ASSUMPTION_ID,
     source,
     captureSha256: sha256(bytes),
+    identityDigest,
     startedAt: report.startedAt,
     finishedAt: report.finishedAt,
     publishedAt: new Date().toISOString(),
@@ -163,7 +168,8 @@ export async function readFoundationSidecar(
     s.policy !== "documented-two-day-assumption" ||
     s.assumptionId !== FOUNDATION_ASSUMPTION_ID ||
     s.source !== source ||
-    s.captureSha256 !== sha256(bytes)
+    s.captureSha256 !== sha256(bytes) ||
+    !/^[0-9a-f]{64}$/.test(s.identityDigest)
   )
     throw new Error("Foundation sidecar binding invalid");
   return s;

@@ -43,14 +43,21 @@ test("sidecar binds immutable raw bytes and rejects replay or edits", async (t) 
   const path = join(dir, "capture.json");
   const raw = JSON.stringify(report) + "\n";
   await writeFile(path, raw, { mode: 0o600 });
-  const sidecar = await writeFoundationSidecar(path, report, binding);
+  const sidecar = await writeFoundationSidecar(
+    path,
+    report,
+    binding,
+    "d".repeat(64),
+  );
   const parsed = await readFoundationSidecar(path, sidecar);
   assert.equal(
     parsed.captureSha256,
     createHash("sha256").update(raw).digest("hex"),
   );
   assert.equal(parsed.assumptionId, "foundation-query-result-lifetime");
-  await assert.rejects(writeFoundationSidecar(path, report, binding));
+  await assert.rejects(
+    writeFoundationSidecar(path, report, binding, "d".repeat(64)),
+  );
   await writeFile(path, raw + " ");
   await assert.rejects(readFoundationSidecar(path, sidecar));
 });
@@ -76,14 +83,22 @@ test("sidecar refuses missing captures, unsafe modes and symlinked inputs", asyn
   await chmod(dir, 0o700);
   t.after(() => rm(dir, { recursive: true, force: true }));
   const path = join(dir, "capture.json");
-  await assert.rejects(writeFoundationSidecar(path, report, binding));
+  await assert.rejects(
+    writeFoundationSidecar(path, report, binding, "d".repeat(64)),
+  );
   await writeFile(path, "{}", { mode: 0o600 });
   await chmod(path, 0o644);
-  await assert.rejects(writeFoundationSidecar(path, report, binding));
+  await assert.rejects(
+    writeFoundationSidecar(path, report, binding, "d".repeat(64)),
+  );
   await chmod(path, 0o600);
   const link = join(dir, "link.json");
   await symlink(path, link);
-  await assert.rejects(writeFoundationSidecar(link, report, binding));
+  await assert.rejects(
+    writeFoundationSidecar(link, report, binding, "d".repeat(64)),
+  );
   await chmod(dir, 0o755);
-  await assert.rejects(writeFoundationSidecar(path, report, binding));
+  await assert.rejects(
+    writeFoundationSidecar(path, report, binding, "d".repeat(64)),
+  );
 });
