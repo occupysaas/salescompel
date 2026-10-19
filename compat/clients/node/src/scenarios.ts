@@ -1,6 +1,7 @@
 import { Connection } from "jsforce";
 import type { Result, Report } from "./core.ts";
 import { FixtureTracker } from "./fixtures.ts";
+import type { FoundationCollectionPolicy } from "./foundation-policy.ts";
 export class Blocked extends Error {}
 // Documentation does not settle which code a read of a deleted record returns;
 // both are accepted here and the observed code is compared between targets.
@@ -13,6 +14,7 @@ export interface Context {
   tracker: FixtureTracker;
   result: Result;
   cleanup: Report["cleanup"];
+  collectionPolicy?: FoundationCollectionPolicy;
 }
 export function expect(c: Context, name: string, condition: unknown) {
   c.result.assertions.push({ name, passed: !!condition });

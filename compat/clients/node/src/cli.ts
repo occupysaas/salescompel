@@ -39,6 +39,12 @@ async function main() {
       second: { type: "string" },
       role: { type: "string" },
       spec: { type: "string" },
+      "first-policy": { type: "string" },
+      "second-policy": { type: "string" },
+      "first-cleanup": { type: "string" },
+      "second-cleanup": { type: "string" },
+      capture: { type: "string" },
+      policy: { type: "string" },
     },
   });
   const selected = suite(values.suite ?? "pilot");
@@ -49,6 +55,86 @@ async function main() {
     throw new Error(
       "Specify one command: validate, preflight, capture, compare, repeatability, verify-evidence or validate-openapi",
     );
+  if (command === "capture-foundation-assumed") {
+    if (
+      values.target !== "reference" ||
+      !values.out ||
+      Object.keys(values).some((k) => !["target", "out"].includes(k))
+    )
+      throw new Error(
+        "Assumed foundation capture requires --target reference and --out private.json only",
+      );
+    const { runAssumedFoundationCapture } =
+      await import("./foundation-command.ts");
+    const result = await runAssumedFoundationCapture(values.out, process.env);
+    console.log(
+      `${result.sidecar ? "policy capture recorded" : "blocked"}: private output ${resolve(values.out)}`,
+    );
+    process.exitCode = result.sidecar ? 0 : 2;
+    return;
+  }
+  if (command === "assess-foundation") {
+    const allowed = [
+      "first",
+      "second",
+      "first-policy",
+      "second-policy",
+      "first-cleanup",
+      "second-cleanup",
+      "out",
+    ];
+    if (
+      Object.keys(values).some((key) => !allowed.includes(key)) ||
+      allowed.some((key) => !values[key as keyof typeof values])
+    )
+      throw new Error(
+        "Foundation assessment requires two captures, policies, cleanup attestations and private output",
+      );
+    const { assessFoundationFiles } =
+      await import("./foundation-assessment-command.ts");
+    const result = await assessFoundationFiles({
+      first: values.first!,
+      second: values.second!,
+      firstPolicy: values["first-policy"]!,
+      secondPolicy: values["second-policy"]!,
+      firstCleanup: values["first-cleanup"]!,
+      secondCleanup: values["second-cleanup"]!,
+      out: values.out!,
+    });
+    console.log(
+      `${result.outcome}: private foundation assessment ${resolve(values.out!)}`,
+    );
+    process.exitCode =
+      result.outcome === "ready-with-assumptions"
+        ? 0
+        : result.outcome === "drift"
+          ? 1
+          : 2;
+    return;
+  }
+  if (command === "verify-foundation-cleanup") {
+    if (
+      !values.capture ||
+      !values.policy ||
+      !values.out ||
+      Object.keys(values).some(
+        (key) => !["capture", "policy", "out"].includes(key),
+      )
+    )
+      throw new Error(
+        "Foundation cleanup verification requires --capture, --policy and --out private JSON paths",
+      );
+    const { verifyFoundationCleanupFiles } =
+      await import("./foundation-cleanup-command.ts");
+    await verifyFoundationCleanupFiles(
+      values.capture,
+      values.policy,
+      values.out,
+      process.env,
+    );
+    console.log(`verified absence: private output ${resolve(values.out)}`);
+    return;
+  }
   if (command === "probe-external-id" || command === "recover-external-id") {
     const mode = command === "probe-external-id" ? "probe" : "recover";
     const allowed =

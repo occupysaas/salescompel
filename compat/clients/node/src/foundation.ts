@@ -1,6 +1,7 @@
 import { setTimeout as delay } from "node:timers/promises";
 import { wire, type WireResponse } from "./wire.ts";
 import { create, expect, Blocked, type Context } from "./scenarios.ts";
+import { runExpiryObservation } from "./foundation-policy.ts";
 
 function base(c: Context) {
   return `/services/data/v${c.env.COMPAT_API_VERSION}/`;
@@ -444,14 +445,27 @@ export const foundationScenarios: Record<
       ),
       { "Sforce-Query-Options": "batchSize=200" },
     );
-    const expires = await firstCursor(c, name, "expiry-start");
-    // Fixed bound, recorded in the probe: an unexpired locator is a gap, not a pass.
-    await delay(16 * 60 * 1000);
-    const expired = await observe(c, "after-16-minutes", expires);
-    if (expired.status === 200)
-      throw new Blocked(
-        "Locator still valid at 16-minute observation bound; expiry unmeasured",
+    try {
+      const expiry = await runExpiryObservation(
+        c.collectionPolicy ?? "observed-only",
+        () => firstCursor(c, name, "expiry-start"),
+        () => delay(16 * 60 * 1000),
+        async (locator) =>
+          (await observe(c, "after-16-minutes", locator)).status,
       );
+      if (expiry === "unmeasured")
+        throw new Blocked(
+          "Cursor expiry unmeasured under foundation-query-result-lifetime",
+        );
+    } catch (error) {
+      if (error instanceof Blocked) throw error;
+      if (
+        error instanceof Error &&
+        error.message.includes("16-minute observation bound")
+      )
+        throw new Blocked(error.message);
+      throw error;
+    }
   },
   async "foundation-ids"(c) {
     const name = owned(c, "ids"),

@@ -11,11 +11,17 @@ import { FixtureTracker, validateRecoveryDirectory } from "./fixtures.ts";
 import { jsScenarios, Blocked, type Context } from "./scenarios.ts";
 import { cliQuery, metadata, pythonProbe } from "./process-clients.ts";
 import { connectorVersions } from "./versions.ts";
+import {
+  assertFoundationPolicy,
+  type FoundationCollectionPolicy,
+} from "./foundation-policy.ts";
 export async function capture(
   target: "reference" | "candidate",
   env: NodeJS.ProcessEnv,
   suiteId: string = "pilot",
+  policy: FoundationCollectionPolicy = "observed-only",
 ): Promise<Report> {
+  assertFoundationPolicy(policy, target, suiteId);
   const selected = suite(suiteId);
   const { requiredScenarios: SCENARIOS, cleanupScenarios: CLEANUP_SCENARIOS } =
     selected;
@@ -118,6 +124,7 @@ export async function capture(
       tracker,
       result,
       cleanup: report.cleanup,
+      collectionPolicy: policy,
     };
     try {
       report.provenance = "live";
