@@ -49,6 +49,24 @@ async function main() {
     throw new Error(
       "Specify one command: validate, preflight, capture, compare, repeatability, verify-evidence or validate-openapi",
     );
+  if (command === "capture-foundation-assumed") {
+    if (
+      values.target !== "reference" ||
+      !values.out ||
+      Object.keys(values).some((k) => !["target", "out"].includes(k))
+    )
+      throw new Error(
+        "Assumed foundation capture requires --target reference and --out private.json only",
+      );
+    const { runAssumedFoundationCapture } =
+      await import("./foundation-command.ts");
+    const result = await runAssumedFoundationCapture(values.out, process.env);
+    console.log(
+      `${result.sidecar ? "policy capture recorded" : "blocked"}: private output ${resolve(values.out)}`,
+    );
+    process.exitCode = result.sidecar ? 0 : 2;
+    return;
+  }
   if (command === "probe-external-id" || command === "recover-external-id") {
     const mode = command === "probe-external-id" ? "probe" : "recover";
     const allowed =
