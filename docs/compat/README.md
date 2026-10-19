@@ -258,3 +258,34 @@ For programmatic review, `compileMetadataMatrix` and
 complete, distinct sequential inventories with matching bindings can report
 `stable`. A blocked pair may have equal observed facts; that does not close its
 missing-evidence gaps. See [Plan 6 results](plan-6-metadata-discovery.md).
+
+## External-ID contract probes (Plan 9)
+
+These lab commands preserve existing product routes and capture a fixed synthetic
+Account external-ID matrix. See [Plan 9 observations and limits](plan-9-external-id-contract.md).
+Use an authorized disposable reference environment with the declared synthetic
+metadata. Keep all config, output and recovery paths outside the checkout in
+existing owner-only directories; config files must be mode 0600.
+
+The private config contains `schemaVersion: 1`, `apiVersion: "65.0"`, current
+foundation `profileHash`, exact HTTPS `origin`, and `administrator: {user, org}`
+with the verified identity IDs. Supply `COMPAT_REFERENCE_URL`,
+`COMPAT_REFERENCE_TOKEN`, `COMPAT_DISPOSABLE=yes`, and `COMPAT_RECOVERY_DIR`
+privately. From `compat/clients/node`:
+
+```sh
+node --import tsx src/cli.ts probe-external-id --config "$EXTERNAL_ID_CONFIG" --out "$EXTERNAL_ID_REPORT"
+node --import tsx src/cli.ts recover-external-id --config "$EXTERNAL_ID_CONFIG" --first "$EXTERNAL_ID_RUN_DIR" --out "$EXTERNAL_ID_RECOVERY_REPORT"
+```
+
+Output must be a new `.json` file. Its sibling `.artifacts` directory holds the
+binding, durable journal, known IDs and raw responses. Recovery works without a
+final report. Retain originals. A per-identity lock prevents another collection
+until cleanup is verified. Unresolved dispatches or identity changes require
+separate investigation; absence alone does not authorize clearing the lock.
+Exit 0 means complete/clean, 2 incomplete/blocked, and 1 persistence failure.
+
+When reading reports from disk, call `validateExternalIdEvidence(report, runDir)`
+for each before `compareExternalIdReports(first, second)`; both exports are in
+`src/external-id-compare.ts`. Structural comparison alone cannot verify files.
+Only complete, clean sequential reports with matching bindings can be stable.

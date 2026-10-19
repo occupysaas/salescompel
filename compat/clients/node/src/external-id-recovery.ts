@@ -1,4 +1,4 @@
-import { open, readFile, lstat } from "node:fs/promises";
+import { open, readFile, lstat, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { isDeepStrictEqual } from "node:util";
 import { privateDirectory } from "./metadata-files.ts";
@@ -254,6 +254,66 @@ export async function preflightCase(
   );
   if (rows.length) throw new Error("PREFLIGHT_COLLISION");
 }
+export async function latchIdentity(dir: string) {
+  try {
+    await durableJSON(join(dir, "identity-blocked.json"), {
+      reason: "IDENTITY_MISMATCH",
+    });
+  } catch (e: any) {
+    if (e.code !== "EEXIST") throw e;
+  }
+}
+export async function rememberRecord(dir: string, caseId: string, id: string) {
+  recordPath(id);
+  if (!manifest.some((c) => c.id === caseId)) throw new Error("UNKNOWN_CASE");
+  const path = join(dir, `known-${id}.json`);
+  try {
+    await durableJSON(path, { caseId, id });
+  } catch (e: any) {
+    if (e.code !== "EEXIST") throw e;
+    const previous = await privateJSON(path, 65536);
+    if (previous.id !== id || previous.caseId !== caseId)
+      throw new Error("OWNERSHIP_UNPROVEN");
+  }
+}
+async function knownRecordIds(
+  dir: string,
+  run: Awaited<ReturnType<typeof readRun>>,
+) {
+  const known = new Map<string, Set<string>>();
+  const add = (caseId: string, id: string) => {
+    recordPath(id);
+    if (!manifest.some((c) => c.id === caseId)) throw new Error("UNKNOWN_CASE");
+    let ids = known.get(caseId);
+    if (!ids) {
+      ids = new Set();
+      known.set(caseId, ids);
+    }
+    ids.add(id);
+  };
+  for (const [id, stage] of run.stages) {
+    if (id.startsWith("delete:") || stage === "intent") continue;
+    try {
+      const response = await privateJSON(
+        join(dir, `response-${id.replaceAll(":", "-")}.json`),
+      );
+      if (typeof response.body?.id === "string")
+        add(id.split(":")[0], response.body.id);
+      else if (response.status === 201 || response.body?.created === true)
+        throw new Error("CREATED_ID_UNAVAILABLE");
+    } catch (e: any) {
+      if (e.code !== "ENOENT" || stage === "response") throw e;
+    }
+  }
+  for (const name of await readdir(dir)) {
+    if (!/^known-[A-Za-z0-9]{15}(?:[A-Za-z0-9]{3})?\.json$/.test(name))
+      continue;
+    const item = await privateJSON(join(dir, name), 65536);
+    if (name !== `known-${item.id}.json`) throw new Error("OWNERSHIP_UNPROVEN");
+    add(item.caseId, item.id);
+  }
+  return known;
+}
 export interface RecoveryResult {
   outcome: "clean" | "pending" | "blocked";
   unresolved: string[];
@@ -274,6 +334,13 @@ export async function recoverExternalIdRun(
   };
   try {
     const run = await readRun(config, dir);
+    try {
+      await privateJSON(join(dir, "identity-blocked.json"), 65536);
+      throw new Error("IDENTITY_LATCHED");
+    } catch (e: any) {
+      if (e.code !== "ENOENT") throw e;
+    }
+    const known = await knownRecordIds(dir, run);
     const t = boundedTransport(
       injected ?? transport(config, env),
       Date.now() + 300000,
@@ -290,6 +357,40 @@ export async function recoverExternalIdRun(
       if (Date.now() > deadline) throw new Error("CLEANUP_DEADLINE");
       await verifyIdentity(config, t);
       const rows = await scopedRecords(t, run.runId, caseId);
+      for (const row of rows) {
+        await rememberRecord(dir, caseId, row.Id);
+        let ids = known.get(caseId);
+        if (!ids) {
+          ids = new Set();
+          known.set(caseId, ids);
+        }
+        ids.add(row.Id);
+      }
+      const scope = caseScope(
+        run.runId,
+        manifest.find((c) => c.id === caseId)!,
+      );
+      for (const id of known.get(caseId) ?? []) {
+        checkedIds.add(id);
+        const response = await t.request(recordPath(id), {});
+        if (response.status === 404) continue;
+        const b = response.body as any;
+        if (
+          response.status !== 200 ||
+          b?.Id !== id ||
+          b?.Name !== scope.marker ||
+          !scope.keys.includes(b?.Compat_Key__c)
+        )
+          throw new Error("OWNERSHIP_UNPROVEN");
+        if (!rows.some((row) => row.Id === id))
+          rows.push({
+            Id: id,
+            Name: b.Name,
+            Compat_Key__c: b.Compat_Key__c,
+            Compat_Text__c: b.Compat_Text__c,
+          });
+      }
+
       for (const row of rows) {
         checkedIds.add(row.Id);
         if (checkedIds.size > 80) throw new Error("FIXTURE_BOUND");
@@ -310,8 +411,8 @@ export async function recoverExternalIdRun(
           throw new Error("DELETE_UNAVAILABLE");
         }
       }
-      for (const row of rows) {
-        const r = await t.request(recordPath(row.Id), {});
+      for (const id of known.get(caseId) ?? []) {
+        const r = await t.request(recordPath(id), {});
         if (r.status !== 404) throw new Error("ABSENCE_UNVERIFIED");
       }
       if ((await scopedRecords(t, run.runId, caseId)).length)
@@ -325,6 +426,8 @@ export async function recoverExternalIdRun(
     result.outcome = result.unresolved.length ? "blocked" : "clean";
     if (result.unresolved.length) result.reasons.push("UNRESOLVED_DISPATCH");
   } catch (e) {
+    if (e instanceof Error && e.message === "IDENTITY_MISMATCH")
+      await latchIdentity(dir);
     result.reasons.push(
       e instanceof Error && /^[A-Z_]+$/.test(e.message)
         ? e.message

@@ -66,8 +66,30 @@ export function compareExternalIdReports(
             JSON.stringify(x).localeCompare(JSON.stringify(y)),
           ),
         }));
-      if (c.id.startsWith("race-"))
-        ops.sort((x, y) => JSON.stringify(x).localeCompare(JSON.stringify(y)));
+      if (c.id.startsWith("race-")) {
+        const sort = (items: unknown[]) =>
+          items.sort((x, y) =>
+            JSON.stringify(x).localeCompare(JSON.stringify(y)),
+          );
+        return {
+          caseId: c.id,
+          inputs: sort(
+            ops.map((o) => ({
+              method: o.method,
+              key: o.key,
+              bodyKey: o.bodyKey,
+            })),
+          ),
+          responses: sort(
+            ops.map((o) => ({
+              status: o.status,
+              bodyPresent: o.bodyPresent,
+              body: o.body,
+            })),
+          ),
+          states: sort(ops.map((o) => o.records)),
+        };
+      }
       return { caseId: c.id, operations: ops };
     });
   };
@@ -79,4 +101,36 @@ export function compareExternalIdReports(
       : [`Observed behavior differs: ${c.caseId}`],
   );
   return { outcome: differences.length ? "drift" : "stable", differences };
+}
+
+// Use this boundary when loading reports from disk; structural comparison alone
+// cannot establish that the referenced private artifacts still exist unmodified.
+export async function validateExternalIdEvidence(
+  report: ExternalIdReport,
+  dir: string,
+) {
+  validateExternalIdReport(report);
+  const { privateDirectory } = await import("./metadata-files.ts");
+  const { privateJSON } = await import("./external-id-recovery.ts");
+  const { readFile } = await import("node:fs/promises");
+  const { join } = await import("node:path");
+  const { createHash } = await import("node:crypto");
+  await privateDirectory(dir);
+  for (const op of report.operations) {
+    if (op.state !== "observed") continue;
+    const path = join(dir, op.artifact);
+    const raw = await privateJSON(path);
+    const digest = createHash("sha256")
+      .update(await readFile(path))
+      .digest("hex");
+    if (
+      digest !== op.sha256 ||
+      !isDeepStrictEqual(raw, {
+        status: op.status,
+        bodyPresent: op.bodyPresent,
+        body: op.body,
+      })
+    )
+      throw new Error("Response artifact differs");
+  }
 }

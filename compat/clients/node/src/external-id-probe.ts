@@ -12,6 +12,8 @@ import {
 } from "./external-id-contract.ts";
 import {
   boundedTransport,
+  rememberRecord,
+  latchIdentity,
   initializeRun,
   appendJournal,
   durableJSON,
@@ -132,6 +134,7 @@ export async function runExternalIdProbe(
           const responseId = (o.body as any)?.id;
           if (typeof responseId === "string") {
             recordPath(responseId);
+            await rememberRecord(dir, scenario.id, responseId);
             ids.set(step.id, responseId);
           }
         } catch {
@@ -149,6 +152,7 @@ export async function runExternalIdProbe(
         for (const row of [...rows].sort((a, b) =>
           a.Compat_Key__c!.localeCompare(b.Compat_Key__c!),
         )) {
+          await rememberRecord(dir, scenario.id, row.Id);
           if (!r.aliases.some((a) => a.id === row.Id))
             r.aliases.push({
               id: row.Id,
@@ -174,6 +178,10 @@ export async function runExternalIdProbe(
     r.collection = "complete";
   } catch (e) {
     r.collection = "incomplete";
+    if (e instanceof Error && e.message === "IDENTITY_MISMATCH") {
+      r.identityVerified = false;
+      await latchIdentity(dir);
+    }
     r.reasons.push(
       e instanceof Error && /^[A-Z_]+$/.test(e.message)
         ? e.message

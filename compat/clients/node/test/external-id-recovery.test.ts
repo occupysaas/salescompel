@@ -128,3 +128,29 @@ test("cleanup refusal remains blocked and config rebinding is rejected", async (
     ),
   );
 });
+
+import { durableJSON } from "../src/external-id-recovery.ts";
+test("returned ID remains accounted for after marker changes and final report is lost", async (t) => {
+  const x = await localProbe(t);
+  const runId = "f".repeat(24);
+  await initializeRun(x.config, x.dir, runId);
+  await appendJournal(x.dir, { kind: "intent", id: "exact:first" });
+  await appendJournal(x.dir, { kind: "dispatched", id: "exact:first" });
+  const id = "001000000000000001";
+  await durableJSON(join(x.dir, "response-exact-first.json"), {
+    status: 201,
+    bodyPresent: true,
+    body: { id, success: true },
+  });
+  await appendJournal(x.dir, { kind: "response", id: "exact:first" });
+  x.rows.set(id, {
+    Id: id,
+    Name: "changed-owner-marker",
+    Compat_Key__c: caseScope(runId, manifest[0]).keys[0],
+    Compat_Text__c: null,
+  });
+  const result = await recoverExternalIdRun(x.config, {}, x.dir, x.transport);
+  assert.equal(result.outcome, "blocked");
+  assert.ok(!x.calls.some((c) => c.method === "DELETE"));
+  assert.equal(x.rows.size, 1);
+});

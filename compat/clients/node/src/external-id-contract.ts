@@ -205,6 +205,19 @@ export function validateExternalIdReport(
     const e = expected.get(o.id);
     if (!e || o.caseId !== e.c.id || o.method !== e.s.method)
       throw new Error("Invalid operation binding");
+    if (o.state === "observed") {
+      if (
+        o.artifact !== `response-${o.id.replaceAll(":", "-")}.json` ||
+        !/^[a-f0-9]{64}$/.test(o.sha256) ||
+        (o.method === "native"
+          ? o.status !== null || !o.bodyPresent
+          : o.status === null) ||
+        (!o.bodyPresent && o.body !== null)
+      )
+        throw new Error("Missing response evidence");
+    }
+    if (new Set(o.records.map((row) => row.Id)).size !== o.records.length)
+      throw new Error("Duplicate state identity");
     for (const row of o.records)
       if (!r.aliases.some((a) => a.id === row.Id))
         throw new Error("Unbound record");

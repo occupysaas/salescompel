@@ -59,3 +59,13 @@ test("native deadline terminates isolated process without exposing credentials",
     /NATIVE_TIMEOUT/,
   );
 });
+
+test("transient identity mismatch is latched and never followed by automatic deletion", async (t) => {
+  const x = await localProbe(t);
+  x.flags.identityMismatchAt = 3;
+  const r = await runExternalIdProbe(x.config, {}, x.dir, x.transport);
+  assert.equal(r.identityVerified, false);
+  assert.equal(r.cleanup, "blocked");
+  assert.ok(!x.calls.some((c) => c.method === "DELETE"));
+  assert.ok(x.rows.size > 0);
+});

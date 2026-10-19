@@ -24,6 +24,8 @@ export async function localProbe(t: TestContext) {
   const calls: { path: string; method: string; body: any }[] = [];
   const flags = {
     wrongIdentity: false,
+    identityMismatchAt: 0,
+    identityCalls: 0,
     pagination: false,
     deleteFailure: false,
     delay: 0,
@@ -45,7 +47,11 @@ export async function localProbe(t: TestContext) {
     };
     if (url.pathname.endsWith("userinfo")) {
       send(200, {
-        user_id: flags.wrongIdentity ? "changed" : "u",
+        user_id:
+          flags.wrongIdentity ||
+          ++flags.identityCalls === flags.identityMismatchAt
+            ? "changed"
+            : "u",
         organization_id: "o",
       });
       return;

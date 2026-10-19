@@ -418,3 +418,18 @@ sanitization review is claimed.
 - See [Plan 8 upgrade guide](plan-8-active-field-metadata.md) for operator actions,
   non-destructive refusal and rollback limits. No production/reference mutations
   or compatibility promotion; Plan 5 remains separate.
+
+## Plan 9 external-ID contract — 2026-10-18
+
+- Added fixed 51-operation probes, journal-first recovery, durable known-ID and
+  identity-mismatch handling, private artifact validation and diagnostic comparison.
+- Two authorized sequential reference runs completed with verified cleanup.
+  Deterministic cases matched; variant race rounds 2–4 differed in winner/stored
+  spelling. Overall comparison is drift, so no stable contract promotion.
+- Fresh review identified four Important findings, all fixed with regression
+  evidence. Full Node check passed: 106 tests, one optional skip, zero failures.
+- Added root `.recomp.json` with applicable project information and validated it
+  against the published v1 schema. No game/decompilation claims were inferred.
+- Product routes, catalog and accepted profiles remain unchanged. This is M1
+  evidence supporting M3; product upsert semantics are not fixed by this plan.
+  See [Plan 9 evidence and implementation boundary](plan-9-external-id-contract.md).
