@@ -1,5 +1,12 @@
 # Plan 5 — REST/query Foundation Implementation Plan
 
+> Maintainer update, 2026-10-19: expiry windows longer than one hour may use
+> explicit assumptions without live testing or waiting. The foundation's
+> documented two-day lifetime is such an assumption. See the
+> [current decision gate](../../compat/plan-5-contract-decisions.md). This
+> overrides live-expiry requirements below only; other evidence and cleanup
+> requirements remain. Historical captures are not reclassified as passing.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement sequentially using the recorded native execution preference. Steps use checkbox syntax. Read the approved spec; complete Task 3's evidence gate before product implementation.
 
 **Goal:** Deliver selected Account/Contact REST/query contracts with repeatable evidence and identical client-facing routes for drop-in use.

@@ -1,7 +1,10 @@
 # Plan 5 contract decision gate
 
 Status: **not frozen**. The first focused capture finished with six passing scenarios and one blocked expiry dimension; the second capture has the same outcome. Pair verification is blocked; no accepted capture pair exists. Candidate semantic
-implementation (Tasks 4–8) remains pending the evidence gate in the approved plan.
+implementation (Tasks 4–8) remains pending the remaining evidence decisions.
+The maintainer has waived live verification of expiry windows longer than one
+hour; the documented two-day cursor lifetime may be used as an explicit assumption.
+This exception does not turn old reports into passing observations.
 
 ## Current evidence
 
@@ -91,3 +94,44 @@ contract. Both captures used the same suite/profile; later probe corrections req
 Task 3 remains incomplete: expiry evidence, tie-order comparison semantics,
 new captures after probe corrections, and relevant release reconciliation are
 outstanding. Tasks 4–8 remain gated. No capture is currently running.
+
+## Follow-up readiness check — 2026-10-19 UTC
+
+At 02:24 UTC, the retained-checkpoint helper reported that neither expiry check
+was due and exited before authentication or reference requests. The first remains
+due at 21:54:43 UTC (17:54:43 America/New_York), and both are due by 23:21:26 UTC
+(19:21:26 America/New_York). No background job was started or capture modified.
+
+The official [API Query Cursor Limits](https://developer.salesforce.com/docs/platform/salesforce-app-limits-cheatsheet/guide/salesforce-app-limits-platform-apicursors.html)
+page was successfully re-read: it still describes two-day result availability and
+removal of the former cursor-count/inactivity limits across API versions. This
+corroborates the documentary expectation only; it does not establish live expiry.
+The release-pinned Winter 23 Help link returned a loading/CSS-error shell on this
+attempt. Earlier recorded source evidence is retained; this attempt does not
+resolve the broader release-content or linked-changelog blockers.
+
+Priority for the next design is to close available evidence follow-ups before
+product changes: define explicit tied-order diagnostic comparisons, prepare
+immutable expiry checkpoint verification, and scope fresh corrected captures.
+An expiry checkpoint on the old reports cannot make those reports acceptable after
+probe corrections, and must not silently change their blocked outcomes.
+
+## Maintainer expiry policy — 2026-10-19
+
+The maintainer explicitly accepts assumptions without live testing for expiry
+windows longer than one hour. Do not wait for those windows or require their
+checkpoints to proceed. For the foundation cursor lifetime, use documented
+two-day availability as a named, unverified assumption. One hour limits test
+waiting, not the intended product lifetime. The exact expiration boundary and
+its lifecycle anchor remain unobserved; any candidate choice must be labeled.
+
+The previously prepared late checkpoints are optional and are not scheduled.
+Preserve original captures and their blocked status. Record assumed versus
+observed dimensions separately; this waiver does not cover identity, cleanup,
+missing responses, ordering loss/duplication or unrelated compatibility gaps.
+Local candidate expiry behavior may be tested with a controllable clock without
+wall-clock waiting; those tests verify our implementation, not reference parity.
+
+This policy supersedes the earlier live-expiry acceptance requirement in Plan 5.
+The next design must provide a distinct assumption-aware development decision;
+existing observed-evidence validators must not silently treat assumptions as passes.

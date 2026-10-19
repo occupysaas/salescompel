@@ -1,5 +1,12 @@
 # Plan 5 — REST/query foundation design
 
+> Maintainer update, 2026-10-19: expiry windows longer than one hour may use
+> explicit assumptions without live testing or waiting. The foundation's
+> documented two-day lifetime is such an assumption. See the
+> [current decision gate](../../compat/plan-5-contract-decisions.md). This
+> overrides live-expiry requirements below only; other evidence and cleanup
+> requirements remain. Historical captures are not reclassified as passing.
+
 Date: 2026-10-17. Status: written spec approved by the maintainer, with the
 explicit requirement to retain the same routes for one-to-one drop-in use.
 This is not an implementation or evidence report.
