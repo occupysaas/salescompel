@@ -27,37 +27,33 @@ import {
 } from "./openapi.ts";
 let selectedCommand: string | undefined;
 async function main() {
-  // Retain the positional command even when strict option parsing fails.
+  const options = {
+    target: { type: "string" },
+    suite: { type: "string" },
+    config: { type: "string" },
+    out: { type: "string" },
+    reference: { type: "string" },
+    candidate: { type: "string" },
+    first: { type: "string" },
+    second: { type: "string" },
+    role: { type: "string" },
+    spec: { type: "string" },
+    "first-policy": { type: "string" },
+    "second-policy": { type: "string" },
+    "first-cleanup": { type: "string" },
+    "second-cleanup": { type: "string" },
+    capture: { type: "string" },
+    policy: { type: "string" },
+  } as const;
+  // Use the same option arity when identifying the command after parse errors.
   selectedCommand = parseArgs({
     allowPositionals: true,
     strict: false,
-  }).positionals.find((value) =>
-    [
-      "probe-external-id-body",
-      "recover-external-id-body",
-      "assess-external-id-body",
-    ].includes(value),
-  );
+    options,
+  }).positionals[0];
   const { values, positionals } = parseArgs({
     allowPositionals: true,
-    options: {
-      target: { type: "string" },
-      suite: { type: "string" },
-      config: { type: "string" },
-      out: { type: "string" },
-      reference: { type: "string" },
-      candidate: { type: "string" },
-      first: { type: "string" },
-      second: { type: "string" },
-      role: { type: "string" },
-      spec: { type: "string" },
-      "first-policy": { type: "string" },
-      "second-policy": { type: "string" },
-      "first-cleanup": { type: "string" },
-      "second-cleanup": { type: "string" },
-      capture: { type: "string" },
-      policy: { type: "string" },
-    },
+    options,
   });
   selectedCommand = positionals[0];
   const selected = suite(values.suite ?? "pilot");

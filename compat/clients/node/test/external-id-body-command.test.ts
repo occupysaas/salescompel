@@ -230,7 +230,7 @@ test("body CLI invocation and output failures exit 1 with flags before command",
   await writeFile(out, "original", { mode: 0o600 });
   const cases = [
     ["--out", out, "probe-external-id-body", "--bogus", "x"],
-    ["--bogus", "x", "probe-external-id-body", "--out", out],
+    ["--bogus", "probe-external-id-body", "--out", out],
     ["--out", out, "recover-external-id-body"],
     [
       "--out",
@@ -250,4 +250,37 @@ test("body CLI invocation and output failures exit 1 with flags before command",
     );
     assert.equal(result.status, 1, args.join(" "));
   }
+});
+
+test("legacy CLI option values cannot select a body command", () => {
+  for (const command of [
+    "probe-external-id-body",
+    "recover-external-id-body",
+    "assess-external-id-body",
+  ]) {
+    const result = spawnSync(
+      process.execPath,
+      [
+        "--import",
+        "tsx",
+        "src/cli.ts",
+        "validate",
+        "--out",
+        command,
+        "--bogus",
+        "x",
+      ],
+      { encoding: "utf8" },
+    );
+    assert.equal(result.status, 2, command);
+  }
+});
+
+test("an unknown flag does not give the following positional string arity", () => {
+  const result = spawnSync(
+    process.execPath,
+    ["--import", "tsx", "src/cli.ts", "--bogus", "x", "probe-external-id-body"],
+    { encoding: "utf8" },
+  );
+  assert.equal(result.status, 2);
 });
