@@ -90,3 +90,34 @@ mutation, and omitted controls must succeed, before enabling the product fix.
 This decision does not revise the proposed presence rule into an observation,
 promote Plan 9's broader drift result, or change the separate
 [Plan 10 blocked decision](plan-10-foundation-decision.md).
+
+## Offline verification and review status
+
+Tasks 1–3 are implemented and received task-level review. The final bounded
+outcome is **offline lab complete; reference evidence and product work pending**.
+The user selected Sol medium subagent execution, overriding the plan's native
+sequential recommendation. That execution choice does not relax the evidence gate.
+
+Final verification on 2026-10-19 ran `npm run check` in
+`compat/clients/node`: TypeScript typecheck, Prettier, Node tests and repository
+contract/catalog/dependency/OpenAPI validation all passed (exit 0). Node reported
+193 tests: 192 passed, zero failed, one skipped. The skip was the optional real
+JSforce candidate CRUD/policy/relationship/upsert test; it provides no live
+candidate verification. Repository-root `git diff --check` also passed (exit 0).
+The local verification log is retained in
+`.superpowers/sdd/2026-10-19-plan-11-external-id-body-validation/task-6-npm-check.log`.
+
+Task 5 remains entirely unimplemented because no ready assessment exists. No Go
+files changed; no Go tests or database-backed tests were expected or run for this
+blocked path. Database behavior and real reference behavior remain unverified.
+No reference calls or private-artifact/configuration changes were made during
+this final verification. The retained identity latch and recovery lock remain
+untouched. Historical evidence, accepted profiles and Plan 10 status are preserved.
+
+A fresh whole-change review is **pending**. The controller will request it after
+this documentation commit, supplying the baseline, changed files, verification
+results and blocked gate outcome. Reviewer access to sanitized documentation and
+offline tests does not establish independent verification of inaccessible private
+reference artifacts. Any review findings still require resolution before claiming
+the final whole-change review is complete. Progress is tracked in the
+[implementation plan](../superpowers/plans/2026-10-19-plan-11-external-id-body-validation.md).
