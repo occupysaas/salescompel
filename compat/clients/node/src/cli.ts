@@ -55,6 +55,69 @@ async function main() {
     throw new Error(
       "Specify one command: validate, preflight, capture, compare, repeatability, verify-evidence or validate-openapi",
     );
+  if (command === "assess-external-id-body") {
+    if (
+      !values.first ||
+      !values.second ||
+      !values.out ||
+      Object.keys(values).some((k) => !["first", "second", "out"].includes(k))
+    )
+      throw new Error(
+        "Body assessment requires --first, --second and --out only",
+      );
+    const { privateDirectory } = await import("./metadata-files.ts");
+    const { assessBodyPair } = await import("./external-id-body-assess.ts");
+    const { open } = await import("node:fs/promises");
+    const target = resolve(values.out);
+    await privateDirectory(dirname(target));
+    if (!target.endsWith(".json"))
+      throw new Error("Private output must end in .json");
+    const output = await open(target, "wx", 0o600);
+    try {
+      const result = await assessBodyPair(values.first, values.second);
+      await output.writeFile(JSON.stringify(result) + "\n");
+      await output.sync();
+      console.log(`${result.outcome}: private output ${target}`);
+      process.exitCode = result.outcome === "ready" ? 0 : 2;
+    } finally {
+      await output.close();
+    }
+    return;
+  }
+  if (
+    command === "probe-external-id-body" ||
+    command === "recover-external-id-body"
+  ) {
+    const mode = command === "probe-external-id-body" ? "probe" : "recover";
+    const allowed =
+      mode === "probe" ? ["config", "out"] : ["config", "out", "first"];
+    if (
+      !values.config ||
+      !values.out ||
+      (mode === "recover" && !values.first) ||
+      Object.keys(values).some((k) => !allowed.includes(k))
+    )
+      throw new Error(
+        "Body command requires private --config and --out; recovery also requires --first",
+      );
+    const { bodyCommand } = await import("./external-id-body-command.ts");
+    const result = await bodyCommand(
+      mode,
+      values.config,
+      values.out,
+      process.env,
+      values.first,
+    );
+    const clean =
+      "collection" in result
+        ? result.collection === "complete" && result.cleanup.outcome === "clean"
+        : result.outcome === "clean";
+    console.log(
+      `${clean ? "complete" : "incomplete/blocked"}: private output ${resolve(values.out)}`,
+    );
+    process.exitCode = clean ? 0 : 2;
+    return;
+  }
   if (command === "capture-foundation-assumed") {
     if (
       values.target !== "reference" ||
@@ -363,5 +426,9 @@ main().catch((e) => {
     .map(([, v]) => v!)
     .filter(Boolean);
   console.error(sanitize(e.message ?? String(e), secrets));
-  process.exitCode = e.exitCode === 1 ? 1 : 2;
+  process.exitCode = process.argv[2]?.endsWith("external-id-body")
+    ? 1
+    : e.exitCode === 1
+      ? 1
+      : 2;
 });

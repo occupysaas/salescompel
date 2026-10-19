@@ -151,7 +151,18 @@ const digest = /^[a-f0-9]{64}$/;
 function timeRange(start: string, end: string) {
   const utc = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/;
   if (
-    ![start, end].every((t) => utc.test(t) && Number.isFinite(Date.parse(t))) ||
+    ![start, end].every(
+      (t) =>
+        utc.test(t) &&
+        Number.isFinite(Date.parse(t)) &&
+        new Date(t).toISOString().replace(/\.000Z$/, "Z") ===
+          t
+            .replace(
+              /\.(\d{1,3})Z$/,
+              (_, ms: string) => "." + ms.padEnd(3, "0") + "Z",
+            )
+            .replace(/\.000Z$/, "Z"),
+    ) ||
     Date.parse(start) > Date.parse(end)
   )
     throw new Error("Invalid body evidence time range");
