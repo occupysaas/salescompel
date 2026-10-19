@@ -39,6 +39,10 @@ async function main() {
       second: { type: "string" },
       role: { type: "string" },
       spec: { type: "string" },
+      "first-policy": { type: "string" },
+      "second-policy": { type: "string" },
+      "first-cleanup": { type: "string" },
+      "second-cleanup": { type: "string" },
     },
   });
   const selected = suite(values.suite ?? "pilot");
@@ -65,6 +69,45 @@ async function main() {
       `${result.sidecar ? "policy capture recorded" : "blocked"}: private output ${resolve(values.out)}`,
     );
     process.exitCode = result.sidecar ? 0 : 2;
+    return;
+  }
+  if (command === "assess-foundation") {
+    const allowed = [
+      "first",
+      "second",
+      "first-policy",
+      "second-policy",
+      "first-cleanup",
+      "second-cleanup",
+      "out",
+    ];
+    if (
+      Object.keys(values).some((key) => !allowed.includes(key)) ||
+      allowed.some((key) => !values[key as keyof typeof values])
+    )
+      throw new Error(
+        "Foundation assessment requires two captures, policies, cleanup attestations and private output",
+      );
+    const { assessFoundationFiles } =
+      await import("./foundation-assessment-command.ts");
+    const result = await assessFoundationFiles({
+      first: values.first!,
+      second: values.second!,
+      firstPolicy: values["first-policy"]!,
+      secondPolicy: values["second-policy"]!,
+      firstCleanup: values["first-cleanup"]!,
+      secondCleanup: values["second-cleanup"]!,
+      out: values.out!,
+    });
+    console.log(
+      `${result.outcome}: private foundation assessment ${resolve(values.out!)}`,
+    );
+    process.exitCode =
+      result.outcome === "ready-with-assumptions"
+        ? 0
+        : result.outcome === "drift"
+          ? 1
+          : 2;
     return;
   }
   if (command === "probe-external-id" || command === "recover-external-id") {

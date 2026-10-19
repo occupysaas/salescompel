@@ -17,7 +17,8 @@
     "check": "npm run typecheck && npm run format:check && npm test && npm run validate",
     "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\"",
     "preflight": "tsx src/cli.ts preflight",
-    "verify-evidence": "tsx src/cli.ts verify-evidence"
+    "verify-evidence": "tsx src/cli.ts verify-evidence",
+    "assess-foundation": "tsx src/cli.ts assess-foundation"
   },
   "dependencies": {
     "@formatjs/icu-messageformat-parser": "3.5.21",

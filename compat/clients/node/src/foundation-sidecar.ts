@@ -92,6 +92,10 @@ async function privateFileBytes(path: string): Promise<Buffer> {
   }
 }
 
+export async function readPrivateFoundationFile(path: string): Promise<string> {
+  return (await privateFileBytes(path)).toString("utf8");
+}
+
 export async function writeFoundationSidecar(
   capturePath: string,
   report: Pick<
