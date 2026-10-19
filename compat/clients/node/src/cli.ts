@@ -49,6 +49,37 @@ async function main() {
     throw new Error(
       "Specify one command: validate, preflight, capture, compare, repeatability, verify-evidence or validate-openapi",
     );
+  if (command === "probe-external-id" || command === "recover-external-id") {
+    const mode = command === "probe-external-id" ? "probe" : "recover";
+    const allowed =
+      mode === "probe" ? ["config", "out"] : ["config", "out", "first"];
+    if (
+      Object.keys(values).some((k) => !allowed.includes(k)) ||
+      !values.config ||
+      !values.out ||
+      (mode === "recover" && !values.first)
+    )
+      throw new Error(
+        "External-ID command requires private config/output and recovery run directory when recovering",
+      );
+    const { externalIdCommand } = await import("./external-id-command.ts");
+    const result = await externalIdCommand(
+      mode,
+      values.config,
+      values.out,
+      process.env,
+      values.first,
+    );
+    const complete =
+      "collection" in result
+        ? result.collection === "complete" && result.cleanup === "clean"
+        : result.outcome === "clean";
+    console.log(
+      `External-ID ${mode}: ${complete ? "complete" : "incomplete/blocked"}; private output ${resolve(values.out)}`,
+    );
+    process.exitCode = complete ? 0 : 2;
+    return;
+  }
   if (command === "discover-metadata") {
     if (Object.keys(values).some((k) => !["config", "out"].includes(k)))
       throw new Error("Discovery accepts only --config and --out");

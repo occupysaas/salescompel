@@ -1,4 +1,7 @@
 import test from "node:test";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+import { createHash } from "node:crypto";
 import assert from "node:assert/strict";
 import { runExternalIdProbe } from "../src/external-id-probe.ts";
 import {
@@ -17,6 +20,13 @@ test("fixed external-ID scenarios use real transport, preserve encoding and clea
     manifest.reduce((n, c) => n + c.steps.length, 0),
   );
   assert.equal(x.rows.size, 0);
+  for (const op of r.operations)
+    assert.equal(
+      createHash("sha256")
+        .update(await readFile(join(x.dir, op.artifact)))
+        .digest("hex"),
+      op.sha256,
+    );
   assert.ok(x.calls.some((c) => c.path.includes("%2Fpercent%25%C3%A9")));
   assert.ok(
     x.calls.filter((c) => ["POST", "PATCH"].includes(c.method)).length <= 160,

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://recomp.fyi/schema/v1.json",
+  "project": "SalesCompel",
+  "status": "in-progress",
+  "approach": "Independent implementation of Salesforce-compatible behavior using public API observations and unmodified clients.",
+  "links": [
+    {
+      "label": "Source repository",
+      "url": "https://github.com/occupysaas/salescompel"
+    },
+    {
+      "label": "Compatibility roadmap",
+      "url": "https://github.com/occupysaas/salescompel/blob/main/docs/plans/2026-10-14-salesforce-compatibility-roadmap.md"
+    }
+  ],
+  "tags": ["crm", "salesforce-compatibility", "black-box-testing", "open-source"],
+  "notes": "An experimental Salesforce replacement with a tenant-isolated Go/PostgreSQL candidate, Account and Contact APIs, and a localized Vue record workflow. Broader protocol, metadata, security and migration compatibility remains in development. Not production-ready or certified Salesforce-compatible. This is a software compatibility project, not a game recompilation or binary decompilation.",
+  "x-target-software": "Salesforce",
+  "x-license": "Apache-2.0",
+  "x-stack": ["Go", "PostgreSQL", "Vue", "TypeScript"]
+}

@@ -113,7 +113,13 @@ export async function runExternalIdProbe(
           // Store the complete response durably before marking its dispatch resolved.
           o.artifact = `response-${id.replaceAll(":", "-")}.json`;
           o.sha256 = createHash("sha256")
-            .update(JSON.stringify(o.body))
+            .update(
+              JSON.stringify({
+                status: o.status,
+                bodyPresent: o.bodyPresent,
+                body: o.body,
+              }) + "\n",
+            )
             .digest("hex");
           await durableJSON(join(dir, o.artifact), {
             status: o.status,
