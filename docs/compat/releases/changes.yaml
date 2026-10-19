@@ -38,3 +38,54 @@ blockers:
     reason: Product/API changelogs and release-update links inside unread documents have not been inventoried.
     resolution: Expand the inventory as source content becomes accessible; retain missing-source owners and never claim complete M1R review from the archive link list.
     blocksFullM1R: true
+accessChecks:
+  - checkedAt: '2026-10-19'
+    url: https://developer.salesforce.com/docs/platform/salesforce-app-limits-cheatsheet/guide/salesforce-app-limits-platform-apicursors.html
+    version: current official API Query Cursor Limits guide; states change at API 56.0 and application to all REST versions including 65.0
+    result: readable-html
+    summary: Cursors and their results are documented as available for two days, including nested query results; the old per-user cursor limit and fifteen-minute inactivity expiry were removed. The page does not state a precise expiry boundary or retention anchor.
+  - checkedAt: '2026-10-19'
+    url: https://resources.docs.salesforce.com/latest/latest/en-us/sfdc/pdf/salesforce_app_limits_cheatsheet.pdf
+    version: current official Developer Limits and Allocations Quick Reference PDF
+    result: readable-pdf
+    summary: Its API Query Cursor Limits section independently repeats two-day result availability and the API 56.0 cursor-limit change. It is current documentation, not a release-pinned Winter 23 review.
+  - checkedAt: '2026-10-19'
+    url: https://help.salesforce.com/s/articleView?id=release-notes.rn_api_improved_query_limits.htm&language=en_US&release=240&type=5
+    version: Winter 23 release-pinned Help page
+    result: inaccessible-content
+    summary: The page exposed a loading and CSS-error shell; its release-note body could not be independently reread on this check. Earlier recorded evidence is retained.
+  - checkedAt: '2026-10-19'
+    url: https://developer.salesforce.com/blogs/2022/12/processing-large-amounts-of-data-with-apis-part-1-of-2
+    version: December 2022 official developer article discussing Winter 23/API 56.0
+    result: readable-html
+    summary: The article separately describes up-to-two-day cursor availability and removal of the open-cursor limit. It does not establish a live expiry boundary.
+  - checkedAt: '2026-10-19'
+    url: https://developer.salesforce.com/docs/platform/api-rest/guide/resources-query-more-results.html
+    version: current REST API guide; selected API 65.0 applicability not release-pinned
+    result: readable-html
+    summary: Describes done, totalSize, records and nextRecordsUrl for query continuation; useful contract context but not historical release reconciliation.
+  - checkedAt: '2026-10-19'
+    url: https://developer.salesforce.com/docs/platform/api-rest/guide/headers-queryoptions.html
+    version: current REST API guide; selected API 65.0 applicability not release-pinned
+    result: readable-html
+    summary: Documents requested batchSize from 200 to 2000 and notes that actual returned size may differ.
+  - checkedAt: '2026-10-19'
+    url: https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-orderby.html
+    version: current SOQL guide; selected API 65.0 applicability not release-pinned
+    result: readable-html
+    summary: Documents ORDER BY and null placement, and explains that records tied on an ordering field can have varying relative order.
+  - checkedAt: '2026-10-19'
+    url: https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-comparisonoperators.html
+    version: current SOQL guide; selected API 65.0 applicability not release-pinned
+    result: readable-html
+    summary: Describes ordinary string comparisons as case-insensitive under the executing user's locale, with an exception for unique case-sensitive fields.
+  - checkedAt: '2026-10-19'
+    url: https://developer.salesforce.com/docs/platform/api-rest/guide/errorcodes.html
+    version: current REST API guide; selected API 65.0 applicability not release-pinned
+    result: readable-html
+    summary: Lists general REST error codes; it does not settle every status and body property in the focused Plan 5 probes.
+  - checkedAt: '2026-10-19'
+    url: https://developer.salesforce.com/docs/platform/api/guide/sforce-api-calls-concepts-core-data-objects.html
+    version: current API guide; selected API 65.0 applicability not release-pinned
+    result: readable-html
+    summary: Defines MALFORMED_ID for IDs that are not 15 characters or a valid 18-character form; focused runtime behavior still needs capture.

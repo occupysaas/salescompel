@@ -7,7 +7,10 @@ import {
 } from "../src/foundation-assessment.ts";
 import type { FoundationSidecar } from "../src/foundation-sidecar.ts";
 import { foundationCoverage } from "../src/foundation-policy.ts";
-import { assessFoundationFiles } from "../src/foundation-assessment-command.ts";
+import {
+  assessFoundationFiles,
+  foundationReleaseFindings,
+} from "../src/foundation-assessment-command.ts";
 import { mkdtemp, chmod, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -255,4 +258,41 @@ test("file command rejects missing sidecars before creating output", async (t) =
       out: join(dir, "assessment.json"),
     }),
   );
+});
+
+test("release input rejects duplicate findings and limits relevance to selected contracts", () => {
+  assert.throws(() =>
+    foundationReleaseFindings({
+      schemaVersion: 1,
+      findings: [
+        {
+          id: "duplicate",
+          affectedContracts: ["query-locator-lifecycle"],
+          blocksContractFreeze: true,
+        },
+        {
+          id: "duplicate",
+          affectedContracts: ["query-locator-lifecycle"],
+          blocksContractFreeze: true,
+        },
+      ],
+      blockers: [],
+    }),
+  );
+  const findings = foundationReleaseFindings({
+    schemaVersion: 1,
+    findings: [
+      {
+        id: "cursor",
+        affectedContracts: ["query-locator-lifecycle"],
+        blocksContractFreeze: true,
+        status: "reviewed-source-awaiting-live-reconciliation",
+      },
+    ],
+    blockers: [{ id: "archive", affectedContracts: [], blocksFullM1R: true }],
+  });
+  assert.deepEqual(findings, [
+    { id: "cursor", relevant: true, resolved: false },
+    { id: "archive", relevant: false, resolved: false },
+  ]);
 });

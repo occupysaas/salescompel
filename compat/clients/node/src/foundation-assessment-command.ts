@@ -33,6 +33,10 @@ export function foundationReleaseFindings(document: unknown): ReleaseFinding[] {
     !Array.isArray(data.blockers)
   )
     throw new Error("Malformed release findings");
+  const items = [...data.findings, ...data.blockers];
+  const ids = items.map((item: any) => item?.id);
+  if (new Set(ids).size !== ids.length)
+    throw new Error("Duplicate release finding identifiers");
   const relevant = new Set([
     "query-response-shape",
     "query-limit-above-batch",
@@ -47,7 +51,7 @@ export function foundationReleaseFindings(document: unknown): ReleaseFinding[] {
     "rest-route-parity",
     "duplicate-canonical-fields",
   ]);
-  return [...data.findings, ...data.blockers].map((finding: any) => {
+  return items.map((finding: any) => {
     if (
       typeof finding?.id !== "string" ||
       !Array.isArray(finding.affectedContracts ?? [])
