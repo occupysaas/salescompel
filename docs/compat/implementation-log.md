@@ -446,3 +446,8 @@ sanitization review is claimed.
   settings and the private recovery directory. Offline foundation preflight exited
   2 before reference requests or fixture writes. The decision remains blocked;
   see [Plan 10 decision](plan-10-foundation-decision.md).
+- Whole-change review found false-ready paths in cleanup chronology, identity
+  binding, response validation and owned-ID accounting, plus false drift from
+  concurrent assertion order. Regression tests reproduce each case; the capture
+  preflight now requires private expected tenant/persona IDs and verifies prior
+  foundation recovery markers and exact-ID absence before collection.

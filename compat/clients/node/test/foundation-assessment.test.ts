@@ -26,6 +26,7 @@ const binding = {
 };
 const source =
   "https://developer.salesforce.com/docs/platform/salesforce-app-limits-cheatsheet/guide/salesforce-app-limits-platform-apicursors.html";
+const sfId = (n: number) => `001${String(n).padStart(12, "0")}AAA`;
 
 function fixture(start: string, end: string) {
   const coverage = foundationCoverage();
@@ -33,7 +34,44 @@ function fixture(start: string, end: string) {
     const observations: Record<string, any> = {};
     const assertions: { name: string; passed: boolean }[] = [];
     for (const label of spec.observations) {
-      observations[label] = { status: 200, body: {} };
+      observations[label] = {
+        status: 200,
+        body: { Id: sfId(1), records: [], done: true, totalSize: 0 },
+      };
+      if (label === "global") observations[label].body = { sobjects: [] };
+      if (label === "describe" || label === "lower-describe")
+        observations[label].body = { name: "Account", fields: [] };
+      if (
+        (id === "foundation-routes" &&
+          ["patch", "escaped-upsert", "delete"].includes(label)) ||
+        (id === "foundation-cursors" &&
+          ["update-pending", "delete-pending"].includes(label)) ||
+        (id === "foundation-ids" &&
+          [
+            "short-update",
+            "short-reference",
+            "invalid-reference",
+            "unlink",
+            "short-delete",
+          ].includes(label)) ||
+        (id === "foundation-names" &&
+          ["lower-json", "duplicate-alias", "duplicate-raw"].includes(label)) ||
+        (id === "foundation-errors" && label === "delete")
+      )
+        observations[label] = { status: 204, body: null };
+      if (
+        (id === "foundation-names" && label.startsWith("denied-")) ||
+        (id === "foundation-errors" &&
+          !["after-failed-writes", "delete"].includes(label)) ||
+        (id === "foundation-cursors" &&
+          ["other-user", "unknown-locator", "malformed-locator"].includes(
+            label,
+          ))
+      )
+        observations[label] = {
+          status: 404,
+          body: [{ errorCode: "NOT_FOUND" }],
+        };
       if (label === "versions")
         observations[label] = { status: 200, requestedVersionAdvertised: true };
       if (label.startsWith("own-user:"))
@@ -66,10 +104,10 @@ function fixture(start: string, end: string) {
             records:
               prefix === "ties"
                 ? Array.from({ length: index === 0 ? 200 : 1 }, (_, i) => ({
-                    Id: `001-${index === 0 ? i : 200}`,
+                    Id: sfId(1000 + (index === 0 ? i : 200)),
                     Compat_Text__c: "same",
                   }))
-                : [{ Id: "001-other" }],
+                : [{ Id: sfId(1) }],
             ...(!done
               ? {
                   nextRecordsUrl: {
@@ -98,12 +136,14 @@ function fixture(start: string, end: string) {
       });
     }
     for (const name of spec.assertions) assertions.push({ name, passed: true });
-    const identities =
-      id === "foundation-cursors"
+    const identities = {
+      owned: sfId(Object.keys(coverage).indexOf(id) + 1),
+      ...(id === "foundation-cursors"
         ? Object.fromEntries(
-            Array.from({ length: 201 }, (_, i) => [`tie-${i}`, `001-${i}`]),
+            Array.from({ length: 201 }, (_, i) => [`tie-${i}`, sfId(1000 + i)]),
           )
-        : {};
+        : {}),
+    };
     return {
       id,
       client: "jsforce",
@@ -119,11 +159,13 @@ function fixture(start: string, end: string) {
       identities,
     };
   });
-  const cleanup = results.map((r) => ({
-    scenario: r.id,
-    resource: `Account:${r.id}`,
-    outcome: "passed",
-  }));
+  const cleanup = results.flatMap((r) =>
+    Object.values(r.identities).map((id) => ({
+      scenario: r.id,
+      resource: `Account:${id}`,
+      outcome: "passed",
+    })),
+  );
   const report = {
     schemaVersion: 1,
     target: "reference",
@@ -181,6 +223,121 @@ function assess(a = pair()[0], b = pair()[1], releases: any[] = []) {
     releases,
   );
 }
+
+function revise(
+  fixtureValue: ReturnType<typeof fixture>,
+  edit: (report: any) => void,
+) {
+  const report = structuredClone(fixtureValue.report);
+  edit(report);
+  const bytes = JSON.stringify(report) + "\n";
+  return {
+    ...fixtureValue,
+    report,
+    bytes,
+    sidecar: { ...fixtureValue.sidecar, captureSha256: hash(bytes) },
+    absence: { ...fixtureValue.absence, captureSha256: hash(bytes) },
+  };
+}
+
+test("first absence must precede second capture", () => {
+  const [a, b] = pair();
+  assert.equal(
+    assess(
+      {
+        ...a,
+        absence: { ...a.absence, checkedAt: "2026-10-19T14:00:00.000Z" },
+      },
+      b,
+    ).outcome,
+    "blocked",
+  );
+});
+
+test("pair must retain the same live identity", () => {
+  const [a, b] = pair();
+  assert.equal(
+    assess(a, {
+      ...b,
+      sidecar: { ...b.sidecar, identityDigest: "e".repeat(64) },
+      absence: { ...b.absence, identityDigest: "e".repeat(64) },
+    }).outcome,
+    "blocked",
+  );
+});
+
+test("authentication failures and malformed positive reads cannot become evidence", () => {
+  const [a, b] = pair();
+  const failed = (f: ReturnType<typeof fixture>) =>
+    revise(f, (report) => {
+      const result = report.results.find(
+        (r: any) => r.id === "foundation-cursors",
+      );
+      result.observations["fresh-session"] = {
+        status: 401,
+        body: [{ errorCode: "INVALID_SESSION_ID" }],
+      };
+    });
+  assert.equal(assess(failed(a), failed(b)).outcome, "blocked");
+  const nullRead = (f: ReturnType<typeof fixture>) =>
+    revise(f, (report) => {
+      report.results.find(
+        (r: any) => r.id === "foundation-routes",
+      ).observations.read.body = null;
+    });
+  assert.equal(assess(nullRead(a), nullRead(b)).outcome, "blocked");
+  const nullAfterWrite = (f: ReturnType<typeof fixture>) =>
+    revise(f, (report) => {
+      report.results.find(
+        (r: any) => r.id === "foundation-errors",
+      ).observations["after-failed-writes"].body = null;
+    });
+  assert.equal(assess(nullAfterWrite(a), nullAfterWrite(b)).outcome, "blocked");
+  const fakeMutation = (f: ReturnType<typeof fixture>) =>
+    revise(f, (report) => {
+      report.results.find(
+        (r: any) => r.id === "foundation-routes",
+      ).observations.patch = { status: 200, body: {} };
+    });
+  assert.equal(assess(fakeMutation(a), fakeMutation(b)).outcome, "blocked");
+});
+
+test("concurrent passing assertion order does not cause drift", () => {
+  const [a, b] = pair();
+  const swapped = revise(b, (report) => {
+    const assertions = report.results.find(
+      (r: any) => r.id === "foundation-cursors",
+    ).assertions;
+    const ai = assertions.findIndex(
+      (x: any) => x.name === "parallel-a: bounded JSON HTTP response",
+    );
+    const bi = assertions.findIndex(
+      (x: any) => x.name === "parallel-b: bounded JSON HTTP response",
+    );
+    [assertions[ai], assertions[bi]] = [assertions[bi], assertions[ai]];
+  });
+  assert.equal(assess(a, swapped).outcome, "ready-with-assumptions");
+});
+
+test("all owned fixture IDs must appear in cleanup and absence evidence", () => {
+  const [a, b] = pair();
+  const missing = revise(b, (report) => {
+    const removed = report.cleanup.findIndex(
+      (c: any) => c.resource === `Account:${sfId(1000)}`,
+    );
+    report.cleanup.splice(removed, 1);
+  });
+  missing.absence.resources = missing.absence.resources.filter(
+    (r) => r.resource !== `Account:${sfId(1000)}`,
+  );
+  assert.equal(assess(a, missing).outcome, "blocked");
+  const mislabeled = revise(b, (report) => {
+    report.cleanup.find(
+      (c: any) => c.resource === `Account:${sfId(1000)}`,
+    ).scenario = "foundation-pagination";
+  });
+  assert.equal(assess(a, mislabeled).outcome, "blocked");
+});
 
 test("complete measured pair is ready only with named assumption", () => {
   const result = assess();

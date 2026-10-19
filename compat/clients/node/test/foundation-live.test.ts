@@ -5,6 +5,8 @@ import { createHash } from "node:crypto";
 import {
   foundationLivePreflight,
   collectFoundationAbsence,
+  verifyFoundationPriorRecovery,
+  foundationJournalDigest,
 } from "../src/foundation-live.ts";
 import type { Report } from "../src/core.ts";
 import { auditFoundationRecovery } from "../src/foundation-live.ts";
@@ -62,10 +64,25 @@ test("live preflight binds two administrator sessions, restricted persona and fi
     COMPAT_REFERENCE_FRESH_TOKEN: "admin-two",
     COMPAT_REFERENCE_RESTRICTED_TOKEN: "restricted",
     COMPAT_API_VERSION: "65.0",
+    COMPAT_REFERENCE_EXPECTED_ORG_ID: "org",
+    COMPAT_REFERENCE_EXPECTED_ADMIN_USER_ID: "admin",
+    COMPAT_REFERENCE_EXPECTED_RESTRICTED_USER_ID: "restricted",
   };
   assert.equal(
     await foundationLivePreflight(env),
     createHash("sha256").update("admin\0org").digest("hex"),
+  );
+  await assert.rejects(
+    foundationLivePreflight({
+      ...env,
+      COMPAT_REFERENCE_EXPECTED_ORG_ID: "different",
+    }),
+  );
+  await assert.rejects(
+    foundationLivePreflight({
+      ...env,
+      COMPAT_REFERENCE_EXPECTED_ADMIN_USER_ID: "different",
+    }),
   );
   restrictedUser = "admin";
   await assert.rejects(foundationLivePreflight(env));
@@ -98,7 +115,10 @@ test("recovery audit refuses a journal with an unmatched create intent", async (
     results: [
       {
         id: "foundation-cursors",
-        identities: { "value:cursors": `Compat_${runId}_cursors` },
+        identities: {
+          "value:cursors": `Compat_${runId}_cursors`,
+          "cursor-0": id,
+        },
       },
     ],
     cleanup: [
@@ -110,11 +130,27 @@ test("recovery audit refuses a journal with an unmatched create intent", async (
     ],
   } as unknown as Report;
   assert.equal(await auditFoundationRecovery(root, report), true);
+  const missingOwned = structuredClone(report);
+  missingOwned.results[0].identities["cursor-1"] = "001000000000002AAA";
+  assert.equal(await auditFoundationRecovery(root, missingOwned), false);
   await writeFile(
     journal,
     `${JSON.stringify(intent)}\n${JSON.stringify(resource)}\n${JSON.stringify(intent)}\n`,
   );
   assert.equal(await auditFoundationRecovery(root, report), false);
+});
+
+test("prior recovery journals without verified absence block a new capture", async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "foundation-prior-"));
+  await chmod(root, 0o700);
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await verifyFoundationPriorRecovery(root, "d".repeat(64), {});
+  const runDir = join(root, `reference-${"a".repeat(16)}`);
+  await mkdir(runDir, { mode: 0o700 });
+  await writeFile(join(runDir, "foundation-cursors.jsonl"), "", {
+    mode: 0o600,
+  });
+  await assert.rejects(verifyFoundationPriorRecovery(root, "d".repeat(64), {}));
 });
 
 test("cleanup command requires private capture and policy before writing attestation", async (t) => {
@@ -183,6 +219,9 @@ test("absence verifier reads exact owned IDs and refuses a remaining record", as
     COMPAT_REFERENCE_FRESH_TOKEN: "admin-two",
     COMPAT_REFERENCE_RESTRICTED_TOKEN: "restricted",
     COMPAT_API_VERSION: "65.0",
+    COMPAT_REFERENCE_EXPECTED_ORG_ID: "org",
+    COMPAT_REFERENCE_EXPECTED_ADMIN_USER_ID: "admin",
+    COMPAT_REFERENCE_EXPECTED_RESTRICTED_USER_ID: "restricted",
   };
   const report = {
     finishedAt: "2026-10-19T00:00:00.000Z",
@@ -206,8 +245,33 @@ test("absence verifier reads exact owned IDs and refuses a remaining record", as
     { resource: `Account:${id}`, absent: true },
   ]);
   assert.equal(evidence.identityDigest, digest);
+  const root = await mkdtemp(join(tmpdir(), "foundation-prior-verified-"));
+  await chmod(root, 0o700);
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const runDir = join(root, `reference-${"b".repeat(16)}`);
+  await mkdir(runDir, { mode: 0o700 });
+  const journal = join(runDir, "foundation-cursors.jsonl");
+  await writeFile(journal, `${JSON.stringify({ intent: "create" })}\n`, {
+    mode: 0o600,
+  });
+  await writeFile(
+    join(runDir, "foundation-absence.json"),
+    JSON.stringify({
+      evidence,
+      journalDigest: await foundationJournalDigest(runDir),
+    }),
+    { mode: 0o600 },
+  );
+  await verifyFoundationPriorRecovery(root, digest, env);
   present = true;
   await assert.rejects(
     collectFoundationAbsence(report, "a".repeat(64), digest, env, true),
   );
+  await assert.rejects(verifyFoundationPriorRecovery(root, digest, env));
+  present = false;
+  await writeFile(
+    journal,
+    `${JSON.stringify({ intent: "create" })}\n${JSON.stringify({ intent: "create" })}\n`,
+  );
+  await assert.rejects(verifyFoundationPriorRecovery(root, digest, env));
 });

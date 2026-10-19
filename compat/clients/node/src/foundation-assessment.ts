@@ -49,6 +49,153 @@ function validTime(value: unknown): value is string {
 function multiset(values: string[]): string[] {
   return [...values].sort();
 }
+const resourceId = /^(Account|Contact):[A-Za-z0-9]{15}(?:[A-Za-z0-9]{3})?$/;
+function ownedResources(
+  report: Report,
+): { scenario: string; resource: string }[] {
+  return report.results.flatMap((result) =>
+    Object.entries(result.identities)
+      .filter(
+        ([key]) =>
+          !/^(value:|url:|short:|locator:|comparison:)/.test(key) &&
+          key !== "external",
+      )
+      .map(([key, id]) => ({
+        scenario: result.id,
+        resource: `${key === "contact" || key === "id-contact" ? "Contact" : "Account"}:${id}`,
+      })),
+  );
+}
+function observationShape(id: string, label: string, item: any): boolean {
+  if (
+    !Number.isInteger(item?.status) ||
+    item.status < 200 ||
+    item.status >= 500
+  )
+    return false;
+  const status = item.status;
+  const body = item.body;
+  const mutation =
+    (id === "foundation-routes" &&
+      ["patch", "escaped-upsert", "delete"].includes(label)) ||
+    (id === "foundation-cursors" &&
+      ["update-pending", "delete-pending"].includes(label)) ||
+    (id === "foundation-ids" &&
+      [
+        "short-update",
+        "short-reference",
+        "invalid-reference",
+        "unlink",
+        "short-delete",
+      ].includes(label)) ||
+    (id === "foundation-names" &&
+      ["lower-json", "duplicate-alias", "duplicate-raw"].includes(label)) ||
+    (id === "foundation-errors" && label === "delete");
+  const expectedError =
+    (id === "foundation-names" && label.startsWith("denied-")) ||
+    (id === "foundation-errors" &&
+      !["after-failed-writes", "delete"].includes(label)) ||
+    (id === "foundation-cursors" &&
+      ["other-user", "unknown-locator", "malformed-locator"].includes(label));
+  const optionalError =
+    (id === "foundation-routes" && label === "deleted-read") ||
+    (id === "foundation-names" &&
+      ["lower-json", "duplicate-alias", "duplicate-raw"].includes(label));
+  if (status === 401 || (status === 403 && !expectedError)) return false;
+  if (status >= 400) {
+    if (
+      !expectedError &&
+      !optionalError &&
+      !(
+        id === "foundation-ids" &&
+        /^(lower|bad-checksum|short-length|wrong-prefix|invalid-reference|long-after-delete)/.test(
+          label,
+        )
+      ) &&
+      !(id === "foundation-pagination" && label.startsWith("batch:"))
+    )
+      return false;
+    const errors = Array.isArray(body) ? body : [body];
+    return (
+      errors.length > 0 &&
+      errors.every(
+        (error) =>
+          typeof error?.errorCode === "string" &&
+          error.errorCode !== "INVALID_SESSION_ID",
+      )
+    );
+  }
+  if (expectedError) return false;
+  if (mutation && status !== 204)
+    return (
+      id === "foundation-routes" &&
+      label === "escaped-upsert" &&
+      status === 201 &&
+      typeof body?.id === "string"
+    );
+  if (status === 204)
+    return body == null || (typeof body === "object" && !Array.isArray(body));
+  if (body === null || typeof body !== "object") return false;
+  if (
+    label === "read" ||
+    label.endsWith(":read") ||
+    (label.startsWith("after-") &&
+      ["foundation-names", "foundation-errors"].includes(id)) ||
+    [
+      "escaped-state",
+      "reference-read",
+      "reference-after-invalid",
+      "short:read",
+      "long:read",
+      "null-record",
+      "blank-record",
+      "lower-path",
+      "restricted-positive",
+    ].includes(label)
+  )
+    return label === "restricted-positive"
+      ? Array.isArray(body.records)
+      : typeof body.Id === "string";
+  if (label === "describe" || label === "lower-describe")
+    return typeof body.name === "string" && Array.isArray(body.fields);
+  if (label === "global") return Array.isArray(body.sobjects);
+  if (label === "resources") return !Array.isArray(body);
+  if (
+    label.includes(":query") ||
+    label.includes("equality:") ||
+    label.includes(":exact") ||
+    label.includes(":lower") ||
+    label.includes(":upper") ||
+    label.includes(":decomposed") ||
+    label === "parent-projection" ||
+    label === "lower-query" ||
+    label.startsWith("batch:")
+  )
+    return (
+      Array.isArray(body.records) &&
+      typeof body.done === "boolean" &&
+      Number.isInteger(body.totalSize)
+    );
+  if (
+    id === "foundation-cursors" &&
+    [
+      "initial",
+      "continuation",
+      "replay",
+      "parallel-a",
+      "parallel-b",
+      "fresh-session",
+      "before-mutation",
+      "after-mutation",
+    ].includes(label)
+  )
+    return (
+      Array.isArray(body.records) &&
+      typeof body.done === "boolean" &&
+      Number.isInteger(body.totalSize)
+    );
+  return true;
+}
 
 function pageIssues(
   result: Result,
@@ -186,12 +333,7 @@ function coverageIssues(report: Report): string[] {
           issues.push(`${id}: malformed nullEquality`);
       } else {
         names.push(`${label}: bounded JSON HTTP response`);
-        if (
-          !Number.isInteger(item?.status) ||
-          item.status < 200 ||
-          item.status >= 500 ||
-          (item.status !== 204 && !Object.hasOwn(item, "body"))
-        )
+        if (!observationShape(id, label, item))
           issues.push(`${id}: malformed ${label}`);
       }
     }
@@ -310,8 +452,17 @@ function cleanupIssues(
   )
     return ["Cleanup absence evidence missing or unbound"];
   const expected = report.cleanup.map((c) => c.resource);
+  const owned = ownedResources(report);
   if (
     report.cleanup.some((c) => c.outcome !== "passed") ||
+    owned.some(({ resource }) => !resourceId.test(resource)) ||
+    !isDeepStrictEqual(
+      multiset(owned.map((item) => `${item.scenario}|${item.resource}`)),
+      multiset(
+        report.cleanup.map((item) => `${item.scenario}|${item.resource}`),
+      ),
+    ) ||
+    new Set(expected).size !== expected.length ||
     !isDeepStrictEqual(
       multiset(expected),
       multiset(evidence.resources.map((r) => r.resource)),
@@ -335,7 +486,10 @@ function withoutTies(result: Result): unknown {
     client: result.client,
     outcome: result.outcome,
     reason: result.reason,
-    assertions: result.assertions.filter((a) => !a.name.startsWith("ties:")),
+    assertions: result.assertions
+      .filter((a) => !a.name.startsWith("ties:"))
+      .map((a) => JSON.stringify(a))
+      .sort(),
     observations: normalize(observations, result.identities),
   };
 }
@@ -416,6 +570,18 @@ export function assessFoundationPair(
       Date.parse(captures[0].finishedAt) > Date.parse(captures[1].startedAt))
   )
     pairIssues.push("Captures are not distinct and sequential");
+  if (captures.length === 2) {
+    if (
+      !validTime(cleanupEvidence?.[0]?.checkedAt) ||
+      Date.parse(cleanupEvidence[0].checkedAt) >
+        Date.parse(captures[1].startedAt)
+    )
+      pairIssues.push(
+        "First cleanup absence was not verified before second capture",
+      );
+    if (firstSidecar?.identityDigest !== secondSidecar?.identityDigest)
+      pairIssues.push("Capture identities differ");
+  }
   const tieDiagnostics: string[] = [];
   let tiePayloadDrift = false;
   if (reports.length === 2 && pairIssues.length === 0) {

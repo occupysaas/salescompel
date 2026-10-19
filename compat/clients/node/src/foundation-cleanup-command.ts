@@ -1,10 +1,12 @@
 import { open } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { validateReport } from "./core.ts";
 import { privateDirectory } from "./metadata-files.ts";
 import {
   auditFoundationRecovery,
   collectFoundationAbsence,
+  foundationRunId,
+  foundationJournalDigest,
 } from "./foundation-live.ts";
 import {
   readFoundationSidecar,
@@ -41,12 +43,28 @@ export async function verifyFoundationCleanupFiles(
     env,
     clear,
   );
+  const runId = foundationRunId(parsed);
+  if (!runId) throw new Error("Foundation run identity missing");
+  const marker = join(
+    await privateDirectory(join(recoveryRoot, `reference-${runId}`)),
+    "foundation-absence.json",
+  );
   const handle = await open(out, "wx", 0o600);
   try {
     await handle.writeFile(JSON.stringify(result, null, 2) + "\n");
     await handle.sync();
   } finally {
     await handle.close();
+  }
+  const journalDigest = await foundationJournalDigest(dirname(marker));
+  const markerHandle = await open(marker, "wx", 0o600);
+  try {
+    await markerHandle.writeFile(
+      JSON.stringify({ evidence: result, journalDigest }, null, 2) + "\n",
+    );
+    await markerHandle.sync();
+  } finally {
+    await markerHandle.close();
   }
   return result;
 }

@@ -13,6 +13,10 @@ profile, API, clients and administrator identity digest. A separate assessor
 requires two fresh sequential runs, exact coverage, valid cleanup/absence
 attestations and the narrow invariant-checked `ties` comparison. Existing
 observed-only capture, comparison and evidence registration remain unchanged.
+The post-implementation review tightened this gate: every owned fixture ID
+must appear under its scenario in cleanup and exact-ID absence evidence;
+authentication failures and malformed positive reads cannot count as measured
+responses. The first absence check must precede the second capture.
 
 The official API Query Cursor Limits guide and current Developer Limits PDF
 document two-day cursor/result availability at API 65.0. The maintainer authorized
@@ -45,7 +49,12 @@ times** to cite because no Plan 10 live run started.
 The offline foundation preflight exited 2 without making reference requests.
 The process lacks `COMPAT_REFERENCE_URL`, `COMPAT_REFERENCE_TOKEN`,
 `COMPAT_REFERENCE_FRESH_TOKEN`, `COMPAT_REFERENCE_RESTRICTED_TOKEN`,
-`COMPAT_API_VERSION`, `COMPAT_DISPOSABLE=yes` and `COMPAT_RECOVERY_DIR`. Named-tenant
+`COMPAT_REFERENCE_EXPECTED_ORG_ID`,
+`COMPAT_REFERENCE_EXPECTED_ADMIN_USER_ID`,
+`COMPAT_REFERENCE_EXPECTED_RESTRICTED_USER_ID`, `COMPAT_API_VERSION`,
+`COMPAT_DISPOSABLE=yes` and `COMPAT_RECOVERY_DIR`. The expected IDs are private
+operator pins for the authorized tenant and personas; the live preflight compares
+all three before fixture writes. Named-tenant
 authorization remains recorded in the foundation readiness file, but live
 administrator/fresh/restricted identities, deployed metadata and recovery state
 could not be rechecked in this process. No fixture writes, cleanup attempts,
@@ -54,7 +63,10 @@ second session fabrication or late expiry checkpoints occurred.
 When the private sessions and recovery directory are made available, re-run the
 reference preflight; inspect unresolved recovery state; collect the first fixed
 policy capture; run the read-only `verify-foundation-cleanup` command and review
-its journal and exact-ID absence evidence; then collect and verify the second
+its journal and exact-ID absence evidence. That command writes a private,
+capture-bound absence marker in the recovery run directory; the next capture
+rechecks every foundation recovery journal digest, the identity pins and exact-ID
+absence before it writes fixtures. Then collect and verify the second
 run sequentially. Run `assess-foundation` with both captures, sidecars and cleanup
 attestations, and publish only a sanitized reviewed outcome. Any relevant
 unresolved release finding remains a separate development-decision blocker.

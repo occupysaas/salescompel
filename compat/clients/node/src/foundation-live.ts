@@ -3,6 +3,7 @@ import { wire } from "./wire.ts";
 import type { Report } from "./core.ts";
 import type { CleanupAbsenceEvidence } from "./foundation-assessment.ts";
 import { join } from "node:path";
+import { readdir } from "node:fs/promises";
 import { privateDirectory } from "./metadata-files.ts";
 import { readPrivateFoundationFile } from "./foundation-sidecar.ts";
 
@@ -19,7 +20,10 @@ export async function foundationLivePreflight(
     !fresh ||
     !restricted ||
     primary === fresh ||
-    env.COMPAT_API_VERSION !== "65.0"
+    env.COMPAT_API_VERSION !== "65.0" ||
+    !env.COMPAT_REFERENCE_EXPECTED_ORG_ID ||
+    !env.COMPAT_REFERENCE_EXPECTED_ADMIN_USER_ID ||
+    !env.COMPAT_REFERENCE_EXPECTED_RESTRICTED_USER_ID
   )
     throw new Error("Foundation live identity prerequisites are incomplete");
   const base = new URL(url);
@@ -50,7 +54,10 @@ export async function foundationLivePreflight(
     admin.user_id !== freshAdmin.user_id ||
     admin.organization_id !== freshAdmin.organization_id ||
     admin.organization_id !== other.organization_id ||
-    admin.user_id === other.user_id
+    admin.user_id === other.user_id ||
+    admin.organization_id !== env.COMPAT_REFERENCE_EXPECTED_ORG_ID ||
+    admin.user_id !== env.COMPAT_REFERENCE_EXPECTED_ADMIN_USER_ID ||
+    other.user_id !== env.COMPAT_REFERENCE_EXPECTED_RESTRICTED_USER_ID
   )
     throw new Error(
       "Foundation administrator/fresh/restricted identities differ",
@@ -158,17 +165,9 @@ export async function auditFoundationRecovery(
 ): Promise<boolean> {
   try {
     const root = await privateDirectory(recoveryRoot);
-    const runIds = new Set<string>();
-    for (const result of report.results)
-      for (const [key, value] of Object.entries(result.identities)) {
-        if (!key.startsWith("value:")) continue;
-        const match = /^Compat_([0-9a-f]{16})_/.exec(value);
-        if (match) runIds.add(match[1]);
-      }
-    if (runIds.size !== 1) return false;
-    const runDir = await privateDirectory(
-      join(root, `reference-${[...runIds][0]}`),
-    );
+    const runId = foundationRunId(report);
+    if (!runId) return false;
+    const runDir = await privateDirectory(join(root, `reference-${runId}`));
     const expected = new Map<string, string[]>();
     for (const item of report.cleanup) {
       if (!item.scenario || item.outcome !== "passed") return false;
@@ -177,6 +176,17 @@ export async function auditFoundationRecovery(
       expected.set(item.scenario, list);
     }
     for (const result of report.results) {
+      const owned = Object.entries(result.identities)
+        .filter(
+          ([key]) =>
+            !/^(value:|url:|short:|locator:|comparison:)/.test(key) &&
+            key !== "external",
+        )
+        .map(
+          ([key, id]) =>
+            `${key === "contact" || key === "id-contact" ? "Contact" : "Account"}:${id}`,
+        );
+      if (!isSameSet(owned, expected.get(result.id) ?? [])) return false;
       const lines = (
         await readPrivateFoundationFile(join(runDir, `${result.id}.jsonl`))
       )
@@ -220,6 +230,94 @@ export async function auditFoundationRecovery(
     return true;
   } catch {
     return false;
+  }
+}
+
+export function foundationRunId(report: Report): string | null {
+  const runIds = new Set<string>();
+  for (const result of report.results)
+    for (const [key, value] of Object.entries(result.identities)) {
+      if (!key.startsWith("value:")) continue;
+      const match = /^Compat_([0-9a-f]{16})_/.exec(value);
+      if (match) runIds.add(match[1]);
+    }
+  return runIds.size === 1 ? [...runIds][0] : null;
+}
+
+export async function foundationJournalDigest(runDir: string): Promise<string> {
+  const dir = await privateDirectory(runDir);
+  const names = (await readdir(dir))
+    .filter((name) => /^foundation-[a-z-]+\.jsonl$/.test(name))
+    .sort();
+  if (!names.length) throw new Error("Foundation recovery journals missing");
+  const digest = createHash("sha256");
+  for (const name of names)
+    digest
+      .update(name)
+      .update("\0")
+      .update(await readPrivateFoundationFile(join(dir, name)))
+      .update("\0");
+  return digest.digest("hex");
+}
+
+export async function verifyFoundationPriorRecovery(
+  recoveryRoot: string,
+  identityDigest: string,
+  env: NodeJS.ProcessEnv,
+): Promise<void> {
+  const root = await privateDirectory(recoveryRoot);
+  for (const name of await readdir(root)) {
+    if (!name.startsWith("reference-")) continue;
+    if (!/^reference-[0-9a-f]{16}$/.test(name))
+      throw new Error("Unrecognized foundation recovery run");
+    const runDir = await privateDirectory(join(root, name));
+    if (
+      !(await readdir(runDir)).some((file) =>
+        /^foundation-[a-z-]+\.jsonl$/.test(file),
+      )
+    )
+      continue;
+    let marker: { evidence: CleanupAbsenceEvidence; journalDigest: string };
+    try {
+      marker = JSON.parse(
+        await readPrivateFoundationFile(
+          join(runDir, "foundation-absence.json"),
+        ),
+      );
+    } catch {
+      throw new Error(`Foundation recovery run ${name} lacks verified absence`);
+    }
+    const evidence = marker.evidence;
+    if (
+      !evidence ||
+      marker.journalDigest !== (await foundationJournalDigest(runDir)) ||
+      evidence.schemaVersion !== 1 ||
+      !evidence.identityVerified ||
+      evidence.identityDigest !== identityDigest ||
+      evidence.unresolvedJournals !== 0 ||
+      !/^[0-9a-f]{64}$/.test(evidence.captureSha256) ||
+      !Array.isArray(evidence.resources) ||
+      evidence.resources.length === 0 ||
+      new Set(evidence.resources.map((r) => r.resource)).size !==
+        evidence.resources.length ||
+      evidence.resources.some((r) => r.absent !== true)
+    )
+      throw new Error(
+        `Foundation recovery run ${name} has invalid absence evidence`,
+      );
+    await collectFoundationAbsence(
+      {
+        cleanup: evidence.resources.map((r) => ({
+          scenario: name,
+          resource: r.resource,
+          outcome: "passed",
+        })),
+      } as Report,
+      evidence.captureSha256,
+      identityDigest,
+      env,
+      true,
+    );
   }
 }
 

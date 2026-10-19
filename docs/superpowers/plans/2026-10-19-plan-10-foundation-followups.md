@@ -110,4 +110,3 @@
 - [ ] Only after first-run cleanup/absence is verified, repeat for a distinct second session/run. If any recovery state remains unresolved, stop before run two and record the gate.
 - [ ] Run the assessor, inspect its private diagnostics and any unresolved release findings. Publish a sanitized decision with exact remaining blockers or `ready-with-assumptions`, plus the bounded next product design boundary. Do not promote observations/profiles or label Plan 5 complete.
 - [ ] Run `npm --prefix compat/clients/node run check`, `git diff --check` and diff checks for `api/`, `internal/`, `cmd/`, `web/`, `docs/compat/profiles/` and accepted observations. Request one fresh whole-change implementation review and fix Important/Critical findings with regression tests. Record actual live results and any external gate; commit the decision/documentation.
-
