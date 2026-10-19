@@ -8,7 +8,7 @@
 
 **Tech Stack:** Existing Go/PostgreSQL service; Node >=22, TypeScript, node:test, Ajv and pinned compatibility clients. No new dependencies.
 
-**Spec:** [Plan 11 design](../specs/2026-10-19-plan-11-external-id-body-validation-design.md). Tasks 1–3 are implemented and reviewed. Task 4 stopped at identity preflight; Task 5 remains gated. Final whole-change review is pending.
+**Spec:** [Plan 11 design](../specs/2026-10-19-plan-11-external-id-body-validation-design.md). Tasks 1–3 are implemented and reviewed. Task 4 stopped at identity preflight; Task 5 remains gated. Final whole-change review approves the blocked outcome.
 
 ## Global Constraints
 
@@ -130,19 +130,19 @@ Unknown flags fail. Exit 0 only for complete clean collection, clean recovery, o
 
 ### Task 6: Review and publish the final bounded outcome
 
-**Progress:** Final offline verification and blocked-status documentation are complete. Step 2 remains pending: the controller will request a fresh whole-change review after this documentation commit and handle any resulting fixes.
+**Progress:** Final offline verification, blocked-status documentation and fresh whole-change review are complete. Review approved the blocked outcome with no Critical, Important or outstanding Minor findings. Private raw evidence was outside reviewer access; the controller separately verified the blocked report digest, zero observations, empty journal and retained identity latch. Tasks 4 live collection and 5 product work remain pending.
 
 **Files:** Update `docs/compat/plan-11-external-id-body-validation.md` and this plan's task checkboxes to reflect actual progress.
 
 - [x] **Step 1:** Run `npm run check` in the Node lab and repository-root `git diff --check`. If Task 5 ran, retain its full Go verification result; rerun Go only if subsequent fixes changed Go code. Report database skips as gaps. Do not run unrelated UI/client suites merely to expand the checklist.
-- [ ] **Step 2:** Request one fresh whole-change review against this plan and its spec. Include the baseline commit, changed files, actual verification, gate outcome and private-evidence access limits. Resolve Important/Critical findings with relevant regressions and checks. Do not give the reviewer credentials or claim it independently verified inaccessible raw evidence.
+- [x] **Step 2:** Request one fresh whole-change review against this plan and its spec. Include the baseline commit, changed files, actual verification, gate outcome and private-evidence access limits. Resolve Important/Critical findings with relevant regressions and checks. Do not give the reviewer credentials or claim it independently verified inaccessible raw evidence.
 - [x] **Step 3:** Publish final status: either evidenced and implemented with review/verification, or offline lab complete but reference/product work pending with exact blockers. Update case findings and links without changing historical evidence, accepted profiles or Plan 10 status. Mark only completed checkboxes.
 - [x] **Step 4:** Run `git diff --check`, commit documentation as `docs: finalize Plan 11 validation status`, and verify `git status --short`. Report remaining unrelated changes accurately; no push is required by this plan.
 
 ## Self-review and handoff
 
-Spec coverage: matrix/representation → Task 1; bounded collection, pre/post state, ownership and recovery → Task 2; binding/integrity/pair gate and CLI → Task 3; live evidence/blocker decision → Task 4; pre-transaction property rejection and regressions → Task 5; review and honest completion → Task 6. Every Review Focus item has tests in its owning task. Product routes, schema/catalog, equality and foundation evidence remain outside the implementation boundary.
+Spec coverage: matrix/representation → Task 1; bounded collection, pre/post state, ownership and recovery → Task 2; binding/integrity/pair gate and CLI → Task 3; live evidence/blocker decision → Task 4; pre-transaction property rejection and regressions → Task 5; review and honest completion → Task 6. Offline Review Focus items have tests in their owning tasks; Task 5 product regressions remain gated and unimplemented. Product routes, schema/catalog, equality and foundation evidence remain outside the implementation boundary.
 
 Recommended execution: native sequential implementation. These tasks share one evidence contract and a live prerequisite; a single implementer with one final independent review avoids repeated recovery-context setup. Review this plan before implementation; the evidence gate remains mandatory regardless of execution method.
 
-Actual execution: the user selected Sol medium subagent execution, overriding the native sequential recommendation above. Tasks 1–3 received task-level review; whole-change review is still pending. The evidence gate applies unchanged. Task 5 was not implemented; no Go files changed and no Go tests were expected or run for this blocked path.
+Actual execution: the user selected Sol medium subagent execution, overriding the native sequential recommendation above. Tasks 1–3 received task-level review; fresh whole-change review approved the blocked outcome. The evidence gate applies unchanged. Task 5 was not implemented; no Go files changed and no Go tests were expected or run for this blocked path.

@@ -114,10 +114,18 @@ No reference calls or private-artifact/configuration changes were made during
 this final verification. The retained identity latch and recovery lock remain
 untouched. Historical evidence, accepted profiles and Plan 10 status are preserved.
 
-A fresh whole-change review is **pending**. The controller will request it after
-this documentation commit, supplying the baseline, changed files, verification
-results and blocked gate outcome. Reviewer access to sanitized documentation and
-offline tests does not establish independent verification of inaccessible private
-reference artifacts. Any review findings still require resolution before claiming
-the final whole-change review is complete. Progress is tracked in the
+A fresh whole-change review is **complete** for the authorized blocked outcome.
+It reviewed baseline `e5e3960` through `856f335` (seven commits and fifteen changed
+files), the design/plan and recorded verification. Spec and quality review approved
+with no Critical, Important or outstanding Minor findings. The reviewer inspected
+existing verification records; no new test run was needed for this documentation
+update. The local review is retained in
+`.superpowers/sdd/2026-10-19-plan-11-external-id-body-validation/final-review.md`.
+
+The reviewer did not access private raw reference evidence. Separately, the
+controller verified the blocked report digest, zero observations, empty journal
+and retained identity latch. These checks establish the recorded blocked state;
+live body-field behavior, repeatability, successful cleanup/absence and the
+identity-endpoint denial's cause remain unverified. Review approval does not
+authorize Task 5. Progress is tracked in the
 [implementation plan](../superpowers/plans/2026-10-19-plan-11-external-id-body-validation.md).
