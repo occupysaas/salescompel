@@ -25,7 +25,19 @@ import {
   LATEST_OPENAPI,
   type OpenApiRole,
 } from "./openapi.ts";
+let selectedCommand: string | undefined;
 async function main() {
+  // Retain the positional command even when strict option parsing fails.
+  selectedCommand = parseArgs({
+    allowPositionals: true,
+    strict: false,
+  }).positionals.find((value) =>
+    [
+      "probe-external-id-body",
+      "recover-external-id-body",
+      "assess-external-id-body",
+    ].includes(value),
+  );
   const { values, positionals } = parseArgs({
     allowPositionals: true,
     options: {
@@ -47,10 +59,11 @@ async function main() {
       policy: { type: "string" },
     },
   });
+  selectedCommand = positionals[0];
   const selected = suite(values.suite ?? "pilot");
   const { requiredScenarios: SCENARIOS, cleanupScenarios: CLEANUP_SCENARIOS } =
     selected;
-  const command = positionals[0];
+  const command = selectedCommand;
   if (positionals.length !== 1)
     throw new Error(
       "Specify one command: validate, preflight, capture, compare, repeatability, verify-evidence or validate-openapi",
@@ -426,7 +439,7 @@ main().catch((e) => {
     .map(([, v]) => v!)
     .filter(Boolean);
   console.error(sanitize(e.message ?? String(e), secrets));
-  process.exitCode = process.argv[2]?.endsWith("external-id-body")
+  process.exitCode = selectedCommand?.endsWith("external-id-body")
     ? 1
     : e.exitCode === 1
       ? 1

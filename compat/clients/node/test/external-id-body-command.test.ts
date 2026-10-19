@@ -223,3 +223,31 @@ test("shared lock covers the previous-clean recheck", async (t) => {
   );
   assert.equal(held, true);
 });
+
+test("body CLI invocation and output failures exit 1 with flags before command", async (t) => {
+  const x = await setup(t);
+  const out = join(x.dir, "existing.json");
+  await writeFile(out, "original", { mode: 0o600 });
+  const cases = [
+    ["--out", out, "probe-external-id-body", "--bogus", "x"],
+    ["--bogus", "x", "probe-external-id-body", "--out", out],
+    ["--out", out, "recover-external-id-body"],
+    [
+      "--out",
+      out,
+      "assess-external-id-body",
+      "--first",
+      "missing1.json",
+      "--second",
+      "missing2.json",
+    ],
+  ];
+  for (const args of cases) {
+    const result = spawnSync(
+      process.execPath,
+      ["--import", "tsx", "src/cli.ts", ...args],
+      { encoding: "utf8" },
+    );
+    assert.equal(result.status, 1, args.join(" "));
+  }
+});
