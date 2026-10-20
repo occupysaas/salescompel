@@ -2,21 +2,22 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Establish the missing external-ID body-field observations and, only after the evidence gate passes, reject the supplied path field without a database mutation.
+**Goal:** Establish the missing external-ID body-field observations and, only after the evidence gate passes, implement the observed validation contract without mutation on rejection.
 
-**Architecture:** Add a separately bound TypeScript probe, recovery path and assessor for sixteen fixed cases. Reuse Plan 9's transport, identity and private-file primitives, preserving its manifest and report semantics. After two clean, sequential reference runs support the rule, replace the equal-value exception in Go `Store.Upsert` with a property-presence check.
+**Architecture:** Add a separately bound TypeScript probe, recovery path and assessor for sixteen fixed cases. Reuse Plan 9's transport, identity and private-file primitives, preserving its manifest and report semantics. After two clean, sequential reference runs support the rule, replace the equal-value exception in Go `Store.Upsert` with the revised non-null body-value validation.
 
 **Tech Stack:** Existing Go/PostgreSQL service; Node >=22, TypeScript, node:test, Ajv and pinned compatibility clients. No new dependencies.
 
-**Spec:** [Plan 11 design](../specs/2026-10-19-plan-11-external-id-body-validation-design.md). Tasks 1–3 are implemented and reviewed. Task 4 stopped at identity preflight; Task 5 remains gated. Final whole-change review approves the blocked outcome.
+**Spec:** [Plan 11 design](../specs/2026-10-19-plan-11-external-id-body-validation-design.md). Tasks 1–4 and 3R are complete; Task 3R review approved the v2 contract and the immutable-pair assessment is ready for all sixteen cases. Task 5 implementation and Go verification are complete. Task 5 spec/quality review passed with no findings; fresh whole-change review remains pending.
 
 ## Execution revision — 2026-10-20
 
 The design's evidence-driven revision supersedes the universal presence rule in
 this historical plan. Two fresh captures agree: null behaves like omission,
 five tested non-null scalar values reject INVALID_FIELD, and object rejects
-JSON_PARSER_ERROR. Preserve original assessment `different`; implement revision
-Task 3R and obtain reviewed versioned ready assessment before revised Task 5.
+JSON_PARSER_ERROR. Original assessment `different` is preserved. Task 3R was
+implemented and reviewed at `67c0c37`; the versioned assessment is ready for all
+sixteen cases, satisfying the prerequisite for Task 5 (`4d57177`).
 The user authorized the current test administrator and necessary fixture setup.
 See the decision document for immutable evidence and restored permissions.
 
@@ -47,6 +48,15 @@ New Node modules use the prefix `external-id-body-`: `contract.ts` owns the fixe
 Do not parameterize Plan 9's public manifest or make its report validator accept Plan 11. Its recovery functions `initializeRun`, `readRun`, `scopedRecords` and `recoverExternalIdRun` embed Plan 9 cases and are unsuitable for direct reuse here. Reuse only generic primitives where their existing contracts fit. A small separate recovery module is preferable to a broad refactor.
 
 Tasks 1–3 deliver offline lab functionality. Task 4 is the live decision gate. Task 5 is conditional on that gate; Task 6 records verification or the exact blocked outcome. All Node commands below run in `compat/clients/node` unless explicitly marked repository root.
+
+### Historical Task 1–3 contract wording
+
+Tasks 1–3 below retain their original implementation instructions and completion
+record. Universal supplied-property rejection and unversioned assessor semantics
+were the original hypothesis, not the current acceptance criteria. Revised
+Task 3R and Task 5 govern scalar/null/object behavior and versioned acceptance;
+Task 4 completed collection first returned `different` under the old hypothesis,
+then the separately reviewed v2 assessment returned ready from unchanged inputs.
 
 ### Task 1: Define a distinct sixteen-case evidence contract
 
@@ -113,15 +123,23 @@ Unknown flags fail. Exit 0 only for complete clean collection, clean recovery, o
 
 **Files:** Create `docs/compat/plan-11-external-id-body-validation.md`. Private reports, artifacts and configuration stay outside the checkout.
 
-**Progress:** Preflight and the first probe were attempted, but identity verification returned HTTP 403 before any dispatch. Steps 1–2 remain unchecked because their identity/metadata and complete-clean-capture requirements were not met. Step 3 was not attempted. The blocked decision and sanitized documentation commit are complete; no successful capture pair or assessment exists. See [decision](../../compat/plan-11-external-id-body-validation.md).
+**Progress:** Complete after authorized resume: current administrator binding and temporary Compat_Admin setup verified, two clean sequential captures collected, temporary assignment restored. Original blocked attempt and original `different` assessment are preserved. The reviewed v2 reassessment is ready for all sixteen cases; see [decision](../../compat/plan-11-external-id-body-validation.md).
 
 **Consumes:** Task 3 CLI and existing authorized private reference configuration. **Produces:** Sanitized case-level decision with `ready`, `different` or `blocked` outcome and exact provenance. This is the prerequisite for Task 5.
 
-- [ ] **Step 1:** Verify available private configuration without printing secrets. Confirm the named tenant authorization, administrator identity, API/client pins, metadata prerequisites and unresolved recovery state. Required environment includes `COMPAT_REFERENCE_URL`, `COMPAT_REFERENCE_TOKEN`, `COMPAT_DISPOSABLE=yes` and `COMPAT_RECOVERY_DIR`. Use private config with origin, administrator user/org, API and profile hash as required by `parseExternalIdConfig`. If unavailable, record which prerequisite is missing and go to Task 6's blocked path; do not fabricate a configuration or run partial collection.
-- [ ] **Step 2:** With `P11_CONFIG` and `P11_PRIVATE` set to existing private paths, run `npx tsx src/cli.ts probe-external-id-body --config "$P11_CONFIG" --out "$P11_PRIVATE/run1.json"`. Expected: complete collection, verified clean recovery. Inspect private findings and absence evidence. If incomplete, recover using `recover-external-id-body --first "$P11_PRIVATE/run1.artifacts"` with a new output; unresolved outcomes stop collection. Never overwrite or retry a possibly committed mutation.
-- [ ] **Step 3:** Only after first-run cleanup/absence succeeds, run the same probe to `$P11_PRIVATE/run2.json`; the command must recheck first-run absence before writes. Then run `npx tsx src/cli.ts assess-external-id-body --first "$P11_PRIVATE/run1.json" --second "$P11_PRIVATE/run2.json" --out "$P11_PRIVATE/assessment.json"`.
+- [x] **Step 1:** Verify available private configuration without printing secrets. Confirm the named tenant authorization, administrator identity, API/client pins, metadata prerequisites and unresolved recovery state. Required environment includes `COMPAT_REFERENCE_URL`, `COMPAT_REFERENCE_TOKEN`, `COMPAT_DISPOSABLE=yes` and `COMPAT_RECOVERY_DIR`. Use private config with origin, administrator user/org, API and profile hash as required by `parseExternalIdConfig`. If unavailable, record which prerequisite is missing and go to Task 6's blocked path; do not fabricate a configuration or run partial collection.
+- [x] **Step 2:** With `P11_CONFIG` and `P11_PRIVATE` set to existing private paths, run `npx tsx src/cli.ts probe-external-id-body --config "$P11_CONFIG" --out "$P11_PRIVATE/run1.json"`. Expected: complete collection, verified clean recovery. Inspect private findings and absence evidence. If incomplete, recover using `recover-external-id-body --first "$P11_PRIVATE/run1.artifacts"` with a new output; unresolved outcomes stop collection. Never overwrite or retry a possibly committed mutation.
+- [x] **Step 3:** Only after first-run cleanup/absence succeeds, run the same probe to `$P11_PRIVATE/run2.json`; the command must recheck first-run absence before writes. Then run `npx tsx src/cli.ts assess-external-id-body --first "$P11_PRIVATE/run1.json" --second "$P11_PRIVATE/run2.json" --out "$P11_PRIVATE/assessment.json"`.
 - [x] **Step 4:** Publish independent summaries of all cases, report/manifest/profile/client digests, capture and cleanup times, gate outcome and limitations. If outcome is `different`, document actual results and revise the design before product implementation. If `blocked`, identify missing evidence and the next action. Only `ready` enables Task 5; no broad Plan 9/10 promotion is allowed.
 - [x] **Step 5:** Run repository-root `git diff --check`, inspect the document for credentials/identifiers/raw prose, and commit only the sanitized decision: `docs: record Plan 11 body validation evidence decision`.
+
+The run/output filenames in Steps 2–3 are illustrative original instructions:
+actual resumed outputs are `capture-a.json`, `capture-b.json` and the retained
+original `assessment.json`. Universal supplied-value rejection was the historical
+hypothesis; the actual revised acceptance criteria are omission/null success,
+five scalar INVALID_FIELD rejections and object JSON_PARSER_ERROR rejection.
+Task 3R reviewed and reassessed those same inputs into `assessment-v2.json`;
+no additional collection or unresolved evidence prerequisite remains.
 
 ### Task 3R: Version the observed validation contract
 
@@ -130,18 +148,18 @@ Unknown flags fail. Exit 0 only for complete clean collection, clean recovery, o
 last two paths relative to `compat/clients/node`). Modify other suite tests only
 where their synthetic fixtures must represent this revised contract.
 
-- [ ] Write regressions proving observed null success/object parser errors pass,
+- [x] Write regressions proving observed null success/object parser errors pass,
   original universal rejections do not pass v2, malformed/error-field envelopes
   and hidden writes remain rejected, and output includes exact contractVersion.
-- [ ] Observe failures, then add required `contractVersion:
+- [x] Observe failures, then add required `contractVersion:
   "plan11-observed-body-validation-v2"` to new BodyAssessment outputs. Keep
   BodyReport schema/manifest and all historical capture bytes unchanged.
-- [ ] Treat omitted/null as success cases with existing state and 200/201 checks;
+- [x] Treat omitted/null as success cases with existing state and 200/201 checks;
   object requires JSON_PARSER_ERROR and all other supplied cases INVALID_FIELD.
   Require a single rejection object, string message/errorCode, absent fields,
   and unchanged state. Keep all integrity/cleanup/pair checks intact.
-- [ ] Run focused tests, typecheck and `npm run check`; commit.
-- [ ] Fresh review this amendment and assessor. Reassess the existing immutable
+- [x] Run focused tests, typecheck and `npm run check`; commit.
+- [x] Fresh review this amendment and assessor. Reassess the existing immutable
   complete pair to a new private exclusive output, never overwrite v1. Require
   ready and contractVersion v2 before Task 5; record digests and outcome.
 
@@ -151,46 +169,46 @@ where their synthetic fixtures must represent this revised contract.
 all sixteen cases. **Files:** `internal/platform/store.go`, `store_test.go`,
 `http_test.go`. Preserve `Store.Upsert` signature and public route.
 
-- [ ] Add `TestUpsertRejectsBodyKeyWithoutDatabase` using `&Store{}`: identical,
+- [x] Add `TestUpsertRejectsBodyKeyWithoutDatabase` using `&Store{}`: identical,
   variant, different, empty strings and number42 reject400 INVALID_FIELD;
   map/array reject400 JSON_PARSER_ERROR. Assert no panic, empty ID, created=false,
   unchanged input. Null is excluded from this rejection-only test.
-- [ ] Add database-backed direct-store and HTTP tests for existing/missing keys
+- [x] Add database-backed direct-store and HTTP tests for existing/missing keys
   in two tenants. Omitted/null create201 then update200 with same ID/path key and
   requested Name; five scalar and object rejections leave all stored rows
   unchanged. Array is local robustness coverage only. All inputs remain unchanged.
   Assert one error element, absent fields, independently written message.
   Ordinary create/record-ID update, malformed JSON, unauthorized calls and exact
   encoded-key values `key/`, `a/b`, `key%2F` retain their current behavior.
-- [ ] Run focused tests against disposable PostgreSQL and observe intended
+- [x] Run focused tests against disposable PostgreSQL and observe intended
   equal-string acceptance/null rejection failures before product edits.
-- [ ] In `Store.Upsert`, inspect the exact body key before copying/injecting.
+- [x] In `Store.Upsert`, inspect the exact body key before copying/injecting.
   If non-null, use a type switch: map[string]any or []any returns
   `invalid("JSON_PARSER_ERROR", "External ID requires a scalar value or null")`;
   all other non-null values return
   `invalid("INVALID_FIELD", "External ID value must be supplied in the upsert URL")`.
   Omitted/null use the existing copy and path-key injection. Remove old equality
   exception. Preserve remaining validation/transaction/tenant logic.
-- [ ] Run focused tests and `go test ./... -count=1` with TEST_DATABASE_URL;
+- [x] Run focused tests and `go test ./... -count=1` with TEST_DATABASE_URL;
   satisfy existing CI Go gates `go test -race ./...` and `go vet ./...` on the
   disposable database. No database skips. Run gofmt/diff checks.
-- [ ] Commit tested product changes and report exact evidence/limitations.
+- [x] Commit tested product changes and report exact evidence/limitations.
 
 ### Task 6: Review and publish the final bounded outcome
 
-**Progress:** Final offline verification, blocked-status documentation and fresh whole-change review are complete. Review approved the blocked outcome with no Critical, Important or outstanding Minor findings. Private raw evidence was outside reviewer access; the controller separately verified the blocked report digest, zero observations, empty journal and retained identity latch. Tasks 4 live collection and 5 product work remain pending.
+**Progress:** Final unchanged-JavaScript checks at `67c0c37` and Go verification at `4d57177` passed. Current documentation is prepared. Task 5 spec/quality review passed with no findings; fresh whole-change review of the resumed evidence-driven implementation remains pending; the earlier blocked-outcome review is historical. Private raw evidence is outside reviewer access; the controller verified immutable-pair and assessment digests.
 
 **Files:** Update `docs/compat/plan-11-external-id-body-validation.md` and this plan's task checkboxes to reflect actual progress.
 
 - [x] **Step 1:** Run `npm run check` in the Node lab and repository-root `git diff --check`. If Task 5 ran, retain its full Go verification result; rerun Go only if subsequent fixes changed Go code. Report database skips as gaps. Do not run unrelated UI/client suites merely to expand the checklist.
-- [x] **Step 2:** Request one fresh whole-change review against this plan and its spec. Include the baseline commit, changed files, actual verification, gate outcome and private-evidence access limits. Resolve Important/Critical findings with relevant regressions and checks. Do not give the reviewer credentials or claim it independently verified inaccessible raw evidence.
-- [x] **Step 3:** Publish final status: either evidenced and implemented with review/verification, or offline lab complete but reference/product work pending with exact blockers. Update case findings and links without changing historical evidence, accepted profiles or Plan 10 status. Mark only completed checkboxes.
-- [x] **Step 4:** Run `git diff --check`, commit documentation as `docs: finalize Plan 11 validation status`, and verify `git status --short`. Report remaining unrelated changes accurately; no push is required by this plan.
+- [ ] **Step 2:** Request one fresh whole-change review against this plan and its spec. Include the baseline commit, changed files, actual verification, gate outcome and private-evidence access limits. Resolve Important/Critical findings with relevant regressions and checks. Do not give the reviewer credentials or claim it independently verified inaccessible raw evidence.
+- [ ] **Step 3:** Publish final status: either evidenced and implemented with review/verification, or offline lab complete but reference/product work pending with exact blockers. Update case findings and links without changing historical evidence, accepted profiles or Plan 10 status. Mark only completed checkboxes.
+- [ ] **Step 4:** Run `git diff --check`, commit documentation as `docs: finalize Plan 11 validation status`, and verify `git status --short`. Report remaining unrelated changes accurately; no push is required by this plan.
 
 ## Self-review and handoff
 
-Spec coverage: matrix/representation → Task 1; bounded collection, pre/post state, ownership and recovery → Task 2; binding/integrity/pair gate and CLI → Task 3; live evidence/blocker decision → Task 4; pre-transaction property rejection and regressions → Task 5; review and honest completion → Task 6. Offline Review Focus items have tests in their owning tasks; Task 5 product regressions remain gated and unimplemented. Product routes, schema/catalog, equality and foundation evidence remain outside the implementation boundary.
+Spec coverage: matrix/representation → Task 1; bounded collection, pre/post state, ownership and recovery → Task 2; binding/integrity/pair gate and CLI → Task 3; live evidence/blocker decision → Task 4; pre-transaction property rejection and regressions → Task 5; review and honest completion → Task 6. Offline Review Focus items have tests in their owning tasks; Task 5 product regressions and implementation are complete; current final review remains pending. Product routes, schema/catalog, equality and foundation evidence remain outside the implementation boundary.
 
 Recommended execution: native sequential implementation. These tasks share one evidence contract and a live prerequisite; a single implementer with one final independent review avoids repeated recovery-context setup. Review this plan before implementation; the evidence gate remains mandatory regardless of execution method.
 
-Actual execution: the user selected Sol medium subagent execution, overriding the native sequential recommendation above. Tasks 1–3 received task-level review; fresh whole-change review approved the blocked outcome. The evidence gate applies unchanged. Task 5 was not implemented; no Go files changed and no Go tests were expected or run for this blocked path.
+Actual execution: the user selected Sol medium subagent execution, overriding the native sequential recommendation above. Tasks 1–3 received task-level review; the first whole-change review approved the historical blocked outcome. After authorized resume, Task 3R received clean spec/quality review, the v2 gate passed, and Task 5 implementation and database-backed verification completed. Task 5 spec/quality review passed with no findings; fresh whole-change review remains pending.

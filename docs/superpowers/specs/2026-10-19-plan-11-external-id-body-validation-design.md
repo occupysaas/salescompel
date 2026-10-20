@@ -1,7 +1,9 @@
 # Plan 11 — External-ID body-field validation
 
-Status: proposed design for review. This document does not authorize product
-implementation. Milestone: bounded M1 evidence follow-up and M3 candidate fix.
+Status: evidence-driven revision approved and executed (2026-10-20). The reviewed
+v2 assessment is ready for sixteen cases; product implementation `4d57177` and
+Go verification are complete. Task 5 spec/quality review passed with no findings; fresh whole-change review remains pending.
+Milestone: bounded M1 evidence follow-up and M3 candidate fix.
 
 ## Evidence-driven revision — 2026-10-20
 
@@ -47,7 +49,17 @@ No query, equality, catalog, permissions or route expansion is introduced.
 The old blocked attempt and the metadata-preflight-only attempt remain recorded;
 temporary fixture permissions for the successful pair were restored.
 
-## Intent and basis
+## Historical original design — 2026-10-19
+
+The remaining sections preserve the original planning rationale and provisional
+universal rejection hypothesis. Their present-tense candidate descriptions,
+missing-evidence statements and acceptance instructions describe the pre-execution
+state; they are superseded by the approved 2026-10-20 revision above wherever
+semantics differ. The two complete captures measured missing-record behavior,
+and the reviewed v2 ready assessment satisfied the revised evidence gate before
+product commit `4d57177`. Historical observations remain as originally recorded.
+
+### Intent and basis
 
 Close the request-validation defect identified by
 [Plan 9](../../compat/plan-9-external-id-contract.md), the next independent work
@@ -69,7 +81,7 @@ clients and API 65.0. Work directly on `main`, per the roadmap. Native sequentia
 execution is the recommendation inherited from Plan 10; implementation method
 can be settled when the implementation plan is reviewed.
 
-## Scope and exclusions
+### Scope and exclusions
 
 The supported request in this design uses the exact field spelling
 `Compat_Key__c` and the existing Account external-ID route. Validate presence
@@ -86,7 +98,7 @@ under their existing validation rules. No UI, dependencies or new routes are
 required. Plan 5 query evidence and the blocked Plan 10 foundation decision
 remain independent.
 
-## Reference evidence required before the product fix
+### Reference evidence required before the product fix
 
 Add a separately identified, fixed body-validation probe suite using Plan 9's
 identity verification, private artifacts, durable journaling and recovery.
@@ -141,7 +153,7 @@ before implementing a universal presence rule. If credentials or evidence are
 unavailable, finish the offline probe work and report the precise blocker; do
 not implement the unverified missing-record rule or claim reference completion.
 
-## Candidate behavior after the evidence gate
+### Candidate behavior after the evidence gate
 
 Put the validation in `Store.Upsert` in `internal/platform/store.go`, shared by
 HTTP and direct store callers. Reject a supplied `Compat_Key__c` before injecting
@@ -160,7 +172,7 @@ Do not infer broad validation precedence from a body containing multiple faults.
 The reference fixtures isolate this one fault. Existing malformed-body and
 unauthorized-request handling must continue to work.
 
-## Verification and acceptance
+### Verification and acceptance
 
 Laboratory tests must demonstrate fixed coverage, omitted versus null distinction,
 state-change detection, incomplete observations, incorrect bindings, corrupt
@@ -191,7 +203,7 @@ Do not promote the whole Plan 9 drift result or Plan 10 blocked result to pass.
 Completion means this narrow validation contract is evidenced and implemented,
 or the evidence work ends with a precise blocker and product work remains pending.
 
-## Planning boundaries
+### Planning boundaries
 
 The implementation plan should separate the independently testable probe and
 assessment work from the evidence-gated candidate fix. Likely product touchpoints
@@ -202,7 +214,7 @@ the builder, provided historical evidence remains interpretable and all gates
 above are enforced. No product code or live reference mutation is part of
 creating this spec.
 
-## Builder check
+### Builder check
 
 A fresh software-engineer review found no important unanswered planning
 questions. The case matrix and evidence gate are executor recommendations for

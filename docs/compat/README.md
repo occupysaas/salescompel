@@ -289,3 +289,32 @@ When reading reports from disk, call `validateExternalIdEvidence(report, runDir)
 for each before `compareExternalIdReports(first, second)`; both exports are in
 `src/external-id-compare.ts`. Structural comparison alone cannot verify files.
 Only complete, clean sequential reports with matching bindings can be stable.
+
+
+## External-ID body validation probes (Plan 11)
+
+See the [Plan 11 decision](plan-11-external-id-body-validation.md) for the measured
+sixteen-case contract, v2 assessment, implementation verification and review status.
+The separate `probe-external-id-body`, `recover-external-id-body` and
+`assess-external-id-body` commands use the private config and shared recovery
+requirements described for Plan 9 above, with exclusive new report paths.
+Preserve historical captures and assessments; current assessments require
+`contractVersion: "plan11-observed-body-validation-v2"`.
+
+For an existing authorized CLI session, obtain the credential through documented
+`sf org auth show-access-token --target-org <authorized-alias> --json` using a
+private subprocess capture; do not print its output or persist the token.
+`sf org display --json` can return a redacted access-token placeholder and is not
+suitable for this credential handoff. Pass the captured token privately to the
+probe environment. Keep credentials out of config, examples, logs and reports.
+
+Privately bind the exact verified administrator user and organization in the
+config and verify the current wire identity. Authorization for one account does
+not silently change a historical identity pin: a newly authorized test account
+uses a fresh config, retaining the old one. The administrator needs the existing
+`Compat_Admin` permission set for fixture-field visibility and read/edit access;
+confirm the assignment before collection. Any authorized temporary assignment
+must be separately journaled by exact ID, restored afterward and independently
+verified absent. Retain original recovery latches and evidence; operator
+resolution of a proven zero-dispatch attempt is recorded separately from clean
+fixture cleanup. Never overwrite evidence or weaken identity checks to proceed.
