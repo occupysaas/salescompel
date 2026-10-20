@@ -64,3 +64,6 @@ Implementation choices: work stayed on main under the existing approved policy (
 
 
 Navigation follow-up: the sidebar now follows the observed area inventory, with expandable Contacts/Accounts shortcuts and Sales/Service/Marketing groups. Unsupported destinations and saved list views are disabled and tagged Planned; Home, Products and Automation remain inert. Evidence is removed from the sidebar and retained as a footer reference. The observed vendor-billing Account area is excluded from this free product. This is a functional menu proposal, not a claim that these additional clouds or metadata navigation import are implemented. Eleven preview browser tests and five Node tests pass after the revision, along with the production build and whitespace checks; fresh code review approved the follow-up. The existing connected browser suite was not repeated for this navigation/default-only revision.
+
+
+Navigation refinement: standalone Accounts and Contacts shortcuts directly below Home were removed at the maintainer's request. Use their entries inside Sales/Service, and Contacts inside Marketing. The supported record screens and routes remain available.

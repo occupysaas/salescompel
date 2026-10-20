@@ -14,6 +14,9 @@ test("routed frame has evidence, history, safe unknown routes and no API calls",
   await expect(
     page.getByRole("heading", { name: "Accounts", exact: true }),
   ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Sales navigation", exact: true })
+    .click();
   await page.getByRole("link", { name: "Contacts", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Contacts", exact: true }),
@@ -65,10 +68,7 @@ test("synthetic edit, cancel, create, validation, reload and reset", async ({
   await expect(
     page.getByRole("heading", { name: "Changed locally" }),
   ).toBeVisible();
-  await page
-    .getByRole("link", { name: "Accounts", exact: true })
-    .first()
-    .click();
+  await page.getByRole("link", { name: "← Back to list", exact: true }).click();
   await page.getByRole("link", { name: "New account", exact: true }).click();
   await page.getByLabel("Name", { exact: true }).fill("New sample");
   await page.getByRole("button", { name: "Save locally" }).click();
@@ -313,6 +313,12 @@ test("observed sidebar groups expose supported records and disable planned desti
   await expect(
     nav.getByRole("link", { name: "Evidence", exact: true }),
   ).toHaveCount(0);
+  await expect(
+    nav.getByRole("link", { name: "Accounts", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    nav.getByRole("link", { name: "Contacts", exact: true }),
+  ).toHaveCount(0);
   for (const label of ["Home", "Products", "Automation"]) {
     await expect(
       nav.getByRole("button", { name: `${label} Planned`, exact: true }),
@@ -333,6 +339,9 @@ test("observed sidebar groups expose supported records and disable planned desti
     page.getByRole("heading", { name: "Contacts", exact: true }),
   ).toBeVisible();
   await page.reload();
+  await nav
+    .getByRole("button", { name: "Sales navigation", exact: true })
+    .click();
   await nav
     .getByRole("button", { name: "Contacts navigation", exact: true })
     .click();

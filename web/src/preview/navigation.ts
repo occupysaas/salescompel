@@ -40,8 +40,6 @@ const accounts = (): PreviewNavigationItem => ({
 // A destination without a path or supported children is planned and inert.
 export const navigation: PreviewNavigationItem[] = [
   planned("home"),
-  contacts(),
-  accounts(),
   {
     key: "sales",
     label: "preview.nav.sales",
