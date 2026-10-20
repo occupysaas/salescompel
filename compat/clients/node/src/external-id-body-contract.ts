@@ -131,6 +131,7 @@ export interface BodyReport {
 }
 /** Complete contradictory evidence is different; insufficient evidence is blocked. */
 export interface BodyAssessment {
+  contractVersion: "plan11-observed-body-validation-v2";
   outcome: "ready" | "different" | "blocked";
   reasons: string[];
   findings: {

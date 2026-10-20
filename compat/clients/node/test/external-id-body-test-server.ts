@@ -21,6 +21,7 @@ export async function bodyFixture(t: TestContext) {
   const rows = new Map<string, RecordState>(),
     calls: { path: string; method: string; body: any }[] = [];
   const flags = {
+    originalHypothesis: false,
     missingId: false,
     hiddenInsert: false,
     mutateRejected: false,
@@ -116,9 +117,12 @@ export async function bodyFixture(t: TestContext) {
         let row = upsert
           ? [...rows.values()].find((r) => r.Compat_Key__c === key)
           : undefined;
-        const supplied = upsert && Object.hasOwn(body, "Compat_Key__c");
+        const supplied = upsert && Object.hasOwn(body, "Compat_Key__c"),
+          succeeds =
+            !supplied ||
+            (!flags.originalHypothesis && body.Compat_Key__c === null);
         if (
-          !supplied ||
+          succeeds ||
           (flags.hiddenInsert && !row) ||
           (flags.mutateRejected && !!row) ||
           (flags.different &&
@@ -145,21 +149,25 @@ export async function bodyFixture(t: TestContext) {
           )
             row.Compat_Key__c = body.Compat_Key__c;
           if (flags.loss) throw new Error("RESPONSE_LOST");
-          if (!supplied)
-            return send(
-              created ? 201 : 204,
-              created
-                ? {
-                    ...(flags.missingId && upsert ? {} : { id: row.Id }),
-                    created: true,
-                    success: true,
-                  }
-                : null,
-            );
+          if (succeeds)
+            return send(upsert ? (created ? 201 : 200) : 201, {
+              ...(flags.missingId && upsert ? {} : { id: row.Id }),
+              created,
+              success: true,
+              ...(upsert ? { errors: [] } : {}),
+            });
         }
         if (flags.loss) throw new Error("RESPONSE_LOST");
         return send(400, [
-          { errorCode: "INVALID_FIELD", message: "synthetic rejection" },
+          {
+            errorCode:
+              !flags.originalHypothesis &&
+              typeof body.Compat_Key__c === "object" &&
+              body.Compat_Key__c !== null
+                ? "JSON_PARSER_ERROR"
+                : "INVALID_FIELD",
+            message: "synthetic rejection",
+          },
         ]);
       } finally {
         active--;

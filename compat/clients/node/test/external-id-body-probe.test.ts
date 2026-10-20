@@ -17,9 +17,12 @@ test("collects all cases without coercion", async (t) => {
   assert.equal(r.cleanup.outcome, "clean");
   validateBodyReport(r);
   for (const o of r.observations) {
-    if (o.caseId.endsWith("omitted")) {
-      assert.ok([201, 204].includes(o.status!));
-      assert.equal(Object.hasOwn(o.request, "Compat_Key__c"), false);
+    if (o.caseId.endsWith("omitted") || o.caseId.endsWith("null")) {
+      assert.ok([200, 201].includes(o.status!));
+      assert.equal(
+        Object.hasOwn(o.request, "Compat_Key__c"),
+        o.caseId.endsWith("null"),
+      );
     } else {
       assert.equal(o.status, 400);
       assert.deepEqual(o.after, o.before);

@@ -401,24 +401,22 @@ function expected(
     c = bodyManifest.find((c) => c.id === caseId)!,
     s = bodyScope(r.runId, c),
     b = o.body as any;
-  if (c.valueKind !== "omitted") {
+  if (c.valueKind !== "omitted" && c.valueKind !== "null") {
     if (o.status !== 400) return "different";
     if (
       !o.bodyPresent ||
       !Array.isArray(b) ||
-      !b.length ||
-      b.some(
-        (e) =>
-          !e ||
-          typeof e.errorCode !== "string" ||
-          typeof e.message !== "string" ||
-          (e.fields !== undefined &&
-            (!Array.isArray(e.fields) ||
-              !e.fields.every((f: unknown) => typeof f === "string"))),
-      )
+      b.length !== 1 ||
+      !b[0] ||
+      typeof b[0] !== "object" ||
+      Array.isArray(b[0]) ||
+      Object.keys(b[0]).sort().join() !== "errorCode,message" ||
+      typeof b[0].errorCode !== "string" ||
+      typeof b[0].message !== "string"
     )
       return "blocked";
-    return b.every((e) => e.errorCode === "INVALID_FIELD") &&
+    return b[0].errorCode ===
+      (c.valueKind === "object" ? "JSON_PARSER_ERROR" : "INVALID_FIELD") &&
       equal(o.before, o.after) &&
       !changedCleanup
       ? "ready"
@@ -480,6 +478,7 @@ export async function assessBodyPair(
   secondPath: string,
 ): Promise<BodyAssessment> {
   const result: BodyAssessment = {
+    contractVersion: "plan11-observed-body-validation-v2",
     outcome: "blocked",
     reasons: [],
     findings: [],
