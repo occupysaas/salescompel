@@ -243,3 +243,45 @@ test("repeatability rejects candidates and the same run twice", () => {
   );
   assert.equal(compare(a, report("reference")).outcome, "blocked");
 });
+test("partial catalogs permit only keys available through their declared fallback chain", () => {
+  const en = {
+    code: "en_US",
+    category: "fully",
+    direction: "ltr",
+    fallback: null,
+    coverage: "partial",
+  };
+  const fr = {
+    code: "fr",
+    category: "fully",
+    direction: "ltr",
+    fallback: "en_US",
+    coverage: "partial",
+  };
+  const catalogs = {
+    en_US: { hello: "Hello {name}", preview: "Sample data" },
+    fr: { hello: "Bonjour {name}" },
+  };
+  assert.deepEqual(validateCatalogs([en, fr], catalogs), []);
+  assert.ok(
+    validateCatalogs([en, { ...fr, coverage: "complete" }], catalogs).some(
+      (x) => x.includes("missing preview"),
+    ),
+  );
+  assert.ok(
+    validateCatalogs([en, { ...fr, fallback: null }], catalogs).some((x) =>
+      x.includes("missing preview"),
+    ),
+  );
+  assert.ok(
+    validateCatalogs([en, { ...fr, fallback: "fr" }], catalogs).some((x) =>
+      x.includes("Fallback cycle"),
+    ),
+  );
+  assert.ok(
+    validateCatalogs([en, fr], {
+      ...catalogs,
+      fr: { hello: "Bonjour {wrong}" },
+    }).some((x) => x.includes("parameters differ")),
+  );
+});

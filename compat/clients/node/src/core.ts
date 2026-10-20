@@ -352,7 +352,21 @@ export function validateCatalogs(
     }
     for (const key of Object.keys(base)) {
       if (!(key in cat)) {
-        if (lang.category !== "platform-only")
+        // Partial product catalogs intentionally use the registered fallback.
+        // Fixture and complete catalogs still require their own messages.
+        let fallback = lang.fallback;
+        let resolved = false;
+        const seen = new Set([lang.code]);
+        while (lang.coverage === "partial" && fallback && !seen.has(fallback)) {
+          seen.add(fallback);
+          if (typeof catalogs[fallback]?.[key] === "string") {
+            resolved = true;
+            break;
+          }
+          fallback =
+            languages.find((l) => l.code === fallback)?.fallback ?? null;
+        }
+        if (lang.category !== "platform-only" && !resolved)
           issues.push(`${lang.code}: missing ${key}`);
         continue;
       }
