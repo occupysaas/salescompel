@@ -41,7 +41,7 @@
   --p-tag: #242424;
 }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
+  :root[data-theme="system"] {
     --p-bg: #121212;
     --p-ink: #f2f2f2;
     --p-muted: #aaa;

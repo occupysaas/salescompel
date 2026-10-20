@@ -8,12 +8,11 @@ import {
 } from "../preferences-core";
 export type Theme = "system" | "light" | "dark";
 export const usePreferencesStore = defineStore("preferences", () => {
-  const theme = ref<Theme>("system");
+  const theme = ref<Theme>("light");
   const locale = language;
   function setTheme(value: Theme) {
     theme.value = value;
-    if (value === "system") delete document.documentElement.dataset.theme;
-    else document.documentElement.dataset.theme = value;
+    document.documentElement.dataset.theme = value;
     writePreference(browserStorage(), "salescompel.theme", value);
   }
   async function setLocale(code: string) {
@@ -26,7 +25,7 @@ export const usePreferencesStore = defineStore("preferences", () => {
         browserStorage(),
         "salescompel.theme",
         ["system", "light", "dark"],
-        "system",
+        "light",
       ) as Theme,
     );
     await setLocale(

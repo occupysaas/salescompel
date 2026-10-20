@@ -5,6 +5,8 @@ import { t, languages } from "../i18n";
 import { usePreferencesStore, type Theme } from "../stores/preferences";
 import { usePreviewStore } from "../stores/preview";
 import "./preview.css";
+import PreviewNavItem from "./PreviewNavItem.vue";
+import { navigation } from "./navigation";
 const preferences = usePreferencesStore(),
   preview = usePreviewStore();
 const route = useRoute(),
@@ -101,18 +103,13 @@ async function reset() {
       <aside id="preview-nav" class="p-sidebar" :class="{ 'p-open': open }">
         <div class="p-nav-label">{{ t("preview.workspace") }}</div>
         <nav :aria-label="t('preview.navigation')">
-          <RouterLink to="/preview/accounts"
-            >{{ t("nav.accounts")
-            }}<span aria-hidden="true">↗</span></RouterLink
-          >
-          <RouterLink to="/preview/contacts"
-            >{{ t("nav.contacts")
-            }}<span aria-hidden="true">↗</span></RouterLink
-          >
-          <RouterLink to="/preview/evidence"
-            >{{ t("preview.evidence")
-            }}<span aria-hidden="true">↗</span></RouterLink
-          >
+          <ul class="p-nav-items">
+            <PreviewNavItem
+              v-for="item in navigation"
+              :key="item.key"
+              :item="item"
+            />
+          </ul>
         </nav>
         <div class="p-sidebar-bottom">
           <p>{{ t("preview.sampleWorkspace") }}</p>

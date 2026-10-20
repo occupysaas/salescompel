@@ -23,7 +23,12 @@ test("routed frame has evidence, history, safe unknown routes and no API calls",
     page.getByRole("heading", { name: "Accounts", exact: true }),
   ).toBeVisible();
   await page.goForward();
-  await page.getByRole("link", { name: "Evidence", exact: true }).click();
+  await page
+    .getByRole("link", {
+      name: "See what supports these screens →",
+      exact: true,
+    })
+    .click();
   await expect(
     page.getByText("/services/data/v65.0/query", { exact: true }),
   ).toBeVisible();
@@ -285,4 +290,57 @@ test("primary save button retains AA contrast on hover in both themes", async ({
     );
     expect((a + 0.05) / (b + 0.05)).toBeGreaterThanOrEqual(4.5);
   }
+});
+
+test("light is the default even when the browser prefers dark", async ({
+  page,
+}) => {
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.goto("/#/preview/accounts");
+  await expect(page.getByLabel("Theme")).toHaveValue("light");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await page.getByLabel("Theme").selectOption("system");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "system");
+  await page.reload();
+  await expect(page.getByLabel("Theme")).toHaveValue("system");
+});
+
+test("observed sidebar groups expose supported records and disable planned destinations", async ({
+  page,
+}) => {
+  await page.goto("/#/preview/accounts");
+  const nav = page.getByRole("navigation", { name: "Preview navigation" });
+  await expect(
+    nav.getByRole("link", { name: "Evidence", exact: true }),
+  ).toHaveCount(0);
+  for (const label of ["Home", "Products", "Automation"]) {
+    await expect(
+      nav.getByRole("button", { name: `${label} Planned`, exact: true }),
+    ).toBeDisabled();
+  }
+  await nav
+    .getByRole("button", { name: "Sales navigation", exact: true })
+    .click();
+  const sales = nav.getByRole("group", { name: "Sales", exact: true });
+  await expect(
+    sales.getByRole("button", { name: "Leads Planned", exact: true }),
+  ).toBeDisabled();
+  await expect(
+    sales.getByRole("button", { name: "Opportunities Planned", exact: true }),
+  ).toBeDisabled();
+  await sales.getByRole("link", { name: "Contacts", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Contacts", exact: true }),
+  ).toBeVisible();
+  await page.reload();
+  await nav
+    .getByRole("button", { name: "Contacts navigation", exact: true })
+    .click();
+  const contacts = nav.getByRole("group", { name: "Contacts", exact: true });
+  await expect(
+    contacts.getByRole("button", { name: "My Contacts Planned", exact: true }),
+  ).toBeDisabled();
+  await expect(
+    contacts.getByRole("button", { name: "Birthdays Planned", exact: true }),
+  ).toBeDisabled();
 });

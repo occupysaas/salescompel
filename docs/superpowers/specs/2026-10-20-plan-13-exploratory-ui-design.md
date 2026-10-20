@@ -12,7 +12,7 @@ The first package combines the route/evidence inventory, shared visual frame and
 
 Reference: sibling `../zeroauthy/console/src/ui/app.css` and [console-frame design](https://github.com/occupysaas/zeroauthy/blob/main/docs/superpowers/specs/2026-10-19-zeroauthy-console-frame-design.md), inspected locally. Do not modify that repository.
 
-Use white surfaces, ink #111111, red #d7141a (hover #a50e13), black header with white text, a strong sidebar rule, bold readable navigation and a red active indicator. Headings are uppercase, bold and letter-spaced. Bundle Glacial Indifference regular/bold from the sibling assets with their SIL OFL license and SalesCompel NOTICE attribution. Use system monospace for IDs and paths. Dark mode uses #121212 surfaces, light text and #ff3b40 accent, with black header. Provide system/light/dark choice; verify contrast, visible focus and WCAG 2.2 AA behavior. Retain SalesCompel branding and CRM information architecture.
+Use white surfaces, ink #111111, red #d7141a (hover #a50e13), black header with white text, a strong sidebar rule, bold readable navigation and a red active indicator. Headings are uppercase, bold and letter-spaced. Bundle Glacial Indifference regular/bold from the sibling assets with their SIL OFL license and SalesCompel NOTICE attribution. Use system monospace for IDs and paths. Dark mode uses #121212 surfaces, light text and #ff3b40 accent, with black header. Default to light while retaining explicit system/light/dark choices and valid saved preferences; verify contrast, visible focus and WCAG 2.2 AA behavior. Retain SalesCompel branding and CRM information architecture.
 
 Keep existing Vue/TypeScript/Vite versions. Add Pinia and Vue Router; use vue-i18n Composition API for the common translation runtime. Resolve compatible versions at implementation and pin them in the existing lockfile; do not upgrade the existing framework/toolchain incidentally. Use CSS custom-property tokens and scoped preview component styles; Tailwind is not required by this design. Keep connected-page styling intact apart from shared font/preference primitives where compatible. No theme/font CDN.
 
@@ -40,7 +40,7 @@ Resolve new before dynamic ID. Unknown IDs and unknown routes show an accessible
 
 ## Screens and interactions
 
-Use a shared header with brand, prototype badge, language and theme controls; sidebar Accounts, Contacts and Evidence; responsive drawer on narrow screens. Drawer supports keyboard close, focus return and no focus trap after closing. Avoid dashboard/pipeline/settings navigation without a design basis.
+Use a shared header with brand, prototype badge, language and theme controls; sidebar organized from the observed Home, Contacts, Accounts, Sales, Service, Marketing, Products and Automation areas; responsive drawer on narrow screens. Drawer supports keyboard close, focus return and no focus trap after closing. Avoid dashboard/pipeline/settings navigation without a design basis.
 
 Lists show clearly synthetic rows, a translatable title and New action. Columns: Account Name and Compat_Key__c; Contact FirstName, LastName and linked Account.Name. IDs are secondary technical values. Do not expose Compat_Text__c in this first preview: its access semantics are deliberately narrow and incomplete. No global search, arbitrary filters, pagination, bulk actions or sortable columns are implied.
 
@@ -81,3 +81,10 @@ Component boundaries, secondary token shades, spacing and icon choices are imple
 ## Builder check
 
 Fresh design review found no important unanswered planning questions. Token cleanup can use existing setToken("") on connected-component unmount; no API redesign is needed.
+
+
+## Maintainer navigation revision — 2026-10-20
+
+The maintainer requested a light default, navigation closer to the observed menu, removal of the Evidence menu link, and disabled Planned labels for unsupported destinations. This supersedes the original three-link sidebar and system-default preference. Use docs/compat/ui/navigation-inventory.md as a functional inventory, without copying the reference styling. Contacts/Accounts expose supported all-records links; unimplemented saved views (including New Contacts/New Accounts, which are not creation actions) stay disabled. Sales/Service/Marketing expand as navigation containers for their observed items and supported record links; destinations with no implemented preview remain disabled. Products/Automation/Home are visibly planned and disabled. The vendor subscription/billing Account area remains excluded under the no-fee product policy. No new API requests, cloud functionality or metadata-driven navigation import is claimed. Evidence remains available from the footer and direct route, outside the primary menu.
+
+Verification for this revision: five Node tests, production build, eleven preview browser tests and git diff --check passed. The two new default/theme and navigation regressions failed before the change and passed afterward. Fresh read-only review approved this bounded follow-up with no Important/Critical findings. Interactive visual acceptance remains unverified under the prior browser denial.

@@ -21,7 +21,7 @@ For the production bundle, use `npm --prefix web run build`, then `npm --prefix 
 2. Follow Alex Rivera to Contact detail, then follow the Account link back.
 3. Edit a sample or create a new Account/Contact. Saving changes only the in-memory sample workspace; Cancel discards the draft.
 4. Leave a required name blank to explore validation. External keys are limited to 80 JavaScript string units as a candidate-aligned prototype constraint, without claiming Salesforce Unicode length behavior.
-5. Switch system/light/dark theme or language. Hebrew changes document language to `he` and layout direction to RTL; other supported wire codes remain unchanged. Newly added non-English strings fall back to English and are not labeled completed translations.
+5. Light is the default; saved preferences are respected. Switch light/dark/system theme or language. Hebrew changes document language to `he` and layout direction to RTL; other supported wire codes remain unchanged. Newly added non-English strings fall back to English and are not labeled completed translations.
 6. Open Evidence for the separate reference/candidate/simulation mapping. API details are kept there rather than in the normal record workflow.
 7. Reset preview to restore seed data, or reload. Local edits and new records disappear on reload. Unknown or removed sample URLs show not-found. Local IDs stay monotonic across resets within a running preview so an old link cannot select a replacement record.
 
@@ -61,3 +61,6 @@ Can people find the right record, understand Account/Contact relationships, dist
 
 
 Implementation choices: work stayed on main under the existing approved policy (shared-checkout changes); compatible i18n and matching declaration pins preserved the existing Vue toolchain (later upstream fixes require a future dependency review); frame and record pages were committed together because their imports are coupled (less granular rollback); automated preview tests use the production bundle (hostile-storage development devtools are outside that supported delivery path); reset ID reuse was treated as navigation correctness and fixed in the same review pass (no persisted-data impact). These choices do not waive the unverified visual acceptance gate. No minor code findings were deferred.
+
+
+Navigation follow-up: the sidebar now follows the observed area inventory, with expandable Contacts/Accounts shortcuts and Sales/Service/Marketing groups. Unsupported destinations and saved list views are disabled and tagged Planned; Home, Products and Automation remain inert. Evidence is removed from the sidebar and retained as a footer reference. The observed vendor-billing Account area is excluded from this free product. This is a functional menu proposal, not a claim that these additional clouds or metadata navigation import are implemented. Eleven preview browser tests and five Node tests pass after the revision, along with the production build and whitespace checks; fresh code review approved the follow-up. The existing connected browser suite was not repeated for this navigation/default-only revision.
