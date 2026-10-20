@@ -8,6 +8,7 @@ export async function normalizationFixture(t: TestContext) {
     ...x.flags,
     exactKeys: false,
     rewrite: false,
+    uppercase: false,
     missingCreatedId: false,
     lossAt: 0,
     rejectedMutation: false,
@@ -17,6 +18,7 @@ export async function normalizationFixture(t: TestContext) {
     reverseRows: false,
     prose: "synthetic duplicate",
     statusOverride: 0,
+    postErrors: [] as unknown,
   };
   let mutation = 0,
     counter = 0;
@@ -71,14 +73,22 @@ export async function normalizationFixture(t: TestContext) {
           row = {
             Id: rid,
             Name: body.Name,
-            Compat_Key__c: flags.rewrite ? "rewritten-" + key : key.trim(),
+            Compat_Key__c: flags.rewrite
+              ? "rewritten-" + key
+              : flags.uppercase
+                ? key.trim().toUpperCase()
+                : key.trim(),
             Compat_Text__c: null,
           };
           x.rows.set(rid, row);
         }
         row.Name = body.Name;
         if (!upsert)
-          row.Compat_Key__c = flags.rewrite ? "rewritten-" + key : key.trim();
+          row.Compat_Key__c = flags.rewrite
+            ? "rewritten-" + key
+            : flags.uppercase
+              ? key.trim().toUpperCase()
+              : key.trim();
       }
       if (flags.lossAt === mutation) throw new Error("RESPONSE_LOST");
       if (reject)
@@ -94,7 +104,8 @@ export async function normalizationFixture(t: TestContext) {
       return send(upsert ? (created ? 201 : 200) : 201, {
         ...(flags.missingCreatedId ? {} : { id: row!.Id }),
         success: true,
-        ...(upsert ? { created: created, errors: [] } : {}),
+        errors: upsert ? [] : flags.postErrors,
+        ...(upsert ? { created: created } : {}),
       });
     },
   };

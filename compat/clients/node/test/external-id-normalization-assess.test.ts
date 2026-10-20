@@ -8,14 +8,19 @@ import {
   validateNormalizationCleanupEvidence,
 } from "../src/external-id-normalization-assess.ts";
 import { normalizationFixture } from "./external-id-normalization-test-server.ts";
-import { normalizationDigest } from "../src/external-id-normalization-recovery.ts";
+import { recoverNormalizationRun } from "../src/external-id-normalization-recovery.ts";
 async function pair(
   t: Parameters<typeof normalizationFixture>[0],
   drift = false,
+  uppercase = false,
+  postErrors: unknown = [],
+  recoverFirst = false,
 ) {
   const x = await normalizationFixture(t),
     a = join(x.dir, "a.json"),
     b = join(x.dir, "b.json");
+  x.flags.uppercase = uppercase;
+  x.flags.postErrors = postErrors;
   await (
     await import("node:fs/promises")
   ).mkdir(join(x.dir, "a.artifacts"), { mode: 0o700 });
@@ -26,6 +31,15 @@ async function pair(
     x.transport,
   );
   await writeFile(a, JSON.stringify(first) + "\n", { mode: 0o600 });
+  if (recoverFirst) {
+    const recovered = await recoverNormalizationRun(
+      x.config,
+      {},
+      join(x.dir, "a.artifacts"),
+      x.transport,
+    );
+    assert.equal(recovered.outcome, "clean");
+  }
   await new Promise((r) => setTimeout(r, 2));
   x.flags.prose = "changed prose";
   x.flags.reverseRows = true;
@@ -88,7 +102,7 @@ test("complete observations compare by identity relationships while preserving e
     },
   );
   await t.test(
-    "changed exact key spelling yields drift even with updated artifact digests",
+    "altering reported spelling without matching source evidence blocks assessment",
     async () => {
       // A distinct spelling experiment requires a genuine second capture; modifying only the report must block integrity.
       const changed = structuredClone(second);
@@ -109,4 +123,36 @@ test("errors that secretly commit a write produce drift against clean rejection 
       (f) => f.caseId === "ascii-other-update" && f.outcome === "drift",
     ),
   );
+});
+test("repeatable uppercase stored prefixes compare equally while a spelling policy change produces drift", async (t) => {
+  const { x, a, b } = await pair(t, false, true);
+  const same = await assessNormalizationPair(a, b);
+  assert.equal(same.outcome, "repeatable", JSON.stringify(same));
+  x.flags.uppercase = false;
+  const dir = join(x.dir, "c.artifacts");
+  await (await import("node:fs/promises")).mkdir(dir, { mode: 0o700 });
+  const third = await runNormalizationProbe(x.config, {}, dir, x.transport),
+    path = join(x.dir, "c.json");
+  await writeFile(path, JSON.stringify(third) + "\n", { mode: 0o600 });
+  assert.equal((await assessNormalizationPair(a, path)).outcome, "drift");
+});
+
+test("matching malformed create success errors block assessment rather than becoming repeatable evidence", async (t) => {
+  const { a, b } = await pair(t, false, false, "malformed");
+  assert.equal((await assessNormalizationPair(a, b)).outcome, "blocked");
+});
+
+test("recovering an already clean capture preserves repeatability with the next capture", async (t) => {
+  const { a, b } = await pair(t, false, false, [], true);
+  const result = await assessNormalizationPair(a, b);
+  assert.equal(result.outcome, "repeatable", JSON.stringify(result));
+});
+test("unavailable captures return explicit blocked findings for every scenario", async () => {
+  const result = await assessNormalizationPair(
+    "/nonexistent-plan14-first.json",
+    "/nonexistent-plan14-second.json",
+  );
+  assert.equal(result.outcome, "blocked");
+  assert.equal(result.findings.length, 36);
+  assert.ok(result.findings.every((f) => f.outcome === "blocked"));
 });

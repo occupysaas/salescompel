@@ -1,6 +1,6 @@
 # Plan 14 external-ID normalization experiment
 
-Status: offline tooling implemented and full lab checks passed; fresh review pending. **Live evidence is blocked** as of 2026-10-20. No normalization rule, runtime change or migration is approved by this report.
+Status: offline tooling implemented, full lab checks and review corrections complete. **Live evidence is blocked** as of 2026-10-20. No normalization rule, runtime change or migration is approved by this report.
 
 ## Purpose and scope
 
@@ -77,15 +77,25 @@ Exact random Names and journal-derived operations establish fixture ownership. K
 
 The fixed suite is sequential. Outer safety ceilings remain 80 records, 160 non-cleanup mutations, ten-minute collection and five-minute cleanup. The manifest dispatch ceiling is 80 mutations. Wire requests have 15-second deadlines, no mutation retries, and no unbounded reconciliation loops.
 
-Assessment checks private file safety, report/schema bindings, source and artifact digests, all 80 operation IDs, raw response/state consistency, cleanup proofs and sequential run chronology. It compares exact spelling and state relationships under synthetic-prefix and one-to-one ID alias substitution. Message prose and transport headers are excluded from equality while retained privately. Record order can vary; field values and hidden mutations cannot disappear from the comparison. Unexpected but agreeing behavior is repeatable. Missing/corrupt evidence is blocked; differing complete behavior is drift.
+Assessment checks private file safety, report/schema bindings, source and artifact digests, all 80 operation IDs, raw response/state consistency, cleanup proofs and sequential run chronology. It compares exact spelling and state relationships under synthetic-prefix and one-to-one ID alias substitution. Message prose and transport headers are excluded from equality while retained privately. Exact generated ownership prefixes can be aliased in their original and uppercase forms while retaining `p14` versus `P14` and all suffix spelling. Other unexpected prefix rewrites remain raw and may prevent a stable-pair claim. Record order can vary; field values and hidden mutations cannot disappear from the comparison. Unexpected but agreeing behavior is repeatable. Missing/corrupt evidence is blocked; differing complete behavior is drift.
 
 ## Offline verification
 
 Focused tests were written before implementation and observed failing for missing modules/exports. Coverage includes manifest bounds and directionality, POST seeds, local spelling preservation, hidden writes on error responses, same/other-record targeting, metadata/admin gates, unknown dispatch and late commit, identity latch, ownership, private/exclusive files, shared locks, artifact corruption, coverage, chronology, repeatability and state drift.
 
-`npm --prefix compat/clients/node run check` passed: TypeScript, Prettier, **230 passed / 0 failed / 1 skipped** of 231 tests, and offline repository validation. The skip is `candidate: real JSforce CRUD, policy, relationships and upsert`, which requires an explicitly configured running candidate. `git diff --check` passed. These tests use explicitly synthetic in-memory reference fixtures; they are not Salesforce observations. Product database/client integration is not claimed.
+`npm --prefix compat/clients/node run check` passed: TypeScript, Prettier, **234 passed / 0 failed / 1 skipped** of 235 tests, and offline repository validation. The skip is `candidate: real JSforce CRUD, policy, relationships and upsert`, which requires an explicitly configured running candidate. `git diff --check` passed. These tests use explicitly synthetic in-memory reference fixtures; they are not Salesforce observations. Product database/client integration is not claimed.
 
-Fresh whole-change review is pending.
+Fresh whole-change review of `99f7f52..ec1f72e` found no Critical issues and three Important issues. Each correction has a regression observed failing before its fix and passing afterward:
+
+| Finding | Verified correction |
+| --- | --- |
+| Uppercased synthetic run prefixes caused false drift | Alias exact original/uppercase generated prefixes separately; two uppercase-policy captures agree while a changed spelling policy still drifts |
+| Malformed POST success `errors` could become repeatable evidence | Require an empty errors array for create successes as well as upserts; matching malformed captures block assessment |
+| Recovery of an already clean capture caused false drift | Accept omitted cleanup rows only when their exact IDs have completed, validated journaled deletions; capture/recover/capture agrees |
+
+A further completeness check ensures unavailable reports expose all 36 scenarios as blocked. There were no deferred Minor findings. The first reviewer was interrupted by a usage limit before a verdict; a replacement reviewer completed the whole-change review. The full lab check passed after all corrections.
+
+Review excluded live Salesforce behavior, real credentials/authorization, private recovery artifacts, production integration and suitability of a runtime normalization rule. These remain unverified because the reference prerequisites are missing and this deliverable changes only evidence tooling. No runtime promotion, migration readiness or production claim follows.
 
 The baseline lab run exposed three pre-existing failures caused by preview keys absent from partial translated catalogs. A focused lab-validator correction allows missing keys only for catalogs marked partial when their declared fallback chain supplies them. Complete and fixture catalogs still require their own keys, and parameter/cycle validation remains active. No catalogs, coverage labels or product language selection behavior were changed.
 

@@ -1,6 +1,6 @@
 # Plan 14 — External-ID normalization contract
 
-Status: approved for implementation by the maintainer, 2026-10-20. Offline tooling implemented; final verification/review in progress. Live collection is blocked by unavailable private reference prerequisites.
+Status: approved for implementation by the maintainer, 2026-10-20. Offline tooling implemented; full lab verification and review corrections complete. Live collection is blocked by unavailable private reference prerequisites.
 Milestones: bounded M1 evidence work supporting M3 external-ID behavior.
 
 ## Intent and selection

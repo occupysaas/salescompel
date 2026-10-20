@@ -218,7 +218,9 @@ function mutationResponse(
           : [200, 201].includes(response.status)) &&
           b &&
           typeof b.id === "string" &&
-          b.success === true,
+          b.success === true &&
+          Array.isArray(b.errors) &&
+          b.errors.length === 0,
       );
       recordPath(b.id);
       if (kind === "upsert")
@@ -407,8 +409,19 @@ async function load(path: string) {
     if (
       cleaned.length !== seen.size ||
       cleaned.some((row) => !seen.has(row.id)) ||
+      // A later recovery can observe our own already verified deletions.
+      // Missing rows without a completed journaled deletion remain drift.
       cleanupStates.some(
-        (s) => s.caseId === c.id && !equal(s.state.records, last.after),
+        (s) =>
+          s.caseId === c.id &&
+          (s.state.records.some(
+            (row) => !last.after.some((expected) => equal(row, expected)),
+          ) ||
+            last.after.some(
+              (row) =>
+                !s.state.records.some((remaining) => remaining.Id === row.Id) &&
+                run.stages.get(`delete:${row.Id}`) !== "response",
+            )),
       )
     )
       changedCleanupCases.add(c.id);
@@ -437,9 +450,14 @@ function projected(r: NormalizationReport) {
       ))
         add(row.Id);
   }
+  // Alias generated prefixes in their original and uppercase forms separately:
+  // retain P14 versus p14 and all suffix spelling as measured behavior.
   const visit = (v: any): any =>
     typeof v === "string"
-      ? (aliases.get(v) ?? v.replaceAll(`p14${r.runId}-`, "p14{run}-"))
+      ? (aliases.get(v) ??
+        v
+          .replaceAll(`p14${r.runId}-`, "p14{run}-")
+          .replaceAll(`P14${r.runId.toUpperCase()}-`, "P14{run}-"))
       : Array.isArray(v)
         ? v.map(visit)
         : v && typeof v === "object"
@@ -480,7 +498,11 @@ export async function assessNormalizationPair(
     contractVersion: "plan14-normalization-v1",
     outcome: "blocked",
     reasons: [],
-    findings: [],
+    findings: normalizationManifest.map((c) => ({
+      caseId: c.id,
+      outcome: "blocked",
+      reasons: ["EVIDENCE_NOT_VERIFIED"],
+    })),
     inputReportDigests: [],
   };
   try {

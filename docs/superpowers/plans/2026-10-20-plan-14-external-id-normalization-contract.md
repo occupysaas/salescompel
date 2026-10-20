@@ -79,7 +79,15 @@ Tasks 3/4 were committed together because command publication depends on cleanup
 
 **Interfaces:** Consume verified command surface and actual test results; no new runtime API.
 
-- [ ] Check presence of reference environment prerequisites without printing values. If unavailable, record exact missing prerequisites and do not make requests or search private files. Otherwise follow the reviewed spec's live preflight and two sequential captures.
-- [ ] Document actual observed results or blocked live evidence, command usage, bounds, privacy/recovery and deferred product gate.
-- [ ] Run `npm --prefix compat/clients/node run check` and `git diff --check`; expect PASS, recording any optional skips explicitly.
-- [ ] Obtain a fresh whole-change review against spec and plan, fix Important/Critical findings with failing-then-passing regressions and rerun the full check. Commit final report and status.
+- [x] Check presence of reference environment prerequisites without printing values. If unavailable, record exact missing prerequisites and do not make requests or search private files. Otherwise follow the reviewed spec's live preflight and two sequential captures.
+- [x] Document actual observed results or blocked live evidence, command usage, bounds, privacy/recovery and deferred product gate.
+- [x] Run `npm --prefix compat/clients/node run check` and `git diff --check`; expect PASS, recording any optional skips explicitly.
+- [x] Obtain a fresh whole-change review against spec and plan, fix Important/Critical findings with failing-then-passing regressions and rerun the full check. Commit final report and status.
+
+## Execution outcome — 2026-10-20
+
+Offline implementation is complete. The final lab check passed TypeScript, formatting, repository validation and 234 tests, with one optional real-candidate integration test skipped and zero failures. `git diff --check` passed. The fresh review's three Important findings (uppercase prefix aliasing, malformed create-success errors and repeat recovery snapshots) were each reproduced and corrected with failing-then-passing regressions. Blocked assessment now explicitly lists every scenario. No Minor findings were deferred.
+
+Live evidence remains blocked: reference URL/token, disposable opt-in and private recovery directory were unset. No reference requests or private reference artifact reads occurred. See the [decision and run guide](../../compat/plan-14-external-id-normalization-contract.md) for commands, evidence limits and the subsequent product gate.
+
+Execution calls: work stayed natively on main under repository policy; future suite modules were initially included as placeholders in the fixed source-digest list and fully implemented before command delivery; command and cleanup assessment shipped together because their interfaces depend on each other. These choices affect execution/review grouping and invalidate only development fixtures when source bytes change; they do not alter product behavior. The separate partial-catalog validator correction permits declared fallback for explicitly incomplete translations, retaining strict fixture/complete-catalog checks. The live/runtime review exclusions remain explicit in the linked guide.
