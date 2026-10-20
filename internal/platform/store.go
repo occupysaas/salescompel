@@ -265,12 +265,17 @@ func (s *Store) Read(ctx context.Context, p Principal, object, id string) (map[s
 	return rows[0], nil
 }
 func (s *Store) Upsert(ctx context.Context, p Principal, key string, data map[string]any) (string, bool, error) {
+	if supplied := data["Compat_Key__c"]; supplied != nil {
+		switch supplied.(type) {
+		case map[string]any, []any:
+			return "", false, invalid("JSON_PARSER_ERROR", "External ID requires a scalar value or null")
+		default:
+			return "", false, invalid("INVALID_FIELD", "External ID value must be supplied in the upsert URL")
+		}
+	}
 	copyData := map[string]any{}
 	for k, v := range data {
 		copyData[k] = v
-	}
-	if supplied, ok := copyData["Compat_Key__c"]; ok && supplied != key {
-		return "", false, invalid("INVALID_FIELD", "Conflicting external ID")
 	}
 	copyData["Compat_Key__c"] = key
 	if err := Validate(p, "Account", copyData, false); err != nil {

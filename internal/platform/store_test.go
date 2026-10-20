@@ -2,6 +2,7 @@ package platform
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"sync"
@@ -203,5 +204,175 @@ func TestStoreBlankNillableStringsAreNull(t *testing.T) {
 	rows, err := s.Select(ctx, a, q)
 	if err != nil || len(rows) != 1 || rows[0]["Id"] != id {
 		t.Fatal(rows, err)
+	}
+}
+
+// The observed cases isolate the body key; array coverage is local robustness only.
+func upsertBodyCases() []struct {
+	name, code string
+	present    bool
+	value      any
+} {
+	return []struct {
+		name, code string
+		present    bool
+		value      any
+	}{
+		{"omitted", "", false, nil},
+		{"null", "", true, nil},
+		{"identical", "INVALID_FIELD", true, "body-key"},
+		{"variant", "INVALID_FIELD", true, "BODY-KEY"},
+		{"different", "INVALID_FIELD", true, "other-key"},
+		{"empty", "INVALID_FIELD", true, ""},
+		{"number42", "INVALID_FIELD", true, float64(42)},
+		{"object", "JSON_PARSER_ERROR", true, map[string]any{"nested": "value"}},
+		{"array-local-robustness", "JSON_PARSER_ERROR", true, []any{"value"}},
+	}
+}
+
+func TestUpsertRejectsBodyKeyWithoutDatabase(t *testing.T) {
+	for _, tc := range upsertBodyCases() {
+		if tc.code == "" {
+			continue
+		}
+		t.Run(tc.name, func(t *testing.T) {
+			data := map[string]any{"Name": "Requested", "Compat_Key__c": tc.value}
+			before := stringJSON(data)
+			defer func() {
+				if v := recover(); v != nil {
+					t.Errorf("body key validation panicked without a database: %v", v)
+				}
+				if after := stringJSON(data); after != before {
+					t.Errorf("caller input changed: %s -> %s", before, after)
+				}
+			}()
+			id, created, err := (&Store{}).Upsert(context.Background(), Principal{Role: "admin"}, "body-key", data)
+			if id != "" || created {
+				t.Errorf("rejected upsert returned id=%q created=%v", id, created)
+			}
+			assertUpsertBodyError(t, err, tc.code)
+		})
+	}
+}
+
+func assertUpsertBodyError(t *testing.T, err error, code string) {
+	t.Helper()
+	var api *APIError
+	if !errors.As(err, &api) || api.Status != 400 || api.Code != code || len(api.Fields) != 0 {
+		t.Fatalf("error = %#v; want 400 %s without fields", err, code)
+	}
+	wantMessage := "External ID value must be supplied in the upsert URL"
+	if code == "JSON_PARSER_ERROR" {
+		wantMessage = "External ID requires a scalar value or null"
+	}
+	if api.Message != wantMessage {
+		t.Errorf("message = %q, want %q", api.Message, wantMessage)
+	}
+}
+
+// Seed the peer's matching key and the target's different body key, so rejected
+// writes cannot silently change either tenant or redirect to the body key.
+func upsertBodyFixture(t *testing.T, s *Store, existing, secondTenant bool) (Principal, Principal, string) {
+	t.Helper()
+	p, peer := principals(t, s)
+	if secondTenant {
+		p, peer = peer, p
+	}
+	ctx := context.Background()
+	for _, seed := range []struct {
+		p   Principal
+		key string
+	}{{peer, "body-key"}, {peer, "other-key"}, {p, "other-key"}} {
+		if _, err := s.Create(ctx, seed.p, "Account", map[string]any{"Name": "Untouched", "Compat_Key__c": seed.key, "Compat_Text__c": "Sentinel"}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var id string
+	if existing {
+		var err error
+		id, err = s.Create(ctx, p, "Account", map[string]any{"Name": "Original", "Compat_Key__c": "body-key", "Compat_Text__c": "Retained"})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	return p, peer, id
+}
+
+func accountSnapshot(t *testing.T, s *Store, p Principal) string {
+	t.Helper()
+	rows, err := s.Select(context.Background(), p, Query{Object: "Account", Fields: []string{"Id", "Name", "Compat_Key__c", "Compat_Text__c"}, Order: "Id", Limit: 100})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return stringJSON(rows)
+}
+
+func assertUpsertBodySuccess(t *testing.T, s *Store, p Principal, id, oldID string, created, retained bool) {
+	t.Helper()
+	if id == "" || created != (oldID == "") || (oldID != "" && id != oldID) {
+		t.Fatalf("upsert id=%q created=%v, prior id=%q", id, created, oldID)
+	}
+	row, err := s.Read(context.Background(), p, "Account", id)
+	if err != nil || row["Name"] != "Requested" || row["Compat_Key__c"] != "body-key" {
+		t.Fatalf("upsert row = %v, error %v", row, err)
+	}
+	if retained && row["Compat_Text__c"] != "Retained" {
+		t.Errorf("unrelated field changed: %v", row)
+	}
+	rows, err := s.Select(context.Background(), p, Query{Object: "Account", Fields: []string{"Id"}, HasWhere: true, WhereField: "Compat_Key__c", WhereValue: stringPointer("body-key"), Limit: 100})
+	if err != nil || len(rows) != 1 || rows[0]["Id"] != id {
+		t.Fatalf("expected exactly one path-key row: %v, %v", rows, err)
+	}
+}
+
+func stringPointer(v string) *string { return &v }
+
+func TestStoreUpsertBodyValidation(t *testing.T) {
+	s := testStore(t)
+	for _, secondTenant := range []bool{false, true} {
+		for _, existing := range []bool{false, true} {
+			for _, tc := range upsertBodyCases() {
+				t.Run(fmt.Sprintf("tenantB=%v/existing=%v/%s", secondTenant, existing, tc.name), func(t *testing.T) {
+					p, peer, oldID := upsertBodyFixture(t, s, existing, secondTenant)
+					before, peerBefore := accountSnapshot(t, s, p), accountSnapshot(t, s, peer)
+					data := map[string]any{"Name": "Requested"}
+					if tc.present {
+						data["Compat_Key__c"] = tc.value
+					}
+					inputBefore := stringJSON(data)
+					id, created, err := s.Upsert(context.Background(), p, "body-key", data)
+					if stringJSON(data) != inputBefore {
+						t.Error("caller input changed")
+					}
+					if tc.code == "" {
+						if err != nil {
+							t.Fatal(err)
+						}
+						assertUpsertBodySuccess(t, s, p, id, oldID, created, existing)
+						if !existing {
+							updatedID, updateCreated, err := s.Upsert(context.Background(), p, "body-key", data)
+							if err != nil {
+								t.Fatal(err)
+							}
+							assertUpsertBodySuccess(t, s, p, updatedID, id, updateCreated, false)
+							if stringJSON(data) != inputBefore {
+								t.Error("caller input changed on second upsert")
+							}
+						}
+					} else {
+						if id != "" || created {
+							t.Errorf("rejected upsert returned id=%q created=%v", id, created)
+						}
+						if after := accountSnapshot(t, s, p); after != before {
+							t.Errorf("rejected write changed rows: %s -> %s", before, after)
+						}
+						assertUpsertBodyError(t, err, tc.code)
+					}
+					if after := accountSnapshot(t, s, peer); after != peerBefore {
+						t.Errorf("peer tenant changed: %s -> %s", peerBefore, after)
+					}
+				})
+			}
+		}
 	}
 }
