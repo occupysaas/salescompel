@@ -28,7 +28,7 @@
   font-weight: 700;
   cursor: pointer;
 }
-.preview-app button:hover:not(:disabled) {
+.preview-app button:not(.p-primary):hover:not(:disabled) {
   background: var(--p-active);
 }
 .preview-app :is(h1, h2, h3) {

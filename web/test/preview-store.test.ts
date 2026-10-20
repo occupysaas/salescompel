@@ -24,3 +24,13 @@ test("preview stores isolate fixtures and reject invalid references without muta
   );
   assert.equal(second.accounts.length, 2);
 });
+
+test("reset does not reuse record identities retained in browser history", () => {
+  setActivePinia(createPinia());
+  const store = usePreviewStore();
+  const old = store.save("accounts", { Name: "Before reset" });
+  store.reset();
+  const fresh = store.save("accounts", { Name: "After reset" });
+  assert.notEqual(fresh, old);
+  assert.equal(store.find("accounts", old), undefined);
+});

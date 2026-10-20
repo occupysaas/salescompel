@@ -1,14 +1,27 @@
 <script setup lang="ts">
 import { computed, ref, onUnmounted } from "vue";
 import {
-  api,
+  api as request,
   setToken,
   type Description,
   type Field,
   type RecordData,
 } from "../api";
 import { language, languages, setLanguage, t } from "../i18n";
-onUnmounted(() => setToken(""));
+const lifetime = new AbortController();
+onUnmounted(() => {
+  lifetime.abort();
+  setToken("");
+});
+async function api<T>(
+  path: string,
+  method = "GET",
+  data?: unknown,
+): Promise<T> {
+  if (lifetime.signal.aborted)
+    throw new DOMException("Route left", "AbortError");
+  return request<T>(path, method, data, lifetime.signal);
+}
 const draftToken = ref(""),
   connected = ref(false),
   busy = ref(false),
@@ -39,7 +52,7 @@ function recordName(row: RecordData) {
   );
 }
 async function action(fn: () => Promise<void>) {
-  if (busy.value) return;
+  if (busy.value || lifetime.signal.aborted) return;
   busy.value = true;
   error.value = "";
   try {
@@ -68,7 +81,7 @@ async function connect() {
     connected.value = true;
     draftToken.value = "";
   });
-  if (!connected.value) setToken("");
+  if (!lifetime.signal.aborted && !connected.value) setToken("");
 }
 function disconnect() {
   setToken("");

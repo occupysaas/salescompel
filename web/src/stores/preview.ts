@@ -41,7 +41,6 @@ export const usePreviewStore = defineStore("preview", () => {
     const next = previewFixtures();
     accounts.value = next.accounts;
     contacts.value = next.contacts;
-    counter = 0;
     announcement.value = "preview.resetDone";
   }
   return { accounts, contacts, announcement, find, save, reset };

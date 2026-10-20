@@ -19,9 +19,11 @@ export async function api<T>(
   path: string,
   method = "GET",
   data?: unknown,
+  signal?: AbortSignal,
 ): Promise<T> {
   const response = await fetch(`/services/data/v65.0/${path}`, {
     method,
+    signal,
     headers: {
       Authorization: `Bearer ${token}`,
       ...(data ? { "Content-Type": "application/json" } : {}),

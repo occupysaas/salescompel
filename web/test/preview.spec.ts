@@ -212,3 +212,77 @@ test("leaving the connected route returns to a credential-free preview and requi
   await expect(page.getByRole("button", { name: "New record" })).toHaveCount(0);
   expect(auth).toHaveLength(2);
 });
+
+test("pending connected reads cannot dispatch follow-up requests inside preview", async ({
+  page,
+}) => {
+  await page.unroute("**/services/**");
+  let release!: () => void;
+  const released = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let started!: () => void;
+  const pending = new Promise<void>((resolve) => {
+    started = resolve;
+  });
+  const requests: string[] = [];
+  await page.route("**/services/**", async (route) => {
+    requests.push(route.request().url());
+    if (route.request().url().includes("/describe")) {
+      started();
+      await released;
+      await route
+        .fulfill({
+          contentType: "application/json",
+          body: JSON.stringify({ fields: [{ name: "Name" }] }),
+        })
+        .catch(() => {});
+    } else
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({ records: [] }),
+      });
+  });
+  await page.goto("/#/");
+  await page.getByLabel("Access token").fill("synthetic-token-pending-test");
+  await page.getByRole("button", { name: "Connect", exact: true }).click();
+  await pending;
+  await page.getByRole("link", { name: "Explore the prototype" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Accounts", exact: true }),
+  ).toBeVisible();
+  release();
+  // Let the deliberately held response propagate before asserting no follow-up.
+  await page.waitForTimeout(250);
+  expect(requests).toHaveLength(1);
+});
+
+test("primary save button retains AA contrast on hover in both themes", async ({
+  page,
+}) => {
+  await page.goto("/#/preview/accounts/new");
+  for (const theme of ["light", "dark"]) {
+    await page.getByLabel("Theme").selectOption(theme);
+    const button = page.getByRole("button", { name: "Save locally" });
+    await button.hover();
+    const colors = await button.evaluate((el) => ({
+      fg: getComputedStyle(el).color,
+      bg: getComputedStyle(el).backgroundColor,
+    }));
+    const luminance = (color: string) => {
+      const rgb = color
+        .match(/[\d.]+/g)!
+        .slice(0, 3)
+        .map(Number)
+        .map((v) => {
+          v /= 255;
+          return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+        });
+      return rgb[0] * 0.2126 + rgb[1] * 0.7152 + rgb[2] * 0.0722;
+    };
+    const [a, b] = [luminance(colors.fg), luminance(colors.bg)].sort(
+      (x, y) => y - x,
+    );
+    expect((a + 0.05) / (b + 0.05)).toBeGreaterThanOrEqual(4.5);
+  }
+});
