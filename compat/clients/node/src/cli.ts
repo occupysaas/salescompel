@@ -64,6 +64,77 @@ async function main() {
     throw new Error(
       "Specify one command: validate, preflight, capture, compare, repeatability, verify-evidence or validate-openapi",
     );
+  if (command === "assess-external-id-normalization") {
+    if (
+      !values.first ||
+      !values.second ||
+      !values.out ||
+      Object.keys(values).some((k) => !["first", "second", "out"].includes(k))
+    )
+      throw new Error(
+        "Normalization assessment requires --first, --second and --out only",
+      );
+    const { privateDirectory } = await import("./metadata-files.ts");
+    const { assessNormalizationPair } =
+      await import("./external-id-normalization-assess.ts");
+    const { open } = await import("node:fs/promises");
+    const target = resolve(values.out);
+    await privateDirectory(dirname(target));
+    if (!target.endsWith(".json"))
+      throw new Error("Private output must end in .json");
+    const output = await open(target, "wx", 0o600);
+    try {
+      const result = await assessNormalizationPair(values.first, values.second);
+      await output.writeFile(JSON.stringify(result) + "\n");
+      await output.sync();
+      console.log(`${result.outcome}: private output ${target}`);
+      process.exitCode =
+        result.outcome === "repeatable"
+          ? 0
+          : result.outcome === "drift"
+            ? 1
+            : 2;
+    } finally {
+      await output.close();
+    }
+    return;
+  }
+  if (
+    command === "probe-external-id-normalization" ||
+    command === "recover-external-id-normalization"
+  ) {
+    const mode =
+      command === "probe-external-id-normalization" ? "probe" : "recover";
+    const allowed =
+      mode === "probe" ? ["config", "out"] : ["config", "out", "first"];
+    if (
+      !values.config ||
+      !values.out ||
+      (mode === "recover" && !values.first) ||
+      Object.keys(values).some((k) => !allowed.includes(k))
+    )
+      throw new Error(
+        "Normalization command requires private --config and --out; recovery also requires --first",
+      );
+    const { normalizationCommand } =
+      await import("./external-id-normalization-command.ts");
+    const result = await normalizationCommand(
+      mode,
+      values.config,
+      values.out,
+      process.env,
+      values.first,
+    );
+    const clean =
+      "collection" in result
+        ? result.collection === "complete" && result.cleanup.outcome === "clean"
+        : result.outcome === "clean";
+    console.log(
+      `${clean ? "complete" : "incomplete/blocked"}: private output ${resolve(values.out)}`,
+    );
+    process.exitCode = clean ? 0 : 2;
+    return;
+  }
   if (command === "assess-external-id-body") {
     if (
       !values.first ||
@@ -435,9 +506,11 @@ main().catch((e) => {
     .map(([, v]) => v!)
     .filter(Boolean);
   console.error(sanitize(e.message ?? String(e), secrets));
-  process.exitCode = selectedCommand?.endsWith("external-id-body")
-    ? 1
-    : e.exitCode === 1
+  process.exitCode =
+    selectedCommand?.endsWith("external-id-body") ||
+    selectedCommand?.endsWith("external-id-normalization")
       ? 1
-      : 2;
+      : e.exitCode === 1
+        ? 1
+        : 2;
 });
