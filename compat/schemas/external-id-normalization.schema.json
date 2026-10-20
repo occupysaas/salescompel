@@ -1,0 +1,407 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "kind": {
+      "const": "external-id-normalization"
+    },
+    "config": {
+      "$ref": "#/$defs/config"
+    },
+    "connectors": {
+      "type": "object",
+      "minProperties": 1,
+      "maxProperties": 30,
+      "additionalProperties": {
+        "type": "string",
+        "maxLength": 100
+      }
+    },
+    "manifestHash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "runId": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{24}$"
+    },
+    "startedAt": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?Z$"
+    },
+    "finishedAt": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?Z$"
+    },
+    "identityVerified": {
+      "type": "boolean"
+    },
+    "collection": {
+      "enum": [
+        "complete",
+        "incomplete",
+        "blocked"
+      ]
+    },
+    "observations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "caseId": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1
+          },
+          "request": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "method": {
+                "enum": [
+                  "POST",
+                  "PATCH"
+                ]
+              },
+              "path": {
+                "type": "string",
+                "maxLength": 512
+              },
+              "body": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string",
+                  "maxLength": 255
+                }
+              },
+              "key": {
+                "type": "string",
+                "maxLength": 80
+              }
+            },
+            "required": [
+              "method",
+              "path",
+              "body",
+              "key"
+            ]
+          },
+          "before": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "Id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 255
+                },
+                "Name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 255
+                },
+                "Compat_Key__c": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "maxLength": 255
+                },
+                "Compat_Text__c": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "maxLength": 255
+                }
+              },
+              "required": [
+                "Id",
+                "Name",
+                "Compat_Key__c",
+                "Compat_Text__c"
+              ]
+            },
+            "maxItems": 80
+          },
+          "after": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "Id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 255
+                },
+                "Name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 255
+                },
+                "Compat_Key__c": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "maxLength": 255
+                },
+                "Compat_Text__c": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "maxLength": 255
+                }
+              },
+              "required": [
+                "Id",
+                "Name",
+                "Compat_Key__c",
+                "Compat_Text__c"
+              ]
+            },
+            "maxItems": 80
+          },
+          "stateVerified": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 100,
+            "maximum": 599
+          },
+          "bodyPresent": {
+            "type": "boolean"
+          },
+          "body": {},
+          "state": {
+            "enum": [
+              "observed",
+              "unavailable"
+            ]
+          },
+          "artifact": {
+            "type": "string",
+            "maxLength": 255,
+            "pattern": "^([A-Za-z0-9][A-Za-z0-9._-]*\\.json)?$"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^([a-f0-9]{64})?$"
+          },
+          "stateArtifact": {
+            "type": "string",
+            "maxLength": 255,
+            "pattern": "^([A-Za-z0-9][A-Za-z0-9._-]*\\.json)?$"
+          },
+          "stateSha256": {
+            "type": "string",
+            "pattern": "^([a-f0-9]{64})?$"
+          },
+          "stepId": {
+            "type": "string",
+            "enum": [
+              "seed",
+              "seed-second",
+              "request",
+              "replay"
+            ]
+          }
+        },
+        "required": [
+          "caseId",
+          "request",
+          "before",
+          "after",
+          "stateVerified",
+          "status",
+          "bodyPresent",
+          "body",
+          "state",
+          "artifact",
+          "sha256",
+          "stateArtifact",
+          "stateSha256",
+          "stepId"
+        ]
+      },
+      "maxItems": 80
+    },
+    "cleanup": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "outcome": {
+          "enum": [
+            "clean",
+            "pending",
+            "blocked"
+          ]
+        },
+        "startedAt": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?Z$"
+        },
+        "finishedAt": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?Z$"
+        },
+        "journalSha256": {
+          "type": "string",
+          "pattern": "^([a-f0-9]{64})?$"
+        },
+        "records": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "caseId": {
+                "type": "string",
+                "maxLength": 255,
+                "minLength": 1
+              },
+              "id": {
+                "type": "string",
+                "maxLength": 255,
+                "minLength": 1
+              },
+              "absenceArtifact": {
+                "type": "string",
+                "maxLength": 255,
+                "pattern": "^([A-Za-z0-9][A-Za-z0-9._-]*\\.json)?$"
+              },
+              "absenceSha256": {
+                "type": "string",
+                "pattern": "^([a-f0-9]{64})?$"
+              }
+            },
+            "required": [
+              "caseId",
+              "id",
+              "absenceArtifact",
+              "absenceSha256"
+            ]
+          },
+          "maxItems": 80
+        },
+        "unresolvedOperationIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1
+          },
+          "maxItems": 160
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "maxItems": 100
+        }
+      },
+      "required": [
+        "outcome",
+        "startedAt",
+        "finishedAt",
+        "journalSha256",
+        "records",
+        "unresolvedOperationIds",
+        "reasons"
+      ]
+    },
+    "reasons": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 1000
+      },
+      "maxItems": 100
+    },
+    "probeHash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "kind",
+    "config",
+    "connectors",
+    "manifestHash",
+    "runId",
+    "startedAt",
+    "finishedAt",
+    "identityVerified",
+    "collection",
+    "observations",
+    "cleanup",
+    "reasons",
+    "probeHash"
+  ],
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$defs": {
+    "config": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "apiVersion": {
+          "const": "65.0"
+        },
+        "profileHash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "origin": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "administrator": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "user": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255
+            },
+            "org": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255
+            }
+          },
+          "required": [
+            "user",
+            "org"
+          ]
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "apiVersion",
+        "profileHash",
+        "origin",
+        "administrator"
+      ]
+    }
+  }
+}
