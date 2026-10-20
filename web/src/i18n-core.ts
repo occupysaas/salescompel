@@ -18,3 +18,12 @@ export function translate(
 ): string {
   return messages[key] ?? fallback[key] ?? key;
 }
+
+export function latestLocaleLoader<T>(load: (code: string) => Promise<T>, commit: (value: T) => void): (code: string) => Promise<void> {
+  let sequence = 0;
+  return async (code: string) => {
+    const ticket = ++sequence;
+    const value = await load(code);
+    if (ticket === sequence) commit(value);
+  };
+}
