@@ -1,5 +1,58 @@
-@font-face { font-family: 'Glacial Indifference'; font-weight: 400; font-style: normal; font-display: swap; src: url('./assets/fonts/GlacialIndifference-Regular.woff2') format('woff2'); }
-@font-face { font-family: 'Glacial Indifference'; font-weight: 700; font-style: normal; font-display: swap; src: url('./assets/fonts/GlacialIndifference-Bold.woff2') format('woff2'); }
-:root { --p-bg:#fff; --p-ink:#111; --p-muted:#5a5a5a; --p-rule:#111; --p-hair:#ddd; --p-accent:#d7141a; --p-hover:#a50e13; --p-accent-text:#fff; --p-active:#fdecec; --p-header:#111; --p-focus:#2563eb; --p-tag:#f1f1f1; }
-:root[data-theme='dark'] { --p-bg:#121212; --p-ink:#f2f2f2; --p-muted:#aaa; --p-rule:#f2f2f2; --p-hair:#393939; --p-accent:#ff3b40; --p-hover:#ff6b6f; --p-accent-text:#121212; --p-active:#2a1213; --p-header:#000; --p-focus:#7aa7ff; --p-tag:#242424; }
-@media(prefers-color-scheme:dark) { :root:not([data-theme='light']) { --p-bg:#121212; --p-ink:#f2f2f2; --p-muted:#aaa; --p-rule:#f2f2f2; --p-hair:#393939; --p-accent:#ff3b40; --p-hover:#ff6b6f; --p-accent-text:#121212; --p-active:#2a1213; --p-header:#000; --p-focus:#7aa7ff; --p-tag:#242424; } }
+@font-face {
+  font-family: "Glacial Indifference";
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url("./assets/fonts/GlacialIndifference-Regular.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Glacial Indifference";
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  src: url("./assets/fonts/GlacialIndifference-Bold.woff2") format("woff2");
+}
+:root {
+  --p-bg: #fff;
+  --p-ink: #111;
+  --p-muted: #5a5a5a;
+  --p-rule: #111;
+  --p-hair: #ddd;
+  --p-accent: #d7141a;
+  --p-hover: #a50e13;
+  --p-accent-text: #fff;
+  --p-active: #fdecec;
+  --p-header: #111;
+  --p-focus: #2563eb;
+  --p-tag: #f1f1f1;
+}
+:root[data-theme="dark"] {
+  --p-bg: #121212;
+  --p-ink: #f2f2f2;
+  --p-muted: #aaa;
+  --p-rule: #f2f2f2;
+  --p-hair: #393939;
+  --p-accent: #ff3b40;
+  --p-hover: #ff6b6f;
+  --p-accent-text: #121212;
+  --p-active: #2a1213;
+  --p-header: #000;
+  --p-focus: #7aa7ff;
+  --p-tag: #242424;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --p-bg: #121212;
+    --p-ink: #f2f2f2;
+    --p-muted: #aaa;
+    --p-rule: #f2f2f2;
+    --p-hair: #393939;
+    --p-accent: #ff3b40;
+    --p-hover: #ff6b6f;
+    --p-accent-text: #121212;
+    --p-active: #2a1213;
+    --p-header: #000;
+    --p-focus: #7aa7ff;
+    --p-tag: #242424;
+  }
+}

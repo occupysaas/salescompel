@@ -19,7 +19,10 @@ export function translate(
   return messages[key] ?? fallback[key] ?? key;
 }
 
-export function latestLocaleLoader<T>(load: (code: string) => Promise<T>, commit: (value: T) => void): (code: string) => Promise<void> {
+export function latestLocaleLoader<T>(
+  load: (code: string) => Promise<T>,
+  commit: (value: T) => void,
+): (code: string) => Promise<void> {
   let sequence = 0;
   return async (code: string) => {
     const ticket = ++sequence;

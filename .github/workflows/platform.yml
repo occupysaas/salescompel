@@ -48,4 +48,5 @@ jobs:
       - run: |
           python -m venv compat/clients/python/.venv
           compat/clients/python/.venv/bin/pip install -r compat/clients/python/requirements.lock
+      - run: npm --prefix web run test:preview
       - run: scripts/check-candidate.sh

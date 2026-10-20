@@ -1,6 +1,13 @@
 import { createApp } from "vue";
+import { createPinia } from "pinia";
+import { router } from "./router";
 import App from "./App.vue";
-import { setLanguage } from "./i18n";
+import { i18n } from "./i18n";
+import { usePreferencesStore } from "./stores/preferences";
 import "./style.css";
-await setLanguage("en_US");
-createApp(App).mount("#app");
+import "./theme.css";
+const app = createApp(App);
+const pinia = createPinia();
+app.use(pinia).use(i18n).use(router);
+await usePreferencesStore(pinia).initialize();
+app.mount("#app");

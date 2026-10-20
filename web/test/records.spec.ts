@@ -82,7 +82,16 @@ test("record workflow, language switching, RTL and logout", async ({
   ).toHaveCount(0);
   await page.getByRole("button", { name: "Disconnect", exact: true }).click();
   await expect(page.getByLabel("Access token")).toHaveValue("");
-  expect(await page.evaluate(() => Object.keys(localStorage))).toEqual([]);
+  // Only non-sensitive display preferences may persist after disconnect.
+  const stored = await page.evaluate(() =>
+    Object.fromEntries(Object.entries(localStorage)),
+  );
+  expect(Object.keys(stored).sort()).toEqual([
+    "salescompel.locale",
+    "salescompel.theme",
+  ]);
+  expect(stored["salescompel.locale"]).toBe("en_US");
+  expect(JSON.stringify(stored)).not.toContain(process.env.CANDIDATE_TOKEN);
 });
 test("invalid session displays an error without entering records", async ({
   page,
