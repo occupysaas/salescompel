@@ -10,6 +10,16 @@
 
 **Spec:** [Plan 11 design](../specs/2026-10-19-plan-11-external-id-body-validation-design.md). Tasks 1–3 are implemented and reviewed. Task 4 stopped at identity preflight; Task 5 remains gated. Final whole-change review approves the blocked outcome.
 
+## Execution revision — 2026-10-20
+
+The design's evidence-driven revision supersedes the universal presence rule in
+this historical plan. Two fresh captures agree: null behaves like omission,
+five tested non-null scalar values reject INVALID_FIELD, and object rejects
+JSON_PARSER_ERROR. Preserve original assessment `different`; implement revision
+Task 3R and obtain reviewed versioned ready assessment before revised Task 5.
+The user authorized the current test administrator and necessary fixture setup.
+See the decision document for immutable evidence and restored permissions.
+
 ## Global Constraints
 
 - Work directly on `main`, per the roadmap; no feature worktree or merge step.
@@ -19,7 +29,7 @@
 - Collection ten minutes, cleanup five minutes, at most 80 created records and 160 non-cleanup mutations; sequential requests, no mutation retries.
 - Private 0600 files and 0700 directories outside the checkout; no credentials or raw reference captures in Git.
 - Two fresh sequential captures; verified cleanup and exact-ID absence before the second starts. Missing credentials, unresolved dispatch or failed recovery block collection/product work.
-- No product fix until every supplied-property case in both record states repeatedly returns HTTP 400 `INVALID_FIELD` without mutation and omitted-property controls succeed.
+- No product fix until the reviewed `plan11-observed-body-validation-v2` assessment is ready: omitted/null succeed with path key; tested non-null scalars reject `INVALID_FIELD`; object rejects `JSON_PARSER_ERROR`; rejection does not mutate state.
 - Preserve historical Plan 9 evidence and the separate Plan 10 blocked decision. Follow `CLEAN_ROOM.md`; independently author explanation text.
 
 ## Review Focus
@@ -113,20 +123,58 @@ Unknown flags fail. Exit 0 only for complete clean collection, clean recovery, o
 - [x] **Step 4:** Publish independent summaries of all cases, report/manifest/profile/client digests, capture and cleanup times, gate outcome and limitations. If outcome is `different`, document actual results and revise the design before product implementation. If `blocked`, identify missing evidence and the next action. Only `ready` enables Task 5; no broad Plan 9/10 promotion is allowed.
 - [x] **Step 5:** Run repository-root `git diff --check`, inspect the document for credentials/identifiers/raw prose, and commit only the sanitized decision: `docs: record Plan 11 body validation evidence decision`.
 
-### Task 5: Reject the supplied path field at the store boundary
+### Task 3R: Version the observed validation contract
 
-**Prerequisite:** Task 4 has a reviewed ready assessment supporting every supplied-property case. Stop this task if the gate is absent; offline lab success alone is insufficient.
+**Files:** Modify `compat/clients/node/src/external-id-body-contract.ts`,
+`src/external-id-body-assess.ts` and `test/external-id-body-assess.test.ts` (the
+last two paths relative to `compat/clients/node`). Modify other suite tests only
+where their synthetic fixtures must represent this revised contract.
 
-**Files:** Modify `internal/platform/store.go`, `internal/platform/store_test.go`, `internal/platform/http_test.go`.
+- [ ] Write regressions proving observed null success/object parser errors pass,
+  original universal rejections do not pass v2, malformed/error-field envelopes
+  and hidden writes remain rejected, and output includes exact contractVersion.
+- [ ] Observe failures, then add required `contractVersion:
+  "plan11-observed-body-validation-v2"` to new BodyAssessment outputs. Keep
+  BodyReport schema/manifest and all historical capture bytes unchanged.
+- [ ] Treat omitted/null as success cases with existing state and 200/201 checks;
+  object requires JSON_PARSER_ERROR and all other supplied cases INVALID_FIELD.
+  Require a single rejection object, string message/errorCode, absent fields,
+  and unchanged state. Keep all integrity/cleanup/pair checks intact.
+- [ ] Run focused tests, typecheck and `npm run check`; commit.
+- [ ] Fresh review this amendment and assessor. Reassess the existing immutable
+  complete pair to a new private exclusive output, never overwrite v1. Require
+  ready and contractVersion v2 before Task 5; record digests and outcome.
 
-**Interfaces:** Preserve `func (s *Store) Upsert(ctx context.Context, p Principal, key string, data map[string]any) (string, bool, error)` and the current HTTP route/envelope. Reuse `APIError` and `invalid` rather than introducing a new error abstraction.
+### Task 5: Implement the observed body-field behavior
 
-- [ ] **Step 1:** Add `TestUpsertRejectsBodyKeyWithoutDatabase`: use `&Store{}` and an admin principal; table values are identical/variant/different strings, nil, empty string, 42, `map[string]any{"value":"invalid"}`, and `[]any{"invalid"}`. Assert no panic, empty ID, created=false, `INVALID_FIELD`/400 through the existing API error type, and deep-equal input map after every call. Array is candidate robustness coverage, not a new reference claim. Equal-value input must fail on current implementation because it reaches the unavailable pool.
-- [ ] **Step 2:** Add `TestStoreUpsertBodyKeyNoMutation` and `TestHTTPUpsertBodyKeyValidation`. For existing/missing keys and both tenants, assert all supplied cases reject, record counts and complete before/after rows are unchanged, the other tenant is unaffected, and caller data remains intact. Omitted controls must create then update the same ID (HTTP 201/200); ordinary create and record-ID update still accept a valid external key. Assert the standard error envelope and evidence-supported fields without copying message prose. Retain malformed JSON and unauthenticated handling. Extend `TestHTTPExternalIDPreservesEscapedSlashes` to assert stored keys `key/`, `a/b`, `key%2F` exactly, alongside rejection when the body property is supplied.
-- [ ] **Step 3:** From repository root run `go test ./internal/platform -run 'Test(UpsertRejectsBodyKeyWithoutDatabase|StoreUpsertBodyKeyNoMutation|HTTPUpsertBodyKeyValidation|HTTPExternalIDPreservesEscapedSlashes)$' -count=1` with a disposable `TEST_DATABASE_URL`. Confirm the equal-value regression fails for the intended reason before editing production code.
-- [ ] **Step 4:** At entry to `Store.Upsert`, use `if _, supplied := data["Compat_Key__c"]; supplied` to return `invalid("INVALID_FIELD", "External ID field must be omitted from the upsert body")`. Remove the old comparison exception; keep the defensive map copy/path-key injection for valid requests and all remaining transaction code. The earlier spec's map-comparison panic rationale is not needed for correctness: Go comparison to a string has differing dynamic types for a map. Presence is still the correct evidenced rule and avoids depending on value comparisons.
-- [ ] **Step 5:** Run the focused command again, then `go test ./... -count=1` with `TEST_DATABASE_URL` set. Expected: pass without PostgreSQL test skips. Run `gofmt` on touched Go files and `git diff --check`.
-- [ ] **Step 6:** Commit only the tested product/test changes: `fix: reject external-ID path field in upsert bodies`.
+**Prerequisite:** Reviewed revision Task 3R and ready versioned assessment for
+all sixteen cases. **Files:** `internal/platform/store.go`, `store_test.go`,
+`http_test.go`. Preserve `Store.Upsert` signature and public route.
+
+- [ ] Add `TestUpsertRejectsBodyKeyWithoutDatabase` using `&Store{}`: identical,
+  variant, different, empty strings and number42 reject400 INVALID_FIELD;
+  map/array reject400 JSON_PARSER_ERROR. Assert no panic, empty ID, created=false,
+  unchanged input. Null is excluded from this rejection-only test.
+- [ ] Add database-backed direct-store and HTTP tests for existing/missing keys
+  in two tenants. Omitted/null create201 then update200 with same ID/path key and
+  requested Name; five scalar and object rejections leave all stored rows
+  unchanged. Array is local robustness coverage only. All inputs remain unchanged.
+  Assert one error element, absent fields, independently written message.
+  Ordinary create/record-ID update, malformed JSON, unauthorized calls and exact
+  encoded-key values `key/`, `a/b`, `key%2F` retain their current behavior.
+- [ ] Run focused tests against disposable PostgreSQL and observe intended
+  equal-string acceptance/null rejection failures before product edits.
+- [ ] In `Store.Upsert`, inspect the exact body key before copying/injecting.
+  If non-null, use a type switch: map[string]any or []any returns
+  `invalid("JSON_PARSER_ERROR", "External ID requires a scalar value or null")`;
+  all other non-null values return
+  `invalid("INVALID_FIELD", "External ID value must be supplied in the upsert URL")`.
+  Omitted/null use the existing copy and path-key injection. Remove old equality
+  exception. Preserve remaining validation/transaction/tenant logic.
+- [ ] Run focused tests and `go test ./... -count=1` with TEST_DATABASE_URL;
+  satisfy existing CI Go gates `go test -race ./...` and `go vet ./...` on the
+  disposable database. No database skips. Run gofmt/diff checks.
+- [ ] Commit tested product changes and report exact evidence/limitations.
 
 ### Task 6: Review and publish the final bounded outcome
 

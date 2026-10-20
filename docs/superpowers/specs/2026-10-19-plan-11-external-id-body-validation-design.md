@@ -3,6 +3,50 @@
 Status: proposed design for review. This document does not authorize product
 implementation. Milestone: bounded M1 evidence follow-up and M3 candidate fix.
 
+## Evidence-driven revision — 2026-10-20
+
+This execution revision supersedes the original universal presence rule and its
+acceptance criteria below. It is the executor's correction within the authorized
+validation work, based on two complete reference captures documented in
+[the decision](../../compat/plan-11-external-id-body-validation.md). The user
+explicitly authorized either test administrator and necessary test setup on
+2026-10-20; the new private binding preserves the original configuration.
+
+The captures agree in both existing-record and missing-record states:
+
+| Body value | Required behavior |
+| --- | --- |
+| Omitted or null | Use path key; update with 200 or create with 201; success=true, created=false/true, errors=[] |
+| Identical, case-variant, different or empty string; number 42 | 400 INVALID_FIELD; no mutation |
+| Object | 400 JSON_PARSER_ERROR; no mutation |
+
+Each rejection is a one-element error array containing message:string and
+errorCode:string, with fields absent. Author explanation text independently.
+Successful null update retains the existing ID and external key while applying
+Name; null create stores the path key. Null must not erase the lookup field.
+The supplied non-null rejection check runs before transactions/locks/writes;
+null and omitted follow the existing copy-and-inject path, without mutating the
+caller's map. Objects and arrays return JSON_PARSER_ERROR; array behavior is a
+candidate robustness decision consistent with existing structured-value
+validation, not an additional reference observation. Other non-null scalar values
+return INVALID_FIELD; only the five scalar cases above are reference-tested.
+
+Preserve the first assessment's `different` result and all capture bytes.
+Version revised assessments with explicit `contractVersion` equal to
+`plan11-observed-body-validation-v2`. Reassess the already complete pair into a
+new exclusive private output; the same fixture matrix, identity, integrity,
+state, cleanup and repeatability requirements apply. The new version changes
+only expected case semantics and pins the observed rejection envelope. Historical
+unversioned assessments represent the original hypothesis, never this revision.
+Do not modify or relabel them. No new capture is required solely to evaluate
+these existing measured responses under the corrected expectations.
+
+Before product implementation, a fresh reviewer must check this revision and
+its assessor, and the versioned assessment must be ready for all sixteen cases.
+No query, equality, catalog, permissions or route expansion is introduced.
+The old blocked attempt and the metadata-preflight-only attempt remain recorded;
+temporary fixture permissions for the successful pair were restored.
+
 ## Intent and basis
 
 Close the request-validation defect identified by
