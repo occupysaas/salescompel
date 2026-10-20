@@ -2,7 +2,10 @@
 
 Status: evidence-driven revision approved and executed (2026-10-20). The reviewed
 v2 assessment is ready for sixteen cases; product implementation `4d57177` and
-Go verification are complete. Task 5 spec/quality review passed with no findings; fresh whole-change review remains pending.
+Go verification are complete. Task 5 and final whole-change spec/quality reviews
+approved the bounded implementation with no findings. The final review covered
+`28ca619..465fba2`; inaccessible private evidence relies on recorded controller
+verification, as detailed in the linked decision.
 Milestone: bounded M1 evidence follow-up and M3 candidate fix.
 
 ## Evidence-driven revision — 2026-10-20

@@ -1,7 +1,7 @@
 # Plan 11 external-ID body validation evidence decision
 
 Status: **reference contract evidenced; product implementation and verification
-complete; fresh whole-change review pending** (2026-10-20).
+complete; final review approved** (2026-10-20).
 The reviewed `plan11-observed-body-validation-v2` assessment is **ready for all
 16 cases** from the same two complete, clean captures. Go implementation
 `4d57177` follows the observed omission/null success, scalar rejection and object
@@ -34,9 +34,20 @@ database tests ran with no skips. Recorded Node `npm run check` at `67c0c37`
 passed typecheck, formatting, offline validation and 210 tests, with one optional
 real JSforce candidate integration test skipped. JavaScript has not changed
 since that check. No tests or live calls were repeated for this documentation
-update. Task 5 spec/quality review passed with no findings. Final whole-change review
-remains pending; the
-prior blocked-outcome review does not cover this resumed implementation.
+update. Task 5 spec/quality review passed with no findings. Fresh whole-change
+review of `28ca619..465fba2` approved the completed bounded implementation with
+no Critical, Important or Minor findings. The retained local report is
+`.superpowers/sdd/2026-10-19-plan-11-external-id-body-validation/final-resumed-review.md`.
+The reviewer inspected code and prior verification records, excluding private
+capture/configuration/credential bytes, exact private hashes, live identity,
+lock archival proof, permission restoration and real reference cleanup. Those
+claims rely on the controller's recorded verification. Review establishes this
+bounded contract, not universal platform parity; the optional real-JSforce
+integration remains skipped.
+
+Temporary reference permissions were restored as recorded below. The controller
+also removed the owned disposable PostgreSQL test container after verification.
+No active test setup or unresolved Plan 11 implementation/review task remains.
 
 ## Reference collection and original assessment
 
