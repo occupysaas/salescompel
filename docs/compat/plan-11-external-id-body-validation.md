@@ -1,5 +1,134 @@
 # Plan 11 external-ID body validation evidence decision
 
+Status: **different**, measured 2026-10-20. Two fresh complete captures repeat
+the same behavior, with clean cleanup. The proposed universal presence rule is
+contradicted by null acceptance and the object error code. Task 5 remains gated
+pending an evidence-driven design revision; no Go implementation changed.
+
+## Current reference decision
+
+The maintainer explicitly authorized both administrators as test accounts in the
+same organization and authorized necessary test setup, excluding production.
+A new private configuration binds the currently connected administrator. Its
+origin, organization, API and profile match the original configuration; the user
+pin changed with authorization. Public userinfo and current-user queries verified
+same-organization identity, active status and ModifyAllData. The original private
+configuration and historical evidence were preserved.
+
+The original authentication failure now has a causal diagnosis: `sf org display
+--json` returns a redacted token placeholder. The supported documented
+`sf org auth show-access-token --target-org <authorized-alias> --json` supplies
+the existing session token. Replacing only credential acquisition made the exact
+laboratory wire identity request succeed. Credentials were captured in subprocess
+memory and never printed or persisted. A real user mismatch also existed against
+the original pin; the authorized new binding resolves that separate issue.
+
+Before fresh collection, the original blocked run's exact report digest, binding,
+byte-empty journal, zero observations, zero known IDs, zero unresolved operations
+and permanent identity latch were checked. Only expected artifacts existed.
+An immutable private resolution record was written and fsynced with authorization
+and exact hashes. After checking unchanged bytes and lock inode, the old active
+lock was archived unchanged under a distinct resolved filename. The latch remains.
+This operator resolution proves zero dispatch; it is not successful cleanup of
+the original blocked run.
+
+A fresh preflight then stopped with `FIELD_METADATA_MISMATCH`: Account describe
+returned HTTP 200 but omitted the fixture field. Public Tooling metadata confirmed
+the existing field is Text, length 80, externalId true, unique true, caseSensitive
+false. Existing Compat_Admin grants read/edit access, but the new administrator
+had no assignment. The authorized temporary assignment returned HTTP 201 and was
+tracked by a separate fsynced intent/dispatch/response journal and exact ID.
+The unchanged real preflight then passed. Both captures used those same permissions.
+After assessment, deletion of that exact assignment returned HTTP 204; an
+independent query confirmed zero assignments, restoring the original state.
+No field metadata or evidence expectations were changed.
+
+Each cell below was independently observed in both captures. Each run contains
+16 cases: two record states times omission plus seven supplied values.
+
+| Body `Compat_Key__c` | Existing-record path | Missing-record path |
+| --- | --- | --- |
+| Omitted | HTTP 200; update intended row | HTTP 201; create one intended row |
+| Identical string | HTTP 400 `INVALID_FIELD`; unchanged | HTTP 400 `INVALID_FIELD`; absent |
+| ASCII case-variant string | HTTP 400 `INVALID_FIELD`; unchanged | HTTP 400 `INVALID_FIELD`; absent |
+| Different string | HTTP 400 `INVALID_FIELD`; unchanged | HTTP 400 `INVALID_FIELD`; absent |
+| `null` | HTTP 200; update intended row | HTTP 201; create one intended row |
+| Empty string | HTTP 400 `INVALID_FIELD`; unchanged | HTTP 400 `INVALID_FIELD`; absent |
+| Number | HTTP 400 `INVALID_FIELD`; unchanged | HTTP 400 `INVALID_FIELD`; absent |
+| Object | HTTP 400 `JSON_PARSER_ERROR`; unchanged | HTTP 400 `JSON_PARSER_ERROR`; absent |
+
+For omitted and null updates, the original ID and path key remain and Name
+changes to the requested Name. For omitted and null creates, exactly one row
+contains the path key and requested Name. Success objects contain `id`,
+`success: true`, `errors: []`, and `created` (false for updates, true for creates);
+the returned ID equals the independently read row ID. Null is accepted without
+clearing the key. Rejected existing cases preserve ID, Name and key; rejected
+missing cases leave no owned row under either path or body key.
+
+Every rejection body is a one-element JSON array. Its object contains
+`message` (string) and `errorCode` (string); the `fields` property is **absent**,
+not null or an empty array. Raw messages remain private. The object response
+indicates parsing/type rejection; the scalar response indicates the external-ID
+body field is disallowed. These isolated fixtures establish no broader error
+precedence or behavior for arrays, booleans, aliases or duplicate JSON members.
+
+`assess-external-id-body` exited 2 with outcome `different`, no top-level blocking
+reasons, twelve ready findings and four different findings: existing/missing null
+and object, each labeled `UNEXPECTED_OR_UNREPEATABLE_BEHAVIOR`. Independent case
+inspection shows these four results repeat; they differ from the proposed rule.
+The assessor was not weakened or forced to ready.
+
+Both captures completed with verified identity, clean cleanup, ten exact-ID
+absence proofs and zero unresolved operations each. First cleanup completed
+strictly before the second began. The standard command held its shared recovery
+lock while validating prior cleanup and rechecking prior exact-ID absence before
+second-run writes. No active recovery lock remains. The shared last-clean pointer
+retains the second capture's private evidence. Historical Plan 9 evidence and the
+separate Plan 10 blocked decision remain independent.
+
+## Fresh provenance
+
+Digests below are SHA-256 of exact file bytes. Parsed wire responses, state,
+discovery, journal and cleanup proof artifacts remain private; original HTTP
+response bytes are not available and are not claimed.
+
+| Binding | Value |
+| --- | --- |
+| Executed code revision | `28ca619a069fe4ef102787bfb3b5bae546e2946f` |
+| API / profile | `65.0` / `rest-query-foundation` |
+| Profile file digest | `99d90e50fc63573f08f5a48da878eb9c129b7d660eb9ed5d600306b9706bd8f8` |
+| Body manifest digest | `900e6691beaba174f49abcce4138c5a02c189155563835169c87abb242cc9f98` |
+| Client binding digest | `0a31f58791092398494ea58875635c4206b2af3dd007fbdf0c3d9d730134a11f` |
+| New config digest | `c3191cb77ab8f5f983ca49d2a1f09d7c53a266f0f85dd00e42b60aa7a01f117e` |
+| Capture A report digest | `47254f0abcd997fb313a0bdd992d7a0e8e5fa3ff2e935c322d93de6772ab942d` |
+| Capture B report digest | `698a7733c3b9fa6de718fc5a54614b034b8073d4b0d9fb7b0927afbfdf338a1a` |
+| Assessment digest | `af5ff0f505216e2d7f91f98525c1f9496f2daf50b438e1356dcb3c268447eb15` |
+| A capture start | `2026-10-20T04:05:39.906Z` |
+| A capture finish | `2026-10-20T04:06:07.963Z` |
+| A cleanup start | `2026-10-20T04:05:55.242Z` |
+| A cleanup finish | `2026-10-20T04:06:07.951Z` |
+| A cleanup proof digest | `e64f07eca01ee2c8b6332faa797ed98b8964e58e5d27f2abb5745f2187127627` |
+| B capture start | `2026-10-20T04:06:19.669Z` |
+| B capture finish | `2026-10-20T04:06:48.860Z` |
+| B cleanup start | `2026-10-20T04:06:36.131Z` |
+| B cleanup finish | `2026-10-20T04:06:48.846Z` |
+| B cleanup proof digest | `09de05b69e3ba631a6cdf377899ed48f3e217775b540d1911922b57ceeb97202` |
+
+Pins remain JSforce `3.11.0`, Salesforce CLI `2.156.0`, plugin-data `5.1.16`,
+plugin-deploy-retrieve `4.2.15`, simple-salesforce `1.12.9`. Reproduction uses the
+existing probe twice with fresh private outputs and the standard assessor,
+with authorized reference URL/token, disposable flag and shared recovery directory.
+Private files are 0600 and directories 0700; the immutable resolution record is
+0400. No credentials, organization/user identifiers or raw response prose are
+published. This documentation update requires `git diff --check` and a sanitized
+content review; it introduces no code requiring a new test run.
+
+## Historical blocked decision (2026-10-19)
+
+The retained text below describes the original attempt and its review status at
+that time. Its diagnosis and next-action statements are superseded by the fresh
+measured decision above. Its original latch and captures remain intact.
+
 Status: **blocked**, recorded 2026-10-19. Product implementation remains gated.
 The first reference probe stopped at administrator identity verification before
 any fixture operation. There is no completed capture pair or assessment, and no
