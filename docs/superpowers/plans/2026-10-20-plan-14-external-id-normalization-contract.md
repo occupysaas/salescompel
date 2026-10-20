@@ -1,6 +1,6 @@
 # Plan 14 — External-ID Normalization Contract Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Capture and compare a bounded external-ID normalization experiment without changing candidate behavior.
 
@@ -33,10 +33,10 @@
 
 **Interfaces:** Produce `normalizationManifest`, `normalizationManifestHash`, `normalizationProbeHash()`, `normalizationScope(runId, scenario)`, `normalizationRequest(runId, scenario, step, ids)`, `validateNormalizationReport(value)`, and suite `NormalizationCase/Step/Report/Observation/Cleanup/Assessment` types. Operations carry method, target alias, submitted key and Name; observations retain per-operation before/after state and response/state artifact references. Cleanup uses the established body-cleanup shape. Bind probe hash to all suite modules and reused runtime primitives.
 
-- [ ] Write tests pinning 36 cases, 80 steps, 64 maximum creations, directional exact keys, absent upsert body key, immutable manifest, invalid report bindings/coverage and request construction.
-- [ ] Run `node_modules/.bin/tsx --test test/external-id-normalization-contract.test.ts` from the Node lab; expect missing module/export failures before implementation.
-- [ ] Implement manifest, short scopes, requests, strict schema and semantic validation including actual timestamps, operation uniqueness and complete coverage.
-- [ ] Run focused tests and typecheck; expect PASS. Commit `feat: define external ID normalization experiment`.
+- [x] Write tests pinning 36 cases, 80 steps, 64 maximum creations, directional exact keys, absent upsert body key, immutable manifest, invalid report bindings/coverage and request construction.
+- [x] Run `node_modules/.bin/tsx --test test/external-id-normalization-contract.test.ts` from the Node lab; expect missing module/export failures before implementation.
+- [x] Implement manifest, short scopes, requests, strict schema and semantic validation including actual timestamps, operation uniqueness and complete coverage.
+- [x] Run focused tests and typecheck; expect PASS. Commit `feat: define external ID normalization experiment`.
 
 ### Task 2: Durable recovery and ownership
 
@@ -44,10 +44,10 @@
 
 **Interfaces:** Consume Task 1 manifest/scopes/types. Produce suite-specific equivalents of `initializeNormalizationRun`, `readNormalizationRun`, `appendNormalizationEvent`, `normalizationArtifact`, `normalizationCondition`, `normalizationOwned`, `captureNormalizationState`, `recoverNormalizationRun`, `knownNormalizationRecords`, `normalizationRow`, and cleanup proof helpers, using existing `Transport` and config types.
 
-- [ ] Write tests for unknown dispatch and late commit, identity latch, changed key/Name ownership, cross-case ID reuse, corrupt journals, incomplete discovery, delete failure and exact-ID absence.
-- [ ] Run focused recovery tests; expect missing functionality failures.
-- [ ] Implement journal bindings (including probe hash), state snapshots and recovery. Discover by exact Names; preflight also checks submitted keys. Require a matching dispatched case and exact journal-derived Name for deletion; retain arbitrary stored key bytes. Unknown Names or duplicate case ownership block cleanup.
-- [ ] Run focused recovery tests; expect PASS. Commit `feat: recover normalization probe fixtures safely`.
+- [x] Write tests for unknown dispatch and late commit, identity latch, changed key/Name ownership, cross-case ID reuse, corrupt journals, incomplete discovery, delete failure and exact-ID absence.
+- [x] Run focused recovery tests; expect missing functionality failures.
+- [x] Implement journal bindings (including probe hash), state snapshots and recovery. Discover by exact Names; preflight also checks submitted keys. Require a matching dispatched case and exact journal-derived Name for deletion; retain arbitrary stored key bytes. Unknown Names or duplicate case ownership block cleanup.
+- [x] Run focused recovery tests; expect PASS. Commit `feat: recover normalization probe fixtures safely`.
 
 ### Task 3: Sequential probe and private command lifecycle
 
@@ -55,10 +55,10 @@
 
 **Interfaces:** Consume Tasks 1/2. Produce `runNormalizationProbe(config, env, dir, injected?) : Promise<NormalizationReport>` and `normalizationCommand(mode, configPath, out, env, first?, injected?) : Promise<NormalizationReport | NormalizationCleanup>`.
 
-- [ ] Write tests pinning POST seeds, same/other-record targets, omitted upsert body key, stored normalized spelling, all 80 operations, rejection with hidden mutation, missing IDs, failed seeds, metadata/admin gates, response loss, output exclusivity and shared pending-run locking.
-- [ ] Run focused probe/command tests; expect missing functionality failures.
-- [ ] Implement identity/metadata preflight, per-operation journaling and independent before/after reads. Stop dependent operations on failed seeds; retain partial evidence. Commands share the existing external-ID active identity lock and revalidate previous clean evidence/absence before the next run.
-- [ ] Run focused tests and typecheck; expect PASS. Commit `feat: collect bounded normalization evidence`.
+- [x] Write tests pinning POST seeds, same/other-record targets, omitted upsert body key, stored normalized spelling, all 80 operations, rejection with hidden mutation, missing IDs, failed seeds, metadata/admin gates, response loss, output exclusivity and shared pending-run locking.
+- [x] Run focused probe/command tests; expect missing functionality failures.
+- [x] Implement identity/metadata preflight, per-operation journaling and independent before/after reads. Stop dependent operations on failed seeds; retain partial evidence. Commands share the existing external-ID active identity lock and revalidate previous clean evidence/absence before the next run.
+- [x] Run focused tests and typecheck; expect PASS. Commit `feat: collect bounded normalization evidence`.
 
 ### Task 4: Evidence assessment and CLI
 
@@ -66,10 +66,12 @@
 
 **Interfaces:** Consume Tasks 1–3. Produce `validateNormalizationCleanupEvidence(config, dir, cleanup, full?)` and `assessNormalizationPair(firstPath, secondPath) : Promise<NormalizationAssessment>`. Commands: `probe-external-id-normalization --config --out`, `recover-external-id-normalization --config --first --out`, `assess-external-id-normalization --first --second --out`. Assessment outcomes: repeatable/drift/blocked, exit 0/1/2; malformed invocations exit 1.
 
-- [ ] Write tests for equal runs with different IDs/order/prose, unexpected repeatable outcomes, spelling/hidden-state drift, corrupt artifacts, missing coverage, alias reuse, changed bindings, incomplete absence proofs, overlapping captures and CLI validation.
-- [ ] Run focused assessment tests; expect missing functionality failures.
-- [ ] Implement strict artifact/response/state/journal checks, exact coverage, chronological run binding and per-case deterministic alias projection. Omit only message prose and raw transport headers from comparison; retain raw artifacts. Compare normalized ownership prefixes, never normalize key values.
-- [ ] Run all normalization tests and `npm run check`; expect PASS. Commit `feat: assess normalization captures and expose commands`.
+- [x] Write tests for equal runs with different IDs/order/prose, unexpected repeatable outcomes, spelling/hidden-state drift, corrupt artifacts, missing coverage, alias reuse, changed bindings, incomplete absence proofs, overlapping captures and CLI validation.
+- [x] Run focused assessment tests; expect missing functionality failures.
+- [x] Implement strict artifact/response/state/journal checks, exact coverage, chronological run binding and per-case deterministic alias projection. Omit only message prose and raw transport headers from comparison; retain raw artifacts. Compare normalized ownership prefixes, never normalize key values.
+- [x] Run all normalization tests and `npm run check`; expect PASS. Commit `feat: assess normalization captures and expose commands`.
+
+Tasks 3/4 were committed together because command publication depends on cleanup evidence validation. The baseline catalog-validator correction is a separate commit with a failing-then-passing regression. No product catalog or runtime behavior changed.
 
 ### Task 5: Decision, verification and whole-change review
 

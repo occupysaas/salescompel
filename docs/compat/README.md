@@ -318,3 +318,11 @@ must be separately journaled by exact ID, restored afterward and independently
 verified absent. Retain original recovery latches and evidence; operator
 resolution of a proven zero-dispatch attempt is recorded separately from clean
 fixture cleanup. Never overwrite evidence or weaken identity checks to proceed.
+
+## External-ID normalization experiment (Plan 14)
+
+The [Plan 14 guide](plan-14-external-id-normalization-contract.md) documents the
+separate 36-scenario normalization probe, crash recovery and pair assessment.
+Offline fixtures exercise the tooling; live evidence remains blocked until the
+existing private reference prerequisites are available. This does not change
+candidate matching, uniqueness or catalog behavior.
