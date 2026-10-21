@@ -70,6 +70,9 @@ export async function validateTargetInventoryRepository(
 }
 export async function validateRepository(): Promise<string[]> {
   const issues: string[] = await validateTargetInventoryRepository();
+  const { validateReleaseReviewRepository } =
+    await import("./release-review.ts");
+  issues.push(...(await validateReleaseReviewRepository(ROOT)));
   if (
     !new Ajv().validateSchema(
       await readDoc("compat/schemas/metadata-inventory.schema.json"),
