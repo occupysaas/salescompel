@@ -8,7 +8,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "test": "tsx --test test/*.test.ts",
+    "test": "node src/candidate-acceptance-test-command.mjs",
     "typecheck": "tsc --noEmit",
     "validate": "tsx src/cli.ts validate",
     "capture": "tsx src/cli.ts capture",

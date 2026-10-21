@@ -10,6 +10,7 @@ import {
 } from "node:fs/promises";
 import { join, resolve, dirname } from "node:path";
 import { tmpdir } from "node:os";
+import { createRequire } from "node:module";
 import { createServer } from "node:net";
 import { randomBytes } from "node:crypto";
 import { ROOT, connectorVersions } from "./versions.ts";
@@ -136,6 +137,8 @@ export async function preflightAcceptance(
   const out = resolve(options.out),
     parent = dirname(out);
   if (
+    out === ROOT.slice(0, -1) ||
+    out.startsWith(ROOT) ||
     !options.out ||
     !options.out.endsWith(".json") ||
     (await realpath(parent)) !== parent
@@ -156,7 +159,11 @@ export async function preflightAcceptance(
     python =
       env.CANDIDATE_PYTHON ??
       join(ROOT, "compat/clients/python/.venv/bin/python"),
-    chromium = env.CHROMIUM_PATH ?? "/usr/bin/chromium";
+    chromium =
+      env.CHROMIUM_PATH ??
+      createRequire(join(ROOT, "web/package.json"))(
+        "playwright",
+      ).chromium.executablePath();
   await availablePort(port);
   await availablePort(4173);
   const base = baseEnvironment(env);
@@ -178,11 +185,15 @@ export async function preflightAcceptance(
     processes: newProcessContext(runId, scratch, deadline),
     fixtureJournal: join(scratch, "fixtures.jsonl"),
     tokens: {
-      admin: '00D'+runId.slice(0,12)+'EAA!'+randomBytes(32).toString('hex'),
-      restricted: randomBytes(32).toString('hex'),
-      other: randomBytes(32).toString('hex'),
+      admin:
+        "00D" + runId.slice(0, 12) + "EAA!" + randomBytes(32).toString("hex"),
+      restricted: randomBytes(32).toString("hex"),
+      other: randomBytes(32).toString("hex"),
     },
-    tenants: { first:'00D'+runId.slice(0,12)+'EAA', other:'00D'+runId.slice(12,24)+'EAA' },
+    tenants: {
+      first: "00D" + runId.slice(0, 12) + "EAA",
+      other: "00D" + runId.slice(12, 24) + "EAA",
+    },
     binary: join(scratch, "salescompel"),
     bindings,
     out,
@@ -234,6 +245,8 @@ export async function preflightAcceptance(
     }
     if (
       Number(bindings.tools.node.split(".")[0]) < 22 ||
+      (Number(bindings.tools.node.split(".")[0]) === 22 &&
+        Number(bindings.tools.node.split(".")[1]) < 12) ||
       Number(bindings.tools.go.split(".")[1]) < 25
     )
       throw new Error("PREREQUISITE");

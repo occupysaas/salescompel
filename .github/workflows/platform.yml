@@ -7,7 +7,7 @@ permissions:
 jobs:
   candidate:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     services:
       postgres:
         image: postgres:17
@@ -37,16 +37,19 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: go test -race ./...
-      - run: go vet ./...
+      - run: go mod download
       - run: npm ci --prefix compat/clients/node --ignore-scripts
       - run: npm ci --prefix web --ignore-scripts
-      - run: npm --prefix compat/clients/node run check
-      - run: npm --prefix web test
-      - run: npm --prefix web run build
       - run: npm --prefix web exec -- playwright install --with-deps chromium
       - run: |
           python -m venv compat/clients/python/.venv
           compat/clients/python/.venv/bin/pip install -r compat/clients/python/requirements.lock
-      - run: npm --prefix web run test:preview
-      - run: scripts/check-candidate.sh
+      - name: Full candidate acceptance
+        run: scripts/check-candidate-acceptance.sh --out "$RUNNER_TEMP/candidate-acceptance.json"
+      - name: Retain sanitized acceptance summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: candidate-acceptance-summary
+          path: ${{ runner.temp }}/candidate-acceptance.json
+          if-no-files-found: warn

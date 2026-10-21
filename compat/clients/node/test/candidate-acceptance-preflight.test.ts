@@ -30,3 +30,14 @@ test("source bindings record actual tracked inputs without raw environment value
   assert.match(r.revision, /^[a-f0-9]{40}$/);
   assert.ok(!JSON.stringify(r).includes("DATABASE_URL"));
 });
+test("occupied ports are refused without disturbing their owner", async (t) => {
+  const { createServer } = await import("node:net"),
+    { availablePort } =
+      await import("../src/candidate-acceptance-preflight.ts");
+  const server = createServer();
+  await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
+  t.after(() => server.close());
+  const address = server.address() as import("node:net").AddressInfo;
+  await assert.rejects(availablePort(address.port));
+  assert.equal(server.listening, true);
+});

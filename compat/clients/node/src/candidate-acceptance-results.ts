@@ -33,7 +33,8 @@ export function parseGateEvents(
           out.push({
             id: spec.title,
             outcome:
-              t.status === "expected"
+              t.status === "expected" &&
+              t.results.every((r: any) => r.status === "passed")
                 ? "passed"
                 : t.status === "skipped"
                   ? "skipped"

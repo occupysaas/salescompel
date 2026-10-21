@@ -64,6 +64,9 @@ export const requiredCoverage: Record<GateID, readonly string[]> = {
   web: [
     "i18n.test.ts::language selection preserves aliases, variants and fallback",
     "preferences.test.ts::only latest async locale selection commits, even when promises resolve backwards",
+    "preferences.test.ts::preferences accept valid values and survive unavailable storage",
+    "preview-store.test.ts::preview stores isolate fixtures and reject invalid references without mutation",
+    "preview-store.test.ts::reset does not reuse record identities retained in browser history",
     "web/build",
   ],
   jsforce: candidateNames,
@@ -85,6 +88,7 @@ export const requiredCoverage: Record<GateID, readonly string[]> = {
   restart: ["restart/identity", "restart/values", "restart/policy"],
   "connected-browser": [
     "connected/admin",
+    "invalid session displays an error without entering records",
     "connected/restricted",
     "connected/other-tenant",
     "connected/locales",
