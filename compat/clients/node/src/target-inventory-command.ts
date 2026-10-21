@@ -45,7 +45,7 @@ async function noSymlinks(path: string): Promise<void> {
     if (info.isSymbolicLink()) throw new Error("unsafe-path");
   }
 }
-async function boundedRead(path: string): Promise<Buffer> {
+export async function readTargetInventoryBytes(path: string): Promise<Buffer> {
   await noSymlinks(path);
   const info = await fs.lstat(path);
   if (!info.isFile() || !(info.mode & 0o444)) throw new Error("input-io");
@@ -83,7 +83,7 @@ export async function validateTargetInventoryFile(
   let report: InventoryReport;
   try {
     const path = resolve(inputPath),
-      bytes = await boundedRead(path);
+      bytes = await readTargetInventoryBytes(path);
     report = assessTargetInventory(bytes);
     if (report.classification === "real") {
       await privateDirectory(dirname(path));
@@ -97,9 +97,9 @@ export async function validateTargetInventoryFile(
   } catch (e) {
     const oversized = e instanceof Error && e.message === "input-too-large";
     report = failure(oversized ? "input-too-large" : "input-io");
-    return { report, exitCode: oversized ? 1 : 2 };
+    if (!oversized) return { report, exitCode: 2 };
   }
-  if (outPath) {
+  if (outPath !== undefined) {
     const path = resolve(outPath);
     let handle: Awaited<ReturnType<typeof fs.open>> | undefined;
     let owned: { dev: number; ino: number } | undefined;
@@ -152,7 +152,7 @@ export async function checkInventoryRepositoryRefs(
         rel = relative(base, actual);
       if (rel === ".." || rel.startsWith("../") || isAbsolute(rel))
         throw new Error("unsafe-path");
-      const bytes = await boundedRead(path);
+      const bytes = await readTargetInventoryBytes(path);
       if (ref.id !== undefined) {
         const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes),
           ext = extname(path);

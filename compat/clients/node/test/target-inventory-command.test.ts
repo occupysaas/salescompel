@@ -270,3 +270,123 @@ test("CLI argument parse errors cannot echo private flag values before dispatch"
   assert.equal(r.code, 1);
   assert.ok(!(r.stdout + r.stderr).includes("INJECTED_SECRET_1234"));
 });
+
+import {
+  validateTargetInventoryRepository,
+  validateRepository,
+} from "../src/validate.ts";
+import { ROOT } from "../src/versions.ts";
+
+test("repository inventory integration rejects malformed examples/schema, real classification and broken IDs", async () =>
+  withDir(async (d) => {
+    await fs.mkdir(join(d, "compat/schemas"), { recursive: true });
+    await fs.mkdir(join(d, "docs/compat/inventories"), { recursive: true });
+    const schemaPath = join(d, "compat/schemas/target-inventory.schema.json"),
+      samplePath = join(
+        d,
+        "docs/compat/inventories/synthetic-account-contact.yaml",
+      );
+    const originalSchema = await fs.readFile(
+      join(ROOT, "compat/schemas/target-inventory.schema.json"),
+    );
+    await fs.writeFile(schemaPath, originalSchema);
+    const v = makeInventory();
+    v.sources[0].locator = "https://127.0.0.1:1/never-fetch";
+    v.sections.dataMetadata.items[0].repositoryRefs = [
+      { path: "docs/compat/contracts.yaml", id: "crud" },
+    ];
+    await fs.writeFile(
+      join(d, "docs/compat/contracts.yaml"),
+      "contracts:\n - id: crud\n",
+    );
+    const write = () => fs.writeFile(samplePath, JSON.stringify(v));
+    await write();
+    assert.deepEqual(await validateTargetInventoryRepository(d), []);
+    const before = structuredClone(v);
+    assert.deepEqual(JSON.parse(await fs.readFile(samplePath, "utf8")), before);
+    await fs.writeFile(samplePath, "invalid: [INJECTED_SECRET_1234");
+    let issues = await validateTargetInventoryRepository(d);
+    assert.ok(issues.length);
+    assert.ok(!issues.join("").includes("INJECTED_SECRET_1234"));
+    await write();
+    await fs.writeFile(schemaPath, '{"type":"nonsense"}');
+    assert.ok((await validateTargetInventoryRepository(d)).length);
+    await fs.writeFile(schemaPath, originalSchema);
+    v.classification = "real";
+    await write();
+    assert.ok((await validateTargetInventoryRepository(d)).length);
+    v.classification = "synthetic";
+    v.sections.dataMetadata.items[0].repositoryRefs[0].id = "missing";
+    await write();
+    assert.ok((await validateTargetInventoryRepository(d)).length);
+    v.sections.dataMetadata.items[0].repositoryRefs[0].id = "crud";
+    await write();
+    await fs.unlink(join(d, "docs/compat/contracts.yaml"));
+    assert.ok((await validateTargetInventoryRepository(d)).length);
+  }));
+test("ordinary repository validation accepts the checked-in incomplete synthetic example", async () => {
+  const issues = await validateRepository();
+  assert.deepEqual(issues, []);
+});
+
+test("repository validation refuses symlinked schema/example files before reading them", async () =>
+  withDir(async (d) => {
+    const root = join(d, "repo");
+    await fs.mkdir(join(root, "compat/schemas"), { recursive: true });
+    await fs.mkdir(join(root, "docs/compat/inventories"), { recursive: true });
+    const schema = join(root, "compat/schemas/target-inventory.schema.json"),
+      sample = join(
+        root,
+        "docs/compat/inventories/synthetic-account-contact.yaml",
+      );
+    await fs.copyFile(
+      join(ROOT, "compat/schemas/target-inventory.schema.json"),
+      schema,
+    );
+    const external = join(d, "external.yaml");
+    await fs.writeFile(external, JSON.stringify(makeInventory()));
+    await fs.symlink(external, sample);
+    assert.ok((await validateTargetInventoryRepository(root)).length);
+    await fs.unlink(sample);
+    await fs.writeFile(sample, JSON.stringify(makeInventory()));
+    await fs.rename(schema, join(d, "external-schema.json"));
+    await fs.symlink(join(d, "external-schema.json"), schema);
+    assert.ok((await validateTargetInventoryRepository(root)).length);
+  }));
+
+test("ordinary validation fails closed when the inventory example cannot be opened", async (t) => {
+  const original = fs.open;
+  const sample = join(
+    ROOT,
+    "docs/compat/inventories/synthetic-account-contact.yaml",
+  );
+  t.mock.method(fs, "open", async (...args: Parameters<typeof fs.open>) => {
+    if (args[0] === sample) throw new Error("INJECTED_SECRET_1234");
+    return original(...args);
+  });
+  const issues = await validateRepository();
+  assert.ok(issues.some((i) => i.startsWith("Target inventory:")));
+  assert.ok(!issues.join("").includes("INJECTED_SECRET_1234"));
+});
+
+test("oversized input with --out actually writes the promised invalid report", async () =>
+  withDir(async (d) => {
+    const p = await writeInput(d);
+    await fs.writeFile(p, Buffer.alloc(1048577, 32));
+    const out = join(d, "oversized.json");
+    const result = await cli(["--input", p, "--out", out]);
+    assert.equal(result.code, 1);
+    assert.match(result.stdout, /private report written/);
+    assert.equal(
+      JSON.parse(await fs.readFile(out, "utf8")).issues[0].code,
+      "input-too-large",
+    );
+  }));
+
+test("empty --out is rejected instead of silently sending the report to stdout", async () =>
+  withDir(async (d) => {
+    const p = await writeInput(d);
+    const r = await cli(["--input", p, "--out", ""]);
+    assert.equal(r.code, 1);
+    assert.ok(!r.stdout.includes("inventoryId"));
+  }));

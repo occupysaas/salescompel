@@ -62,6 +62,7 @@ async function main() {
       if (
         positionals.length !== 1 ||
         !values.input ||
+        values.out === "" ||
         Object.keys(values).some((k) => !["input", "out"].includes(k))
       ) {
         console.error(

@@ -1,3 +1,4 @@
+import type { TargetInventory } from "./target-inventory-model.ts";
 import { observationLinkIssues } from "./evidence.ts";
 import {
   readReadiness,
@@ -29,8 +30,46 @@ export async function profile(suiteId: string = "pilot") {
     hash: createHash("sha256").update(text).digest("hex"),
   };
 }
+export async function validateTargetInventoryRepository(
+  root: string = ROOT,
+): Promise<string[]> {
+  try {
+    // Inventory assets are needed only for validation, not readiness/capture imports.
+    const { assessTargetInventory, repositoryReferences } =
+      await import("./target-inventory.ts");
+    const { checkInventoryRepositoryRefs, readTargetInventoryBytes } =
+      await import("./target-inventory-command.ts");
+    const schema = JSON.parse(
+      (
+        await readTargetInventoryBytes(
+          resolve(root, "compat/schemas/target-inventory.schema.json"),
+        )
+      ).toString("utf8"),
+    );
+    const ajv = new Ajv();
+    if (!ajv.validateSchema(schema))
+      return ["Target inventory: invalid schema"];
+    const validate = ajv.compile(schema);
+    const bytes = await readTargetInventoryBytes(
+      resolve(root, "docs/compat/inventories/synthetic-account-contact.yaml"),
+    );
+    const result = assessTargetInventory(bytes);
+    if (result.validation !== "valid" || result.classification !== "synthetic")
+      return ["Target inventory: invalid synthetic example"];
+    const inventory = parseDocument(bytes.toString("utf8")) as TargetInventory;
+    if (!validate(inventory))
+      return ["Target inventory: example does not match schema"];
+    const issues = await checkInventoryRepositoryRefs(
+      repositoryReferences(inventory),
+      root,
+    );
+    return issues.map((i) => `Target inventory: ${i.code}`);
+  } catch {
+    return ["Target inventory: unavailable or malformed schema/example"];
+  }
+}
 export async function validateRepository(): Promise<string[]> {
-  const issues: string[] = [];
+  const issues: string[] = await validateTargetInventoryRepository();
   if (
     !new Ajv().validateSchema(
       await readDoc("compat/schemas/metadata-inventory.schema.json"),

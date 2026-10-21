@@ -326,3 +326,9 @@ separate 36-scenario normalization probe, crash recovery and pair assessment.
 Offline fixtures exercise the tooling; live evidence remains blocked until the
 existing private reference prerequisites are available. This does not change
 candidate matching, uniqueness or catalog behavior.
+
+## Target inventory contract (Plan 17)
+
+Use the [offline target inventory guide](plan-17-target-inventory.md) to record
+requirements, provenance, owners and open questions. The checked-in example is
+synthetic; successful validation does not complete M0 or certify compatibility.
