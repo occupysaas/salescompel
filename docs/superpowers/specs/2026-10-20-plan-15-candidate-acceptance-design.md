@@ -1,6 +1,6 @@
 # Plan 15 — Candidate walking-slice acceptance
 
-Status: proposed for review, 2026-10-20. Spec only; no implementation or acceptance run has started.
+Status: tooling implemented and reviewed, 2026-10-21 UTC. Full candidate acceptance remains open: two final full runs failed the native CLI query. See the [execution and decision record](../../compat/plan-15-candidate-acceptance.md).
 Milestone: bounded M2 acceptance work, with regression coverage for the existing M3/M4 slices and M6 preview.
 
 ## Intent and selection

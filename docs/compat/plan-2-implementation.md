@@ -79,28 +79,39 @@ identity, token rotation and comprehensive audit logging remain future work.
 
 ## Checks
 
+Install locked prerequisites separately, with Go's module cache prepared, and use
+one dedicated disposable PostgreSQL 17 database. See the [Plan 15 setup and
+verification record](plan-15-candidate-acceptance.md) for full setup commands.
+
 ```sh
-TEST_DATABASE_URL="$DATABASE_URL" go test -race ./...
-go vet ./...
-npm --prefix compat/clients/node run check
-npm --prefix web test
-npm --prefix web run build
-python3 -m venv compat/clients/python/.venv
-compat/clients/python/.venv/bin/pip install -r compat/clients/python/requirements.lock
-npm --prefix web exec -- playwright install chromium
-CANDIDATE_DISPOSABLE=yes scripts/check-candidate.sh
+# DATABASE_URL must already identify the dedicated disposable database.
+export TEST_DATABASE_URL="$DATABASE_URL"
+CANDIDATE_DISPOSABLE=yes scripts/check-candidate-acceptance.sh \
+  --out /absolute/new-summary.json
 ```
 
-The script requires an explicitly disposable DB, creates unique synthetic tenants,
-starts a temporary HTTPS service on port 58443, runs real JSforce/Python/CLI calls,
-checks process restart persistence and runs Chromium UI tests. CANDIDATE_PORT can
-change the port; CANDIDATE_PYTHON can select an installed Python. CHROMIUM_PATH is
-an optional local browser executable override. No HTTP connector mocks are used.
-Successful fixture rows are deleted by ID, but provisioned test tenants/principal
-digests remain in the disposable DB; discard that DB after testing. Failed runs
-retain their temporary directory (including short-lived test credentials) for
-local diagnosis. Do not upload it as public evidence. Go integration tests skip
-locally without TEST_DATABASE_URL and fail in CI if it is absent.
+This consolidated command owns database tests/vet, the offline lab check, web
+units/build, real JSforce/Python/native CLI journeys, restart, connected browser,
+preview and cleanup. Do not duplicate those checks for a full invocation. Use
+`go test -race -count=1 ./...`, `npm --prefix compat/clients/node run check` or
+web tests individually for focused development. Go integration tests require
+`TEST_DATABASE_URL`; offline lab checks intentionally skip the three opt-in
+candidate identities.
+
+`scripts/check-candidate.sh` remains the candidate-only subset and prints its
+private summary location when `--out` is omitted. It cannot establish full
+acceptance. Both commands require `CANDIDATE_DISPOSABLE=yes`, generate their own
+HTTPS service/credentials, refuse occupied ports and preserve private failure
+diagnostics. Optional `CANDIDATE_PORT`, `CANDIDATE_PYTHON` and `CHROMIUM_PATH`
+select local prerequisites. Fixture records are deleted by exact ID, but
+provisioned tenant/principal digests remain; the operator disposes of the test
+database. Never upload private scratch/auth/browser files.
+
+The latest Plan 15 full attempts **failed** the native nonempty CLI query because
+the candidate lacks the client's expected `columns=true` metadata response.
+Later full gates were not run. Separate downstream diagnostics pass, but full
+acceptance, reference parity and the full M2 milestone remain open. The historical
+October 15 results below describe that older scope and revision.
 
 ## Release-history follow-up
 
