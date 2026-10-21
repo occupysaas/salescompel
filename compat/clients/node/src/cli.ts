@@ -28,6 +28,7 @@ import {
 let selectedCommand: string | undefined;
 async function main() {
   const options = {
+    input: { type: "string" },
     target: { type: "string" },
     suite: { type: "string" },
     config: { type: "string" },
@@ -51,6 +52,44 @@ async function main() {
     strict: false,
     options,
   }).positionals[0];
+  if (selectedCommand === "validate-target-inventory") {
+    // Keep parsing failures and all input-derived error prose out of diagnostics.
+    try {
+      const { values, positionals } = parseArgs({
+        allowPositionals: true,
+        options,
+      });
+      if (
+        positionals.length !== 1 ||
+        !values.input ||
+        Object.keys(values).some((k) => !["input", "out"].includes(k))
+      ) {
+        console.error(
+          "Invalid target inventory arguments; use --input and optional --out only",
+        );
+        process.exitCode = 1;
+        return;
+      }
+      const { validateTargetInventoryFile } =
+        await import("./target-inventory-command.ts");
+      const { report, exitCode } = await validateTargetInventoryFile(
+        values.input,
+        values.out,
+      );
+      if (values.out)
+        console.log(
+          `${report.validation}: ${report.readiness}; ${exitCode === 2 ? "report unavailable" : "private report written"}`,
+        );
+      else console.log(JSON.stringify(report));
+      process.exitCode = exitCode;
+    } catch {
+      console.error(
+        "Invalid target inventory arguments or unavailable validator",
+      );
+      process.exitCode = 1;
+    }
+    return;
+  }
   const { values, positionals } = parseArgs({
     allowPositionals: true,
     options,
