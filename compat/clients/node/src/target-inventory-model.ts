@@ -277,3 +277,44 @@ export interface TargetInventory {
   }[];
   sections: Record<SectionId, InventorySection>;
 }
+
+export type IssueCode =
+  | "parse-invalid"
+  | "schema-invalid"
+  | "input-too-large"
+  | "encoding-invalid"
+  | "completion-contradiction"
+  | "absence-invalid"
+  | "duplicate-id"
+  | "dangling-reference"
+  | "dependency-cycle"
+  | "required-information-missing"
+  | "decision-missing"
+  | "date-invalid"
+  | "repository-reference-invalid"
+  | "unknown-section"
+  | "unknown-detail"
+  | "unknown-disposition"
+  | "missing-evidence"
+  | "pending-question"
+  | "input-io"
+  | "output-io";
+export interface InventoryIssue {
+  code: IssueCode;
+  section?: SectionId;
+  itemId?: string;
+  ownerId?: string;
+  nextAction?: ActionCode;
+}
+export interface InventoryReport {
+  schemaVersion: 1;
+  inputDigest: string;
+  inventoryId?: string;
+  revision?: number;
+  classification?: Classification;
+  validation: "valid" | "invalid";
+  readiness: "incomplete" | "synthetic-only" | "ready-for-review";
+  sections: { id: SectionId; status: "unknown" | "partial" | "complete" }[];
+  issues: InventoryIssue[];
+  gaps: InventoryIssue[];
+}
