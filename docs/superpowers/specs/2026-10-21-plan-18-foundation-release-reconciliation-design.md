@@ -1,6 +1,6 @@
 # Plan 18 — Foundation release-history reconciliation
 
-Status: proposed for maintainer review; implementation is not authorized by this document.
+Status: approved through maintainer acceptance of the implementation plan; implemented, independently reviewed, corrected and verified, 2026-10-21. See the [implementation and verification record](../../compat/plan-18-foundation-release-reconciliation.md).
 Milestone: bounded M1R review supporting the M3 foundation; full M1R remains open.
 
 ## Intent and selection

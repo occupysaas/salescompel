@@ -74,3 +74,7 @@ unresolved release finding remains a separate development-decision blocker.
 The independent Plan 9 body-field validation follow-up can be designed next,
 subject to its own missing-record reference cases and scoped product fix. It does
 not inherit Plan 5 query-text observations or change this blocked decision.
+
+## Documentary follow-up — 2026-10-21
+
+[Plan 18](plan-18-foundation-release-reconciliation.md) records fresh official-source attempts and current-guide context for all twelve foundation contracts. Release-pinned bodies remain unavailable; historical reconciliation and all existing live gates remain blocked. This dated follow-up qualifies the earlier source-access record without replacing its observations or the existing cursor-lifetime waiver.

@@ -165,3 +165,7 @@ and accepted profiles remain unchanged.
 This policy supersedes the earlier live-expiry acceptance requirement in Plan 5.
 The next design must provide a distinct assumption-aware development decision;
 existing observed-evidence validators must not silently treat assumptions as passes.
+
+## Documentary follow-up — 2026-10-21
+
+[Plan 18](plan-18-foundation-release-reconciliation.md) records fresh official-source attempts and current-guide context for all twelve foundation contracts. Release-pinned bodies remain unavailable; historical reconciliation and all existing live gates remain blocked. This dated follow-up qualifies the earlier source-access record without replacing its observations or the existing cursor-lifetime waiver.
