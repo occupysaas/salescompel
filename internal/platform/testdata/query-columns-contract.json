@@ -1,0 +1,774 @@
+{
+  "schemaVersion": 1,
+  "cases": [
+    {
+      "id": "account-all",
+      "principal": "admin",
+      "query": "SELECT Id,Name,Compat_Text__c,Compat_Key__c FROM Account",
+      "querySuffix": "&columns=true",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "totalSize": 1,
+        "done": true,
+        "records": [
+          {
+            "attributes": {
+              "type": "Account",
+              "url": "/services/data/v65.0/sobjects/Account/$accountId"
+            },
+            "Id": "$accountId",
+            "Name": "$name",
+            "Compat_Text__c": null,
+            "Compat_Key__c": "owned-key"
+          }
+        ],
+        "columnMetadata": [
+          {
+            "columnName": "Id"
+          },
+          {
+            "columnName": "Name"
+          },
+          {
+            "columnName": "Compat_Text__c"
+          },
+          {
+            "columnName": "Compat_Key__c"
+          }
+        ]
+      },
+      "basis": [
+        "candidate-contract",
+        "pinned-consumer"
+      ]
+    },
+    {
+      "id": "contact-all",
+      "principal": "admin",
+      "query": "SELECT Id,FirstName,LastName,AccountId FROM Contact WHERE Id = '$contactId'",
+      "querySuffix": "&columns=true",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "totalSize": 1,
+        "done": true,
+        "records": [
+          {
+            "attributes": {
+              "type": "Contact",
+              "url": "/services/data/v65.0/sobjects/Contact/$contactId"
+            },
+            "Id": "$contactId",
+            "FirstName": null,
+            "LastName": "Contact",
+            "AccountId": "$accountId"
+          }
+        ],
+        "columnMetadata": [
+          {
+            "columnName": "Id"
+          },
+          {
+            "columnName": "FirstName"
+          },
+          {
+            "columnName": "LastName"
+          },
+          {
+            "columnName": "AccountId"
+          }
+        ]
+      },
+      "basis": [
+        "candidate-contract",
+        "pinned-consumer"
+      ]
+    },
+    {
+      "id": "empty-account",
+      "principal": "admin",
+      "query": "SELECT Id,Name FROM Account WHERE Name = 'absent'",
+      "querySuffix": "&columns=true",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "totalSize": 0,
+        "done": true,
+        "records": [],
+        "columnMetadata": [
+          {
+            "columnName": "Id"
+          },
+          {
+            "columnName": "Name"
+          }
+        ]
+      },
+      "basis": [
+        "candidate-contract",
+        "pinned-consumer"
+      ]
+    },
+    {
+      "id": "empty-contact",
+      "principal": "admin",
+      "query": "SELECT Id,AccountId FROM Contact WHERE LastName = 'absent'",
+      "querySuffix": "&columns=true",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "totalSize": 0,
+        "done": true,
+        "records": [],
+        "columnMetadata": [
+          {
+            "columnName": "Id"
+          },
+          {
+            "columnName": "AccountId"
+          }
+        ]
+      },
+      "basis": [
+        "candidate-contract",
+        "pinned-consumer"
+      ]
+    },
+    {
+      "id": "reordered-duplicate",
+      "principal": "admin",
+      "query": "SELECT Name,Id,Name FROM Account",
+      "querySuffix": "&columns=true",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "totalSize": 1,
+        "done": true,
+        "records": [
+          {
+            "attributes": {
+              "type": "Account",
+              "url": "/services/data/v65.0/sobjects/Account/$accountId"
+            },
+            "Name": "$name",
+            "Id": "$accountId"
+          }
+        ],
+        "columnMetadata": [
+          {
+            "columnName": "Name"
+          },
+          {
+            "columnName": "Id"
+          },
+          {
+            "columnName": "Name"
+          }
+        ]
+      },
+      "basis": [
+        "candidate-contract",
+        "pinned-consumer"
+      ]
+    },
+    {
+      "id": "null-custom",
+      "principal": "admin",
+      "query": "SELECT Compat_Text__c FROM Account",
+      "querySuffix": "&columns=true",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "totalSize": 1,
+        "done": true,
+        "records": [
+          {
+            "attributes": {
+              "type": "Account"
+            },
+            "Compat_Text__c": null
+          }
+        ],
+        "columnMetadata": [
+          {
+            "columnName": "Compat_Text__c"
+          }
+        ]
+      },
+      "basis": [
+        "candidate-contract",
+        "pinned-consumer"
+      ]
+    },
+    {
+      "id": "nonnull-custom",
+      "principal": "admin",
+      "query": "SELECT Compat_Key__c FROM Account",
+      "querySuffix": "&columns=true",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "totalSize": 1,
+        "done": true,
+        "records": [
+          {
+            "attributes": {
+              "type": "Account"
+            },
+            "Compat_Key__c": "owned-key"
+          }
+        ],
+        "columnMetadata": [
+          {
+            "columnName": "Compat_Key__c"
+          }
+        ]
+      },
+      "basis": [
+        "candidate-contract",
+        "pinned-consumer"
+      ]
+    },
+    {
+      "id": "null-contact",
+      "principal": "admin",
+      "query": "SELECT FirstName,AccountId FROM Contact WHERE Id = '$nullContactId'",
+      "querySuffix": "&columns=true",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "totalSize": 1,
+        "done": true,
+        "records": [
+          {
+            "attributes": {
+              "type": "Contact"
+            },
+            "FirstName": null,
+            "AccountId": null
+          }
+        ],
+        "columnMetadata": [
+          {
+            "columnName": "FirstName"
+          },
+          {
+            "columnName": "AccountId"
+          }
+        ]
+      },
+      "basis": [
+        "candidate-contract",
+        "pinned-consumer"
+      ]
+    },
+    {
+      "id": "ordinary",
+      "principal": "admin",
+      "query": "SELECT Id,Name FROM Account",
+      "querySuffix": "",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "totalSize": 1,
+        "done": true,
+        "records": [
+          {
+            "attributes": {
+              "type": "Account",
+              "url": "/services/data/v65.0/sobjects/Account/$accountId"
+            },
+            "Id": "$accountId",
+            "Name": "$name"
+          }
+        ]
+      },
+      "basis": [
+        "candidate-contract",
+        "pinned-consumer"
+      ]
+    },
+    {
+      "id": "false",
+      "principal": "admin",
+      "query": "SELECT Id,Name FROM Account",
+      "querySuffix": "&columns=false",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "totalSize": 1,
+        "done": true,
+        "records": [
+          {
+            "attributes": {
+              "type": "Account",
+              "url": "/services/data/v65.0/sobjects/Account/$accountId"
+            },
+            "Id": "$accountId",
+            "Name": "$name"
+          }
+        ]
+      },
+      "basis": [
+        "candidate-contract",
+        "pinned-consumer"
+      ]
+    },
+    {
+      "id": "other-tenant",
+      "principal": "other",
+      "query": "SELECT Id,Name FROM Account WHERE Id = '$accountId'",
+      "querySuffix": "&columns=true",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "totalSize": 0,
+        "done": true,
+        "records": [],
+        "columnMetadata": [
+          {
+            "columnName": "Id"
+          },
+          {
+            "columnName": "Name"
+          }
+        ]
+      },
+      "basis": [
+        "candidate-contract",
+        "pinned-consumer"
+      ]
+    },
+    {
+      "id": "restricted-readable",
+      "principal": "restricted",
+      "query": "SELECT Id,Name FROM Account",
+      "querySuffix": "&columns=true",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "totalSize": 1,
+        "done": true,
+        "records": [
+          {
+            "attributes": {
+              "type": "Account",
+              "url": "/services/data/v65.0/sobjects/Account/$accountId"
+            },
+            "Id": "$accountId",
+            "Name": "$name"
+          }
+        ],
+        "columnMetadata": [
+          {
+            "columnName": "Id"
+          },
+          {
+            "columnName": "Name"
+          }
+        ]
+      },
+      "basis": [
+        "candidate-contract",
+        "pinned-consumer"
+      ]
+    },
+    {
+      "id": "nested",
+      "principal": "admin",
+      "query": "SELECT Id,Account.Name FROM Contact WHERE Id = '$contactId'",
+      "querySuffix": "&columns=true",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "totalSize": 1,
+        "done": true,
+        "records": [
+          {
+            "attributes": {
+              "type": "Contact",
+              "url": "/services/data/v65.0/sobjects/Contact/$contactId"
+            },
+            "Id": "$contactId",
+            "Account": {
+              "Name": "$name",
+              "attributes": {
+                "type": "Account"
+              }
+            }
+          }
+        ],
+        "columnMetadata": [
+          {
+            "columnName": "Id"
+          },
+          {
+            "columnName": "Account",
+            "joinColumns": [
+              {
+                "columnName": "Name"
+              }
+            ]
+          }
+        ]
+      },
+      "basis": [
+        "candidate-contract",
+        "pinned-consumer"
+      ]
+    },
+    {
+      "id": "nested-ordinary",
+      "principal": "admin",
+      "query": "SELECT Id,Account.Name FROM Contact WHERE Id = '$contactId'",
+      "querySuffix": "",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "totalSize": 1,
+        "done": true,
+        "records": [
+          {
+            "attributes": {
+              "type": "Contact",
+              "url": "/services/data/v65.0/sobjects/Contact/$contactId"
+            },
+            "Id": "$contactId",
+            "Account": {
+              "Name": "$name",
+              "attributes": {
+                "type": "Account"
+              }
+            }
+          }
+        ]
+      },
+      "basis": [
+        "candidate-contract",
+        "pinned-consumer"
+      ]
+    },
+    {
+      "id": "nested-null",
+      "principal": "admin",
+      "query": "SELECT Id,Account.Name FROM Contact WHERE Id = '$nullContactId'",
+      "querySuffix": "&columns=true",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "totalSize": 1,
+        "done": true,
+        "records": [
+          {
+            "attributes": {
+              "type": "Contact",
+              "url": "/services/data/v65.0/sobjects/Contact/$nullContactId"
+            },
+            "Id": "$nullContactId",
+            "Account": null
+          }
+        ],
+        "columnMetadata": [
+          {
+            "columnName": "Id"
+          },
+          {
+            "columnName": "Account",
+            "joinColumns": [
+              {
+                "columnName": "Name"
+              }
+            ]
+          }
+        ]
+      },
+      "basis": [
+        "candidate-contract",
+        "pinned-consumer"
+      ]
+    },
+    {
+      "id": "nested-null-ordinary",
+      "principal": "admin",
+      "query": "SELECT Id,Account.Name FROM Contact WHERE Id = '$nullContactId'",
+      "querySuffix": "",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "totalSize": 1,
+        "done": true,
+        "records": [
+          {
+            "attributes": {
+              "type": "Contact",
+              "url": "/services/data/v65.0/sobjects/Contact/$nullContactId"
+            },
+            "Id": "$nullContactId",
+            "Account": null
+          }
+        ]
+      },
+      "basis": [
+        "candidate-contract",
+        "pinned-consumer"
+      ]
+    },
+    {
+      "id": "option-16",
+      "principal": "admin",
+      "query": "SELECT Id FROM Account",
+      "querySuffix": "&columns=",
+      "expectedStatus": 400,
+      "expectedBody": [
+        {
+          "errorCode": "INVALID_QUERY_PARAMETER",
+          "message": "columns must be specified once as true or false"
+        }
+      ],
+      "basis": [
+        "candidate-contract",
+        "existing-policy"
+      ]
+    },
+    {
+      "id": "option-17",
+      "principal": "admin",
+      "query": "SELECT Id FROM Account",
+      "querySuffix": "&columns=TRUE",
+      "expectedStatus": 400,
+      "expectedBody": [
+        {
+          "errorCode": "INVALID_QUERY_PARAMETER",
+          "message": "columns must be specified once as true or false"
+        }
+      ],
+      "basis": [
+        "candidate-contract",
+        "existing-policy"
+      ]
+    },
+    {
+      "id": "option-18",
+      "principal": "admin",
+      "query": "SELECT Id FROM Account",
+      "querySuffix": "&columns=1",
+      "expectedStatus": 400,
+      "expectedBody": [
+        {
+          "errorCode": "INVALID_QUERY_PARAMETER",
+          "message": "columns must be specified once as true or false"
+        }
+      ],
+      "basis": [
+        "candidate-contract",
+        "existing-policy"
+      ]
+    },
+    {
+      "id": "option-19",
+      "principal": "admin",
+      "query": "SELECT Id FROM Account",
+      "querySuffix": "&columns=wat",
+      "expectedStatus": 400,
+      "expectedBody": [
+        {
+          "errorCode": "INVALID_QUERY_PARAMETER",
+          "message": "columns must be specified once as true or false"
+        }
+      ],
+      "basis": [
+        "candidate-contract",
+        "existing-policy"
+      ]
+    },
+    {
+      "id": "option-20",
+      "principal": "admin",
+      "query": "SELECT Id FROM Account",
+      "querySuffix": "&columns=true&columns=false",
+      "expectedStatus": 400,
+      "expectedBody": [
+        {
+          "errorCode": "INVALID_QUERY_PARAMETER",
+          "message": "columns must be specified once as true or false"
+        }
+      ],
+      "basis": [
+        "candidate-contract",
+        "existing-policy"
+      ]
+    },
+    {
+      "id": "option-21",
+      "principal": "admin",
+      "query": "SELECT Id FROM Account",
+      "querySuffix": "&columns=false&columns=true",
+      "expectedStatus": 400,
+      "expectedBody": [
+        {
+          "errorCode": "INVALID_QUERY_PARAMETER",
+          "message": "columns must be specified once as true or false"
+        }
+      ],
+      "basis": [
+        "candidate-contract",
+        "existing-policy"
+      ]
+    },
+    {
+      "id": "option-22",
+      "principal": "admin",
+      "query": "SELECT Id FROM Account",
+      "querySuffix": "&columns=true&columns=true",
+      "expectedStatus": 400,
+      "expectedBody": [
+        {
+          "errorCode": "INVALID_QUERY_PARAMETER",
+          "message": "columns must be specified once as true or false"
+        }
+      ],
+      "basis": [
+        "candidate-contract",
+        "existing-policy"
+      ]
+    },
+    {
+      "id": "denied-projection",
+      "principal": "restricted",
+      "query": "SELECT Id,Compat_Text__c FROM Account",
+      "querySuffix": "&columns=true",
+      "expectedStatus": 400,
+      "expectedBody": [
+        {
+          "errorCode": "INVALID_FIELD",
+          "message": "Field Compat_Text__c is unavailable"
+        }
+      ],
+      "basis": [
+        "candidate-contract",
+        "existing-policy"
+      ]
+    },
+    {
+      "id": "denied-filter",
+      "principal": "restricted",
+      "query": "SELECT Id FROM Account WHERE Compat_Text__c = 'secret'",
+      "querySuffix": "&columns=true",
+      "expectedStatus": 400,
+      "expectedBody": [
+        {
+          "errorCode": "INVALID_FIELD",
+          "message": "Field Compat_Text__c is unavailable"
+        }
+      ],
+      "basis": [
+        "candidate-contract",
+        "existing-policy"
+      ]
+    },
+    {
+      "id": "denied-order",
+      "principal": "restricted",
+      "query": "SELECT Id FROM Account ORDER BY Compat_Text__c",
+      "querySuffix": "&columns=true",
+      "expectedStatus": 400,
+      "expectedBody": [
+        {
+          "errorCode": "INVALID_FIELD",
+          "message": "Field Compat_Text__c is unavailable"
+        }
+      ],
+      "basis": [
+        "candidate-contract",
+        "existing-policy"
+      ]
+    },
+    {
+      "id": "unknown-object",
+      "principal": "admin",
+      "query": "SELECT Id FROM Nope",
+      "querySuffix": "&columns=true",
+      "expectedStatus": 400,
+      "expectedBody": [
+        {
+          "errorCode": "INVALID_TYPE",
+          "message": "Unsupported object"
+        }
+      ],
+      "basis": [
+        "candidate-contract",
+        "existing-policy"
+      ]
+    },
+    {
+      "id": "unknown-field",
+      "principal": "admin",
+      "query": "SELECT Missing FROM Account",
+      "querySuffix": "&columns=true",
+      "expectedStatus": 400,
+      "expectedBody": [
+        {
+          "errorCode": "INVALID_FIELD",
+          "message": "Field Missing is unavailable"
+        }
+      ],
+      "basis": [
+        "candidate-contract",
+        "existing-policy"
+      ]
+    },
+    {
+      "id": "wrong-case",
+      "principal": "admin",
+      "query": "SELECT name FROM Account",
+      "querySuffix": "&columns=true",
+      "expectedStatus": 400,
+      "expectedBody": [
+        {
+          "errorCode": "INVALID_FIELD",
+          "message": "Field name is unavailable"
+        }
+      ],
+      "basis": [
+        "candidate-contract",
+        "existing-policy"
+      ]
+    },
+    {
+      "id": "unsupported-traversal",
+      "principal": "admin",
+      "query": "SELECT Account.Id FROM Contact",
+      "querySuffix": "&columns=true",
+      "expectedStatus": 400,
+      "expectedBody": [
+        {
+          "errorCode": "INVALID_FIELD",
+          "message": "Field Account.Id is unavailable"
+        }
+      ],
+      "basis": [
+        "candidate-contract",
+        "existing-policy"
+      ]
+    },
+    {
+      "id": "malformed",
+      "principal": "admin",
+      "query": "SELECT FROM Account",
+      "querySuffix": "&columns=true",
+      "expectedStatus": 400,
+      "expectedBody": [
+        {
+          "errorCode": "MALFORMED_QUERY",
+          "message": "Unsupported or incomplete query"
+        }
+      ],
+      "basis": [
+        "candidate-contract",
+        "existing-policy"
+      ]
+    },
+    {
+      "id": "unsupported-aggregate",
+      "principal": "admin",
+      "query": "SELECT count(Id) FROM Account",
+      "querySuffix": "&columns=true",
+      "expectedStatus": 400,
+      "expectedBody": [
+        {
+          "errorCode": "MALFORMED_QUERY",
+          "message": "Unsupported query syntax"
+        }
+      ],
+      "basis": [
+        "candidate-contract",
+        "existing-policy"
+      ]
+    }
+  ]
+}
