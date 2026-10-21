@@ -1,0 +1,428 @@
+# Synthetic demonstration only. Candidate facts do not establish customer demand or Salesforce parity.
+schemaVersion: 1
+inventoryId: synthetic-sales
+revision: 1
+date: 2026-10-21
+classification: synthetic
+targetLabel: Synthetic example
+ownerId: inventory-owner
+sources:
+  - id: design
+    kind: repository
+    date: 2026-10-21
+    locator: docs/compat/plan-16-cli-query-column-metadata.md
+    description: Candidate implementation facts; no customer requirements
+sections:
+  sourceOrg:
+    status: unknown
+    ownerId: inventory-owner
+    evidenceRefs: []
+    questions:
+      - id: source-org-scope
+        question: Which requirements does a real named target have in this section?
+        ownerId: inventory-owner
+        nextAction: collect
+    absence: null
+    items: []
+  dataMetadata:
+    status: partial
+    ownerId: inventory-owner
+    evidenceRefs: []
+    questions:
+      - id: data-metadata-scope
+        question: Which requirements does a real named target have in this section?
+        ownerId: inventory-owner
+        nextAction: collect
+    absence: null
+    items:
+      - id: account
+        category: object
+        disposition: required
+        rationale: Synthetic demonstration requirement, selected by the executor.
+        ownerId: data-owner
+        provenanceRefs:
+          - design
+        behavior:
+          status: known
+          value: Create and read Account records
+        acceptance:
+          status: known
+          value: Read back the created record
+        milestone:
+          status: known
+          value: M3
+        dependencies: []
+        repositoryRefs:
+          - path: docs/compat/plan-16-cli-query-column-metadata.md
+        decision: null
+        facts:
+          observation:
+            status: unknown
+            evidenceRefs: []
+          implementation:
+            status: documented
+            evidenceRefs:
+              - design
+          verification:
+            status: unknown
+            evidenceRefs: []
+        details:
+          name:
+            status: known
+            value: Account
+      - id: contact
+        category: object
+        disposition: required
+        rationale: Synthetic demonstration requirement, selected by the executor.
+        ownerId: data-owner
+        provenanceRefs:
+          - design
+        behavior:
+          status: known
+          value: Create a Contact linked to an Account
+        acceptance:
+          status: known
+          value: Read the same relationship after restart
+        milestone:
+          status: known
+          value: M3
+        dependencies: []
+        repositoryRefs:
+          - path: docs/compat/plan-16-cli-query-column-metadata.md
+        decision: null
+        facts:
+          observation:
+            status: unknown
+            evidenceRefs: []
+          implementation:
+            status: documented
+            evidenceRefs:
+              - design
+          verification:
+            status: unknown
+            evidenceRefs: []
+        details:
+          name:
+            status: known
+            value: Contact
+  workflowsUsers:
+    status: unknown
+    ownerId: inventory-owner
+    evidenceRefs: []
+    questions:
+      - id: workflows-users-scope
+        question: Which requirements does a real named target have in this section?
+        ownerId: inventory-owner
+        nextAction: collect
+    absence: null
+    items: []
+  clientsIntegrations:
+    status: unknown
+    ownerId: inventory-owner
+    evidenceRefs: []
+    questions:
+      - id: clients-integrations-scope
+        question: Which requirements does a real named target have in this section?
+        ownerId: inventory-owner
+        nextAction: collect
+    absence: null
+    items: []
+  cliPlugins:
+    status: partial
+    ownerId: inventory-owner
+    evidenceRefs: []
+    questions:
+      - id: cli-plugins-scope
+        question: Which requirements does a real named target have in this section?
+        ownerId: inventory-owner
+        nextAction: collect
+    absence: null
+    items:
+      - id: data-plugin
+        category: plugin
+        disposition: required
+        rationale: Synthetic demonstration requirement, selected by the executor.
+        ownerId: data-owner
+        provenanceRefs:
+          - design
+        behavior:
+          status: known
+          value: Run the laboratory data commands
+        acceptance:
+          status: known
+          value: Use the pinned native CLI
+        milestone:
+          status: known
+          value: M3
+        dependencies: []
+        repositoryRefs:
+          - path: docs/compat/plan-16-cli-query-column-metadata.md
+        decision: null
+        facts:
+          observation:
+            status: unknown
+            evidenceRefs: []
+          implementation:
+            status: documented
+            evidenceRefs:
+              - design
+          verification:
+            status: unknown
+            evidenceRefs: []
+        details:
+          name:
+            status: known
+            value: "@salesforce/plugin-data"
+          version:
+            status: known
+            value: 5.1.16
+          source:
+            status: known
+            value: core
+          signature:
+            status: known
+            value: bundled
+          license:
+            status: known
+            value: Apache-2.0
+          dependencies:
+            status: known
+            value: []
+      - id: account-query
+        category: cli-command
+        disposition: required
+        rationale: Synthetic demonstration requirement, selected by the executor.
+        ownerId: data-owner
+        provenanceRefs:
+          - design
+        behavior:
+          status: known
+          value: Query nonempty Account results
+        acceptance:
+          status: known
+          value: Assert record values and column metadata
+        milestone:
+          status: known
+          value: M3
+        dependencies: []
+        repositoryRefs:
+          - path: docs/compat/plan-16-cli-query-column-metadata.md
+        decision: null
+        facts:
+          observation:
+            status: unknown
+            evidenceRefs: []
+          implementation:
+            status: documented
+            evidenceRefs:
+              - design
+          verification:
+            status: unknown
+            evidenceRefs: []
+        details:
+          command:
+            status: known
+            value: data query
+          flags:
+            status: known
+            value:
+              - --query
+              - --json
+          outputFormats:
+            status: known
+            value:
+              - json
+          target:
+            status: known
+            value: org
+          cliVersion:
+            status: known
+            value: 2.156.0
+          pluginId:
+            status: known
+            value: data-plugin
+  automationCustomization:
+    status: unknown
+    ownerId: inventory-owner
+    evidenceRefs: []
+    questions:
+      - id: automation-customization-scope
+        question: Which requirements does a real named target have in this section?
+        ownerId: inventory-owner
+        nextAction: collect
+    absence: null
+    items: []
+  security:
+    status: partial
+    ownerId: inventory-owner
+    evidenceRefs: []
+    questions:
+      - id: security-scope
+        question: Which requirements does a real named target have in this section?
+        ownerId: inventory-owner
+        nextAction: collect
+    absence: null
+    items:
+      - id: restricted-field
+        category: security-policy
+        disposition: required
+        rationale: Synthetic demonstration requirement, selected by the executor.
+        ownerId: data-owner
+        provenanceRefs:
+          - design
+        behavior:
+          status: known
+          value: Preserve the synthetic field policy
+        acceptance:
+          status: known
+          value: Verify denial leaves stored values unchanged
+        milestone:
+          status: known
+          value: M4
+        dependencies: []
+        repositoryRefs:
+          - path: docs/compat/plan-16-cli-query-column-metadata.md
+        decision: null
+        facts:
+          observation:
+            status: unknown
+            evidenceRefs: []
+          implementation:
+            status: documented
+            evidenceRefs:
+              - design
+          verification:
+            status: unknown
+            evidenceRefs: []
+        details:
+          name:
+            status: known
+            value: Account.Compat_Text__c
+          kind:
+            status: known
+            value: field-permission
+          grants:
+            status: known
+            value:
+              - administrator read/write
+          deniedBehavior:
+            status: known
+            value: Restricted principal cannot read/write the field
+  localization:
+    status: partial
+    ownerId: inventory-owner
+    evidenceRefs: []
+    questions:
+      - id: localization-scope
+        question: Which requirements does a real named target have in this section?
+        ownerId: inventory-owner
+        nextAction: collect
+    absence: null
+    items:
+      - id: hebrew-preview
+        category: locale-requirement
+        disposition: required
+        rationale: Synthetic demonstration requirement, selected by the executor.
+        ownerId: data-owner
+        provenanceRefs:
+          - design
+        behavior:
+          status: known
+          value: Select Hebrew and use RTL layout
+        acceptance:
+          status: known
+          value: Check language and direction; partial translation is explicit
+        milestone:
+          status: known
+          value: M6
+        dependencies: []
+        repositoryRefs:
+          - path: docs/compat/plan-16-cli-query-column-metadata.md
+        decision: null
+        facts:
+          observation:
+            status: unknown
+            evidenceRefs: []
+          implementation:
+            status: documented
+            evidenceRefs:
+              - design
+          verification:
+            status: unknown
+            evidenceRefs: []
+        details:
+          wireLanguage:
+            status: known
+            value: iw
+          locale:
+            status: known
+            value: he_IL
+          currency:
+            status: unknown
+            question: What does the target require?
+            nextAction: collect
+          timezone:
+            status: unknown
+            question: What does the target require?
+            nextAction: collect
+          supportCategory:
+            status: unknown
+            question: What does the target require?
+            nextAction: collect
+          fallback:
+            status: known
+            value:
+              - en_US
+  migrationOperations:
+    status: partial
+    ownerId: inventory-owner
+    evidenceRefs: []
+    questions:
+      - id: migration-operations-scope
+        question: Which requirements does a real named target have in this section?
+        ownerId: inventory-owner
+        nextAction: collect
+    absence: null
+    items:
+      - id: downtime-target
+        category: operating-objective
+        disposition: required
+        rationale: Synthetic demonstration requirement, selected by the executor.
+        ownerId: data-owner
+        provenanceRefs:
+          - design
+        behavior:
+          status: known
+          value: Decide target downtime with an operator
+        acceptance:
+          status: known
+          value: Review a measured rehearsal against the agreed target
+        milestone:
+          status: known
+          value: M5
+        dependencies: []
+        repositoryRefs:
+          - path: docs/compat/plan-16-cli-query-column-metadata.md
+        decision: null
+        facts:
+          observation:
+            status: unknown
+            evidenceRefs: []
+          implementation:
+            status: documented
+            evidenceRefs:
+              - design
+          verification:
+            status: unknown
+            evidenceRefs: []
+        details:
+          name:
+            status: known
+            value: Allowed cutover downtime
+          value:
+            status: unknown
+            question: What does the target require?
+            nextAction: collect
+          unit:
+            status: known
+            value: minutes

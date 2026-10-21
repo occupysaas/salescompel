@@ -1,0 +1,4836 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "inventoryId",
+    "revision",
+    "date",
+    "classification",
+    "targetLabel",
+    "ownerId",
+    "sources",
+    "sections"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "inventoryId": {
+      "$ref": "#/definitions/id"
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "date": {
+      "$ref": "#/definitions/date"
+    },
+    "classification": {
+      "enum": [
+        "synthetic",
+        "real"
+      ]
+    },
+    "targetLabel": {
+      "$ref": "#/definitions/text"
+    },
+    "ownerId": {
+      "$ref": "#/definitions/id"
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/source"
+      }
+    },
+    "sections": {
+      "type": "object",
+      "required": [
+        "sourceOrg",
+        "dataMetadata",
+        "workflowsUsers",
+        "clientsIntegrations",
+        "cliPlugins",
+        "automationCustomization",
+        "security",
+        "localization",
+        "migrationOperations"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "sourceOrg": {
+          "$ref": "#/definitions/section-sourceOrg"
+        },
+        "dataMetadata": {
+          "$ref": "#/definitions/section-dataMetadata"
+        },
+        "workflowsUsers": {
+          "$ref": "#/definitions/section-workflowsUsers"
+        },
+        "clientsIntegrations": {
+          "$ref": "#/definitions/section-clientsIntegrations"
+        },
+        "cliPlugins": {
+          "$ref": "#/definitions/section-cliPlugins"
+        },
+        "automationCustomization": {
+          "$ref": "#/definitions/section-automationCustomization"
+        },
+        "security": {
+          "$ref": "#/definitions/section-security"
+        },
+        "localization": {
+          "$ref": "#/definitions/section-localization"
+        },
+        "migrationOperations": {
+          "$ref": "#/definitions/section-migrationOperations"
+        }
+      }
+    }
+  },
+  "definitions": {
+    "text": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096,
+      "pattern": "\\S"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{0,63}$"
+    },
+    "date": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "action": {
+      "enum": [
+        "collect",
+        "clarify",
+        "assign-owner",
+        "define-acceptance",
+        "reconcile",
+        "review-scope"
+      ]
+    },
+    "texts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/text"
+      },
+      "uniqueItems": true
+    },
+    "bool": {
+      "type": "boolean"
+    },
+    "count": {
+      "type": "number",
+      "minimum": 0
+    },
+    "api": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.0$"
+    },
+    "currency": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$"
+    },
+    "channel": {
+      "enum": [
+        "npm",
+        "installer",
+        "tarball",
+        "docker-slim",
+        "docker-full"
+      ]
+    },
+    "pluginSource": {
+      "enum": [
+        "core",
+        "jit",
+        "npm",
+        "github",
+        "tarball"
+      ]
+    },
+    "signature": {
+      "enum": [
+        "bundled",
+        "verified",
+        "unsigned",
+        "unsigned-allowlisted"
+      ]
+    },
+    "outputs": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "json",
+          "csv",
+          "human",
+          "files"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "commandTarget": {
+      "enum": [
+        "org",
+        "non-org"
+      ]
+    },
+    "support": {
+      "enum": [
+        "fully-supported",
+        "end-user",
+        "platform-only"
+      ]
+    },
+    "milestone": {
+      "enum": [
+        "M0",
+        "M1",
+        "M1R",
+        "M2",
+        "M3",
+        "M4",
+        "M5",
+        "M6",
+        "M7",
+        "M8",
+        "M9",
+        "M10"
+      ]
+    },
+    "apis": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/api"
+      },
+      "uniqueItems": true
+    },
+    "decision": {
+      "type": "object",
+      "required": [
+        "question",
+        "nextAction"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "question": {
+          "$ref": "#/definitions/text"
+        },
+        "nextAction": {
+          "$ref": "#/definitions/action"
+        }
+      }
+    },
+    "k-text": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "status",
+            "value"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "known"
+            },
+            "value": {
+              "$ref": "#/definitions/text"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "status",
+            "question",
+            "nextAction"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "unknown"
+            },
+            "question": {
+              "$ref": "#/definitions/text"
+            },
+            "nextAction": {
+              "$ref": "#/definitions/action"
+            }
+          }
+        }
+      ]
+    },
+    "k-texts": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "status",
+            "value"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "known"
+            },
+            "value": {
+              "$ref": "#/definitions/texts"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "status",
+            "question",
+            "nextAction"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "unknown"
+            },
+            "question": {
+              "$ref": "#/definitions/text"
+            },
+            "nextAction": {
+              "$ref": "#/definitions/action"
+            }
+          }
+        }
+      ]
+    },
+    "k-bool": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "status",
+            "value"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "known"
+            },
+            "value": {
+              "$ref": "#/definitions/bool"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "status",
+            "question",
+            "nextAction"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "unknown"
+            },
+            "question": {
+              "$ref": "#/definitions/text"
+            },
+            "nextAction": {
+              "$ref": "#/definitions/action"
+            }
+          }
+        }
+      ]
+    },
+    "k-count": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "status",
+            "value"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "known"
+            },
+            "value": {
+              "$ref": "#/definitions/count"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "status",
+            "question",
+            "nextAction"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "unknown"
+            },
+            "question": {
+              "$ref": "#/definitions/text"
+            },
+            "nextAction": {
+              "$ref": "#/definitions/action"
+            }
+          }
+        }
+      ]
+    },
+    "k-api": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "status",
+            "value"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "known"
+            },
+            "value": {
+              "$ref": "#/definitions/api"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "status",
+            "question",
+            "nextAction"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "unknown"
+            },
+            "question": {
+              "$ref": "#/definitions/text"
+            },
+            "nextAction": {
+              "$ref": "#/definitions/action"
+            }
+          }
+        }
+      ]
+    },
+    "k-apis": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "status",
+            "value"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "known"
+            },
+            "value": {
+              "$ref": "#/definitions/apis"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "status",
+            "question",
+            "nextAction"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "unknown"
+            },
+            "question": {
+              "$ref": "#/definitions/text"
+            },
+            "nextAction": {
+              "$ref": "#/definitions/action"
+            }
+          }
+        }
+      ]
+    },
+    "k-currency": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "status",
+            "value"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "known"
+            },
+            "value": {
+              "$ref": "#/definitions/currency"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "status",
+            "question",
+            "nextAction"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "unknown"
+            },
+            "question": {
+              "$ref": "#/definitions/text"
+            },
+            "nextAction": {
+              "$ref": "#/definitions/action"
+            }
+          }
+        }
+      ]
+    },
+    "k-channel": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "status",
+            "value"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "known"
+            },
+            "value": {
+              "$ref": "#/definitions/channel"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "status",
+            "question",
+            "nextAction"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "unknown"
+            },
+            "question": {
+              "$ref": "#/definitions/text"
+            },
+            "nextAction": {
+              "$ref": "#/definitions/action"
+            }
+          }
+        }
+      ]
+    },
+    "k-pluginSource": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "status",
+            "value"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "known"
+            },
+            "value": {
+              "$ref": "#/definitions/pluginSource"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "status",
+            "question",
+            "nextAction"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "unknown"
+            },
+            "question": {
+              "$ref": "#/definitions/text"
+            },
+            "nextAction": {
+              "$ref": "#/definitions/action"
+            }
+          }
+        }
+      ]
+    },
+    "k-signature": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "status",
+            "value"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "known"
+            },
+            "value": {
+              "$ref": "#/definitions/signature"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "status",
+            "question",
+            "nextAction"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "unknown"
+            },
+            "question": {
+              "$ref": "#/definitions/text"
+            },
+            "nextAction": {
+              "$ref": "#/definitions/action"
+            }
+          }
+        }
+      ]
+    },
+    "k-outputs": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "status",
+            "value"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "known"
+            },
+            "value": {
+              "$ref": "#/definitions/outputs"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "status",
+            "question",
+            "nextAction"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "unknown"
+            },
+            "question": {
+              "$ref": "#/definitions/text"
+            },
+            "nextAction": {
+              "$ref": "#/definitions/action"
+            }
+          }
+        }
+      ]
+    },
+    "k-commandTarget": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "status",
+            "value"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "known"
+            },
+            "value": {
+              "$ref": "#/definitions/commandTarget"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "status",
+            "question",
+            "nextAction"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "unknown"
+            },
+            "question": {
+              "$ref": "#/definitions/text"
+            },
+            "nextAction": {
+              "$ref": "#/definitions/action"
+            }
+          }
+        }
+      ]
+    },
+    "k-support": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "status",
+            "value"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "known"
+            },
+            "value": {
+              "$ref": "#/definitions/support"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "status",
+            "question",
+            "nextAction"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "unknown"
+            },
+            "question": {
+              "$ref": "#/definitions/text"
+            },
+            "nextAction": {
+              "$ref": "#/definitions/action"
+            }
+          }
+        }
+      ]
+    },
+    "k-milestone": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "status",
+            "value"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "known"
+            },
+            "value": {
+              "$ref": "#/definitions/milestone"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "status",
+            "question",
+            "nextAction"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "unknown"
+            },
+            "question": {
+              "$ref": "#/definitions/text"
+            },
+            "nextAction": {
+              "$ref": "#/definitions/action"
+            }
+          }
+        }
+      ]
+    },
+    "source": {
+      "type": "object",
+      "required": [
+        "id",
+        "kind",
+        "date",
+        "locator",
+        "description"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "kind": {
+          "enum": [
+            "repository",
+            "operator",
+            "source-export",
+            "pipeline",
+            "observation"
+          ]
+        },
+        "date": {
+          "$ref": "#/definitions/date"
+        },
+        "locator": {
+          "$ref": "#/definitions/text"
+        },
+        "description": {
+          "$ref": "#/definitions/text"
+        }
+      }
+    },
+    "question": {
+      "type": "object",
+      "required": [
+        "id",
+        "question",
+        "ownerId",
+        "nextAction"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "question": {
+          "$ref": "#/definitions/text"
+        },
+        "ownerId": {
+          "$ref": "#/definitions/id"
+        },
+        "nextAction": {
+          "$ref": "#/definitions/action"
+        }
+      }
+    },
+    "absence": {
+      "type": "object",
+      "required": [
+        "ownerId",
+        "evidenceRefs",
+        "rationale"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "ownerId": {
+          "$ref": "#/definitions/id"
+        },
+        "evidenceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "rationale": {
+          "$ref": "#/definitions/text"
+        }
+      }
+    },
+    "fact": {
+      "type": "object",
+      "required": [
+        "status",
+        "evidenceRefs"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "unknown",
+            "documented"
+          ]
+        },
+        "evidenceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "repoRef": {
+      "type": "object",
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "$ref": "#/definitions/text"
+        },
+        "id": {
+          "$ref": "#/definitions/text"
+        }
+      }
+    },
+    "item-source": {
+      "type": "object",
+      "required": [
+        "id",
+        "category",
+        "disposition",
+        "rationale",
+        "ownerId",
+        "provenanceRefs",
+        "behavior",
+        "acceptance",
+        "milestone",
+        "dependencies",
+        "repositoryRefs",
+        "decision",
+        "facts",
+        "details"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "category": {
+          "const": "source"
+        },
+        "disposition": {
+          "enum": [
+            "required",
+            "optional",
+            "out-of-scope",
+            "unknown"
+          ]
+        },
+        "rationale": {
+          "$ref": "#/definitions/text"
+        },
+        "ownerId": {
+          "$ref": "#/definitions/id"
+        },
+        "provenanceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "behavior": {
+          "$ref": "#/definitions/k-text"
+        },
+        "acceptance": {
+          "$ref": "#/definitions/k-text"
+        },
+        "milestone": {
+          "$ref": "#/definitions/k-milestone"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "repositoryRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/repoRef"
+          },
+          "uniqueItems": true
+        },
+        "decision": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/decision"
+            }
+          ]
+        },
+        "facts": {
+          "type": "object",
+          "required": [
+            "observation",
+            "implementation",
+            "verification"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "observation": {
+              "$ref": "#/definitions/fact"
+            },
+            "implementation": {
+              "$ref": "#/definitions/fact"
+            },
+            "verification": {
+              "$ref": "#/definitions/fact"
+            }
+          }
+        },
+        "details": {
+          "type": "object",
+          "required": [
+            "edition",
+            "release",
+            "apiVersions"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "edition": {
+              "$ref": "#/definitions/k-text"
+            },
+            "release": {
+              "$ref": "#/definitions/k-text"
+            },
+            "apiVersions": {
+              "$ref": "#/definitions/k-apis"
+            }
+          }
+        }
+      }
+    },
+    "item-org-feature": {
+      "type": "object",
+      "required": [
+        "id",
+        "category",
+        "disposition",
+        "rationale",
+        "ownerId",
+        "provenanceRefs",
+        "behavior",
+        "acceptance",
+        "milestone",
+        "dependencies",
+        "repositoryRefs",
+        "decision",
+        "facts",
+        "details"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "category": {
+          "const": "org-feature"
+        },
+        "disposition": {
+          "enum": [
+            "required",
+            "optional",
+            "out-of-scope",
+            "unknown"
+          ]
+        },
+        "rationale": {
+          "$ref": "#/definitions/text"
+        },
+        "ownerId": {
+          "$ref": "#/definitions/id"
+        },
+        "provenanceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "behavior": {
+          "$ref": "#/definitions/k-text"
+        },
+        "acceptance": {
+          "$ref": "#/definitions/k-text"
+        },
+        "milestone": {
+          "$ref": "#/definitions/k-milestone"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "repositoryRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/repoRef"
+          },
+          "uniqueItems": true
+        },
+        "decision": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/decision"
+            }
+          ]
+        },
+        "facts": {
+          "type": "object",
+          "required": [
+            "observation",
+            "implementation",
+            "verification"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "observation": {
+              "$ref": "#/definitions/fact"
+            },
+            "implementation": {
+              "$ref": "#/definitions/fact"
+            },
+            "verification": {
+              "$ref": "#/definitions/fact"
+            }
+          }
+        },
+        "details": {
+          "type": "object",
+          "required": [
+            "name",
+            "enabled"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "$ref": "#/definitions/k-text"
+            },
+            "enabled": {
+              "$ref": "#/definitions/k-bool"
+            }
+          }
+        }
+      }
+    },
+    "item-object": {
+      "type": "object",
+      "required": [
+        "id",
+        "category",
+        "disposition",
+        "rationale",
+        "ownerId",
+        "provenanceRefs",
+        "behavior",
+        "acceptance",
+        "milestone",
+        "dependencies",
+        "repositoryRefs",
+        "decision",
+        "facts",
+        "details"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "category": {
+          "const": "object"
+        },
+        "disposition": {
+          "enum": [
+            "required",
+            "optional",
+            "out-of-scope",
+            "unknown"
+          ]
+        },
+        "rationale": {
+          "$ref": "#/definitions/text"
+        },
+        "ownerId": {
+          "$ref": "#/definitions/id"
+        },
+        "provenanceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "behavior": {
+          "$ref": "#/definitions/k-text"
+        },
+        "acceptance": {
+          "$ref": "#/definitions/k-text"
+        },
+        "milestone": {
+          "$ref": "#/definitions/k-milestone"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "repositoryRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/repoRef"
+          },
+          "uniqueItems": true
+        },
+        "decision": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/decision"
+            }
+          ]
+        },
+        "facts": {
+          "type": "object",
+          "required": [
+            "observation",
+            "implementation",
+            "verification"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "observation": {
+              "$ref": "#/definitions/fact"
+            },
+            "implementation": {
+              "$ref": "#/definitions/fact"
+            },
+            "verification": {
+              "$ref": "#/definitions/fact"
+            }
+          }
+        },
+        "details": {
+          "type": "object",
+          "required": [
+            "name"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "$ref": "#/definitions/k-text"
+            }
+          }
+        }
+      }
+    },
+    "item-field": {
+      "type": "object",
+      "required": [
+        "id",
+        "category",
+        "disposition",
+        "rationale",
+        "ownerId",
+        "provenanceRefs",
+        "behavior",
+        "acceptance",
+        "milestone",
+        "dependencies",
+        "repositoryRefs",
+        "decision",
+        "facts",
+        "details"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "category": {
+          "const": "field"
+        },
+        "disposition": {
+          "enum": [
+            "required",
+            "optional",
+            "out-of-scope",
+            "unknown"
+          ]
+        },
+        "rationale": {
+          "$ref": "#/definitions/text"
+        },
+        "ownerId": {
+          "$ref": "#/definitions/id"
+        },
+        "provenanceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "behavior": {
+          "$ref": "#/definitions/k-text"
+        },
+        "acceptance": {
+          "$ref": "#/definitions/k-text"
+        },
+        "milestone": {
+          "$ref": "#/definitions/k-milestone"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "repositoryRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/repoRef"
+          },
+          "uniqueItems": true
+        },
+        "decision": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/decision"
+            }
+          ]
+        },
+        "facts": {
+          "type": "object",
+          "required": [
+            "observation",
+            "implementation",
+            "verification"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "observation": {
+              "$ref": "#/definitions/fact"
+            },
+            "implementation": {
+              "$ref": "#/definitions/fact"
+            },
+            "verification": {
+              "$ref": "#/definitions/fact"
+            }
+          }
+        },
+        "details": {
+          "type": "object",
+          "required": [
+            "name",
+            "object",
+            "kind"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "$ref": "#/definitions/k-text"
+            },
+            "object": {
+              "$ref": "#/definitions/k-text"
+            },
+            "kind": {
+              "$ref": "#/definitions/k-text"
+            }
+          }
+        }
+      }
+    },
+    "item-relationship": {
+      "type": "object",
+      "required": [
+        "id",
+        "category",
+        "disposition",
+        "rationale",
+        "ownerId",
+        "provenanceRefs",
+        "behavior",
+        "acceptance",
+        "milestone",
+        "dependencies",
+        "repositoryRefs",
+        "decision",
+        "facts",
+        "details"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "category": {
+          "const": "relationship"
+        },
+        "disposition": {
+          "enum": [
+            "required",
+            "optional",
+            "out-of-scope",
+            "unknown"
+          ]
+        },
+        "rationale": {
+          "$ref": "#/definitions/text"
+        },
+        "ownerId": {
+          "$ref": "#/definitions/id"
+        },
+        "provenanceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "behavior": {
+          "$ref": "#/definitions/k-text"
+        },
+        "acceptance": {
+          "$ref": "#/definitions/k-text"
+        },
+        "milestone": {
+          "$ref": "#/definitions/k-milestone"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "repositoryRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/repoRef"
+          },
+          "uniqueItems": true
+        },
+        "decision": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/decision"
+            }
+          ]
+        },
+        "facts": {
+          "type": "object",
+          "required": [
+            "observation",
+            "implementation",
+            "verification"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "observation": {
+              "$ref": "#/definitions/fact"
+            },
+            "implementation": {
+              "$ref": "#/definitions/fact"
+            },
+            "verification": {
+              "$ref": "#/definitions/fact"
+            }
+          }
+        },
+        "details": {
+          "type": "object",
+          "required": [
+            "name",
+            "from",
+            "to",
+            "kind"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "$ref": "#/definitions/k-text"
+            },
+            "from": {
+              "$ref": "#/definitions/k-text"
+            },
+            "to": {
+              "$ref": "#/definitions/k-text"
+            },
+            "kind": {
+              "$ref": "#/definitions/k-text"
+            }
+          }
+        }
+      }
+    },
+    "item-record-type": {
+      "type": "object",
+      "required": [
+        "id",
+        "category",
+        "disposition",
+        "rationale",
+        "ownerId",
+        "provenanceRefs",
+        "behavior",
+        "acceptance",
+        "milestone",
+        "dependencies",
+        "repositoryRefs",
+        "decision",
+        "facts",
+        "details"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "category": {
+          "const": "record-type"
+        },
+        "disposition": {
+          "enum": [
+            "required",
+            "optional",
+            "out-of-scope",
+            "unknown"
+          ]
+        },
+        "rationale": {
+          "$ref": "#/definitions/text"
+        },
+        "ownerId": {
+          "$ref": "#/definitions/id"
+        },
+        "provenanceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "behavior": {
+          "$ref": "#/definitions/k-text"
+        },
+        "acceptance": {
+          "$ref": "#/definitions/k-text"
+        },
+        "milestone": {
+          "$ref": "#/definitions/k-milestone"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "repositoryRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/repoRef"
+          },
+          "uniqueItems": true
+        },
+        "decision": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/decision"
+            }
+          ]
+        },
+        "facts": {
+          "type": "object",
+          "required": [
+            "observation",
+            "implementation",
+            "verification"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "observation": {
+              "$ref": "#/definitions/fact"
+            },
+            "implementation": {
+              "$ref": "#/definitions/fact"
+            },
+            "verification": {
+              "$ref": "#/definitions/fact"
+            }
+          }
+        },
+        "details": {
+          "type": "object",
+          "required": [
+            "name",
+            "object"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "$ref": "#/definitions/k-text"
+            },
+            "object": {
+              "$ref": "#/definitions/k-text"
+            }
+          }
+        }
+      }
+    },
+    "item-layout": {
+      "type": "object",
+      "required": [
+        "id",
+        "category",
+        "disposition",
+        "rationale",
+        "ownerId",
+        "provenanceRefs",
+        "behavior",
+        "acceptance",
+        "milestone",
+        "dependencies",
+        "repositoryRefs",
+        "decision",
+        "facts",
+        "details"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "category": {
+          "const": "layout"
+        },
+        "disposition": {
+          "enum": [
+            "required",
+            "optional",
+            "out-of-scope",
+            "unknown"
+          ]
+        },
+        "rationale": {
+          "$ref": "#/definitions/text"
+        },
+        "ownerId": {
+          "$ref": "#/definitions/id"
+        },
+        "provenanceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "behavior": {
+          "$ref": "#/definitions/k-text"
+        },
+        "acceptance": {
+          "$ref": "#/definitions/k-text"
+        },
+        "milestone": {
+          "$ref": "#/definitions/k-milestone"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "repositoryRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/repoRef"
+          },
+          "uniqueItems": true
+        },
+        "decision": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/decision"
+            }
+          ]
+        },
+        "facts": {
+          "type": "object",
+          "required": [
+            "observation",
+            "implementation",
+            "verification"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "observation": {
+              "$ref": "#/definitions/fact"
+            },
+            "implementation": {
+              "$ref": "#/definitions/fact"
+            },
+            "verification": {
+              "$ref": "#/definitions/fact"
+            }
+          }
+        },
+        "details": {
+          "type": "object",
+          "required": [
+            "name",
+            "object"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "$ref": "#/definitions/k-text"
+            },
+            "object": {
+              "$ref": "#/definitions/k-text"
+            }
+          }
+        }
+      }
+    },
+    "item-data-volume": {
+      "type": "object",
+      "required": [
+        "id",
+        "category",
+        "disposition",
+        "rationale",
+        "ownerId",
+        "provenanceRefs",
+        "behavior",
+        "acceptance",
+        "milestone",
+        "dependencies",
+        "repositoryRefs",
+        "decision",
+        "facts",
+        "details"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "category": {
+          "const": "data-volume"
+        },
+        "disposition": {
+          "enum": [
+            "required",
+            "optional",
+            "out-of-scope",
+            "unknown"
+          ]
+        },
+        "rationale": {
+          "$ref": "#/definitions/text"
+        },
+        "ownerId": {
+          "$ref": "#/definitions/id"
+        },
+        "provenanceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "behavior": {
+          "$ref": "#/definitions/k-text"
+        },
+        "acceptance": {
+          "$ref": "#/definitions/k-text"
+        },
+        "milestone": {
+          "$ref": "#/definitions/k-milestone"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "repositoryRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/repoRef"
+          },
+          "uniqueItems": true
+        },
+        "decision": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/decision"
+            }
+          ]
+        },
+        "facts": {
+          "type": "object",
+          "required": [
+            "observation",
+            "implementation",
+            "verification"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "observation": {
+              "$ref": "#/definitions/fact"
+            },
+            "implementation": {
+              "$ref": "#/definitions/fact"
+            },
+            "verification": {
+              "$ref": "#/definitions/fact"
+            }
+          }
+        },
+        "details": {
+          "type": "object",
+          "required": [
+            "name",
+            "count",
+            "unit"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "$ref": "#/definitions/k-text"
+            },
+            "count": {
+              "$ref": "#/definitions/k-count"
+            },
+            "unit": {
+              "$ref": "#/definitions/k-text"
+            }
+          }
+        }
+      }
+    },
+    "item-export-area": {
+      "type": "object",
+      "required": [
+        "id",
+        "category",
+        "disposition",
+        "rationale",
+        "ownerId",
+        "provenanceRefs",
+        "behavior",
+        "acceptance",
+        "milestone",
+        "dependencies",
+        "repositoryRefs",
+        "decision",
+        "facts",
+        "details"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "category": {
+          "const": "export-area"
+        },
+        "disposition": {
+          "enum": [
+            "required",
+            "optional",
+            "out-of-scope",
+            "unknown"
+          ]
+        },
+        "rationale": {
+          "$ref": "#/definitions/text"
+        },
+        "ownerId": {
+          "$ref": "#/definitions/id"
+        },
+        "provenanceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "behavior": {
+          "$ref": "#/definitions/k-text"
+        },
+        "acceptance": {
+          "$ref": "#/definitions/k-text"
+        },
+        "milestone": {
+          "$ref": "#/definitions/k-milestone"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "repositoryRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/repoRef"
+          },
+          "uniqueItems": true
+        },
+        "decision": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/decision"
+            }
+          ]
+        },
+        "facts": {
+          "type": "object",
+          "required": [
+            "observation",
+            "implementation",
+            "verification"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "observation": {
+              "$ref": "#/definitions/fact"
+            },
+            "implementation": {
+              "$ref": "#/definitions/fact"
+            },
+            "verification": {
+              "$ref": "#/definitions/fact"
+            }
+          }
+        },
+        "details": {
+          "type": "object",
+          "required": [
+            "name",
+            "exportable",
+            "limitations"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "$ref": "#/definitions/k-text"
+            },
+            "exportable": {
+              "$ref": "#/definitions/k-bool"
+            },
+            "limitations": {
+              "$ref": "#/definitions/k-texts"
+            }
+          }
+        }
+      }
+    },
+    "item-workflow": {
+      "type": "object",
+      "required": [
+        "id",
+        "category",
+        "disposition",
+        "rationale",
+        "ownerId",
+        "provenanceRefs",
+        "behavior",
+        "acceptance",
+        "milestone",
+        "dependencies",
+        "repositoryRefs",
+        "decision",
+        "facts",
+        "details"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "category": {
+          "const": "workflow"
+        },
+        "disposition": {
+          "enum": [
+            "required",
+            "optional",
+            "out-of-scope",
+            "unknown"
+          ]
+        },
+        "rationale": {
+          "$ref": "#/definitions/text"
+        },
+        "ownerId": {
+          "$ref": "#/definitions/id"
+        },
+        "provenanceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "behavior": {
+          "$ref": "#/definitions/k-text"
+        },
+        "acceptance": {
+          "$ref": "#/definitions/k-text"
+        },
+        "milestone": {
+          "$ref": "#/definitions/k-milestone"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "repositoryRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/repoRef"
+          },
+          "uniqueItems": true
+        },
+        "decision": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/decision"
+            }
+          ]
+        },
+        "facts": {
+          "type": "object",
+          "required": [
+            "observation",
+            "implementation",
+            "verification"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "observation": {
+              "$ref": "#/definitions/fact"
+            },
+            "implementation": {
+              "$ref": "#/definitions/fact"
+            },
+            "verification": {
+              "$ref": "#/definitions/fact"
+            }
+          }
+        },
+        "details": {
+          "type": "object",
+          "required": [
+            "name",
+            "journey",
+            "outcomes",
+            "permissionBoundaries"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "$ref": "#/definitions/k-text"
+            },
+            "journey": {
+              "$ref": "#/definitions/k-text"
+            },
+            "outcomes": {
+              "$ref": "#/definitions/k-texts"
+            },
+            "permissionBoundaries": {
+              "$ref": "#/definitions/k-texts"
+            }
+          }
+        }
+      }
+    },
+    "item-persona": {
+      "type": "object",
+      "required": [
+        "id",
+        "category",
+        "disposition",
+        "rationale",
+        "ownerId",
+        "provenanceRefs",
+        "behavior",
+        "acceptance",
+        "milestone",
+        "dependencies",
+        "repositoryRefs",
+        "decision",
+        "facts",
+        "details"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "category": {
+          "const": "persona"
+        },
+        "disposition": {
+          "enum": [
+            "required",
+            "optional",
+            "out-of-scope",
+            "unknown"
+          ]
+        },
+        "rationale": {
+          "$ref": "#/definitions/text"
+        },
+        "ownerId": {
+          "$ref": "#/definitions/id"
+        },
+        "provenanceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "behavior": {
+          "$ref": "#/definitions/k-text"
+        },
+        "acceptance": {
+          "$ref": "#/definitions/k-text"
+        },
+        "milestone": {
+          "$ref": "#/definitions/k-milestone"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "repositoryRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/repoRef"
+          },
+          "uniqueItems": true
+        },
+        "decision": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/decision"
+            }
+          ]
+        },
+        "facts": {
+          "type": "object",
+          "required": [
+            "observation",
+            "implementation",
+            "verification"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "observation": {
+              "$ref": "#/definitions/fact"
+            },
+            "implementation": {
+              "$ref": "#/definitions/fact"
+            },
+            "verification": {
+              "$ref": "#/definitions/fact"
+            }
+          }
+        },
+        "details": {
+          "type": "object",
+          "required": [
+            "name",
+            "journey",
+            "outcomes",
+            "permissionBoundaries"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "$ref": "#/definitions/k-text"
+            },
+            "journey": {
+              "$ref": "#/definitions/k-text"
+            },
+            "outcomes": {
+              "$ref": "#/definitions/k-texts"
+            },
+            "permissionBoundaries": {
+              "$ref": "#/definitions/k-texts"
+            }
+          }
+        }
+      }
+    },
+    "item-client": {
+      "type": "object",
+      "required": [
+        "id",
+        "category",
+        "disposition",
+        "rationale",
+        "ownerId",
+        "provenanceRefs",
+        "behavior",
+        "acceptance",
+        "milestone",
+        "dependencies",
+        "repositoryRefs",
+        "decision",
+        "facts",
+        "details"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "category": {
+          "const": "client"
+        },
+        "disposition": {
+          "enum": [
+            "required",
+            "optional",
+            "out-of-scope",
+            "unknown"
+          ]
+        },
+        "rationale": {
+          "$ref": "#/definitions/text"
+        },
+        "ownerId": {
+          "$ref": "#/definitions/id"
+        },
+        "provenanceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "behavior": {
+          "$ref": "#/definitions/k-text"
+        },
+        "acceptance": {
+          "$ref": "#/definitions/k-text"
+        },
+        "milestone": {
+          "$ref": "#/definitions/k-milestone"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "repositoryRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/repoRef"
+          },
+          "uniqueItems": true
+        },
+        "decision": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/decision"
+            }
+          ]
+        },
+        "facts": {
+          "type": "object",
+          "required": [
+            "observation",
+            "implementation",
+            "verification"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "observation": {
+              "$ref": "#/definitions/fact"
+            },
+            "implementation": {
+              "$ref": "#/definitions/fact"
+            },
+            "verification": {
+              "$ref": "#/definitions/fact"
+            }
+          }
+        },
+        "details": {
+          "type": "object",
+          "required": [
+            "name",
+            "version",
+            "protocol",
+            "endpoint",
+            "authentication",
+            "dependencies"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "$ref": "#/definitions/k-text"
+            },
+            "version": {
+              "$ref": "#/definitions/k-text"
+            },
+            "protocol": {
+              "$ref": "#/definitions/k-text"
+            },
+            "endpoint": {
+              "$ref": "#/definitions/k-text"
+            },
+            "authentication": {
+              "$ref": "#/definitions/k-text"
+            },
+            "dependencies": {
+              "$ref": "#/definitions/k-texts"
+            }
+          }
+        }
+      }
+    },
+    "item-integration": {
+      "type": "object",
+      "required": [
+        "id",
+        "category",
+        "disposition",
+        "rationale",
+        "ownerId",
+        "provenanceRefs",
+        "behavior",
+        "acceptance",
+        "milestone",
+        "dependencies",
+        "repositoryRefs",
+        "decision",
+        "facts",
+        "details"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "category": {
+          "const": "integration"
+        },
+        "disposition": {
+          "enum": [
+            "required",
+            "optional",
+            "out-of-scope",
+            "unknown"
+          ]
+        },
+        "rationale": {
+          "$ref": "#/definitions/text"
+        },
+        "ownerId": {
+          "$ref": "#/definitions/id"
+        },
+        "provenanceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "behavior": {
+          "$ref": "#/definitions/k-text"
+        },
+        "acceptance": {
+          "$ref": "#/definitions/k-text"
+        },
+        "milestone": {
+          "$ref": "#/definitions/k-milestone"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "repositoryRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/repoRef"
+          },
+          "uniqueItems": true
+        },
+        "decision": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/decision"
+            }
+          ]
+        },
+        "facts": {
+          "type": "object",
+          "required": [
+            "observation",
+            "implementation",
+            "verification"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "observation": {
+              "$ref": "#/definitions/fact"
+            },
+            "implementation": {
+              "$ref": "#/definitions/fact"
+            },
+            "verification": {
+              "$ref": "#/definitions/fact"
+            }
+          }
+        },
+        "details": {
+          "type": "object",
+          "required": [
+            "name",
+            "version",
+            "protocol",
+            "endpoint",
+            "authentication",
+            "dependencies"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "$ref": "#/definitions/k-text"
+            },
+            "version": {
+              "$ref": "#/definitions/k-text"
+            },
+            "protocol": {
+              "$ref": "#/definitions/k-text"
+            },
+            "endpoint": {
+              "$ref": "#/definitions/k-text"
+            },
+            "authentication": {
+              "$ref": "#/definitions/k-text"
+            },
+            "dependencies": {
+              "$ref": "#/definitions/k-texts"
+            }
+          }
+        }
+      }
+    },
+    "item-cli": {
+      "type": "object",
+      "required": [
+        "id",
+        "category",
+        "disposition",
+        "rationale",
+        "ownerId",
+        "provenanceRefs",
+        "behavior",
+        "acceptance",
+        "milestone",
+        "dependencies",
+        "repositoryRefs",
+        "decision",
+        "facts",
+        "details"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "category": {
+          "const": "cli"
+        },
+        "disposition": {
+          "enum": [
+            "required",
+            "optional",
+            "out-of-scope",
+            "unknown"
+          ]
+        },
+        "rationale": {
+          "$ref": "#/definitions/text"
+        },
+        "ownerId": {
+          "$ref": "#/definitions/id"
+        },
+        "provenanceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "behavior": {
+          "$ref": "#/definitions/k-text"
+        },
+        "acceptance": {
+          "$ref": "#/definitions/k-text"
+        },
+        "milestone": {
+          "$ref": "#/definitions/k-milestone"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "repositoryRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/repoRef"
+          },
+          "uniqueItems": true
+        },
+        "decision": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/decision"
+            }
+          ]
+        },
+        "facts": {
+          "type": "object",
+          "required": [
+            "observation",
+            "implementation",
+            "verification"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "observation": {
+              "$ref": "#/definitions/fact"
+            },
+            "implementation": {
+              "$ref": "#/definitions/fact"
+            },
+            "verification": {
+              "$ref": "#/definitions/fact"
+            }
+          }
+        },
+        "details": {
+          "type": "object",
+          "required": [
+            "name",
+            "version",
+            "channel"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "$ref": "#/definitions/k-text"
+            },
+            "version": {
+              "$ref": "#/definitions/k-text"
+            },
+            "channel": {
+              "$ref": "#/definitions/k-channel"
+            }
+          }
+        }
+      }
+    },
+    "item-plugin": {
+      "type": "object",
+      "required": [
+        "id",
+        "category",
+        "disposition",
+        "rationale",
+        "ownerId",
+        "provenanceRefs",
+        "behavior",
+        "acceptance",
+        "milestone",
+        "dependencies",
+        "repositoryRefs",
+        "decision",
+        "facts",
+        "details"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "category": {
+          "const": "plugin"
+        },
+        "disposition": {
+          "enum": [
+            "required",
+            "optional",
+            "out-of-scope",
+            "unknown"
+          ]
+        },
+        "rationale": {
+          "$ref": "#/definitions/text"
+        },
+        "ownerId": {
+          "$ref": "#/definitions/id"
+        },
+        "provenanceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "behavior": {
+          "$ref": "#/definitions/k-text"
+        },
+        "acceptance": {
+          "$ref": "#/definitions/k-text"
+        },
+        "milestone": {
+          "$ref": "#/definitions/k-milestone"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "repositoryRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/repoRef"
+          },
+          "uniqueItems": true
+        },
+        "decision": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/decision"
+            }
+          ]
+        },
+        "facts": {
+          "type": "object",
+          "required": [
+            "observation",
+            "implementation",
+            "verification"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "observation": {
+              "$ref": "#/definitions/fact"
+            },
+            "implementation": {
+              "$ref": "#/definitions/fact"
+            },
+            "verification": {
+              "$ref": "#/definitions/fact"
+            }
+          }
+        },
+        "details": {
+          "type": "object",
+          "required": [
+            "name",
+            "version",
+            "source",
+            "signature",
+            "license",
+            "dependencies"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "$ref": "#/definitions/k-text"
+            },
+            "version": {
+              "$ref": "#/definitions/k-text"
+            },
+            "source": {
+              "$ref": "#/definitions/k-pluginSource"
+            },
+            "signature": {
+              "$ref": "#/definitions/k-signature"
+            },
+            "license": {
+              "$ref": "#/definitions/k-text"
+            },
+            "dependencies": {
+              "$ref": "#/definitions/k-texts"
+            }
+          }
+        }
+      }
+    },
+    "item-cli-command": {
+      "type": "object",
+      "required": [
+        "id",
+        "category",
+        "disposition",
+        "rationale",
+        "ownerId",
+        "provenanceRefs",
+        "behavior",
+        "acceptance",
+        "milestone",
+        "dependencies",
+        "repositoryRefs",
+        "decision",
+        "facts",
+        "details"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "category": {
+          "const": "cli-command"
+        },
+        "disposition": {
+          "enum": [
+            "required",
+            "optional",
+            "out-of-scope",
+            "unknown"
+          ]
+        },
+        "rationale": {
+          "$ref": "#/definitions/text"
+        },
+        "ownerId": {
+          "$ref": "#/definitions/id"
+        },
+        "provenanceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "behavior": {
+          "$ref": "#/definitions/k-text"
+        },
+        "acceptance": {
+          "$ref": "#/definitions/k-text"
+        },
+        "milestone": {
+          "$ref": "#/definitions/k-milestone"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "repositoryRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/repoRef"
+          },
+          "uniqueItems": true
+        },
+        "decision": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/decision"
+            }
+          ]
+        },
+        "facts": {
+          "type": "object",
+          "required": [
+            "observation",
+            "implementation",
+            "verification"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "observation": {
+              "$ref": "#/definitions/fact"
+            },
+            "implementation": {
+              "$ref": "#/definitions/fact"
+            },
+            "verification": {
+              "$ref": "#/definitions/fact"
+            }
+          }
+        },
+        "details": {
+          "type": "object",
+          "required": [
+            "command",
+            "flags",
+            "outputFormats",
+            "target",
+            "cliVersion",
+            "pluginId"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "command": {
+              "$ref": "#/definitions/k-text"
+            },
+            "flags": {
+              "$ref": "#/definitions/k-texts"
+            },
+            "outputFormats": {
+              "$ref": "#/definitions/k-outputs"
+            },
+            "target": {
+              "$ref": "#/definitions/k-commandTarget"
+            },
+            "cliVersion": {
+              "$ref": "#/definitions/k-text"
+            },
+            "pluginId": {
+              "$ref": "#/definitions/k-text"
+            }
+          }
+        }
+      }
+    },
+    "item-apex": {
+      "type": "object",
+      "required": [
+        "id",
+        "category",
+        "disposition",
+        "rationale",
+        "ownerId",
+        "provenanceRefs",
+        "behavior",
+        "acceptance",
+        "milestone",
+        "dependencies",
+        "repositoryRefs",
+        "decision",
+        "facts",
+        "details"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "category": {
+          "const": "apex"
+        },
+        "disposition": {
+          "enum": [
+            "required",
+            "optional",
+            "out-of-scope",
+            "unknown"
+          ]
+        },
+        "rationale": {
+          "$ref": "#/definitions/text"
+        },
+        "ownerId": {
+          "$ref": "#/definitions/id"
+        },
+        "provenanceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "behavior": {
+          "$ref": "#/definitions/k-text"
+        },
+        "acceptance": {
+          "$ref": "#/definitions/k-text"
+        },
+        "milestone": {
+          "$ref": "#/definitions/k-milestone"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "repositoryRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/repoRef"
+          },
+          "uniqueItems": true
+        },
+        "decision": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/decision"
+            }
+          ]
+        },
+        "facts": {
+          "type": "object",
+          "required": [
+            "observation",
+            "implementation",
+            "verification"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "observation": {
+              "$ref": "#/definitions/fact"
+            },
+            "implementation": {
+              "$ref": "#/definitions/fact"
+            },
+            "verification": {
+              "$ref": "#/definitions/fact"
+            }
+          }
+        },
+        "details": {
+          "type": "object",
+          "required": [
+            "name",
+            "version",
+            "dependencies",
+            "classApiVersion"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "$ref": "#/definitions/k-text"
+            },
+            "version": {
+              "$ref": "#/definitions/k-text"
+            },
+            "dependencies": {
+              "$ref": "#/definitions/k-texts"
+            },
+            "classApiVersion": {
+              "$ref": "#/definitions/k-api"
+            }
+          }
+        }
+      }
+    },
+    "item-flow": {
+      "type": "object",
+      "required": [
+        "id",
+        "category",
+        "disposition",
+        "rationale",
+        "ownerId",
+        "provenanceRefs",
+        "behavior",
+        "acceptance",
+        "milestone",
+        "dependencies",
+        "repositoryRefs",
+        "decision",
+        "facts",
+        "details"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "category": {
+          "const": "flow"
+        },
+        "disposition": {
+          "enum": [
+            "required",
+            "optional",
+            "out-of-scope",
+            "unknown"
+          ]
+        },
+        "rationale": {
+          "$ref": "#/definitions/text"
+        },
+        "ownerId": {
+          "$ref": "#/definitions/id"
+        },
+        "provenanceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "behavior": {
+          "$ref": "#/definitions/k-text"
+        },
+        "acceptance": {
+          "$ref": "#/definitions/k-text"
+        },
+        "milestone": {
+          "$ref": "#/definitions/k-milestone"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "repositoryRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/repoRef"
+          },
+          "uniqueItems": true
+        },
+        "decision": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/decision"
+            }
+          ]
+        },
+        "facts": {
+          "type": "object",
+          "required": [
+            "observation",
+            "implementation",
+            "verification"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "observation": {
+              "$ref": "#/definitions/fact"
+            },
+            "implementation": {
+              "$ref": "#/definitions/fact"
+            },
+            "verification": {
+              "$ref": "#/definitions/fact"
+            }
+          }
+        },
+        "details": {
+          "type": "object",
+          "required": [
+            "name",
+            "version",
+            "dependencies"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "$ref": "#/definitions/k-text"
+            },
+            "version": {
+              "$ref": "#/definitions/k-text"
+            },
+            "dependencies": {
+              "$ref": "#/definitions/k-texts"
+            }
+          }
+        }
+      }
+    },
+    "item-formula": {
+      "type": "object",
+      "required": [
+        "id",
+        "category",
+        "disposition",
+        "rationale",
+        "ownerId",
+        "provenanceRefs",
+        "behavior",
+        "acceptance",
+        "milestone",
+        "dependencies",
+        "repositoryRefs",
+        "decision",
+        "facts",
+        "details"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "category": {
+          "const": "formula"
+        },
+        "disposition": {
+          "enum": [
+            "required",
+            "optional",
+            "out-of-scope",
+            "unknown"
+          ]
+        },
+        "rationale": {
+          "$ref": "#/definitions/text"
+        },
+        "ownerId": {
+          "$ref": "#/definitions/id"
+        },
+        "provenanceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "behavior": {
+          "$ref": "#/definitions/k-text"
+        },
+        "acceptance": {
+          "$ref": "#/definitions/k-text"
+        },
+        "milestone": {
+          "$ref": "#/definitions/k-milestone"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "repositoryRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/repoRef"
+          },
+          "uniqueItems": true
+        },
+        "decision": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/decision"
+            }
+          ]
+        },
+        "facts": {
+          "type": "object",
+          "required": [
+            "observation",
+            "implementation",
+            "verification"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "observation": {
+              "$ref": "#/definitions/fact"
+            },
+            "implementation": {
+              "$ref": "#/definitions/fact"
+            },
+            "verification": {
+              "$ref": "#/definitions/fact"
+            }
+          }
+        },
+        "details": {
+          "type": "object",
+          "required": [
+            "name",
+            "version",
+            "dependencies"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "$ref": "#/definitions/k-text"
+            },
+            "version": {
+              "$ref": "#/definitions/k-text"
+            },
+            "dependencies": {
+              "$ref": "#/definitions/k-texts"
+            }
+          }
+        }
+      }
+    },
+    "item-validation": {
+      "type": "object",
+      "required": [
+        "id",
+        "category",
+        "disposition",
+        "rationale",
+        "ownerId",
+        "provenanceRefs",
+        "behavior",
+        "acceptance",
+        "milestone",
+        "dependencies",
+        "repositoryRefs",
+        "decision",
+        "facts",
+        "details"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "category": {
+          "const": "validation"
+        },
+        "disposition": {
+          "enum": [
+            "required",
+            "optional",
+            "out-of-scope",
+            "unknown"
+          ]
+        },
+        "rationale": {
+          "$ref": "#/definitions/text"
+        },
+        "ownerId": {
+          "$ref": "#/definitions/id"
+        },
+        "provenanceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "behavior": {
+          "$ref": "#/definitions/k-text"
+        },
+        "acceptance": {
+          "$ref": "#/definitions/k-text"
+        },
+        "milestone": {
+          "$ref": "#/definitions/k-milestone"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "repositoryRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/repoRef"
+          },
+          "uniqueItems": true
+        },
+        "decision": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/decision"
+            }
+          ]
+        },
+        "facts": {
+          "type": "object",
+          "required": [
+            "observation",
+            "implementation",
+            "verification"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "observation": {
+              "$ref": "#/definitions/fact"
+            },
+            "implementation": {
+              "$ref": "#/definitions/fact"
+            },
+            "verification": {
+              "$ref": "#/definitions/fact"
+            }
+          }
+        },
+        "details": {
+          "type": "object",
+          "required": [
+            "name",
+            "version",
+            "dependencies"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "$ref": "#/definitions/k-text"
+            },
+            "version": {
+              "$ref": "#/definitions/k-text"
+            },
+            "dependencies": {
+              "$ref": "#/definitions/k-texts"
+            }
+          }
+        }
+      }
+    },
+    "item-legacy-rule": {
+      "type": "object",
+      "required": [
+        "id",
+        "category",
+        "disposition",
+        "rationale",
+        "ownerId",
+        "provenanceRefs",
+        "behavior",
+        "acceptance",
+        "milestone",
+        "dependencies",
+        "repositoryRefs",
+        "decision",
+        "facts",
+        "details"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "category": {
+          "const": "legacy-rule"
+        },
+        "disposition": {
+          "enum": [
+            "required",
+            "optional",
+            "out-of-scope",
+            "unknown"
+          ]
+        },
+        "rationale": {
+          "$ref": "#/definitions/text"
+        },
+        "ownerId": {
+          "$ref": "#/definitions/id"
+        },
+        "provenanceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "behavior": {
+          "$ref": "#/definitions/k-text"
+        },
+        "acceptance": {
+          "$ref": "#/definitions/k-text"
+        },
+        "milestone": {
+          "$ref": "#/definitions/k-milestone"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "repositoryRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/repoRef"
+          },
+          "uniqueItems": true
+        },
+        "decision": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/decision"
+            }
+          ]
+        },
+        "facts": {
+          "type": "object",
+          "required": [
+            "observation",
+            "implementation",
+            "verification"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "observation": {
+              "$ref": "#/definitions/fact"
+            },
+            "implementation": {
+              "$ref": "#/definitions/fact"
+            },
+            "verification": {
+              "$ref": "#/definitions/fact"
+            }
+          }
+        },
+        "details": {
+          "type": "object",
+          "required": [
+            "name",
+            "version",
+            "dependencies"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "$ref": "#/definitions/k-text"
+            },
+            "version": {
+              "$ref": "#/definitions/k-text"
+            },
+            "dependencies": {
+              "$ref": "#/definitions/k-texts"
+            }
+          }
+        }
+      }
+    },
+    "item-imported-ui": {
+      "type": "object",
+      "required": [
+        "id",
+        "category",
+        "disposition",
+        "rationale",
+        "ownerId",
+        "provenanceRefs",
+        "behavior",
+        "acceptance",
+        "milestone",
+        "dependencies",
+        "repositoryRefs",
+        "decision",
+        "facts",
+        "details"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "category": {
+          "const": "imported-ui"
+        },
+        "disposition": {
+          "enum": [
+            "required",
+            "optional",
+            "out-of-scope",
+            "unknown"
+          ]
+        },
+        "rationale": {
+          "$ref": "#/definitions/text"
+        },
+        "ownerId": {
+          "$ref": "#/definitions/id"
+        },
+        "provenanceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "behavior": {
+          "$ref": "#/definitions/k-text"
+        },
+        "acceptance": {
+          "$ref": "#/definitions/k-text"
+        },
+        "milestone": {
+          "$ref": "#/definitions/k-milestone"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "repositoryRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/repoRef"
+          },
+          "uniqueItems": true
+        },
+        "decision": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/decision"
+            }
+          ]
+        },
+        "facts": {
+          "type": "object",
+          "required": [
+            "observation",
+            "implementation",
+            "verification"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "observation": {
+              "$ref": "#/definitions/fact"
+            },
+            "implementation": {
+              "$ref": "#/definitions/fact"
+            },
+            "verification": {
+              "$ref": "#/definitions/fact"
+            }
+          }
+        },
+        "details": {
+          "type": "object",
+          "required": [
+            "name",
+            "version",
+            "dependencies"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "$ref": "#/definitions/k-text"
+            },
+            "version": {
+              "$ref": "#/definitions/k-text"
+            },
+            "dependencies": {
+              "$ref": "#/definitions/k-texts"
+            }
+          }
+        }
+      }
+    },
+    "item-package": {
+      "type": "object",
+      "required": [
+        "id",
+        "category",
+        "disposition",
+        "rationale",
+        "ownerId",
+        "provenanceRefs",
+        "behavior",
+        "acceptance",
+        "milestone",
+        "dependencies",
+        "repositoryRefs",
+        "decision",
+        "facts",
+        "details"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "category": {
+          "const": "package"
+        },
+        "disposition": {
+          "enum": [
+            "required",
+            "optional",
+            "out-of-scope",
+            "unknown"
+          ]
+        },
+        "rationale": {
+          "$ref": "#/definitions/text"
+        },
+        "ownerId": {
+          "$ref": "#/definitions/id"
+        },
+        "provenanceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "behavior": {
+          "$ref": "#/definitions/k-text"
+        },
+        "acceptance": {
+          "$ref": "#/definitions/k-text"
+        },
+        "milestone": {
+          "$ref": "#/definitions/k-milestone"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "repositoryRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/repoRef"
+          },
+          "uniqueItems": true
+        },
+        "decision": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/decision"
+            }
+          ]
+        },
+        "facts": {
+          "type": "object",
+          "required": [
+            "observation",
+            "implementation",
+            "verification"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "observation": {
+              "$ref": "#/definitions/fact"
+            },
+            "implementation": {
+              "$ref": "#/definitions/fact"
+            },
+            "verification": {
+              "$ref": "#/definitions/fact"
+            }
+          }
+        },
+        "details": {
+          "type": "object",
+          "required": [
+            "name",
+            "version",
+            "dependencies"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "$ref": "#/definitions/k-text"
+            },
+            "version": {
+              "$ref": "#/definitions/k-text"
+            },
+            "dependencies": {
+              "$ref": "#/definitions/k-texts"
+            }
+          }
+        }
+      }
+    },
+    "item-security-policy": {
+      "type": "object",
+      "required": [
+        "id",
+        "category",
+        "disposition",
+        "rationale",
+        "ownerId",
+        "provenanceRefs",
+        "behavior",
+        "acceptance",
+        "milestone",
+        "dependencies",
+        "repositoryRefs",
+        "decision",
+        "facts",
+        "details"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "category": {
+          "const": "security-policy"
+        },
+        "disposition": {
+          "enum": [
+            "required",
+            "optional",
+            "out-of-scope",
+            "unknown"
+          ]
+        },
+        "rationale": {
+          "$ref": "#/definitions/text"
+        },
+        "ownerId": {
+          "$ref": "#/definitions/id"
+        },
+        "provenanceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "behavior": {
+          "$ref": "#/definitions/k-text"
+        },
+        "acceptance": {
+          "$ref": "#/definitions/k-text"
+        },
+        "milestone": {
+          "$ref": "#/definitions/k-milestone"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "repositoryRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/repoRef"
+          },
+          "uniqueItems": true
+        },
+        "decision": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/decision"
+            }
+          ]
+        },
+        "facts": {
+          "type": "object",
+          "required": [
+            "observation",
+            "implementation",
+            "verification"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "observation": {
+              "$ref": "#/definitions/fact"
+            },
+            "implementation": {
+              "$ref": "#/definitions/fact"
+            },
+            "verification": {
+              "$ref": "#/definitions/fact"
+            }
+          }
+        },
+        "details": {
+          "type": "object",
+          "required": [
+            "name",
+            "kind",
+            "grants",
+            "deniedBehavior"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "$ref": "#/definitions/k-text"
+            },
+            "kind": {
+              "$ref": "#/definitions/k-text"
+            },
+            "grants": {
+              "$ref": "#/definitions/k-texts"
+            },
+            "deniedBehavior": {
+              "$ref": "#/definitions/k-text"
+            }
+          }
+        }
+      }
+    },
+    "item-locale-requirement": {
+      "type": "object",
+      "required": [
+        "id",
+        "category",
+        "disposition",
+        "rationale",
+        "ownerId",
+        "provenanceRefs",
+        "behavior",
+        "acceptance",
+        "milestone",
+        "dependencies",
+        "repositoryRefs",
+        "decision",
+        "facts",
+        "details"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "category": {
+          "const": "locale-requirement"
+        },
+        "disposition": {
+          "enum": [
+            "required",
+            "optional",
+            "out-of-scope",
+            "unknown"
+          ]
+        },
+        "rationale": {
+          "$ref": "#/definitions/text"
+        },
+        "ownerId": {
+          "$ref": "#/definitions/id"
+        },
+        "provenanceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "behavior": {
+          "$ref": "#/definitions/k-text"
+        },
+        "acceptance": {
+          "$ref": "#/definitions/k-text"
+        },
+        "milestone": {
+          "$ref": "#/definitions/k-milestone"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "repositoryRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/repoRef"
+          },
+          "uniqueItems": true
+        },
+        "decision": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/decision"
+            }
+          ]
+        },
+        "facts": {
+          "type": "object",
+          "required": [
+            "observation",
+            "implementation",
+            "verification"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "observation": {
+              "$ref": "#/definitions/fact"
+            },
+            "implementation": {
+              "$ref": "#/definitions/fact"
+            },
+            "verification": {
+              "$ref": "#/definitions/fact"
+            }
+          }
+        },
+        "details": {
+          "type": "object",
+          "required": [
+            "wireLanguage",
+            "locale",
+            "currency",
+            "timezone",
+            "supportCategory",
+            "fallback"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "wireLanguage": {
+              "$ref": "#/definitions/k-text"
+            },
+            "locale": {
+              "$ref": "#/definitions/k-text"
+            },
+            "currency": {
+              "$ref": "#/definitions/k-currency"
+            },
+            "timezone": {
+              "$ref": "#/definitions/k-text"
+            },
+            "supportCategory": {
+              "$ref": "#/definitions/k-support"
+            },
+            "fallback": {
+              "$ref": "#/definitions/k-texts"
+            }
+          }
+        }
+      }
+    },
+    "item-migration-path": {
+      "type": "object",
+      "required": [
+        "id",
+        "category",
+        "disposition",
+        "rationale",
+        "ownerId",
+        "provenanceRefs",
+        "behavior",
+        "acceptance",
+        "milestone",
+        "dependencies",
+        "repositoryRefs",
+        "decision",
+        "facts",
+        "details"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "category": {
+          "const": "migration-path"
+        },
+        "disposition": {
+          "enum": [
+            "required",
+            "optional",
+            "out-of-scope",
+            "unknown"
+          ]
+        },
+        "rationale": {
+          "$ref": "#/definitions/text"
+        },
+        "ownerId": {
+          "$ref": "#/definitions/id"
+        },
+        "provenanceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "behavior": {
+          "$ref": "#/definitions/k-text"
+        },
+        "acceptance": {
+          "$ref": "#/definitions/k-text"
+        },
+        "milestone": {
+          "$ref": "#/definitions/k-milestone"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "repositoryRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/repoRef"
+          },
+          "uniqueItems": true
+        },
+        "decision": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/decision"
+            }
+          ]
+        },
+        "facts": {
+          "type": "object",
+          "required": [
+            "observation",
+            "implementation",
+            "verification"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "observation": {
+              "$ref": "#/definitions/fact"
+            },
+            "implementation": {
+              "$ref": "#/definitions/fact"
+            },
+            "verification": {
+              "$ref": "#/definitions/fact"
+            }
+          }
+        },
+        "details": {
+          "type": "object",
+          "required": [
+            "name",
+            "path",
+            "identityMapping",
+            "reconciliation"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "$ref": "#/definitions/k-text"
+            },
+            "path": {
+              "$ref": "#/definitions/k-text"
+            },
+            "identityMapping": {
+              "$ref": "#/definitions/k-text"
+            },
+            "reconciliation": {
+              "$ref": "#/definitions/k-text"
+            }
+          }
+        }
+      }
+    },
+    "item-operating-objective": {
+      "type": "object",
+      "required": [
+        "id",
+        "category",
+        "disposition",
+        "rationale",
+        "ownerId",
+        "provenanceRefs",
+        "behavior",
+        "acceptance",
+        "milestone",
+        "dependencies",
+        "repositoryRefs",
+        "decision",
+        "facts",
+        "details"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "category": {
+          "const": "operating-objective"
+        },
+        "disposition": {
+          "enum": [
+            "required",
+            "optional",
+            "out-of-scope",
+            "unknown"
+          ]
+        },
+        "rationale": {
+          "$ref": "#/definitions/text"
+        },
+        "ownerId": {
+          "$ref": "#/definitions/id"
+        },
+        "provenanceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "behavior": {
+          "$ref": "#/definitions/k-text"
+        },
+        "acceptance": {
+          "$ref": "#/definitions/k-text"
+        },
+        "milestone": {
+          "$ref": "#/definitions/k-milestone"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "repositoryRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/repoRef"
+          },
+          "uniqueItems": true
+        },
+        "decision": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/decision"
+            }
+          ]
+        },
+        "facts": {
+          "type": "object",
+          "required": [
+            "observation",
+            "implementation",
+            "verification"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "observation": {
+              "$ref": "#/definitions/fact"
+            },
+            "implementation": {
+              "$ref": "#/definitions/fact"
+            },
+            "verification": {
+              "$ref": "#/definitions/fact"
+            }
+          }
+        },
+        "details": {
+          "type": "object",
+          "required": [
+            "name",
+            "value",
+            "unit"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "$ref": "#/definitions/k-text"
+            },
+            "value": {
+              "$ref": "#/definitions/k-count"
+            },
+            "unit": {
+              "$ref": "#/definitions/k-text"
+            }
+          }
+        }
+      }
+    },
+    "section-sourceOrg": {
+      "type": "object",
+      "required": [
+        "status",
+        "ownerId",
+        "evidenceRefs",
+        "questions",
+        "absence",
+        "items"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "unknown",
+            "partial",
+            "complete"
+          ]
+        },
+        "ownerId": {
+          "$ref": "#/definitions/id"
+        },
+        "evidenceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "questions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/question"
+          }
+        },
+        "absence": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/absence"
+            }
+          ]
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/definitions/item-source"
+              },
+              {
+                "$ref": "#/definitions/item-org-feature"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "section-dataMetadata": {
+      "type": "object",
+      "required": [
+        "status",
+        "ownerId",
+        "evidenceRefs",
+        "questions",
+        "absence",
+        "items"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "unknown",
+            "partial",
+            "complete"
+          ]
+        },
+        "ownerId": {
+          "$ref": "#/definitions/id"
+        },
+        "evidenceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "questions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/question"
+          }
+        },
+        "absence": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/absence"
+            }
+          ]
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/definitions/item-object"
+              },
+              {
+                "$ref": "#/definitions/item-field"
+              },
+              {
+                "$ref": "#/definitions/item-relationship"
+              },
+              {
+                "$ref": "#/definitions/item-record-type"
+              },
+              {
+                "$ref": "#/definitions/item-layout"
+              },
+              {
+                "$ref": "#/definitions/item-data-volume"
+              },
+              {
+                "$ref": "#/definitions/item-export-area"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "section-workflowsUsers": {
+      "type": "object",
+      "required": [
+        "status",
+        "ownerId",
+        "evidenceRefs",
+        "questions",
+        "absence",
+        "items"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "unknown",
+            "partial",
+            "complete"
+          ]
+        },
+        "ownerId": {
+          "$ref": "#/definitions/id"
+        },
+        "evidenceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "questions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/question"
+          }
+        },
+        "absence": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/absence"
+            }
+          ]
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/definitions/item-workflow"
+              },
+              {
+                "$ref": "#/definitions/item-persona"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "section-clientsIntegrations": {
+      "type": "object",
+      "required": [
+        "status",
+        "ownerId",
+        "evidenceRefs",
+        "questions",
+        "absence",
+        "items"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "unknown",
+            "partial",
+            "complete"
+          ]
+        },
+        "ownerId": {
+          "$ref": "#/definitions/id"
+        },
+        "evidenceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "questions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/question"
+          }
+        },
+        "absence": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/absence"
+            }
+          ]
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/definitions/item-client"
+              },
+              {
+                "$ref": "#/definitions/item-integration"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "section-cliPlugins": {
+      "type": "object",
+      "required": [
+        "status",
+        "ownerId",
+        "evidenceRefs",
+        "questions",
+        "absence",
+        "items"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "unknown",
+            "partial",
+            "complete"
+          ]
+        },
+        "ownerId": {
+          "$ref": "#/definitions/id"
+        },
+        "evidenceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "questions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/question"
+          }
+        },
+        "absence": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/absence"
+            }
+          ]
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/definitions/item-cli"
+              },
+              {
+                "$ref": "#/definitions/item-plugin"
+              },
+              {
+                "$ref": "#/definitions/item-cli-command"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "section-automationCustomization": {
+      "type": "object",
+      "required": [
+        "status",
+        "ownerId",
+        "evidenceRefs",
+        "questions",
+        "absence",
+        "items"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "unknown",
+            "partial",
+            "complete"
+          ]
+        },
+        "ownerId": {
+          "$ref": "#/definitions/id"
+        },
+        "evidenceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "questions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/question"
+          }
+        },
+        "absence": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/absence"
+            }
+          ]
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/definitions/item-apex"
+              },
+              {
+                "$ref": "#/definitions/item-flow"
+              },
+              {
+                "$ref": "#/definitions/item-formula"
+              },
+              {
+                "$ref": "#/definitions/item-validation"
+              },
+              {
+                "$ref": "#/definitions/item-legacy-rule"
+              },
+              {
+                "$ref": "#/definitions/item-imported-ui"
+              },
+              {
+                "$ref": "#/definitions/item-package"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "section-security": {
+      "type": "object",
+      "required": [
+        "status",
+        "ownerId",
+        "evidenceRefs",
+        "questions",
+        "absence",
+        "items"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "unknown",
+            "partial",
+            "complete"
+          ]
+        },
+        "ownerId": {
+          "$ref": "#/definitions/id"
+        },
+        "evidenceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "questions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/question"
+          }
+        },
+        "absence": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/absence"
+            }
+          ]
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/definitions/item-security-policy"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "section-localization": {
+      "type": "object",
+      "required": [
+        "status",
+        "ownerId",
+        "evidenceRefs",
+        "questions",
+        "absence",
+        "items"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "unknown",
+            "partial",
+            "complete"
+          ]
+        },
+        "ownerId": {
+          "$ref": "#/definitions/id"
+        },
+        "evidenceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "questions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/question"
+          }
+        },
+        "absence": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/absence"
+            }
+          ]
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/definitions/item-locale-requirement"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "section-migrationOperations": {
+      "type": "object",
+      "required": [
+        "status",
+        "ownerId",
+        "evidenceRefs",
+        "questions",
+        "absence",
+        "items"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "unknown",
+            "partial",
+            "complete"
+          ]
+        },
+        "ownerId": {
+          "$ref": "#/definitions/id"
+        },
+        "evidenceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "uniqueItems": true
+        },
+        "questions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/question"
+          }
+        },
+        "absence": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/absence"
+            }
+          ]
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/definitions/item-migration-path"
+              },
+              {
+                "$ref": "#/definitions/item-operating-objective"
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}
