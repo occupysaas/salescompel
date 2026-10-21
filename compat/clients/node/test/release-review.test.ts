@@ -369,3 +369,8 @@ test("wrapper detects protected hash drift and malformed or absent ledgers", asy
   await rm(join(root, "docs/compat/releases/index.yaml"));
   assert.ok((await validateReleaseReviewRepository(root)).length);
 });
+
+test("repository release batch validates all registered foundation contracts", async () => {
+  const { ROOT } = await import("../src/versions.ts");
+  assert.deepEqual(await validateReleaseReviewRepository(ROOT), []);
+});

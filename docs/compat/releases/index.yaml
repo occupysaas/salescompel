@@ -1284,5 +1284,855 @@
         "resolution": "Retrieve official PDF or its release-pinned official HTML equivalent; inspect applicable API changes and record contract/test impact."
       }
     }
+  ],
+  "reviewBatches": [
+    {
+      "id": "plan-18-foundation",
+      "profile": "rest-query-foundation",
+      "apiVersion": "65.0",
+      "profileHash": "99d90e50fc63573f08f5a48da878eb9c129b7d660eb9ed5d600306b9706bd8f8",
+      "contractHash": "c4d71ee2235025bbe786d97a8b2a262dc104b2447e03323435410da055a85ddb",
+      "completedAt": "2026-10-21",
+      "status": "complete",
+      "scope": "foundation-sections",
+      "owner": "platform-implementer",
+      "sources": [
+        {
+          "id": "p18-winter26-pdf",
+          "url": "https://resources.docs.salesforce.com/rel1/doc/en-us/static/pdf/salesforce_winter26_release_notes.pdf",
+          "kind": "release-notes",
+          "release": "Winter 26",
+          "apiVersion": "65.0",
+          "publicationDate": null,
+          "accessedAt": "2026-10-21",
+          "reviewer": "platform-implementer",
+          "outcome": "unavailable",
+          "locator": null,
+          "coverage": "No document bytes or table of contents available; API, query, security, limits and release-update sections unread.",
+          "attempts": [
+            "Web tool: inaccessible archive PDF",
+            "Direct urllib and curl with TLS verification: certificate-chain verification failed; no bypass attempted"
+          ],
+          "checksum": null,
+          "gap": {
+            "owner": "platform-implementer",
+            "reason": "Content unavailable; no section review claimed",
+            "nextAction": "Retrieve official release-pinned sections and reconcile API 65.0 applicability"
+          }
+        },
+        {
+          "id": "p18-winter23-pdf",
+          "url": "https://resources.docs.salesforce.com/240/latest/en-us/sfdc/pdf/salesforce_winter23_release_notes.pdf",
+          "kind": "release-notes",
+          "release": "Winter 23",
+          "apiVersion": "56.0",
+          "publicationDate": null,
+          "accessedAt": "2026-10-21",
+          "reviewer": "platform-implementer",
+          "outcome": "unavailable",
+          "locator": null,
+          "coverage": "No document bytes available; contents and cursor/API sections unread.",
+          "attempts": [
+            "Web tool: inaccessible archive PDF",
+            "Direct urllib with TLS verification: certificate-chain verification failed"
+          ],
+          "checksum": null,
+          "gap": {
+            "owner": "platform-implementer",
+            "reason": "Content unavailable; no section review claimed",
+            "nextAction": "Retrieve official release-pinned sections and reconcile API 65.0 applicability"
+          }
+        },
+        {
+          "id": "p18-winter26-toc",
+          "url": "https://help.salesforce.com/s/articleView?id=release-notes.salesforce_release_notes.htm&language=en_US&release=258&type=5",
+          "kind": "release-notes",
+          "release": "Winter 26",
+          "apiVersion": "65.0",
+          "publicationDate": null,
+          "accessedAt": "2026-10-21",
+          "reviewer": "platform-implementer",
+          "outcome": "unavailable",
+          "locator": null,
+          "coverage": "Attempted pinned section returned loading/CSS shell or inaccessible content; body and links unread.",
+          "attempts": [
+            "Web tool open: no readable release-note body"
+          ],
+          "checksum": null,
+          "gap": {
+            "owner": "platform-implementer",
+            "reason": "Content unavailable; no section review claimed",
+            "nextAction": "Retrieve official release-pinned sections and reconcile API 65.0 applicability"
+          }
+        },
+        {
+          "id": "p18-winter26-api",
+          "url": "https://help.salesforce.com/s/articleView?id=release-notes.rn_api.htm&language=en_US&release=258&type=5",
+          "kind": "release-notes",
+          "release": "Winter 26",
+          "apiVersion": "65.0",
+          "publicationDate": null,
+          "accessedAt": "2026-10-21",
+          "reviewer": "platform-implementer",
+          "outcome": "unavailable",
+          "locator": null,
+          "coverage": "Attempted pinned section returned loading/CSS shell or inaccessible content; body and links unread.",
+          "attempts": [
+            "Web tool open: no readable release-note body",
+            "Alternate language=it URL also returned CSS/loading shell"
+          ],
+          "checksum": null,
+          "gap": {
+            "owner": "platform-implementer",
+            "reason": "Content unavailable; no section review claimed",
+            "nextAction": "Retrieve official release-pinned sections and reconcile API 65.0 applicability"
+          }
+        },
+        {
+          "id": "p18-winter26-soql",
+          "url": "https://help.salesforce.com/s/articleView?id=release-notes.rn_api_soql.htm&language=en_US&release=258&type=5",
+          "kind": "release-notes",
+          "release": "Winter 26",
+          "apiVersion": "65.0",
+          "publicationDate": null,
+          "accessedAt": "2026-10-21",
+          "reviewer": "platform-implementer",
+          "outcome": "unavailable",
+          "locator": null,
+          "coverage": "Attempted pinned section returned loading/CSS shell or inaccessible content; body and links unread.",
+          "attempts": [
+            "Web tool open: no readable release-note body"
+          ],
+          "checksum": null,
+          "gap": {
+            "owner": "platform-implementer",
+            "reason": "Content unavailable; no section review claimed",
+            "nextAction": "Retrieve official release-pinned sections and reconcile API 65.0 applicability"
+          }
+        },
+        {
+          "id": "p18-winter26-changelog",
+          "url": "https://help.salesforce.com/s/articleView?id=release-notes.rn_change_log.htm&language=en_US&release=258&type=5",
+          "kind": "changelog",
+          "release": "Winter 26",
+          "apiVersion": "65.0",
+          "publicationDate": null,
+          "accessedAt": "2026-10-21",
+          "reviewer": "platform-implementer",
+          "outcome": "unavailable",
+          "locator": null,
+          "coverage": "Attempted pinned section returned loading/CSS shell or inaccessible content; body and links unread.",
+          "attempts": [
+            "Web tool open: no readable release-note body"
+          ],
+          "checksum": null,
+          "gap": {
+            "owner": "platform-implementer",
+            "reason": "Content unavailable; no section review claimed",
+            "nextAction": "Retrieve official release-pinned sections and reconcile API 65.0 applicability"
+          }
+        },
+        {
+          "id": "p18-winter26-security",
+          "url": "https://help.salesforce.com/s/articleView?id=release-notes.rn_security.htm&language=en_US&release=258&type=5",
+          "kind": "release-notes",
+          "release": "Winter 26",
+          "apiVersion": "65.0",
+          "publicationDate": null,
+          "accessedAt": "2026-10-21",
+          "reviewer": "platform-implementer",
+          "outcome": "unavailable",
+          "locator": null,
+          "coverage": "Attempted pinned section returned loading/CSS shell or inaccessible content; body and links unread.",
+          "attempts": [
+            "Web tool open: no readable release-note body"
+          ],
+          "checksum": null,
+          "gap": {
+            "owner": "platform-implementer",
+            "reason": "Content unavailable; no section review claimed",
+            "nextAction": "Retrieve official release-pinned sections and reconcile API 65.0 applicability"
+          }
+        },
+        {
+          "id": "p18-winter26-updates",
+          "url": "https://help.salesforce.com/s/articleView?id=release-notes.rn_release_updates.htm&language=en_US&release=258&type=5",
+          "kind": "release-update",
+          "release": "Winter 26",
+          "apiVersion": "65.0",
+          "publicationDate": null,
+          "accessedAt": "2026-10-21",
+          "reviewer": "platform-implementer",
+          "outcome": "unavailable",
+          "locator": null,
+          "coverage": "Attempted pinned section returned loading/CSS shell or inaccessible content; body and links unread.",
+          "attempts": [
+            "Web tool open: no readable release-note body"
+          ],
+          "checksum": null,
+          "gap": {
+            "owner": "platform-implementer",
+            "reason": "Content unavailable; no section review claimed",
+            "nextAction": "Retrieve official release-pinned sections and reconcile API 65.0 applicability"
+          }
+        },
+        {
+          "id": "p18-winter23-api",
+          "url": "https://help.salesforce.com/s/articleView?id=release-notes.rn_api.htm&language=en_US&release=240&type=5",
+          "kind": "release-notes",
+          "release": "Winter 23",
+          "apiVersion": "56.0",
+          "publicationDate": null,
+          "accessedAt": "2026-10-21",
+          "reviewer": "platform-implementer",
+          "outcome": "unavailable",
+          "locator": null,
+          "coverage": "Attempted pinned section returned loading/CSS shell or inaccessible content; body and links unread.",
+          "attempts": [
+            "Web tool open: no readable release-note body"
+          ],
+          "checksum": null,
+          "gap": {
+            "owner": "platform-implementer",
+            "reason": "Content unavailable; no section review claimed",
+            "nextAction": "Retrieve official release-pinned sections and reconcile API 65.0 applicability"
+          }
+        },
+        {
+          "id": "p18-winter23-cursor",
+          "url": "https://help.salesforce.com/s/articleView?id=release-notes.rn_api_improved_query_limits.htm&language=en_US&release=240&type=5",
+          "kind": "release-notes",
+          "release": "Winter 23",
+          "apiVersion": "56.0",
+          "publicationDate": null,
+          "accessedAt": "2026-10-21",
+          "reviewer": "platform-implementer",
+          "outcome": "unavailable",
+          "locator": null,
+          "coverage": "Attempted pinned section returned loading/CSS shell or inaccessible content; body and links unread.",
+          "attempts": [
+            "Web tool open: no readable release-note body"
+          ],
+          "checksum": null,
+          "gap": {
+            "owner": "platform-implementer",
+            "reason": "Content unavailable; no section review claimed",
+            "nextAction": "Retrieve official release-pinned sections and reconcile API 65.0 applicability"
+          }
+        },
+        {
+          "id": "p18-version-table",
+          "url": "https://help.salesforce.com/s/articleView?id=000199268&language=en_US&type=1",
+          "kind": "current-guide",
+          "release": null,
+          "apiVersion": null,
+          "publicationDate": "2026-06-14",
+          "accessedAt": "2026-10-21",
+          "reviewer": "platform-implementer",
+          "outcome": "reviewed",
+          "locator": "Examples table: API Version / Salesforce Release",
+          "coverage": "Read release/API mapping table only; verifies Winter 26=65.0 and Winter 23=56.0, not source-org version or historical semantics.",
+          "attempts": [
+            "Opened public official page with web tool; read the named section"
+          ],
+          "checksum": null,
+          "gap": null
+        },
+        {
+          "id": "p18-cursor-guide",
+          "url": "https://developer.salesforce.com/docs/platform/salesforce-app-limits-cheatsheet/guide/salesforce-app-limits-platform-apicursors.html",
+          "kind": "current-guide",
+          "release": null,
+          "apiVersion": null,
+          "publicationDate": null,
+          "accessedAt": "2026-10-21",
+          "reviewer": "platform-implementer",
+          "outcome": "reviewed",
+          "locator": "API Query Cursor Limits, availability and changed-limits paragraphs",
+          "coverage": "Read complete short section; current two-day result availability and removed cursor limits; exact expiry anchor/eviction unaddressed.",
+          "attempts": [
+            "Opened public official page with web tool; read the named section"
+          ],
+          "checksum": null,
+          "gap": null
+        },
+        {
+          "id": "p18-current-limits-pdf",
+          "url": "https://resources.docs.salesforce.com/latest/latest/en-us/sfdc/pdf/salesforce_app_limits_cheatsheet.pdf",
+          "kind": "current-guide",
+          "release": null,
+          "apiVersion": null,
+          "publicationDate": null,
+          "accessedAt": "2026-10-21",
+          "reviewer": "platform-implementer",
+          "outcome": "unavailable",
+          "locator": null,
+          "coverage": "No PDF content available on this attempt; current HTML cursor guide reviewed separately.",
+          "attempts": [
+            "Web tool open failed: 502 Bad Gateway"
+          ],
+          "checksum": null,
+          "gap": {
+            "owner": "platform-implementer",
+            "reason": "Content unavailable; no section review claimed",
+            "nextAction": "Retrieve official release-pinned sections and reconcile API 65.0 applicability"
+          }
+        },
+        {
+          "id": "p18-api-article",
+          "url": "https://developer.salesforce.com/blogs/2022/12/processing-large-amounts-of-data-with-apis-part-1-of-2",
+          "kind": "dated-article",
+          "release": "Winter 23",
+          "apiVersion": "56.0",
+          "publicationDate": null,
+          "accessedAt": "2026-10-21",
+          "reviewer": "platform-implementer",
+          "outcome": "reviewed",
+          "locator": "REST API > Using the query locator to retrieve additional results; Using pagination to retrieve additional results",
+          "coverage": "Read REST/locator/pagination subsections; historical Winter 23/API 56 cursor context. Bulk sections excluded; article is not a release-pinned note.",
+          "attempts": [
+            "Opened public official page with web tool; read the named section"
+          ],
+          "checksum": null,
+          "gap": null
+        },
+        {
+          "id": "p18-query",
+          "url": "https://developer.salesforce.com/docs/platform/api-rest/guide/resources-query.html",
+          "kind": "current-guide",
+          "release": null,
+          "apiVersion": null,
+          "publicationDate": null,
+          "accessedAt": "2026-10-21",
+          "reviewer": "platform-implementer",
+          "outcome": "reviewed",
+          "locator": "Query: description, response fields, URI and q parameter",
+          "coverage": "Read resource description and parameter table; page size caveat, continuation fields and query URI; not historical change coverage.",
+          "attempts": [
+            "Opened public official page with web tool; read the named section"
+          ],
+          "checksum": null,
+          "gap": null
+        },
+        {
+          "id": "p18-query-more",
+          "url": "https://developer.salesforce.com/docs/platform/api-rest/guide/resources-query-more-results.html",
+          "kind": "current-guide",
+          "release": null,
+          "apiVersion": null,
+          "publicationDate": null,
+          "accessedAt": "2026-10-21",
+          "reviewer": "platform-implementer",
+          "outcome": "reviewed",
+          "locator": "Query More Results: description, URI, method and queryLocator parameter",
+          "coverage": "Read complete short resource section; response paragraph refers to QueryAll, so avoid treating it as an exhaustive Query guarantee.",
+          "attempts": [
+            "Opened public official page with web tool; read the named section"
+          ],
+          "checksum": null,
+          "gap": null
+        },
+        {
+          "id": "p18-batch-header",
+          "url": "https://developer.salesforce.com/docs/platform/api-rest/guide/headers-queryoptions.html",
+          "kind": "current-guide",
+          "release": null,
+          "apiVersion": null,
+          "publicationDate": null,
+          "accessedAt": "2026-10-21",
+          "reviewer": "platform-implementer",
+          "outcome": "reviewed",
+          "locator": "Query Options Header: batchSize field values",
+          "coverage": "Read complete header section; requested default/bounds and actual-size caveat. No exact bad-input response established.",
+          "attempts": [
+            "Opened public official page with web tool; read the named section"
+          ],
+          "checksum": null,
+          "gap": null
+        },
+        {
+          "id": "p18-order-by",
+          "url": "https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-orderby.html",
+          "kind": "current-guide",
+          "release": null,
+          "apiVersion": null,
+          "publicationDate": null,
+          "accessedAt": "2026-10-21",
+          "reviewer": "platform-implementer",
+          "outcome": "reviewed",
+          "locator": "ORDER BY: syntax table, duplicate values, locale and relationship-null caveats",
+          "coverage": "Read syntax, defaults, ties, locale and datatype/relationship restrictions; broader relationship behavior remains outside selected slice.",
+          "attempts": [
+            "Opened public official page with web tool; read the named section"
+          ],
+          "checksum": null,
+          "gap": null
+        },
+        {
+          "id": "p18-comparisons",
+          "url": "https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-comparisonoperators.html",
+          "kind": "current-guide",
+          "release": null,
+          "apiVersion": null,
+          "publicationDate": null,
+          "accessedAt": "2026-10-21",
+          "reviewer": "platform-implementer",
+          "outcome": "reviewed",
+          "locator": "Comparison Operators: introductory string-comparison rules and operator table",
+          "coverage": "Read introduction and operator table; locale-sensitive equality and unique case-sensitive field exception. Semi-join examples excluded.",
+          "attempts": [
+            "Opened public official page with web tool; read the named section"
+          ],
+          "checksum": null,
+          "gap": null
+        },
+        {
+          "id": "p18-errors",
+          "url": "https://developer.salesforce.com/docs/platform/api-rest/guide/errorcodes.html",
+          "kind": "current-guide",
+          "release": null,
+          "apiVersion": null,
+          "publicationDate": null,
+          "accessedAt": "2026-10-21",
+          "reviewer": "platform-implementer",
+          "outcome": "reviewed",
+          "locator": "Status Codes and Error Responses: status table and missing-ID/object examples",
+          "coverage": "Read HTTP table and examples context; no complete foundation-specific error matrix or retained example bodies from extraction.",
+          "attempts": [
+            "Opened public official page with web tool; read the named section"
+          ],
+          "checksum": null,
+          "gap": null
+        },
+        {
+          "id": "p18-core-types",
+          "url": "https://developer.salesforce.com/docs/platform/api/guide/sforce-api-calls-concepts-core-data-objects.html",
+          "kind": "current-guide",
+          "release": null,
+          "apiVersion": null,
+          "publicationDate": null,
+          "accessedAt": "2026-10-21",
+          "reviewer": "platform-implementer",
+          "outcome": "reviewed",
+          "locator": "Core Data Types Used in API Calls: error-handling introduction; StatusCode MALFORMED_ID entry",
+          "coverage": "Read error-handling introduction and relevant invalid ID/type/locator entries; SOAP vocabulary is not a complete REST wire mapping.",
+          "attempts": [
+            "Opened public official page with web tool; read the named section"
+          ],
+          "checksum": null,
+          "gap": null
+        }
+      ],
+      "contracts": [
+        {
+          "contractId": "query-response-shape",
+          "sourceIds": [
+            "p18-query",
+            "p18-query-more"
+          ],
+          "findingIds": [
+            "p18-query-continuation-context"
+          ],
+          "documentaryStatus": "partial",
+          "expectation": "Current Query documentation describes continuation and result envelope; attributes and precise selected-version shape still need evidence.",
+          "coverage": "Current named sections only; Winter 26/API 65 and relevant historical release sections remain unread.",
+          "gaps": [
+            {
+              "owner": "platform-implementer",
+              "reason": "Pinned release body and linked update coverage unavailable; historical interval remains unreviewed",
+              "nextAction": "Retrieve official release-pinned sections and reconcile API 65.0 applicability"
+            }
+          ],
+          "liveStatus": "blocked",
+          "blocksContractFreeze": true,
+          "owner": "platform-implementer",
+          "nextAction": "Resolve documentary source gaps; resume Plan 10 under its private-session and recovery prerequisites",
+          "regressions": [
+            {
+              "id": "p18-query-response-shape-regression",
+              "status": "proposed",
+              "path": null,
+              "testName": null,
+              "operation": "Query more than 2000 owned Accounts and follow every returned nextRecordsUrl",
+              "assertion": "Compare totalSize/done/records/attributes and each continuation response to accepted reference; no loss or duplicate IDs",
+              "evidencePrerequisite": "Accepted fresh sequential Plan 10 pair and documentary decision; existing cursor waiver remains in force"
+            }
+          ]
+        },
+        {
+          "contractId": "query-limit-above-batch",
+          "sourceIds": [
+            "p18-query",
+            "p18-api-article"
+          ],
+          "findingIds": [
+            "p18-query-continuation-context"
+          ],
+          "documentaryStatus": "partial",
+          "expectation": "Current material distinguishes page size from query results; the exact LIMIT 5000 outcome remains an evidence question.",
+          "coverage": "Current named sections only; Winter 26/API 65 and relevant historical release sections remain unread.",
+          "gaps": [
+            {
+              "owner": "platform-implementer",
+              "reason": "Pinned release body and linked update coverage unavailable; historical interval remains unreviewed",
+              "nextAction": "Retrieve official release-pinned sections and reconcile API 65.0 applicability"
+            }
+          ],
+          "liveStatus": "blocked",
+          "blocksContractFreeze": true,
+          "owner": "platform-implementer",
+          "nextAction": "Resolve documentary source gaps; resume Plan 10 under its private-session and recovery prerequisites",
+          "regressions": [
+            {
+              "id": "p18-query-limit-above-batch-regression",
+              "status": "proposed",
+              "path": null,
+              "testName": null,
+              "operation": "Query 2001 owned rows with LIMIT 5000 and traverse returned locators",
+              "assertion": "Compare accepted total/page counts and complete ID membership; do not reject LIMIT solely for exceeding one page",
+              "evidencePrerequisite": "Accepted fresh sequential Plan 10 pair and documentary decision; existing cursor waiver remains in force"
+            }
+          ]
+        },
+        {
+          "contractId": "id-15-18",
+          "sourceIds": [
+            "p18-core-types"
+          ],
+          "findingIds": [
+            "p18-error-id-context"
+          ],
+          "documentaryStatus": "partial",
+          "expectation": "Current SOAP status vocabulary distinguishes 15/18-character ID validity; REST acceptance, checksum behavior and canonical response casing remain unmeasured by this package.",
+          "coverage": "Current named sections only; Winter 26/API 65 and relevant historical release sections remain unread.",
+          "gaps": [
+            {
+              "owner": "platform-implementer",
+              "reason": "Pinned release body and linked update coverage unavailable; historical interval remains unreviewed",
+              "nextAction": "Retrieve official release-pinned sections and reconcile API 65.0 applicability"
+            }
+          ],
+          "liveStatus": "blocked",
+          "blocksContractFreeze": true,
+          "owner": "platform-implementer",
+          "nextAction": "Resolve documentary source gaps; resume Plan 10 under its private-session and recovery prerequisites",
+          "regressions": [
+            {
+              "id": "p18-id-15-18-regression",
+              "status": "proposed",
+              "path": null,
+              "testName": null,
+              "operation": "Read, update and delete synthetic records using 15-character and valid/invalid 18-character forms",
+              "assertion": "Compare each status/error and returned ID form against accepted REST evidence; verify committed state independently",
+              "evidencePrerequisite": "Accepted fresh sequential Plan 10 pair and documentary decision; existing cursor waiver remains in force"
+            }
+          ]
+        },
+        {
+          "contractId": "case-insensitive-names",
+          "sourceIds": [],
+          "findingIds": [],
+          "documentaryStatus": "blocked",
+          "expectation": "No reviewed source in this batch settles canonical object/field name handling in all selected routes.",
+          "coverage": "Current named sections only; Winter 26/API 65 and relevant historical release sections remain unread.",
+          "gaps": [
+            {
+              "owner": "platform-implementer",
+              "reason": "Pinned release body and linked update coverage unavailable; historical interval remains unreviewed",
+              "nextAction": "Retrieve official release-pinned sections and reconcile API 65.0 applicability"
+            }
+          ],
+          "liveStatus": "blocked",
+          "blocksContractFreeze": true,
+          "owner": "platform-implementer",
+          "nextAction": "Resolve documentary source gaps; resume Plan 10 under its private-session and recovery prerequisites",
+          "regressions": [
+            {
+              "id": "p18-case-insensitive-names-regression",
+              "status": "proposed",
+              "path": null,
+              "testName": null,
+              "operation": "Use lowercase/mixed-case object and field API names in SOQL and REST describe",
+              "assertion": "Compare accepted response key casing, statuses and selected fields across route variants",
+              "evidencePrerequisite": "Accepted fresh sequential Plan 10 pair and documentary decision; existing cursor waiver remains in force"
+            }
+          ]
+        },
+        {
+          "contractId": "case-insensitive-comparison",
+          "sourceIds": [
+            "p18-comparisons"
+          ],
+          "findingIds": [
+            "p18-locale-comparison-context"
+          ],
+          "documentaryStatus": "partial",
+          "expectation": "Current guide makes ordinary string comparison depend on executing-user locale and exempts unique case-sensitive fields; no universal Unicode normalization rule follows.",
+          "coverage": "Current named sections only; Winter 26/API 65 and relevant historical release sections remain unread.",
+          "gaps": [
+            {
+              "owner": "platform-implementer",
+              "reason": "Pinned release body and linked update coverage unavailable; historical interval remains unreviewed",
+              "nextAction": "Retrieve official release-pinned sections and reconcile API 65.0 applicability"
+            }
+          ],
+          "liveStatus": "blocked",
+          "blocksContractFreeze": true,
+          "owner": "platform-implementer",
+          "nextAction": "Resolve documentary source gaps; resume Plan 10 under its private-session and recovery prerequisites",
+          "regressions": [
+            {
+              "id": "p18-case-insensitive-comparison-regression",
+              "status": "proposed",
+              "path": null,
+              "testName": null,
+              "operation": "Run Plan 10 ASCII, sharp-s, accent and Turkish equality cases under pinned user locale",
+              "assertion": "Compare exact accepted membership per input; never substitute external-ID equality or an assumed full Unicode fold",
+              "evidencePrerequisite": "Accepted fresh sequential Plan 10 pair and documentary decision; existing cursor waiver remains in force"
+            }
+          ]
+        },
+        {
+          "contractId": "null-ordering",
+          "sourceIds": [
+            "p18-order-by"
+          ],
+          "findingIds": [
+            "p18-null-and-tie-context"
+          ],
+          "documentaryStatus": "partial",
+          "expectation": "Current guide states nulls-first default and permits tied-order variation; relationship-null restrictions cannot silently generalize to every field.",
+          "coverage": "Current named sections only; Winter 26/API 65 and relevant historical release sections remain unread.",
+          "gaps": [
+            {
+              "owner": "platform-implementer",
+              "reason": "Pinned release body and linked update coverage unavailable; historical interval remains unreviewed",
+              "nextAction": "Retrieve official release-pinned sections and reconcile API 65.0 applicability"
+            }
+          ],
+          "liveStatus": "blocked",
+          "blocksContractFreeze": true,
+          "owner": "platform-implementer",
+          "nextAction": "Resolve documentary source gaps; resume Plan 10 under its private-session and recovery prerequisites",
+          "regressions": [
+            {
+              "id": "p18-null-ordering-regression",
+              "status": "proposed",
+              "path": null,
+              "testName": null,
+              "operation": "Traverse tied/null/non-null sort values under ASC/DESC and explicit NULLS FIRST/LAST",
+              "assertion": "Compare null placement, complete membership and within-tie equivalence under accepted Plan 10 policy",
+              "evidencePrerequisite": "Accepted fresh sequential Plan 10 pair and documentary decision; existing cursor waiver remains in force"
+            }
+          ]
+        },
+        {
+          "contractId": "error-shape",
+          "sourceIds": [
+            "p18-errors",
+            "p18-core-types"
+          ],
+          "findingIds": [
+            "p18-error-id-context"
+          ],
+          "documentaryStatus": "partial",
+          "expectation": "General HTTP and SOAP error context does not settle the exact REST status/code/fields matrix for the selected errors.",
+          "coverage": "Current named sections only; Winter 26/API 65 and relevant historical release sections remain unread.",
+          "gaps": [
+            {
+              "owner": "platform-implementer",
+              "reason": "Pinned release body and linked update coverage unavailable; historical interval remains unreviewed",
+              "nextAction": "Retrieve official release-pinned sections and reconcile API 65.0 applicability"
+            }
+          ],
+          "liveStatus": "blocked",
+          "blocksContractFreeze": true,
+          "owner": "platform-implementer",
+          "nextAction": "Resolve documentary source gaps; resume Plan 10 under its private-session and recovery prerequisites",
+          "regressions": [
+            {
+              "id": "p18-error-shape-regression",
+              "status": "proposed",
+              "path": null,
+              "testName": null,
+              "operation": "Send malformed JSON/query, unknown field and missing-record operations",
+              "assertion": "Compare status plus errorCode/message/fields structure to accepted evidence; check failed mutations leave state unchanged",
+              "evidencePrerequisite": "Accepted fresh sequential Plan 10 pair and documentary decision; existing cursor waiver remains in force"
+            }
+          ]
+        },
+        {
+          "contractId": "unknown-sobject",
+          "sourceIds": [
+            "p18-errors",
+            "p18-core-types"
+          ],
+          "findingIds": [
+            "p18-error-id-context"
+          ],
+          "documentaryStatus": "partial",
+          "expectation": "Missing-resource and invalid-type vocabulary does not establish that REST path and SOQL FROM return the same error.",
+          "coverage": "Current named sections only; Winter 26/API 65 and relevant historical release sections remain unread.",
+          "gaps": [
+            {
+              "owner": "platform-implementer",
+              "reason": "Pinned release body and linked update coverage unavailable; historical interval remains unreviewed",
+              "nextAction": "Retrieve official release-pinned sections and reconcile API 65.0 applicability"
+            }
+          ],
+          "liveStatus": "blocked",
+          "blocksContractFreeze": true,
+          "owner": "platform-implementer",
+          "nextAction": "Resolve documentary source gaps; resume Plan 10 under its private-session and recovery prerequisites",
+          "regressions": [
+            {
+              "id": "p18-unknown-sobject-regression",
+              "status": "proposed",
+              "path": null,
+              "testName": null,
+              "operation": "Request unknown sObject describe and SELECT Id FROM the unknown type",
+              "assertion": "Compare status/code pairs independently for route and query; retain any difference",
+              "evidencePrerequisite": "Accepted fresh sequential Plan 10 pair and documentary decision; existing cursor waiver remains in force"
+            }
+          ]
+        },
+        {
+          "contractId": "query-batch-header",
+          "sourceIds": [
+            "p18-batch-header",
+            "p18-query"
+          ],
+          "findingIds": [
+            "p18-batch-size-context"
+          ],
+          "documentaryStatus": "partial",
+          "expectation": "Current guide documents requested size default 2000 and bounds 200..2000, while actual size may differ.",
+          "coverage": "Current named sections only; Winter 26/API 65 and relevant historical release sections remain unread.",
+          "gaps": [
+            {
+              "owner": "platform-implementer",
+              "reason": "Pinned release body and linked update coverage unavailable; historical interval remains unreviewed",
+              "nextAction": "Retrieve official release-pinned sections and reconcile API 65.0 applicability"
+            }
+          ],
+          "liveStatus": "blocked",
+          "blocksContractFreeze": true,
+          "owner": "platform-implementer",
+          "nextAction": "Resolve documentary source gaps; resume Plan 10 under its private-session and recovery prerequisites",
+          "regressions": [
+            {
+              "id": "p18-query-batch-header-regression",
+              "status": "proposed",
+              "path": null,
+              "testName": null,
+              "operation": "Traverse 2001 owned rows with requested batchSize 200 plus boundary/invalid header cases",
+              "assertion": "Compare complete traversal and reference-measured pages/errors; never require every page to equal the requested size",
+              "evidencePrerequisite": "Accepted fresh sequential Plan 10 pair and documentary decision; existing cursor waiver remains in force"
+            }
+          ]
+        },
+        {
+          "contractId": "query-locator-lifecycle",
+          "sourceIds": [
+            "p18-cursor-guide",
+            "p18-api-article",
+            "p18-winter23-cursor"
+          ],
+          "findingIds": [
+            "winter23-query-cursor-retention"
+          ],
+          "documentaryStatus": "partial",
+          "expectation": "Current and dated sources corroborate the two-day assumption; exact expiry anchor, eviction, later retrieval, replay/session and mutation behavior remain independent questions.",
+          "coverage": "Current named sections only; Winter 26/API 65 and relevant historical release sections remain unread.",
+          "gaps": [
+            {
+              "owner": "platform-implementer",
+              "reason": "Pinned release body and linked update coverage unavailable; historical interval remains unreviewed",
+              "nextAction": "Retrieve official release-pinned sections and reconcile API 65.0 applicability"
+            }
+          ],
+          "liveStatus": "assumed",
+          "blocksContractFreeze": true,
+          "owner": "platform-implementer",
+          "nextAction": "Resolve documentary source gaps; resume Plan 10 under its private-session and recovery prerequisites",
+          "regressions": [
+            {
+              "id": "p18-query-locator-lifecycle-regression",
+              "status": "proposed",
+              "path": null,
+              "testName": null,
+              "operation": "Run existing bounded Plan 10 replay, session and mutation cases; retain long-window waiver",
+              "assertion": "Compare bounded outcomes to accepted pair; label two-day lifetime assumed and leave exact expiry unmeasured",
+              "evidencePrerequisite": "Accepted fresh sequential Plan 10 pair and documentary decision; existing cursor waiver remains in force"
+            }
+          ]
+        },
+        {
+          "contractId": "rest-route-parity",
+          "sourceIds": [
+            "p18-query",
+            "p18-query-more"
+          ],
+          "findingIds": [
+            "p18-query-continuation-context"
+          ],
+          "documentaryStatus": "partial",
+          "expectation": "Current Query resources describe versioned query and locator URIs; other routes, host handling and escaping still need evidence.",
+          "coverage": "Current named sections only; Winter 26/API 65 and relevant historical release sections remain unread.",
+          "gaps": [
+            {
+              "owner": "platform-implementer",
+              "reason": "Pinned release body and linked update coverage unavailable; historical interval remains unreviewed",
+              "nextAction": "Retrieve official release-pinned sections and reconcile API 65.0 applicability"
+            }
+          ],
+          "liveStatus": "blocked",
+          "blocksContractFreeze": true,
+          "owner": "platform-implementer",
+          "nextAction": "Resolve documentary source gaps; resume Plan 10 under its private-session and recovery prerequisites",
+          "regressions": [
+            {
+              "id": "p18-rest-route-parity-regression",
+              "status": "proposed",
+              "path": null,
+              "testName": null,
+              "operation": "Use returned record/continuation links and encoded query text through unmodified clients",
+              "assertion": "Compare accepted route templates, escaping and complete traversal without inferred host rewrites",
+              "evidencePrerequisite": "Accepted fresh sequential Plan 10 pair and documentary decision; existing cursor waiver remains in force"
+            }
+          ]
+        },
+        {
+          "contractId": "duplicate-canonical-fields",
+          "sourceIds": [],
+          "findingIds": [],
+          "documentaryStatus": "blocked",
+          "expectation": "No reviewed source in this batch settles duplicate JSON keys or field aliases, ordering and permission effects.",
+          "coverage": "Current named sections only; Winter 26/API 65 and relevant historical release sections remain unread.",
+          "gaps": [
+            {
+              "owner": "platform-implementer",
+              "reason": "Pinned release body and linked update coverage unavailable; historical interval remains unreviewed",
+              "nextAction": "Retrieve official release-pinned sections and reconcile API 65.0 applicability"
+            }
+          ],
+          "liveStatus": "blocked",
+          "blocksContractFreeze": true,
+          "owner": "platform-implementer",
+          "nextAction": "Resolve documentary source gaps; resume Plan 10 under its private-session and recovery prerequisites",
+          "regressions": [
+            {
+              "id": "p18-duplicate-canonical-fields-regression",
+              "status": "proposed",
+              "path": null,
+              "testName": null,
+              "operation": "Send duplicate raw keys and canonical aliases for allowed/denied fields",
+              "assertion": "Compare accepted last/first/error behavior and independent state; verify aliases never bypass field denial",
+              "evidencePrerequisite": "Accepted fresh sequential Plan 10 pair and documentary decision; existing cursor waiver remains in force"
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

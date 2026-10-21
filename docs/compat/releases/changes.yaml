@@ -18,6 +18,211 @@ findings:
     implication: The current sixteen-minute live probe can establish continued validity but cannot measure full expiry. Do not derive a fifteen-minute candidate lifetime from it.
     resolution: Retain the live bound as partial evidence and design a separately journaled long-duration expiry observation before freezing expiry semantics.
     blocksContractFreeze: true
+    reviewDetail:
+      batchId: plan-18-foundation
+      sourceIds:
+        - p18-cursor-guide
+        - p18-api-article
+        - p18-winter23-cursor
+      introducedApiVersion: "56.0"
+      effectiveApiVersion: null
+      activation: enforced
+      applicability: in-profile
+      rationale: Required foundation contracts; current material informs expectations without historical
+        or live acceptance
+      sourceStatement: Current cursor guide and dated official article corroborate two-day availability
+        and removal of old cursor limits; the pinned Winter 23 note remains unread.
+      inference: "2026-10-21 clarification: prior long-duration resolution text is historical. Plan 10
+        maintainer waiver controls; no wait over one hour is introduced. Exact boundary, clock anchor,
+        eviction and later-retrieval effects stay unmeasured."
+      unresolvedQuestions:
+        - owner: platform-implementer
+          reason: Historical applicability and exact selected-profile behavior remain unresolved
+          nextAction: Retrieve pinned sections and reconcile accepted Plan 10 observations
+      deprecation: null
+      migrationImplications: null
+      regressionIds:
+        - p18-query-locator-lifecycle-regression
+      supersedes: []
+  - id: p18-query-continuation-context
+    status: reviewed-source-awaiting-live-reconciliation
+    source: https://developer.salesforce.com/docs/platform/api-rest/guide/resources-query.html
+    accessedAt: 2026-10-21
+    affectedContracts:
+      - query-response-shape
+      - query-limit-above-batch
+      - rest-route-parity
+    finding: Current Query guide describes result fields, a versioned GET endpoint and continuation when
+      results exceed a batch.
+    implication: Page limits do not alone establish total-result LIMIT semantics; Query More Results has
+      QueryAll wording that must not silently define every Query field.
+    blocksContractFreeze: true
+    reviewDetail:
+      batchId: plan-18-foundation
+      sourceIds:
+        - p18-query
+        - p18-query-more
+      introducedApiVersion: null
+      effectiveApiVersion: null
+      activation: unknown
+      applicability: in-profile
+      rationale: Required foundation contracts; current material informs expectations without historical
+        or live acceptance
+      sourceStatement: Current Query guide describes result fields, a versioned GET endpoint and
+        continuation when results exceed a batch.
+      inference: Page limits do not alone establish total-result LIMIT semantics; Query More Results has
+        QueryAll wording that must not silently define every Query field.
+      unresolvedQuestions:
+        - owner: platform-implementer
+          reason: Historical applicability and exact selected-profile behavior remain unresolved
+          nextAction: Retrieve pinned sections and reconcile accepted Plan 10 observations
+      deprecation: null
+      migrationImplications: null
+      regressionIds:
+        - p18-query-response-shape-regression
+        - p18-query-limit-above-batch-regression
+        - p18-rest-route-parity-regression
+      supersedes: []
+  - id: p18-batch-size-context
+    status: reviewed-source-awaiting-live-reconciliation
+    source: https://developer.salesforce.com/docs/platform/api-rest/guide/headers-queryoptions.html
+    accessedAt: 2026-10-21
+    affectedContracts:
+      - query-batch-header
+    finding: Current header guide gives requested default 2000 and bounds 200..2000; actual pages may differ.
+    implication: Test complete traversal and measured errors rather than requiring requested page size
+      on every response.
+    blocksContractFreeze: true
+    reviewDetail:
+      batchId: plan-18-foundation
+      sourceIds:
+        - p18-batch-header
+      introducedApiVersion: null
+      effectiveApiVersion: null
+      activation: unknown
+      applicability: in-profile
+      rationale: Required foundation contracts; current material informs expectations without historical
+        or live acceptance
+      sourceStatement: Current header guide gives requested default 2000 and bounds 200..2000; actual
+        pages may differ.
+      inference: Test complete traversal and measured errors rather than requiring requested page size on
+        every response.
+      unresolvedQuestions:
+        - owner: platform-implementer
+          reason: Historical applicability and exact selected-profile behavior remain unresolved
+          nextAction: Retrieve pinned sections and reconcile accepted Plan 10 observations
+      deprecation: null
+      migrationImplications: null
+      regressionIds:
+        - p18-query-batch-header-regression
+      supersedes: []
+  - id: p18-locale-comparison-context
+    status: reviewed-source-awaiting-live-reconciliation
+    source: https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-comparisonoperators.html
+    accessedAt: 2026-10-21
+    affectedContracts:
+      - case-insensitive-comparison
+    finding: Current comparison guide distinguishes unique case-sensitive fields from other string
+      comparisons and makes ordinary comparison locale-dependent.
+    implication: Do not promote ASCII evidence into universal Unicode equality or reuse the external-ID
+      rule for SOQL.
+    blocksContractFreeze: true
+    reviewDetail:
+      batchId: plan-18-foundation
+      sourceIds:
+        - p18-comparisons
+      introducedApiVersion: null
+      effectiveApiVersion: null
+      activation: unknown
+      applicability: in-profile
+      rationale: Required foundation contracts; current material informs expectations without historical
+        or live acceptance
+      sourceStatement: Current comparison guide distinguishes unique case-sensitive fields from other
+        string comparisons and makes ordinary comparison locale-dependent.
+      inference: Do not promote ASCII evidence into universal Unicode equality or reuse the external-ID
+        rule for SOQL.
+      unresolvedQuestions:
+        - owner: platform-implementer
+          reason: Historical applicability and exact selected-profile behavior remain unresolved
+          nextAction: Retrieve pinned sections and reconcile accepted Plan 10 observations
+      deprecation: null
+      migrationImplications: null
+      regressionIds:
+        - p18-case-insensitive-comparison-regression
+      supersedes: []
+  - id: p18-null-and-tie-context
+    status: reviewed-source-awaiting-live-reconciliation
+    source: https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-orderby.html
+    accessedAt: 2026-10-21
+    affectedContracts:
+      - null-ordering
+    finding: Current ORDER BY guide specifies nulls-first defaults, optional null placement and
+      nondeterministic order among equal sort keys.
+    implication: Preserve scoped tie comparison and complete membership; relationship-null caveats need
+      a separate field-specific decision.
+    blocksContractFreeze: true
+    reviewDetail:
+      batchId: plan-18-foundation
+      sourceIds:
+        - p18-order-by
+      introducedApiVersion: null
+      effectiveApiVersion: null
+      activation: unknown
+      applicability: in-profile
+      rationale: Required foundation contracts; current material informs expectations without historical
+        or live acceptance
+      sourceStatement: Current ORDER BY guide specifies nulls-first defaults, optional null placement and
+        nondeterministic order among equal sort keys.
+      inference: Preserve scoped tie comparison and complete membership; relationship-null caveats need a
+        separate field-specific decision.
+      unresolvedQuestions:
+        - owner: platform-implementer
+          reason: Historical applicability and exact selected-profile behavior remain unresolved
+          nextAction: Retrieve pinned sections and reconcile accepted Plan 10 observations
+      deprecation: null
+      migrationImplications: null
+      regressionIds:
+        - p18-null-ordering-regression
+      supersedes: []
+  - id: p18-error-id-context
+    status: reviewed-source-awaiting-live-reconciliation
+    source: https://developer.salesforce.com/docs/platform/api-rest/guide/errorcodes.html
+    accessedAt: 2026-10-21
+    affectedContracts:
+      - error-shape
+      - unknown-sobject
+      - id-15-18
+    finding: Current REST status table and SOAP invalid-ID/type vocabulary provide context but not a
+      complete REST operation-specific error matrix.
+    implication: 15/18-character SOAP ID descriptions do not settle REST acceptance and canonical
+      spelling; compare route and query errors independently.
+    blocksContractFreeze: true
+    reviewDetail:
+      batchId: plan-18-foundation
+      sourceIds:
+        - p18-errors
+        - p18-core-types
+      introducedApiVersion: null
+      effectiveApiVersion: null
+      activation: unknown
+      applicability: in-profile
+      rationale: Required foundation contracts; current material informs expectations without historical
+        or live acceptance
+      sourceStatement: Current REST status table and SOAP invalid-ID/type vocabulary provide context but
+        not a complete REST operation-specific error matrix.
+      inference: 15/18-character SOAP ID descriptions do not settle REST acceptance and canonical
+        spelling; compare route and query errors independently.
+      unresolvedQuestions:
+        - owner: platform-implementer
+          reason: Historical applicability and exact selected-profile behavior remain unresolved
+          nextAction: Retrieve pinned sections and reconcile accepted Plan 10 observations
+      deprecation: null
+      migrationImplications: null
+      regressionIds:
+        - p18-error-shape-regression
+        - p18-unknown-sobject-regression
+        - p18-id-15-18-regression
+      supersedes: []
 blockers:
   - id: release-content-unavailable
     owner: platform-implementer

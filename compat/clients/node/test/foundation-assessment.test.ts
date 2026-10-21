@@ -462,3 +462,51 @@ test("release input rejects duplicate findings and limits relevance to selected 
     { id: "archive", relevant: false, resolved: false },
   ]);
 });
+
+test("documentary review details and supersession preserve live release blockers", () => {
+  const document = {
+    schemaVersion: 1,
+    findings: [
+      {
+        id: "cursor",
+        status: "reviewed-source-awaiting-live-reconciliation",
+        affectedContracts: ["query-locator-lifecycle"],
+        blocksContractFreeze: true,
+        reviewDetail: { documentaryComplete: true, supersedes: ["older"] },
+      },
+      {
+        id: "older",
+        status: "blocked",
+        affectedContracts: ["query-locator-lifecycle"],
+        blocksContractFreeze: true,
+      },
+      {
+        id: "documentary",
+        status: "documentary-complete",
+        affectedContracts: ["query-response-shape"],
+        blocksContractFreeze: true,
+      },
+      {
+        id: "resolved",
+        status: "resolved",
+        affectedContracts: ["error-shape"],
+        blocksContractFreeze: true,
+      },
+      {
+        id: "reconciled",
+        status: "reviewed-and-reconciled",
+        affectedContracts: ["error-shape"],
+        blocksContractFreeze: true,
+      },
+    ],
+    blockers: [{ id: "archive", affectedContracts: [], blocksFullM1R: true }],
+  };
+  assert.deepEqual(foundationReleaseFindings(document), [
+    { id: "cursor", relevant: true, resolved: false },
+    { id: "older", relevant: true, resolved: false },
+    { id: "documentary", relevant: true, resolved: false },
+    { id: "resolved", relevant: true, resolved: true },
+    { id: "reconciled", relevant: true, resolved: true },
+    { id: "archive", relevant: false, resolved: false },
+  ]);
+});
