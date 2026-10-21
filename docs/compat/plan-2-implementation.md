@@ -56,6 +56,11 @@ PATCH update and DELETE. Account PATCH upsert via `Compat_Key__c/{value}`.
 (string or null), one ordering field and LIMIT 1..2000. Contact.Account.Name is
 the only relationship projection. Unknown fields and denied fields fail closed.
 Queries without LIMIT that exceed 2000 rows return an error; there are no cursors.
+The bounded `columns=true` extension adds ordered catalog-derived `columnMetadata`
+for the pinned CLI, including empty results and the existing relationship projection.
+Absent/false preserves ordinary responses; malformed or repeated options fail.
+See the [Plan 16 candidate contract](plan-16-cli-query-column-metadata.md) for exact
+shapes and the distinction between interoperability and reference parity.
 Generated IDs are stable 18-character IDs with case checksum. Null is preserved;
 omitted PATCH fields remain unchanged. A blank string in an optional field is stored
 as null, so blank external IDs never collide and match `= null`. Deleting a referenced Account is rejected.
@@ -107,11 +112,14 @@ select local prerequisites. Fixture records are deleted by exact ID, but
 provisioned tenant/principal digests remain; the operator disposes of the test
 database. Never upload private scratch/auth/browser files.
 
-The latest Plan 15 full attempts **failed** the native nonempty CLI query because
-the candidate lacks the client's expected `columns=true` metadata response.
-Later full gates were not run. Separate downstream diagnostics pass, but full
-acceptance, reference parity and the full M2 milestone remain open. The historical
-October 15 results below describe that older scope and revision.
+The original Plan 15 full attempts failed the native nonempty CLI query.
+[Plan 16](plan-16-cli-query-column-metadata.md) resolved that bounded contract and
+the restart-result publication collision. Two fresh sequential full acceptance
+runs now pass all gates on clean code revision
+`807c937983311383f947f14bf636dd6eeba17e70`. This establishes the tested candidate
+walking slice; reference parity, the full M2 milestone and Plan 13's interactive
+visual gate remain open. The historical October 15 results below describe that
+older scope and revision.
 
 ## Release-history follow-up
 

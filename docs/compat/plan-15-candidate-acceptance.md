@@ -1,6 +1,6 @@
 # Plan 15 — Candidate acceptance tooling and decision
 
-The consolidated acceptance harness is implemented. **The candidate is not accepted:** both final full invocations failed the native CLI's required nonempty query. No product API behavior was changed to manufacture acceptance.
+The consolidated acceptance harness is implemented. The original Plan 15 invocations below failed the native CLI's required nonempty query. [Plan 16](plan-16-cli-query-column-metadata.md) subsequently resolved the bounded metadata contract and a restart result/fixture filename collision; two fresh sequential full runs now pass every gate. The tested candidate walking slice is accepted locally. Reference parity and the full M1/M2 milestone gates remain open.
 
 The entry point is `scripts/check-candidate-acceptance.sh --out /absolute/new-summary.json`. It runs fresh database tests/vet, the complete offline lab check, web units/build, owned HTTPS service and real clients, restart, connected browser, isolated preview, and cleanup/publication. Required identities, terminal events, exit status and digest-bound results all participate in the result. Later gates remain `not-run` after a failure. Reports distinguish `full` from legacy `candidate-only`; only a full passing report can be eligible.
 
@@ -26,7 +26,7 @@ Conflicting database URLs, dirty full-run source, missing tools/browser, occupie
 
 Exits are 0 passed, 1 failed, 2 blocked. Output must be a new `.json` file outside the repository with a real, existing parent directory. `scripts/check-candidate.sh [--out /absolute/new-summary.json]` remains the smaller candidate-only command and allocates/prints a private summary path when omitted. Both commands print the private diagnostic directory after context creation. The 20-minute command deadline is separate from CI's 30-minute job limit.
 
-## Actual result
+## Historical Plan 15 result
 
 Tested clean code revision: `90a7fa3f6b4f07d596de04a48dbae09be12d9154` (catalog version 2, API 65.0). Documentation-only commits cite this revision without claiming to retest newer runtime code.
 
@@ -87,6 +87,6 @@ Only exact run-owned Account/Contact IDs with matching allowed names are deleted
 
 Platform CI is configured to install locked prerequisites and call acceptance once, preserving its exit status and uploading only the sanitized summary with `always()`. No actual GitHub Actions execution was observed in this session.
 
-Full candidate acceptance remains open until the CLI contract is resolved and two fresh sequential full runs pass with every gate executed. This package does not establish Salesforce parity, close M1/full M2, execute Plan 10/14 reference collection, choose external-ID normalization semantics, or close Plan 13's interactive visual gate. No reference credentials or private reference evidence were read.
+The original acceptance condition required resolving the CLI contract and two fresh sequential full runs with every gate executed. Plan 16 now records both passes and their source/report bindings. This package does not establish Salesforce parity, close M1/full M2, execute Plan 10/14 reference collection, choose external-ID normalization semantics, or close Plan 13's interactive visual gate. No reference credentials or private reference evidence were read.
 
 Local teardown: the owned `salescompel-plan15-db` container was stopped and removed after all checks. No operator-supplied database or unrelated container was modified. Raw failed-run diagnostics remain private for local inspection.

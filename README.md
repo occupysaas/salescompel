@@ -28,7 +28,7 @@ program milestone has a recorded exit-gate pass yet.
 | M0 — Target inventory | Partial | Required features, integrations, packages and operating targets |
 | M1 — Behavior laboratory | Partial; pilot baseline accepted | Broader client coverage, CLI/plugin runners and repeatable evidence |
 | M1R — Release-history review | Partial | Complete source inventory and reconcile relevant changes |
-| M2 — Platform walking slice | Implemented slice; acceptance open | Consolidated client, UI, isolation and restart acceptance |
+| M2 — Platform walking slice | Walking slice accepted; milestone open | Remaining milestone dependencies and exclusions |
 | M3 — Protocol and query fidelity | Early implementation | REST/query semantics, external IDs, SOAP, Bulk and identity |
 | M4 — Metadata and security | Bounded slices implemented | Dynamic schema, deployment, permissions and sharing |
 | M5 — Migration | Planning and contracts | Import/export, resumability, deltas and reconciliation |
@@ -69,6 +69,8 @@ The [OpenAPI 3.2 REST contract](api/openapi.yaml) is a proposed broader subset; 
 ## Platform walking slice
 
 [Plan 2](docs/superpowers/plans/2026-10-15-plan-2-platform-walking-slice.md) implements persistent Account/Contact CRUD, describe, limited queries, external-ID upsert, provisioned bearer authentication and a localized Vue editor. See the [setup and verification guide](docs/compat/plan-2-implementation.md). The roadmap also tracks [M1R release-history review](docs/plans/2026-10-14-salesforce-compatibility-roadmap.md#m1r--salesforce-release-notes-and-changelog-review).
+
+The [Plan 16 local candidate acceptance](docs/compat/plan-16-cli-query-column-metadata.md) records two complete sequential passing runs across database, real clients, restart and browser gates.
 
 The candidate is not production-ready or certified Salesforce-compatible. The eleven-scenario reference baseline is recorded; broader M1 obligations and the wider protocol/security/migration surfaces remain pending.
 

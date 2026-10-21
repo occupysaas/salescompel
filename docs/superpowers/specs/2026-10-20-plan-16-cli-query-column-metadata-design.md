@@ -1,6 +1,6 @@
 # Plan 16 — CLI query column metadata
 
-Status: proposed spec for review, 2026-10-20 (America/New_York).
+Status: approved for implementation by the maintainer; implemented, reviewed and verified with two full acceptance passes, 2026-10-21 UTC. See the [contract and evidence record](../../compat/plan-16-cli-query-column-metadata.md).
 Milestones: bounded M3 query-response contract supporting the open M2 candidate acceptance gate.
 
 ## Intent and selection
@@ -75,4 +75,4 @@ The executor chose this blocker as the next package and recommends extending the
 
 ## Builder check
 
-A fresh software-engineer reviewer read the specification and reported “nothing important left.” Wire-shape decisions remain explicitly assigned to the evidence-based contract gate. This is a proposed specification, not an accepted contract or completed implementation.
+A fresh software-engineer reviewer read the specification and reported “nothing important left.” Wire-shape decisions remain explicitly assigned to the evidence-based contract gate. The subsequent contract decision, implementation and acceptance evidence are recorded in the linked Plan 16 execution record.

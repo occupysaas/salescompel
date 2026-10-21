@@ -10,7 +10,7 @@
 
 **Spec:** [Plan 15 design](../specs/2026-10-20-plan-15-candidate-acceptance-design.md).
 
-**Status:** Tooling implemented and reviewed on `main`. Final candidate acceptance remains open because the required native CLI query fails. See [execution and decision record](../../compat/plan-15-candidate-acceptance.md) for tested revision, reports, commands and exclusions.
+**Status:** Tooling implemented and reviewed on `main`. The original native CLI blocker was resolved by [Plan 16](../../compat/plan-16-cli-query-column-metadata.md), which records two fresh full acceptance passes. Full M1/M2 milestones and reference parity remain open. See [execution and decision record](../../compat/plan-15-candidate-acceptance.md) for tested revision, reports, commands and exclusions.
 
 ## Global Constraints
 
