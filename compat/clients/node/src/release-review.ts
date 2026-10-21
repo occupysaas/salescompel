@@ -85,6 +85,8 @@ export interface ReviewDetail {
 }
 type Finding = {
   id: string;
+  status?: unknown;
+  blocksContractFreeze?: unknown;
   affectedContracts?: string[];
   reviewDetail?: ReviewDetail;
 };
@@ -342,6 +344,28 @@ export function releaseReviewIssues(
         "detail regression",
       );
       refs(f.affectedContracts ?? [], new Set(contractIds), "detail contract");
+      // Documentary additions must agree with fields consumed by the existing
+      // live assessor. Existence checks alone cannot preserve its gates.
+      if (d.applicability !== "out-of-profile") {
+        const affected = f.affectedContracts ?? [];
+        if (!affected.length)
+          issue(`required finding lacks contract scope: ${f.id}`);
+        const unresolved =
+          d.unresolvedQuestions.length > 0 ||
+          b.contracts.some(
+            (c) => affected.includes(c.contractId) && c.blocksContractFreeze,
+          );
+        if (
+          unresolved &&
+          (f.blocksContractFreeze !== true ||
+            typeof f.status !== "string" ||
+            !f.status.trim() ||
+            f.status === "resolved" ||
+            f.status === "reviewed-and-reconciled")
+        )
+          issue(`unresolved finding bypasses live gate: ${f.id}`);
+      }
+
       if (
         !d.sourceIds.length ||
         (d.applicability === "in-profile" && !d.regressionIds.length)

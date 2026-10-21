@@ -374,3 +374,32 @@ test("repository release batch validates all registered foundation contracts", a
   const { ROOT } = await import("../src/versions.ts");
   assert.deepEqual(await validateReleaseReviewRepository(ROOT), []);
 });
+
+const findingBypasses: [string, (finding: any) => void][] = [
+  ["resolved", (f) => (f.status = "resolved")],
+  ["reconciled", (f) => (f.status = "reviewed-and-reconciled")],
+  ["blocking false", (f) => (f.blocksContractFreeze = false)],
+  ["blocking absent", (f) => delete f.blocksContractFreeze],
+  ["blocking string", (f) => (f.blocksContractFreeze = "true")],
+  ["contracts empty", (f) => (f.affectedContracts = [])],
+  ["contracts absent", (f) => delete f.affectedContracts],
+];
+for (const [name, mutate] of findingBypasses)
+  test(`unresolved in-profile finding rejects ${name} assessor bypass`, () => {
+    const f = fixture();
+    f.changes.blockers[0].reviewDetail = detail();
+    assert.deepEqual(releaseReviewIssues(f.index, f.changes, ids), []);
+    mutate(f.changes.blockers[0]);
+    assert.ok(releaseReviewIssues(f.index, f.changes, ids).length);
+  });
+
+test("legacy reconciled findings retain legitimate resolution without Plan 18 detail", () => {
+  const f = fixture();
+  f.changes.findings.push({
+    id: "legacy-reconciled",
+    status: "reviewed-and-reconciled",
+    affectedContracts: ["query-response-shape"],
+    blocksContractFreeze: true,
+  });
+  assert.deepEqual(releaseReviewIssues(f.index, f.changes, ids), []);
+});
