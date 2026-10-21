@@ -41,3 +41,21 @@ test("occupied ports are refused without disturbing their owner", async (t) => {
   await assert.rejects(availablePort(address.port));
   assert.equal(server.listening, true);
 });
+test("catalog inputs have explicit digests alongside dependency lockfiles", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const { ROOT } = await import("../src/versions.ts");
+  const { digest } = await import("../src/candidate-acceptance-results.ts");
+  const bindings = await collectSourceBindings();
+  for (const path of [
+    "internal/platform/catalog.go",
+    "internal/platform/metadata.go",
+    "internal/platform/catalog_migration.go",
+    "internal/platform/catalog_v1.json",
+    "internal/platform/schema.sql",
+  ]) {
+    assert.equal(
+      bindings.locks[path],
+      digest(await readFile(join(ROOT, path))),
+    );
+  }
+});
