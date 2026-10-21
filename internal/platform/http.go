@@ -154,12 +154,26 @@ func NewHandler(s *Store, assetDir string) http.Handler {
 				writeError(w, e)
 				return
 			}
+			columns, e := queryColumnsRequested(r.URL.Query())
+			if e != nil {
+				writeError(w, e)
+				return
+			}
 			rows, e := s.Select(ctx, p, q)
 			if e != nil {
 				writeError(w, e)
 				return
 			}
-			writeJSON(w, 200, map[string]any{"totalSize": len(rows), "done": true, "records": rows})
+			result := map[string]any{"totalSize": len(rows), "done": true, "records": rows}
+			if columns {
+				metadata, err := queryColumnMetadata(p, q)
+				if err != nil {
+					writeError(w, err)
+					return
+				}
+				result["columnMetadata"] = metadata
+			}
+			writeJSON(w, 200, result)
 			return
 		}
 		if parts[0] != "sobjects" {

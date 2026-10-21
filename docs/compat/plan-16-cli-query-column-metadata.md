@@ -43,3 +43,5 @@ The admin tenant contains one Account named `$name`, Compat_Key__c `owned-key`, 
 ## Verification and acceptance
 
 Pending implementation, behavioral tests, fresh review and two full acceptance runs. Reproduction raw logs, CLI auth, tokens and connection strings remain private. Provisioned acceptance principals intentionally remain only in the disposable database until its owned teardown.
+
+Development verification: the original HTTP route failed the new complete-body oracle on missing metadata; after integration the focused cases passed. `go test -race -count=1 ./...` passed with disposable PostgreSQL and `go vet ./...` passed. The shared OpenAPI QueryResult also describes broader query/cursor surfaces; it remains unchanged because adding this undocumented bounded extension there would imply support outside the selected candidate path. The exact candidate wire contract lives here and in the oracle.
