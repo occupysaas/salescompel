@@ -1,4 +1,5 @@
 import test from "node:test";
+import type { TargetInventory } from "../src/target-inventory-model.ts";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { Ajv } from "ajv";
@@ -14,7 +15,7 @@ const schemaPath = new URL(
   import.meta.url,
 );
 const schema = () =>
-  new Ajv({ allErrors: true }).compile(
+  new Ajv({ allErrors: true }).compile<TargetInventory>(
     JSON.parse(readFileSync(schemaPath, "utf8")),
   );
 
@@ -117,8 +118,8 @@ test("checked-in synthetic example validates without inventing source requiremen
   );
   assert.equal(value.classification, "synthetic");
   assert.ok(schema()(value));
-  assert.equal(
-    value.sections.migrationOperations.items[0].details.value.status,
-    "unknown",
-  );
+  const objective = value.sections.migrationOperations.items[0];
+  assert.equal(objective.category, "operating-objective");
+  if (objective.category === "operating-objective")
+    assert.equal(objective.details.value.status, "unknown");
 });
