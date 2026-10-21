@@ -214,9 +214,17 @@ export async function runNativeCLI(c: GateContext): Promise<ParsedResult> {
   ]);
   assert.equal((await get()).Name, name + "-updated");
   steps.push("cli/update");
-  let queryFailed = false;
-  try {
-    const q = await cli([
+  const failedQueries: string[] = [];
+  const checkQuery = async (step: string, check: () => Promise<void>) => {
+    try {
+      await check();
+      steps.push(step);
+    } catch {
+      failedQueries.push(step);
+    }
+  };
+  const query = (soql: string) =>
+    cli([
       "data",
       "query",
       "--target-org",
@@ -224,15 +232,47 @@ export async function runNativeCLI(c: GateContext): Promise<ParsedResult> {
       "--api-version",
       "65.0",
       "--query",
-      `SELECT Id,Name FROM Account WHERE Id = '${id}'`,
+      soql,
     ]);
+  await checkQuery("cli/query", async () => {
+    const q = await query(`SELECT Id,Name FROM Account WHERE Id = '${id}'`);
     assert.equal(q.records.length, 1);
     assert.equal(q.records[0].Id, id);
     assert.equal(q.records[0].Name, name + "-updated");
-    steps.push("cli/query");
-  } catch {
-    queryFailed = true;
-  }
+  });
+  await checkQuery("cli/query-contact", async () => {
+    // Separate journaled parent leaves the original CLI delete/absence journey intact.
+    const parentName = name + "-query-parent";
+    const parent = await createFixture(
+      c,
+      "cli-query-parent",
+      "Account",
+      { Name: parentName },
+      [parentName],
+    );
+    const childName = name + "-query-contact";
+    const child = await createFixture(
+      c,
+      "cli-query-contact",
+      "Contact",
+      { LastName: childName, AccountId: parent },
+      [childName],
+    );
+    const q = await query(
+      `SELECT Id,LastName,AccountId FROM Contact WHERE Id = '${child}'`,
+    );
+    assert.equal(q.records.length, 1);
+    assert.equal(q.records[0].Id, child);
+    assert.equal(q.records[0].LastName, childName);
+    assert.equal(q.records[0].AccountId, parent);
+  });
+  await checkQuery("cli/query-empty", async () => {
+    const q = await query(
+      `SELECT Id,Name FROM Account WHERE Name = '${name}-never-created'`,
+    );
+    assert.equal(q.totalSize, 0);
+    assert.deepEqual(q.records, []);
+  });
   await cli(["data", "delete", "record", ...common, "--record-id", id]);
   steps.push("cli/delete");
   assert.equal(
@@ -247,9 +287,11 @@ export async function runNativeCLI(c: GateContext): Promise<ParsedResult> {
   );
   steps.push("cli/absence");
   const result = stepResult(c, "cli", steps);
-  if (queryFailed) {
+  if (failedQueries.length) {
     result.exitCode = 1;
-    result.tests.push({ id: "cli/query", outcome: "failed" });
+    result.tests.push(
+      ...failedQueries.map((id) => ({ id, outcome: "failed" as const })),
+    );
   }
   return result;
 }

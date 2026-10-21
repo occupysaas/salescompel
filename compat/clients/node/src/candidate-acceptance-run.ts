@@ -50,6 +50,33 @@ export const databaseTestArgs = () => [
   "-json",
   "./...",
 ];
+// Step results use a separate namespace from persistence fixtures (restart.json).
+export async function publishStepResult(
+  c: GateContext,
+  id: "cli" | "restart",
+  parsed: ParsedResult,
+) {
+  const path = join(c.scratch, id + "-result.json");
+  const bytes = JSON.stringify(parsed) + "\n";
+  await writeFile(path, bytes, { flag: "wx", mode: 0o600 });
+  await writeFile(
+    path + ".binding.json",
+    JSON.stringify({
+      schemaVersion: 1,
+      runId: c.runId,
+      gate: id,
+      source: c.bindings.source,
+      digest: digest(bytes),
+      exitCode: parsed.exitCode,
+      complete: parsed.complete,
+    }),
+    { flag: "wx", mode: 0o600 },
+  );
+  return {
+    parsed: await readGateResult("steps", path, c.runId),
+    sha256: digest(bytes),
+  };
+}
 interface AcceptanceSignals {
   attach(c: ProcessContext): void;
 }
@@ -105,24 +132,9 @@ export async function runAcceptance(
     report.gates.find((g) => g.id === id)!.startedAt = startedAt;
     let parsed = await fn();
     if (id === "cli" || id === "restart") {
-      const path = join(c!.scratch, id + ".json");
-      const bytes = JSON.stringify(parsed) + "\n";
-      await writeFile(path, bytes, { flag: "wx", mode: 0o600 });
-      await writeFile(
-        path + ".binding.json",
-        JSON.stringify({
-          schemaVersion: 1,
-          runId: c!.runId,
-          gate: id,
-          source: c!.bindings.source,
-          digest: digest(bytes),
-          exitCode: parsed.exitCode,
-          complete: parsed.complete,
-        }),
-        { flag: "wx", mode: 0o600 },
-      );
-      parsed = await readGateResult("steps", path, c!.runId);
-      report.evidence.push({ gate: id, sha256: digest(bytes) });
+      const saved = await publishStepResult(c!, id, parsed);
+      parsed = saved.parsed;
+      report.evidence.push({ gate: id, sha256: saved.sha256 });
     }
     const gate = {
       ...assessCoverage(id, parsed),

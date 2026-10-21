@@ -7,6 +7,7 @@ import {
   publishAcceptanceReport,
   validateAcceptanceReport,
   requiredCoverage,
+  type ParsedResult,
 } from "../src/candidate-acceptance-contract.ts";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -64,4 +65,36 @@ test("publication is exclusive and rejects secret-bearing extra properties", asy
   assert.ok(!saved.includes("secret"));
   await assert.rejects(publishAcceptanceReport(path, r));
   assert.equal(await readFile(path, "utf8"), saved);
+});
+
+test("coverage requires query metadata regressions", () => {
+  for (const [suite, ids] of [
+    ["cli", ["cli/query-contact", "cli/query-empty"]],
+    ["database", ["TestHTTPQueryColumns", "TestHTTPQueryColumnsPolicy"]],
+  ] as const) {
+    const tests = [...new Set([...requiredCoverage[suite], ...ids])].map(
+      (id) => ({ id, outcome: "passed" as const }),
+    );
+    const result = {
+      schemaVersion: 1 as const,
+      runId: "a".repeat(24),
+      suite,
+      complete: true,
+      exitCode: 0,
+      tests,
+    };
+    assert.equal(assessCoverage(suite, result).outcome, "passed");
+    for (const id of ids) {
+      for (const outcome of ["omitted", "failed", "skipped"] as const) {
+        const changed = tests.flatMap<ParsedResult["tests"][number]>((t) =>
+          t.id !== id ? [t] : outcome === "omitted" ? [] : [{ id, outcome }],
+        );
+        assert.equal(
+          assessCoverage(suite, { ...result, tests: changed }).outcome,
+          "failed",
+          `${suite}/${id}/${outcome}`,
+        );
+      }
+    }
+  }
 });

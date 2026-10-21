@@ -157,3 +157,37 @@ test("invalid publication destinations never create a blocked report", async (t)
     await assert.rejects(lstat(path), { code: "ENOENT" });
   }
 });
+
+test("restart result publication preserves its persistence fixture and is exclusive", async (t) => {
+  const { publishStepResult } =
+    await import("../src/candidate-acceptance-run.ts");
+  const { writeFile } = await import("node:fs/promises");
+  const { stepResult } = await import("../src/candidate-acceptance-clients.ts");
+  const dir = await mkdtemp(join(tmpdir(), "p16-restart-result-"));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  const fixture = JSON.stringify({
+    account: "001000000000000001",
+    retained: "baseline",
+  });
+  await writeFile(join(dir, "restart.json"), fixture, {
+    flag: "wx",
+    mode: 0o600,
+  });
+  const c = {
+    scratch: dir,
+    runId: "a".repeat(24),
+    bindings: { source: "b".repeat(64) },
+  } as any;
+  const expected = stepResult(c, "restart", [
+    "restart/identity",
+    "restart/values",
+    "restart/policy",
+  ]);
+  const saved = await publishStepResult(c, "restart", expected);
+  assert.deepEqual(saved.parsed, expected);
+  assert.match(saved.sha256, /^[a-f0-9]{64}$/);
+  assert.equal(await readFile(join(dir, "restart.json"), "utf8"), fixture);
+  await assert.rejects(publishStepResult(c, "restart", expected), {
+    code: "EEXIST",
+  });
+});
