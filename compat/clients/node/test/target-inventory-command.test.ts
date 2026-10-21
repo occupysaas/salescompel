@@ -169,7 +169,11 @@ for (const operation of ["writeFile", "sync"] as const)
         originalOpen = fs.open;
       t.mock.method(fs, "open", async (...args: Parameters<typeof fs.open>) => {
         const handle = await originalOpen(...args);
-        if (args[0] !== out) return handle;
+        if (
+          !String(args[0]).endsWith("/out.json") ||
+          (Number(args[1]) & constants.O_EXCL) === 0
+        )
+          return handle;
         return new Proxy(handle, {
           get(target, key) {
             if (key === operation)
@@ -356,12 +360,9 @@ test("repository validation refuses symlinked schema/example files before readin
 
 test("ordinary validation fails closed when the inventory example cannot be opened", async (t) => {
   const original = fs.open;
-  const sample = join(
-    ROOT,
-    "docs/compat/inventories/synthetic-account-contact.yaml",
-  );
   t.mock.method(fs, "open", async (...args: Parameters<typeof fs.open>) => {
-    if (args[0] === sample) throw new Error("INJECTED_SECRET_1234");
+    if (String(args[0]).endsWith("/synthetic-account-contact.yaml"))
+      throw new Error("INJECTED_SECRET_1234");
     return original(...args);
   });
   const issues = await validateRepository();
@@ -389,4 +390,120 @@ test("empty --out is rejected instead of silently sending the report to stdout",
     const r = await cli(["--input", p, "--out", ""]);
     assert.equal(r.code, 1);
     assert.ok(!r.stdout.includes("inventoryId"));
+  }));
+
+test("YAML collection keys never disclose private input through CLI stderr", async () =>
+  withDir(async (d) => {
+    const p = await writeInput(d);
+    await fs.writeFile(p, "? [INJECTED_SECRET_1234]\n: x\n");
+    const r = await cli(["--input", p]);
+    assert.equal(r.code, 1);
+    assert.equal(r.stderr, "");
+    assert.ok(!(r.stdout + r.stderr).includes("INJECTED_SECRET_1234"));
+  }));
+test("referenced YAML collection keys cannot emit process warnings", async (t) =>
+  withDir(async (d) => {
+    await fs.mkdir(join(d, "docs/compat"), { recursive: true });
+    await fs.writeFile(
+      join(d, "docs/compat/private.yaml"),
+      "? [INJECTED_SECRET_1234]\n: x\n",
+    );
+    const warnings: string[] = [];
+    t.mock.method(process, "emitWarning", (message: any) => {
+      warnings.push(String(message));
+    });
+    const issues = await checkInventoryRepositoryRefs(
+      [{ path: "docs/compat/private.yaml", id: "expected" }],
+      d,
+    );
+    assert.ok(issues.length);
+    assert.equal(warnings.length, 0);
+  }));
+test("replacing a checked read directory with an external symlink cannot open private files", async (t) =>
+  withDir(async (d) => {
+    const root = join(d, "repo"),
+      parent = join(root, "docs/compat"),
+      outside = join(d, "private");
+    await fs.mkdir(parent, { recursive: true });
+    await fs.mkdir(outside);
+    await fs.writeFile(join(parent, "target.yaml"), "id: public\n");
+    await fs.writeFile(join(outside, "target.yaml"), "id: private\n");
+    const originalLstat = fs.lstat,
+      originalOpen = fs.open;
+    let swapped = false;
+    const opened: string[] = [];
+    t.mock.method(fs, "lstat", async (...args: Parameters<typeof fs.lstat>) => {
+      const info = await originalLstat(...args);
+      if (args[0] === join(parent, "target.yaml") && !swapped) {
+        swapped = true;
+        await fs.rename(parent, parent + "-old");
+        await fs.symlink(outside, parent);
+      }
+      return info;
+    });
+    t.mock.method(fs, "open", async (...args: Parameters<typeof fs.open>) => {
+      const h = await originalOpen(...args);
+      opened.push(await fs.realpath(`/proc/self/fd/${h.fd}`));
+      return h;
+    });
+    const issues = await checkInventoryRepositoryRefs(
+      [{ path: "docs/compat/target.yaml", id: "private" }],
+      root,
+    );
+    assert.ok(issues.length);
+    assert.ok(!opened.includes(join(outside, "target.yaml")));
+  }));
+test("a directory swap just before final open keeps the read anchored to the checked parent", async (t) =>
+  withDir(async (d) => {
+    const root = join(d, "repo"),
+      parent = join(root, "docs/compat"),
+      outside = join(d, "private");
+    await fs.mkdir(parent, { recursive: true });
+    await fs.mkdir(outside);
+    await fs.writeFile(join(parent, "target.yaml"), "id: public\n");
+    await fs.writeFile(join(outside, "target.yaml"), "id: private\n");
+    const original = fs.open;
+    let swapped = false;
+    const opened: string[] = [];
+    t.mock.method(fs, "open", async (...args: Parameters<typeof fs.open>) => {
+      if (String(args[0]).endsWith("/target.yaml") && !swapped) {
+        swapped = true;
+        await fs.rename(parent, parent + "-old");
+        await fs.symlink(outside, parent);
+      }
+      const h = await original(...args);
+      opened.push(await fs.realpath(`/proc/self/fd/${h.fd}`));
+      return h;
+    });
+    await checkInventoryRepositoryRefs(
+      [{ path: "docs/compat/target.yaml", id: "private" }],
+      root,
+    );
+    assert.ok(swapped);
+    assert.ok(!opened.includes(join(outside, "target.yaml")));
+  }));
+test("output creation and failure cleanup stay anchored when the parent is replaced", async (t) =>
+  withDir(async (d) => {
+    const p = await writeInput(d),
+      parent = join(d, "output"),
+      outside = join(d, "private");
+    await fs.mkdir(parent, { mode: 0o700 });
+    await fs.mkdir(outside, { mode: 0o700 });
+    const original = fs.open;
+    let swapped = false;
+    const opened: string[] = [];
+    t.mock.method(fs, "open", async (...args: Parameters<typeof fs.open>) => {
+      if ((Number(args[1]) & constants.O_EXCL) !== 0 && !swapped) {
+        swapped = true;
+        await fs.rename(parent, parent + "-old");
+        await fs.symlink(outside, parent);
+      }
+      const h = await original(...args);
+      opened.push(await fs.realpath(`/proc/self/fd/${h.fd}`));
+      return h;
+    });
+    await validateTargetInventoryFile(p, join(parent, "report.json"));
+    assert.ok(swapped);
+    assert.ok(!opened.includes(join(outside, "report.json")));
+    await assert.rejects(fs.access(join(outside, "report.json")));
   }));

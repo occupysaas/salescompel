@@ -1,7 +1,7 @@
 import { Ajv } from "ajv";
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
-import { parseDocument, isAlias, isMap, isSeq } from "yaml";
+import { parseDocument, isAlias, isMap, isSeq, isScalar } from "yaml";
 import {
   SECTION_IDS,
   type TargetInventory,
@@ -37,9 +37,10 @@ export function safeInventoryReference(ref: RepositoryReference): boolean {
   );
 }
 
-function parseBounded(bytes: Uint8Array): unknown {
+export function parseInventoryDocument(bytes: Uint8Array): unknown {
+  if (bytes.length > MAX_INVENTORY_BYTES) throw new Error("input-too-large");
   const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
-  const doc = parseDocument(text, { uniqueKeys: true });
+  const doc = parseDocument(text, { uniqueKeys: true, logLevel: "silent" });
   if (doc.errors.length) throw new Error("parse-invalid");
   // Bound the AST (including alias expansion) before toJS or schema recursion.
   let nodes = 0;
@@ -52,6 +53,8 @@ function parseBounded(bytes: Uint8Array): unknown {
     if (isAlias(node)) visit(node.resolve(doc), depth + 1);
     else if (isMap(node))
       for (const pair of node.items) {
+        if (!isScalar(pair.key) || typeof pair.key.value !== "string")
+          throw new Error("parse-invalid");
         visit(pair.key, depth + 1);
         visit(pair.value, depth + 1);
       }
@@ -102,7 +105,7 @@ export function assessTargetInventory(bytes: Uint8Array): InventoryReport {
   }
   let data: unknown;
   try {
-    data = parseBounded(bytes);
+    data = parseInventoryDocument(bytes);
   } catch {
     return fail("parse-invalid");
   }
@@ -211,6 +214,29 @@ export function assessTargetInventory(bytes: Uint8Array): InventoryReport {
         issue("required-information-missing", id, item.id);
       if (!item.provenanceRefs.length)
         gap("missing-evidence", id, item.ownerId, "collect", item.id);
+      if (item.decision) {
+        gap(
+          "pending-question",
+          id,
+          item.ownerId,
+          item.decision.nextAction,
+          item.id,
+        );
+        if (s.status === "complete")
+          issue("completion-contradiction", id, item.id);
+      }
+      if (
+        item.category === "cli-command" &&
+        item.details.pluginId.status === "known" &&
+        item.details.pluginId.value !== null
+      ) {
+        const pluginId = item.details.pluginId.value;
+        const plugin = Object.values(v.sections)
+          .flatMap((section) => section.items)
+          .find((candidate) => candidate.id === pluginId);
+        if (!plugin || plugin.category !== "plugin")
+          issue("dangling-reference", id, item.id);
+      }
       if (item.disposition === "unknown") {
         if (!item.decision) issue("decision-missing", id, item.id);
         gap(

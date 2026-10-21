@@ -1,6 +1,6 @@
 # Plan 17 — Target inventory contract
 
-Status: draft for maintainer review, 2026-10-21. No implementation authorized.
+Status: approved for implementation by the maintainer; implemented, independently reviewed, corrected and verified, 2026-10-21. See the [implementation and verification record](../../compat/plan-17-target-inventory.md).
 Milestone: bounded M0 inventory foundation; the full M0 exit gate remains open.
 
 ## Intent and selection
@@ -79,4 +79,4 @@ No real target inventory, M0 sign-off, M1R archive completion, Salesforce behavi
 
 ## Builder check
 
-A fresh software-engineer reviewer read this design and repository context and reported “nothing important left.” No material planning questions remained. The inventory package selection, readiness rules and offline-only scope are executor recommendations pending maintainer review.
+A fresh software-engineer reviewer read this design and repository context and reported “nothing important left.” No material planning questions remained. The maintainer subsequently requested the implementation plan and authorized its execution. The implementation record documents executor choices and final verification.

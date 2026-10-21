@@ -2893,7 +2893,7 @@
               "$ref": "#/definitions/k-text"
             },
             "pluginId": {
-              "$ref": "#/definitions/k-text"
+              "$ref": "#/definitions/k-pluginRef"
             }
           }
         }
@@ -4831,6 +4831,53 @@
           }
         }
       }
+    },
+    "k-pluginRef": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "status",
+            "value"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "known"
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/id"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "status",
+            "question",
+            "nextAction"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "unknown"
+            },
+            "question": {
+              "$ref": "#/definitions/text"
+            },
+            "nextAction": {
+              "$ref": "#/definitions/action"
+            }
+          }
+        }
+      ]
     }
   }
 }

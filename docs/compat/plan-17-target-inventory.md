@@ -1,6 +1,6 @@
 # Plan 17 — Target inventory contract
 
-Status: implemented and verified; independent whole-change review pending, 2026-10-21. The checked-in
+Status: implemented, independently reviewed and corrected; final verification passed, 2026-10-21. The checked-in
 inventory is a synthetic demonstration with open questions, not a collected
 customer inventory. M0 remains open. See the [design](../superpowers/specs/2026-10-21-plan-17-target-inventory-contract-design.md)
 and [implementation plan](../superpowers/plans/2026-10-21-plan-17-target-inventory-contract.md).
@@ -114,6 +114,11 @@ next action; an out-of-scope rationale records why exclusion is deliberate.
 an independent `unknown`/`documented` status and evidence references. Documented
 facts require evidence; unknown facts cannot carry evidence as if documented.
 Unknown runtime facts do not by themselves prevent collection completeness.
+Any non-null item decision remains a pending owned question, including for
+required, optional or out-of-scope items; it prevents complete readiness.
+Known command `pluginId` values must resolve to an inventory item of category
+`plugin`. A known null value explicitly records a command supplied without a
+plugin (for example a non-org tool); unknown plugin provenance stays unknown.
 
 A complete section cannot contain unresolved questions, unknown dispositions or
 unknown Knowledge values. A complete empty section needs an `absence` attestation
@@ -134,7 +139,13 @@ Real input files must be mode 0600 and owned by the operator, in an existing
 owner-only directory outside the checkout. Synthetic input may be checked in.
 All output parents must be existing owner-only directories outside the checkout.
 Symlink inputs, symlink path components, nonregular files and symlink outputs
-are rejected. Keep source files, real inventories and reports private; nothing is
+are rejected. Filesystem commands require Linux with `/proc/self/fd` available;
+other environments fail closed with exit 2. Every directory component is opened
+with no-follow flags and pinned by a descriptor. Final read/create operations
+and failed-output cleanup use that verified parent descriptor, so a concurrent
+directory replacement cannot redirect them to a private symlink target. Real
+input permissions are checked against the actual read handles' metadata. The
+in-memory assessor does not require Linux. Keep source files, real inventories and reports private; nothing is
 automatically published. Use nonsecret endpoint descriptions and never store
 tokens/passwords in inventory fields.
 
@@ -150,7 +161,9 @@ invalid metadata is included only when its individual type/format is safe.
 Limits are 1 MiB input, YAML alias expansion ceiling 50, AST depth 32 and 10,000
 visited AST nodes including expansion. UTF-8 decoding is strict; duplicate mapping
 keys (including JSON), multiple documents, alias cycles and malformed values
-are rejected. File reads are bounded. `inputDigest: ""` means unavailable when
+are rejected. Collection/non-string mapping keys are rejected before conversion;
+YAML warning logging is disabled for input and referenced YAML, so warnings cannot
+echo private keys to stderr. File reads are bounded. `inputDigest: ""` means unavailable when
 a file was refused before reading (oversize or unsafe I/O). In-memory assessment
 hashes every supplied byte, even for invalid input. Issues and gaps have stable
 ordering by section, item, code, owner and next action; reports have no volatile
@@ -165,12 +178,12 @@ It does not resolve source locators or change accepted profiles.
 
 ## Verification
 
-On 2026-10-21, the frozen-source full lab check (`npm --prefix
+On 2026-10-21, the post-review frozen-source full lab check (`npm --prefix
 compat/clients/node run check`) passed typechecking, formatting, tests and
-repository validation: **311 tests, 308 passed, zero failures, three skips**.
+repository validation: **321 tests, 318 passed, zero failures, three skips**.
 The skips are the existing optional `candidate/jsforce/core`,
 `candidate/jsforce/policy` and `candidate/jsforce/isolation` live-candidate tests.
-All **47 target-inventory tests** ran without skips. The public example reported
+All **57 target-inventory tests** ran without skips. The public example reported
 valid / synthetic-only with 29 owned gaps. `git diff --check` and guide link
 checks passed; 13 protected profile/evidence/dependency files were byte-identical
 to execution base `8712c46`.
@@ -185,9 +198,31 @@ create success errors block assessment rather than becoming repeatable evidence`
 with `NORMALIZATION_BINDING_MISMATCH`; it is not counted as verification. The
 final successful run used unchanged source for its entire duration.
 
-Independent whole-change review is pending. No real inventory or new Salesforce
-evidence has been collected, and no database/browser/live acceptance is claimed
-by this package.
+Independent whole-change review found four Important issues and no Critical or
+Minor findings: YAML collection-key warnings bypassed report filtering;
+directory replacement could race path checks; pending item decisions could be
+ignored; and known command plugin IDs could dangle. Each finding was reproduced
+by failing tests and corrected in one fix pass. The warning tests include the
+real CLI's stderr and referenced YAML. Directory-swap tests verify actual opened
+paths and output creation; readiness tests cover all resolved dispositions and
+missing/wrong-category plugins. A plugin-free command uses explicit known null.
+No behaviors were declined by the reviewer. The full post-fix lab check passed with the counts above; no second review was dispatched. The reviewer declined no behaviors and deferred no Minor findings.
+
+No real inventory or new Salesforce evidence has been collected, and no
+database/browser/live acceptance is claimed by this package.
+
+## Implementation decisions
+
+- Work stayed directly on main under the approved repository convention; changes
+  share the existing checkout rather than an isolated worktree.
+- A file refused before bounded reading has an unavailable (empty) digest rather
+  than a fabricated digest of truncated bytes. Report consumers must handle it.
+- Filesystem access uses Linux descriptor paths because Node has no openat API
+  and this package cannot add dependencies. Other platforms need a reviewed
+  adapter; the commands currently fail closed there.
+- Known null command plugin IDs mean explicitly plugin-free, preserving non-org
+  tools without fabricated plugin records. Schema consumers must accept this
+  alternative; non-null IDs must resolve to plugin items.
 
 ## Operator handoff
 

@@ -138,7 +138,7 @@ export interface CategoryDetails {
     outputFormats: Knowledge<("json" | "csv" | "human" | "files")[]>;
     target: Knowledge<"org" | "non-org">;
     cliVersion: Knowledge<string>;
-    pluginId: Knowledge<string>;
+    pluginId: Knowledge<string | null>;
   };
   apex: {
     name: Knowledge<string>;

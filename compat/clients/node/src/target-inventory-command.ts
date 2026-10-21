@@ -1,6 +1,7 @@
-import fs from "node:fs/promises";
-import { constants } from "node:fs";
+import fs, { type FileHandle } from "node:fs/promises";
+import { constants, type Stats } from "node:fs";
 import {
+  basename,
   dirname,
   resolve,
   parse,
@@ -9,12 +10,13 @@ import {
   isAbsolute,
   extname,
 } from "node:path";
-import { parseDocument } from "./core.ts";
 import { privateDirectory } from "./metadata-files.ts";
+import { ROOT } from "./versions.ts";
 import {
   assessTargetInventory,
   MAX_INVENTORY_BYTES,
   safeInventoryReference,
+  parseInventoryDocument,
 } from "./target-inventory.ts";
 import type {
   InventoryReport,
@@ -45,19 +47,47 @@ async function noSymlinks(path: string): Promise<void> {
     if (info.isSymbolicLink()) throw new Error("unsafe-path");
   }
 }
-export async function readTargetInventoryBytes(path: string): Promise<Buffer> {
-  await noSymlinks(path);
-  const info = await fs.lstat(path);
-  if (!info.isFile() || !(info.mode & 0o444)) throw new Error("input-io");
-  const handle = await fs.open(
-    path,
-    constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK,
-  );
+const descriptorPath = (handle: FileHandle) => `/proc/self/fd/${handle.fd}`;
+const anchored = (parent: FileHandle, name: string) =>
+  `${descriptorPath(parent)}/${name}`;
+/** Node has no openat API: pin every Linux directory component through its fd. */
+async function openDirectory(path: string): Promise<FileHandle> {
+  if (process.platform !== "linux") throw new Error("unsupported-platform");
+  const flags =
+    constants.O_RDONLY | constants.O_DIRECTORY | constants.O_NOFOLLOW;
+  let parent = await fs.open("/", flags);
   try {
-    const actual = await handle.stat();
-    if (!actual.isFile() || actual.dev !== info.dev || actual.ino !== info.ino)
-      throw new Error("input-io");
-    if (actual.size > MAX_INVENTORY_BYTES) throw new Error("input-too-large");
+    for (const part of resolve(path).split("/").filter(Boolean)) {
+      const child = await fs.open(anchored(parent, part), flags);
+      await parent.close();
+      parent = child;
+    }
+    return parent;
+  } catch (e) {
+    await parent.close().catch(() => {});
+    throw e;
+  }
+}
+interface ReadResult {
+  bytes: Buffer;
+  fileInfo: Stats;
+  parentInfo: Stats;
+  parentPath: string;
+}
+async function readPinned(path: string): Promise<ReadResult> {
+  await noSymlinks(path);
+  const parent = await openDirectory(dirname(path));
+  let handle: FileHandle | undefined;
+  try {
+    const parentInfo = await parent.stat(),
+      parentPath = await fs.realpath(descriptorPath(parent));
+    handle = await fs.open(
+      anchored(parent, basename(path)),
+      constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK,
+    );
+    const info = await handle.stat();
+    if (!info.isFile() || !(info.mode & 0o444)) throw new Error("input-io");
+    if (info.size > MAX_INVENTORY_BYTES) throw new Error("input-too-large");
     const buffer = Buffer.alloc(MAX_INVENTORY_BYTES + 1);
     let offset = 0;
     while (offset < buffer.length) {
@@ -71,10 +101,29 @@ export async function readTargetInventoryBytes(path: string): Promise<Buffer> {
       offset += bytesRead;
     }
     if (offset > MAX_INVENTORY_BYTES) throw new Error("input-too-large");
-    return buffer.subarray(0, offset);
+    return {
+      bytes: buffer.subarray(0, offset),
+      fileInfo: info,
+      parentInfo,
+      parentPath,
+    };
   } finally {
-    await handle.close();
+    if (handle) await handle.close();
+    await parent.close();
   }
+}
+export async function readTargetInventoryBytes(path: string): Promise<Buffer> {
+  return (await readPinned(path)).bytes;
+}
+function privateOwner(info: Stats): boolean {
+  return (
+    (info.mode & 0o077) === 0 &&
+    (!process.getuid || info.uid === process.getuid())
+  );
+}
+async function externalPath(path: string): Promise<boolean> {
+  const rel = relative(await fs.realpath(ROOT), path);
+  return rel === ".." || rel.startsWith("../") || isAbsolute(rel);
 }
 export async function validateTargetInventoryFile(
   inputPath: string,
@@ -83,14 +132,16 @@ export async function validateTargetInventoryFile(
   let report: InventoryReport;
   try {
     const path = resolve(inputPath),
-      bytes = await readTargetInventoryBytes(path);
-    report = assessTargetInventory(bytes);
+      read = await readPinned(path);
+    report = assessTargetInventory(read.bytes);
     if (report.classification === "real") {
-      await privateDirectory(dirname(path));
-      const info = await fs.lstat(path);
+      // Check the actual objects read, not fresh path lookups which may name replacements.
       if (
-        (info.mode & 0o777) !== 0o600 ||
-        (process.getuid && info.uid !== process.getuid())
+        (read.fileInfo.mode & 0o777) !== 0o600 ||
+        !privateOwner(read.fileInfo) ||
+        !privateOwner(read.parentInfo) ||
+        read.parentPath !== dirname(path) ||
+        !(await externalPath(read.parentPath))
       )
         throw new Error("input-io");
     }
@@ -101,13 +152,22 @@ export async function validateTargetInventoryFile(
   }
   if (outPath !== undefined) {
     const path = resolve(outPath);
-    let handle: Awaited<ReturnType<typeof fs.open>> | undefined;
+    let parent: FileHandle | undefined, handle: FileHandle | undefined;
     let owned: { dev: number; ino: number } | undefined;
     try {
       await noSymlinks(dirname(path));
       await privateDirectory(dirname(path));
+      parent = await openDirectory(dirname(path));
+      const info = await parent.stat(),
+        actual = await fs.realpath(descriptorPath(parent));
+      if (
+        !privateOwner(info) ||
+        actual !== dirname(path) ||
+        !(await externalPath(actual))
+      )
+        throw new Error("output-io");
       handle = await fs.open(
-        path,
+        anchored(parent, basename(path)),
         constants.O_WRONLY |
           constants.O_CREAT |
           constants.O_EXCL |
@@ -121,16 +181,18 @@ export async function validateTargetInventoryFile(
       handle = undefined;
     } catch {
       if (handle) await handle.close().catch(() => {});
-      if (owned) {
+      if (owned && parent) {
         try {
-          const current = await fs.lstat(path);
+          const current = await fs.lstat(anchored(parent, basename(path)));
           if (current.dev === owned.dev && current.ino === owned.ino)
-            await fs.unlink(path);
+            await fs.unlink(anchored(parent, basename(path)));
         } catch {
           /* retain failure */
         }
       }
       return { report: failure("output-io"), exitCode: 2 };
+    } finally {
+      if (parent) await parent.close().catch(() => {});
     }
   }
   return { report, exitCode: report.validation === "valid" ? 0 : 1 };
@@ -158,18 +220,19 @@ export async function checkInventoryRepositoryRefs(
           ext = extname(path);
         let ids: string[] = [];
         if (ext === ".yaml" || ext === ".yml") {
-          const value = parseDocument(text);
+          const value = parseInventoryDocument(bytes) as {
+            id?: unknown;
+            contracts?: unknown[];
+          } | null;
           if (value && typeof value === "object") {
             if (typeof value.id === "string") ids.push(value.id);
             if (Array.isArray(value.contracts))
               ids.push(
                 ...value.contracts
-                  .map((c: unknown) =>
+                  .map((c) =>
                     c && typeof c === "object" && "id" in c ? c.id : undefined,
                   )
-                  .filter(
-                    (id: unknown): id is string => typeof id === "string",
-                  ),
+                  .filter((id): id is string => typeof id === "string"),
               );
           }
         } else if (ext === ".md") {
