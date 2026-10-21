@@ -1,7 +1,6 @@
-import { test, expect } from "@playwright/test";
-test("record workflow, language switching, RTL and logout", async ({
-  page,
-}) => {
+import { expect } from "@playwright/test";
+import { test, createBrowserFixture } from "./helpers/candidate-fixtures";
+test("connected/admin", async ({ page }) => {
   if (!process.env.CANDIDATE_URL || !process.env.CANDIDATE_TOKEN)
     throw new Error("candidate URL/token required");
   const name = `Browser ${Date.now()}`;
@@ -109,13 +108,9 @@ for (const mutation of ["save", "delete"])
     request,
   }) => {
     const name = `Refresh failure ${Date.now()}`;
-    const response = await request.post(
-      `${process.env.CANDIDATE_URL}/services/data/v65.0/sobjects/Account`,
-      {
-        headers: { Authorization: `Bearer ${process.env.CANDIDATE_TOKEN}` },
-        data: { Name: name },
-      },
-    );
+    const response = await createBrowserFixture(request, "Account", {
+      Name: name,
+    });
     expect(response.status()).toBe(201);
     const { id } = await response.json();
     try {
@@ -162,3 +157,64 @@ for (const mutation of ["save", "delete"])
       );
     }
   });
+async function connect(page: import("@playwright/test").Page, token: string) {
+  await page.goto("/#/");
+  await page.getByLabel("Access token").fill(token);
+  await page.getByRole("button", { name: "Connect", exact: true }).click();
+  await expect(page.getByRole("button", { name: "New record" })).toBeVisible();
+}
+test("connected/restricted", async ({ page, request }) => {
+  const name = "p15-restricted-" + Date.now();
+  const response = await createBrowserFixture(request, "Account", {
+    Name: name,
+    Compat_Text__c: "private value",
+  });
+  const { id } = await response.json();
+  await connect(page, process.env.CANDIDATE_RESTRICTED_TOKEN!);
+  await page.getByRole("button", { name, exact: true }).click();
+  await expect(page.getByLabel("Compatibility text")).toHaveCount(0);
+  await page.getByLabel("Name", { exact: true }).fill(name + " edited");
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: name + " edited", exact: true }),
+  ).toBeVisible();
+  const read = await request.get(
+    `${process.env.CANDIDATE_URL}/services/data/v65.0/sobjects/Account/${id}`,
+    { headers: { Authorization: `Bearer ${process.env.CANDIDATE_TOKEN}` } },
+  );
+  expect((await read.json()).Compat_Text__c).toBe("private value");
+});
+test("connected/other-tenant", async ({ page, request }) => {
+  const name = "p15-other-" + Date.now();
+  await createBrowserFixture(request, "Account", { Name: name });
+  await connect(page, process.env.CANDIDATE_OTHER_TOKEN!);
+  await expect(page.getByRole("button", { name, exact: true })).toHaveCount(0);
+});
+test("connected/locales", async ({ page }) => {
+  await connect(page, process.env.CANDIDATE_TOKEN!);
+  for (const [code, lang, dir, label] of [
+    ["en_US", "en-US", "ltr", "New record"],
+    ["fr", "fr", "ltr", "Nouvel enregistrement"],
+    ["de", "de", "ltr", "Neuer Datensatz"],
+    ["pt_BR", "pt-BR", "ltr", "Novo registro"],
+    ["iw", "he", "rtl", "רשומה חדשה"],
+  ]) {
+    await page.locator("header select").selectOption(code);
+    await expect(page.locator("html")).toHaveAttribute("lang", lang);
+    await expect(page.locator("html")).toHaveAttribute("dir", dir);
+    await expect(page.getByRole("button", { name: label })).toBeVisible();
+  }
+});
+test("connected/token-boundary", async ({ page }) => {
+  await connect(page, process.env.CANDIDATE_TOKEN!);
+  await page.goto("/#/preview/accounts");
+  await expect(
+    page.getByRole("heading", { name: "Accounts", exact: true }),
+  ).toBeVisible();
+  await page.goto("/#/");
+  await expect(page.getByLabel("Access token")).toHaveValue("");
+  await expect(page.getByRole("button", { name: "New record" })).toHaveCount(0);
+  await connect(page, process.env.CANDIDATE_TOKEN!);
+  await page.getByRole("button", { name: "Disconnect", exact: true }).click();
+  await expect(page.getByLabel("Access token")).toHaveValue("");
+});
