@@ -197,20 +197,25 @@ export async function runNativeCLI(c: GateContext): Promise<ParsedResult> {
   ]);
   assert.equal((await get()).Name, name + "-updated");
   steps.push("cli/update");
-  const q = await cli([
-    "data",
-    "query",
-    "--target-org",
-    alias,
-    "--api-version",
-    "65.0",
-    "--query",
-    `SELECT Id,Name FROM Account WHERE Id = '${id}'`,
-  ]);
-  assert.equal(q.records.length, 1);
-  assert.equal(q.records[0].Id, id);
-  assert.equal(q.records[0].Name, name + "-updated");
-  steps.push("cli/query");
+  let queryFailed = false;
+  try {
+    const q = await cli([
+      "data",
+      "query",
+      "--target-org",
+      alias,
+      "--api-version",
+      "65.0",
+      "--query",
+      `SELECT Id,Name FROM Account WHERE Id = '${id}'`,
+    ]);
+    assert.equal(q.records.length, 1);
+    assert.equal(q.records[0].Id, id);
+    assert.equal(q.records[0].Name, name + "-updated");
+    steps.push("cli/query");
+  } catch {
+    queryFailed = true;
+  }
   await cli(["data", "delete", "record", ...common, "--record-id", id]);
   steps.push("cli/delete");
   assert.equal(
@@ -224,5 +229,10 @@ export async function runNativeCLI(c: GateContext): Promise<ParsedResult> {
     404,
   );
   steps.push("cli/absence");
-  return stepResult(c, "cli", steps);
+  const result = stepResult(c, "cli", steps);
+  if (queryFailed) {
+    result.exitCode = 1;
+    result.tests.push({ id: "cli/query", outcome: "failed" });
+  }
+  return result;
 }
