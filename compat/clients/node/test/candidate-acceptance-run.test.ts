@@ -55,3 +55,20 @@ test("CI invokes acceptance once and preserves its failure without selecting pri
     "${{ runner.temp }}/candidate-acceptance.json",
   );
 });
+test("documented shell entry point works from repository root before any prerequisites", async (t) => {
+  const { spawnSync } = await import("node:child_process"),
+    { ROOT } = await import("../src/versions.ts");
+  const dir = await mkdtemp(join(tmpdir(), "p15-shell-"));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  const out = join(dir, "summary.json");
+  const env = { ...process.env };
+  delete env.CANDIDATE_DISPOSABLE;
+  delete env.DATABASE_URL;
+  const r = spawnSync(
+    "bash",
+    ["scripts/check-candidate-acceptance.sh", "--out", out],
+    { cwd: ROOT, env, encoding: "utf8" },
+  );
+  assert.equal(r.status, 2);
+  assert.equal(JSON.parse(await readFile(out, "utf8")).outcome, "blocked");
+});
