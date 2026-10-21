@@ -1,0 +1,287 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "kind": {
+      "const": "candidate-acceptance"
+    },
+    "runId": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{24}$"
+    },
+    "scope": {
+      "enum": [
+        "full",
+        "candidate-only"
+      ]
+    },
+    "outcome": {
+      "enum": [
+        "passed",
+        "failed",
+        "blocked"
+      ]
+    },
+    "acceptanceEligible": {
+      "type": "boolean"
+    },
+    "startedAt": {
+      "type": "string"
+    },
+    "finishedAt": {
+      "type": "string"
+    },
+    "bindings": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "revision": {
+          "type": "string",
+          "pattern": "^([a-f0-9]{40,64})?$"
+        },
+        "source": {
+          "type": "string",
+          "pattern": "^([a-f0-9]{64})?$"
+        },
+        "clean": {
+          "type": "boolean"
+        },
+        "locks": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^([a-f0-9]{64})?$"
+          }
+        },
+        "tools": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9 .+_:/@()\\-]{1,128}$"
+          }
+        },
+        "binary": {
+          "type": "string",
+          "pattern": "^([a-f0-9]{64})?$"
+        },
+        "assets": {
+          "type": "string",
+          "pattern": "^([a-f0-9]{64})?$"
+        }
+      },
+      "required": [
+        "revision",
+        "source",
+        "clean",
+        "locks",
+        "tools",
+        "binary",
+        "assets"
+      ]
+    },
+    "gates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "enum": [
+              "bindings",
+              "database",
+              "lab",
+              "web",
+              "jsforce",
+              "python",
+              "cli",
+              "restart",
+              "connected-browser",
+              "preview",
+              "cleanup"
+            ]
+          },
+          "outcome": {
+            "enum": [
+              "passed",
+              "failed",
+              "blocked",
+              "not-run"
+            ]
+          },
+          "coverage": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "expected": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 10000
+              },
+              "observedRequired": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 10000
+              },
+              "passed": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "failed": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "skipped": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "allowedSkipped": {
+                "type": "array",
+                "items": {
+                  "enum": [
+                    "candidate/jsforce/core",
+                    "candidate/jsforce/policy",
+                    "candidate/jsforce/isolation"
+                  ]
+                },
+                "maxItems": 10000
+              }
+            },
+            "required": [
+              "expected",
+              "observedRequired",
+              "passed",
+              "failed",
+              "skipped",
+              "allowedSkipped"
+            ]
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "PREREQUISITE",
+                "SOURCE",
+                "COVERAGE",
+                "RESULT",
+                "PROCESS",
+                "TIMEOUT",
+                "SIGNAL",
+                "FIXTURES",
+                "CLEANUP",
+                "PUBLICATION",
+                "ASSERTION"
+              ]
+            },
+            "maxItems": 10000
+          },
+          "startedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "finishedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "outcome",
+          "coverage",
+          "categories",
+          "startedAt",
+          "finishedAt"
+        ]
+      },
+      "maxItems": 10000
+    },
+    "cleanup": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "verified": {
+          "type": "boolean"
+        },
+        "records": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unknownIntents": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "retainedPrincipals": {
+          "const": true
+        },
+        "processesStopped": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "verified",
+        "records",
+        "unknownIntents",
+        "retainedPrincipals",
+        "processesStopped"
+      ]
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "gate": {
+            "enum": [
+              "bindings",
+              "database",
+              "lab",
+              "web",
+              "jsforce",
+              "python",
+              "cli",
+              "restart",
+              "connected-browser",
+              "preview",
+              "cleanup"
+            ]
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^([a-f0-9]{64})?$"
+          }
+        },
+        "required": [
+          "gate",
+          "sha256"
+        ]
+      },
+      "maxItems": 10000
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "kind",
+    "runId",
+    "scope",
+    "outcome",
+    "acceptanceEligible",
+    "startedAt",
+    "finishedAt",
+    "bindings",
+    "gates",
+    "cleanup",
+    "evidence"
+  ],
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}
