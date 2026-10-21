@@ -20,6 +20,7 @@ Command: `CANDIDATE_DISPOSABLE=yes CHROMIUM_PATH=/usr/bin/chromium scripts/check
 | --- | --- | --- |
 | Absent columns / exactly `columns=false` | Ordinary `totalSize`, `done`, `records` body, no columnMetadata property | Existing behavior; candidate decision; ordinary envelope documented |
 | Exactly `columns=true` | Same envelope and records plus `columnMetadata`: array, including for empty results | Pinned consumer requirement + candidate decision |
+| Malformed query-parameter encoding (including percent escapes and unescaped semicolons), after valid SELECT parsing | HTTP 400, `INVALID_QUERY_PARAMETER`; message `Invalid query parameter encoding` | Candidate decision; reject the raw parse error rather than using silently dropped values |
 | Empty, other spelling/value, repeated columns (even identical values) | HTTP 400, `INVALID_QUERY_PARAMETER`; message `columns must be specified once as true or false` | Candidate decision; not reference error semantics |
 | Scalar selected field | `{ "columnName": "<exact catalog field Name>" }` | Minimal pinned consumption requirement + candidate decision |
 | ID, string, reference and custom text fields | Same scalar shape; no type/label/length/precision/aggregate/displayName or empty joinColumns properties | Candidate decision; omitted unused values avoid invented Salesforce mappings |

@@ -34,7 +34,7 @@ func columnsCases(t *testing.T) []columnsContractCase {
 	if err = json.Unmarshal(b, &fixture); err != nil {
 		t.Fatal(err)
 	}
-	if fixture.SchemaVersion != 1 || len(fixture.Cases) != 32 {
+	if fixture.SchemaVersion != 1 || len(fixture.Cases) != 35 {
 		t.Fatal("incomplete contract oracle")
 	}
 	return fixture.Cases

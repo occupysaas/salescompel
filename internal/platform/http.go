@@ -154,7 +154,12 @@ func NewHandler(s *Store, assetDir string) http.Handler {
 				writeError(w, e)
 				return
 			}
-			columns, e := queryColumnsRequested(r.URL.Query())
+			options, optionErr := url.ParseQuery(r.URL.RawQuery)
+			if optionErr != nil {
+				writeError(w, invalid("INVALID_QUERY_PARAMETER", "Invalid query parameter encoding"))
+				return
+			}
+			columns, e := queryColumnsRequested(options)
 			if e != nil {
 				writeError(w, e)
 				return

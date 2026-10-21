@@ -769,6 +769,54 @@
         "candidate-contract",
         "existing-policy"
       ]
+    },
+    {
+      "id": "malformed-escape",
+      "principal": "admin",
+      "query": "SELECT Id FROM Account",
+      "querySuffix": "&columns=%zz",
+      "expectedStatus": 400,
+      "expectedBody": [
+        {
+          "errorCode": "INVALID_QUERY_PARAMETER",
+          "message": "Invalid query parameter encoding"
+        }
+      ],
+      "basis": [
+        "candidate-contract"
+      ]
+    },
+    {
+      "id": "malformed-duplicate",
+      "principal": "admin",
+      "query": "SELECT Id FROM Account",
+      "querySuffix": "&columns=true&columns=%zz",
+      "expectedStatus": 400,
+      "expectedBody": [
+        {
+          "errorCode": "INVALID_QUERY_PARAMETER",
+          "message": "Invalid query parameter encoding"
+        }
+      ],
+      "basis": [
+        "candidate-contract"
+      ]
+    },
+    {
+      "id": "malformed-semicolon",
+      "principal": "admin",
+      "query": "SELECT Id FROM Account",
+      "querySuffix": "&columns=true;false",
+      "expectedStatus": 400,
+      "expectedBody": [
+        {
+          "errorCode": "INVALID_QUERY_PARAMETER",
+          "message": "Invalid query parameter encoding"
+        }
+      ],
+      "basis": [
+        "candidate-contract"
+      ]
     }
   ]
 }
