@@ -3,7 +3,11 @@ import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import { runAcceptance } from "./candidate-acceptance-run.ts";
+import {
+  runAcceptance,
+  withAcceptanceSignals,
+} from "./candidate-acceptance-run.ts";
+import { validateOutputDestination } from "./candidate-acceptance-preflight.ts";
 import { publishAcceptanceReport } from "./candidate-acceptance-contract.ts";
 export async function candidateAcceptanceMain(
   argv: string[],
@@ -33,20 +37,25 @@ export async function candidateAcceptanceMain(
       "summary.json",
     );
   try {
-    const report = await runAcceptance(
-      {
-        scope,
-        out: resolve(out),
-        ...(args.values.port ? { port: Number(args.values.port) } : {}),
-      },
-      env,
-    );
-    await publishAcceptanceReport(out, report);
-    return report.outcome === "passed"
-      ? 0
-      : report.outcome === "failed"
-        ? 1
-        : 2;
+    await validateOutputDestination(out);
+    if (!args.values.out) console.log(`Candidate-only summary: ${out}`);
+    return await withAcceptanceSignals(async (signals) => {
+      const report = await runAcceptance(
+        {
+          scope,
+          out: resolve(out),
+          ...(args.values.port ? { port: Number(args.values.port) } : {}),
+        },
+        env,
+        signals,
+      );
+      await publishAcceptanceReport(out, report);
+      return report.outcome === "passed"
+        ? 0
+        : report.outcome === "failed"
+          ? 1
+          : 2;
+    });
   } catch {
     return 2;
   }

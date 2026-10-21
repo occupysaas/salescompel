@@ -124,23 +124,14 @@ export function baseEnvironment(env: NodeJS.ProcessEnv) {
     NO_COLOR: "1",
   };
 }
-export async function preflightAcceptance(
-  options: AcceptanceOptions,
-  env: NodeJS.ProcessEnv,
-): Promise<GateContext> {
-  if (
-    env.CANDIDATE_DISPOSABLE !== "yes" ||
-    !env.DATABASE_URL ||
-    (env.TEST_DATABASE_URL && env.TEST_DATABASE_URL !== env.DATABASE_URL)
-  )
-    throw new Error("PREREQUISITE");
-  const out = resolve(options.out),
+export async function validateOutputDestination(output: string) {
+  const out = resolve(output),
     parent = dirname(out);
   if (
     out === ROOT.slice(0, -1) ||
     out.startsWith(ROOT) ||
-    !options.out ||
-    !options.out.endsWith(".json") ||
+    !output ||
+    !output.endsWith(".json") ||
     (await realpath(parent)) !== parent
   )
     throw new Error("PREREQUISITE");
@@ -150,6 +141,20 @@ export async function preflightAcceptance(
   } catch (e: any) {
     if (e.code !== "ENOENT") throw e;
   }
+}
+export async function preflightAcceptance(
+  options: AcceptanceOptions,
+  env: NodeJS.ProcessEnv,
+  onContext?: (c: GateContext) => void,
+): Promise<GateContext> {
+  if (
+    env.CANDIDATE_DISPOSABLE !== "yes" ||
+    !env.DATABASE_URL ||
+    (env.TEST_DATABASE_URL && env.TEST_DATABASE_URL !== env.DATABASE_URL)
+  )
+    throw new Error("PREREQUISITE");
+  await validateOutputDestination(options.out);
+  const out = resolve(options.out);
   const bindings = await collectSourceBindings();
   if (options.scope === "full" && !bindings.clean) throw new Error("SOURCE");
   const scratch = await mkdtemp(join(tmpdir(), "salescompel-acceptance-")),
@@ -198,6 +203,7 @@ export async function preflightAcceptance(
     bindings,
     out,
   };
+  onContext?.(c);
   c.processes.source = bindings.source;
   await writeFile(c.fixtureJournal, "", { flag: "wx", mode: 0o600 });
   try {

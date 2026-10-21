@@ -39,3 +39,33 @@ test("bounded subprocess captures private logs, exit status and terminates a han
   await stopOwnedProcesses(context);
   assert.equal(context.children.size, 0);
 });
+test("shutdown owns grandchildren after the leader exits and escalates resistant groups", async (t) => {
+  const dir = await mkdtemp(join(tmpdir(), "p15-descendant-"));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  const context = newProcessContext("b".repeat(24), dir, Date.now() + 10000);
+  const result = await runCommand(
+    {
+      executable: process.execPath,
+      argv: [
+        "-e",
+        `const {spawn}=require('node:child_process');const c=spawn(process.execPath,['-e', 'process.on("SIGTERM",()=>{});console.log("ready");setInterval(()=>{},1000)'],{stdio:['ignore','pipe','ignore']});c.stdout.once('data',()=>{console.log(c.pid);c.stdout.destroy();c.unref()})`,
+      ],
+      cwd: dir,
+      env: {},
+    },
+    context,
+    "lab",
+  );
+  const pid = Number((await readFile(result.resultPath, "utf8")).trim());
+  t.after(() => {
+    try {
+      process.kill(pid, "SIGKILL");
+    } catch {}
+  });
+  await stopOwnedProcesses(context);
+  const stat = await readFile(`/proc/${pid}/stat`, "utf8").catch(() => "");
+  assert.ok(
+    !stat || stat.slice(stat.lastIndexOf(")") + 2).startsWith("Z "),
+    "owned grandchild must be stopped",
+  );
+});

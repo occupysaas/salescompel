@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { Connection } from "jsforce";
 import {
   recordFixtureEvent,
+  trackFixtureAttempt,
   type FixtureEvent,
 } from "../src/candidate-acceptance-fixtures.ts";
 const opts = { skip: process.env.RUN_CANDIDATE !== "1" };
@@ -117,12 +118,17 @@ test("candidate/jsforce/core", opts, async () => {
     if (path) await recordFixtureEvent(path, { ...e, kind: "known", id: u.id });
     assert.equal(u.created, true);
     try {
-      const u2: any = await f.admin
-        .sobject("Account")
-        .upsert(
-          { Compat_Key__c: f.name, Compat_Text__c: "retained" },
-          "Compat_Key__c",
-        );
+      const u2: any = await trackFixtureAttempt(
+        path,
+        { ...e, operationId: "jsforce-upsert-repeat" },
+        () =>
+          f.admin
+            .sobject("Account")
+            .upsert(
+              { Compat_Key__c: f.name, Compat_Text__c: "retained" },
+              "Compat_Key__c",
+            ) as Promise<any>,
+      );
       assert.equal(u2.created, false);
       assert.equal(u2.id, u.id);
       assert.equal(
@@ -201,7 +207,23 @@ test("candidate/jsforce/isolation", opts, async () => {
     ])
       await assert.rejects(action(), { errorCode: "NOT_FOUND" });
     await assert.rejects(
-      f.other.sobject("Contact").create({ LastName: f.name, AccountId: id }),
+      trackFixtureAttempt(
+        process.env.CANDIDATE_FIXTURE_JOURNAL,
+        {
+          schemaVersion: 1,
+          runId: process.env.CANDIDATE_RUN_ID!,
+          operationId: "jsforce-denied-link",
+          principal: "other",
+          object: "Contact",
+          names: [f.name],
+          kind: "intent",
+        },
+        () =>
+          f.other
+            .sobject("Contact")
+            .create({ LastName: f.name, AccountId: id }) as Promise<any>,
+        ["INVALID_CROSS_REFERENCE_KEY"],
+      ),
       { errorCode: "INVALID_CROSS_REFERENCE_KEY" },
     );
     assert.equal(

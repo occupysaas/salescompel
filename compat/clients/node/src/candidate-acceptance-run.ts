@@ -22,6 +22,7 @@ import {
   runCommand,
   stopOwnedProcesses,
   type CommandResult,
+  type ProcessContext,
 } from "./candidate-acceptance-process.ts";
 import {
   readGateResult,
@@ -42,10 +43,49 @@ import {
   seedRestartFixture,
   verifyRestartFixture,
 } from "./candidate-acceptance-clients.ts";
+export const databaseTestArgs = () => [
+  "test",
+  "-race",
+  "-count=1",
+  "-json",
+  "./...",
+];
+interface AcceptanceSignals {
+  attach(c: ProcessContext): void;
+}
+export async function withAcceptanceSignals<T>(
+  action: (signals: AcceptanceSignals) => Promise<T>,
+): Promise<T> {
+  let interrupted = false;
+  let context: ProcessContext | undefined;
+  const handler = () => {
+    interrupted = true;
+    if (context) {
+      context.interrupted = true;
+      void stopOwnedProcesses(context).catch(() => {});
+    }
+  };
+  process.on("SIGINT", handler);
+  process.on("SIGTERM", handler);
+  try {
+    return await action({
+      attach(c) {
+        context = c;
+        if (interrupted) handler();
+      },
+    });
+  } finally {
+    process.off("SIGINT", handler);
+    process.off("SIGTERM", handler);
+  }
+}
 export async function runAcceptance(
   options: AcceptanceOptions,
   env: NodeJS.ProcessEnv,
+  signals?: AcceptanceSignals,
 ): Promise<AcceptanceReport> {
+  if (!signals)
+    return withAcceptanceSignals((owned) => runAcceptance(options, env, owned));
   let report = newReport(randomBytes(12).toString("hex"), options.scope),
     c: GateContext | undefined,
     service: OwnedService | undefined,
@@ -63,7 +103,27 @@ export async function runAcceptance(
     active = id;
     const startedAt = new Date().toISOString();
     report.gates.find((g) => g.id === id)!.startedAt = startedAt;
-    const parsed = await fn();
+    let parsed = await fn();
+    if (id === "cli" || id === "restart") {
+      const path = join(c!.scratch, id + ".json");
+      const bytes = JSON.stringify(parsed) + "\n";
+      await writeFile(path, bytes, { flag: "wx", mode: 0o600 });
+      await writeFile(
+        path + ".binding.json",
+        JSON.stringify({
+          schemaVersion: 1,
+          runId: c!.runId,
+          gate: id,
+          source: c!.bindings.source,
+          digest: digest(bytes),
+          exitCode: parsed.exitCode,
+          complete: parsed.complete,
+        }),
+        { flag: "wx", mode: 0o600 },
+      );
+      parsed = await readGateResult("steps", path, c!.runId);
+      report.evidence.push({ gate: id, sha256: digest(bytes) });
+    }
     const gate = {
       ...assessCoverage(id, parsed),
       startedAt,
@@ -72,19 +132,15 @@ export async function runAcceptance(
     report.gates[report.gates.findIndex((g) => g.id === id)] = gate;
     if (gate.outcome !== "passed") throw new Error("COVERAGE");
   };
-  const handlers: Record<string, () => void> = {};
   try {
-    c = await preflightAcceptance(options, env);
+    c = await preflightAcceptance(options, env, (context) => {
+      c = context;
+      console.error(`Private candidate diagnostics: ${context.scratch}`);
+      signals.attach(context.processes);
+    });
     const ctx = c;
     report = newReport(c.runId, options.scope);
     report.bindings = c.bindings;
-    for (const signal of ["SIGINT", "SIGTERM"] as const) {
-      handlers[signal] = () => {
-        ctx.processes.interrupted = true;
-        void stopOwnedProcesses(ctx.processes).catch(() => {});
-      };
-      process.on(signal, handlers[signal]);
-    }
     const command = async (
       executable: string,
       argv: string[],
@@ -137,11 +193,7 @@ export async function runAcceptance(
     };
     if (options.scope === "full") {
       await step("database", async () => {
-        const tests = await command(
-          "go",
-          ["test", "-race", "-json", "./..."],
-          "database",
-        );
+        const tests = await command("go", databaseTestArgs(), "database");
         const parsed = await load("go", tests.resultPath, "database");
         const vet = await command("go", ["vet", "./..."], "database");
         done(vet);
@@ -313,7 +365,6 @@ export async function runAcceptance(
       ["PREREQUISITE", "SOURCE", "TIMEOUT", "SIGNAL"].includes(code),
     );
   } finally {
-    for (const [s, h] of Object.entries(handlers)) process.off(s, h);
     if (c) {
       try {
         report.cleanup = await cleanupFixtures(c);

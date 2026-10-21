@@ -1,5 +1,12 @@
 import { spawn, type ChildProcess } from "node:child_process";
-import { openSync, writeSync, closeSync, fsyncSync } from "node:fs";
+import {
+  openSync,
+  writeSync,
+  closeSync,
+  fsyncSync,
+  readdirSync,
+  readFileSync,
+} from "node:fs";
 import { writeFile, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { randomBytes } from "node:crypto";
@@ -47,6 +54,32 @@ function signalGroup(child: ChildProcess, signal: NodeJS.Signals) {
       if (e.code !== "ESRCH") throw e;
     }
 }
+function groupAlive(child: ChildProcess) {
+  if (!child.pid) return false;
+  if (process.platform === "linux") {
+    // Killed orphan zombies await their host reaper; they cannot execute or hold ports.
+    return readdirSync("/proc").some((entry) => {
+      if (!/^\d+$/.test(entry)) return false;
+      try {
+        const stat = readFileSync(`/proc/${entry}/stat`, "utf8");
+        const fields = stat.slice(stat.lastIndexOf(")") + 2).split(" ");
+        return (
+          Number(fields[2]) === child.pid && !["Z", "X"].includes(fields[0])
+        );
+      } catch (e: any) {
+        if (["ENOENT", "ESRCH"].includes(e.code)) return false;
+        throw e;
+      }
+    });
+  }
+  try {
+    process.kill(-child.pid, 0);
+    return true;
+  } catch (e: any) {
+    if (e.code === "ESRCH") return false;
+    throw e;
+  }
+}
 export function spawnOwned(spec: CommandSpec, c: ProcessContext, gate: GateID) {
   if (c.interrupted || Date.now() >= c.deadline)
     throw new Error(c.interrupted ? "SIGNAL" : "TIMEOUT");
@@ -65,7 +98,7 @@ export function spawnOwned(spec: CommandSpec, c: ProcessContext, gate: GateID) {
     ended = false,
     failed = false;
   const terminate = () => {
-    if (!ended) {
+    if (!ended || groupAlive(child)) {
       failed = true;
       signalGroup(child, "SIGTERM");
       const force = setTimeout(() => signalGroup(child, "SIGKILL"), 1000);
@@ -93,7 +126,7 @@ export function spawnOwned(spec: CommandSpec, c: ProcessContext, gate: GateID) {
     child.once("close", async (code) => {
       ended = true;
       clearTimeout(timer);
-      c.children.delete(child);
+      if (!groupAlive(child)) c.children.delete(child);
       fsyncSync(out);
       fsyncSync(err);
       closeSync(out);
@@ -138,22 +171,17 @@ export async function runCommand(
 export async function stopOwnedProcesses(c: ProcessContext) {
   const children = [...c.children];
   for (const child of children) signalGroup(child, "SIGTERM");
-  await Promise.all(
-    children.map(
-      (child) =>
-        new Promise<void>((resolve) => {
-          const force = setTimeout(() => signalGroup(child, "SIGKILL"), 1000);
-          const bound = setTimeout(() => {
-            clearTimeout(force);
-            resolve();
-          }, 10000);
-          child.once("close", () => {
-            clearTimeout(force);
-            clearTimeout(bound);
-            resolve();
-          });
-        }),
-    ),
-  );
-  if (c.children.size) throw new Error("CLEANUP");
+  const started = Date.now();
+  let forced = false;
+  while (c.children.size) {
+    for (const child of c.children) {
+      if (!groupAlive(child)) c.children.delete(child);
+      else if (!forced && Date.now() - started >= 1000)
+        signalGroup(child, "SIGKILL");
+    }
+    if (Date.now() - started >= 1000) forced = true;
+    if (!c.children.size) break;
+    if (Date.now() - started >= 10000) throw new Error("CLEANUP");
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
 }

@@ -72,3 +72,88 @@ test("documented shell entry point works from repository root before any prerequ
   assert.equal(r.status, 2);
   assert.equal(JSON.parse(await readFile(out, "utf8")).outcome, "blocked");
 });
+test("database gate executes fresh tests twice instead of replaying the Go cache", async (t) => {
+  const { databaseTestArgs } =
+    await import("../src/candidate-acceptance-run.ts");
+  const { writeFile } = await import("node:fs/promises");
+  const { execFileSync } = await import("node:child_process");
+  const dir = await mkdtemp(join(tmpdir(), "p15-go-fresh-"));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  await writeFile(join(dir, "go.mod"), "module acceptancefresh\n\ngo 1.25\n");
+  await writeFile(
+    join(dir, "fresh_test.go"),
+    'package acceptancefresh\nimport("fmt";"testing";"time")\nfunc TestFresh(t *testing.T){fmt.Println("fresh",time.Now().UnixNano())}\n',
+  );
+  const run = () =>
+    execFileSync("go", databaseTestArgs(), {
+      cwd: dir,
+      env: { ...process.env, GOTOOLCHAIN: "local", GOPROXY: "off" },
+      encoding: "utf8",
+    }).match(/fresh \d+/)?.[0];
+  const first = run(),
+    second = run();
+  assert.ok(first);
+  assert.notEqual(first, second);
+});
+test("signal ownership starts before preflight work and persists through asynchronous shutdown", async (t) => {
+  const { withAcceptanceSignals } =
+    await import("../src/candidate-acceptance-run.ts");
+  const { newProcessContext, spawnOwned, stopOwnedProcesses } =
+    await import("../src/candidate-acceptance-process.ts");
+  const dir = await mkdtemp(join(tmpdir(), "p15-signal-"));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  const before = process.listenerCount("SIGTERM");
+  await withAcceptanceSignals(async (signals) => {
+    process.emit("SIGTERM");
+    const c = newProcessContext("c".repeat(24), dir, Date.now() + 5000);
+    signals.attach(c);
+    assert.equal(c.interrupted, true);
+    assert.throws(
+      () =>
+        spawnOwned(
+          { executable: process.execPath, argv: [], cwd: dir, env: {} },
+          c,
+          "bindings",
+        ),
+      /SIGNAL/,
+    );
+    await stopOwnedProcesses(c);
+    await new Promise((r) => setTimeout(r, 10));
+    process.emit("SIGTERM");
+    assert.equal(process.listenerCount("SIGTERM"), before + 1);
+  });
+  assert.equal(process.listenerCount("SIGTERM"), before);
+  await withAcceptanceSignals(async (signals) => {
+    const c = newProcessContext("c".repeat(24), dir, Date.now() + 5000);
+    signals.attach(c);
+    const child = spawnOwned(
+      {
+        executable: process.execPath,
+        argv: ["-e", "setInterval(()=>{},1000)"],
+        cwd: dir,
+        env: {},
+      },
+      c,
+      "bindings",
+    );
+    process.emit("SIGINT");
+    await child.done;
+    await stopOwnedProcesses(c);
+    assert.equal(c.interrupted, true);
+    assert.equal(c.children.size, 0);
+  });
+});
+test("invalid publication destinations never create a blocked report", async (t) => {
+  const { ROOT } = await import("../src/versions.ts");
+  const { lstat } = await import("node:fs/promises");
+  const dir = await mkdtemp(join(tmpdir(), "p15-output-"));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  for (const path of [
+    join(dir, "summary.txt"),
+    join(ROOT, `p15-invalid-${process.pid}.json`),
+  ]) {
+    t.after(() => rm(path, { force: true }));
+    assert.equal(await candidateAcceptanceMain(["full", "--out", path], {}), 2);
+    await assert.rejects(lstat(path), { code: "ENOENT" });
+  }
+});

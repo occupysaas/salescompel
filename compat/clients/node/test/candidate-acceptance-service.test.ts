@@ -80,3 +80,84 @@ test("fixture cleanup deletes children before parents and independently checks a
   assert.equal(r.verified, true);
   assert.ok(deleted[0].includes("Contact"));
 });
+test("create-capable attempts capture unexpected IDs and leave lost responses unresolved", async (t) => {
+  const { trackFixtureAttempt } =
+    await import("../src/candidate-acceptance-fixtures.ts");
+  const dir = await mkdtemp(join(tmpdir(), "p15-attempt-"));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  const path = join(dir, "journal");
+  await writeFile(path, "", { mode: 0o600 });
+  const e = {
+    schemaVersion: 1 as const,
+    runId: "d".repeat(24),
+    operationId: "denied",
+    principal: "other" as const,
+    object: "Contact" as const,
+    names: ["owned"],
+    kind: "intent" as const,
+  };
+  await trackFixtureAttempt(
+    path,
+    e,
+    async () => ({ id: "003000000000000001", success: true }),
+    ["INVALID_CROSS_REFERENCE_KEY"],
+  );
+  const c = { runId: e.runId, fixtureJournal: path } as any;
+  assert.equal(
+    (await cleanupFixtures(c, async () => ({ status: 404, body: null })))
+      .verified,
+    true,
+  );
+  await assert.rejects(
+    trackFixtureAttempt(
+      path,
+      { ...e, operationId: "lost" },
+      async () => {
+        throw new Error("connection lost");
+      },
+      ["INVALID_CROSS_REFERENCE_KEY"],
+    ),
+  );
+  assert.equal(
+    (await cleanupFixtures(c, async () => ({ status: 404, body: null })))
+      .unknownIntents,
+    1,
+  );
+});
+test("proven rejected creation resolves only its own durable intent", async (t) => {
+  const { trackFixtureAttempt } =
+    await import("../src/candidate-acceptance-fixtures.ts");
+  const dir = await mkdtemp(join(tmpdir(), "p15-rejected-"));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  const path = join(dir, "journal");
+  await writeFile(path, "", { mode: 0o600 });
+  const e = {
+    schemaVersion: 1 as const,
+    runId: "e".repeat(24),
+    operationId: "denied",
+    principal: "other" as const,
+    object: "Contact" as const,
+    names: ["owned"],
+    kind: "intent" as const,
+  };
+  await assert.rejects(
+    trackFixtureAttempt(
+      path,
+      e,
+      async () => {
+        throw Object.assign(new Error("denied"), {
+          errorCode: "INVALID_CROSS_REFERENCE_KEY",
+        });
+      },
+      ["INVALID_CROSS_REFERENCE_KEY"],
+    ),
+  );
+  const r = await cleanupFixtures(
+    { runId: e.runId, fixtureJournal: path } as any,
+    async () => {
+      throw Error("no known record");
+    },
+  );
+  assert.equal(r.verified, true);
+  assert.equal(r.unknownIntents, 0);
+});

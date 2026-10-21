@@ -9,7 +9,7 @@ export interface FixtureEvent {
   principal: "admin" | "restricted" | "other";
   object: "Account" | "Contact";
   names: string[];
-  kind: "intent" | "known" | "deleted" | "absent";
+  kind: "intent" | "known" | "deleted" | "absent" | "rejected";
   id?: string;
 }
 export interface Response {
@@ -84,7 +84,7 @@ export async function recordFixtureEvent(path: string, e: FixtureEvent) {
     !e.operationId ||
     !["Account", "Contact"].includes(e.object) ||
     !["admin", "restricted", "other"].includes(e.principal) ||
-    !["intent", "known", "deleted", "absent"].includes(e.kind) ||
+    !["intent", "known", "deleted", "absent", "rejected"].includes(e.kind) ||
     !e.names.length ||
     e.names.some((n) => typeof n !== "string" || n.length > 255) ||
     (e.id && !/^[a-zA-Z0-9]{18}$/.test(e.id))
@@ -112,7 +112,7 @@ export async function cleanupFixtures(
     const text = await readFile(c.fixtureJournal, "utf8");
     if (text && !text.endsWith("\n")) throw new Error("FIXTURES");
     const states = new Map<string, FixtureEvent>();
-    const ids = new Set<string>();
+
     for (const raw of text.trim().split("\n").filter(Boolean)) {
       const e = JSON.parse(raw) as FixtureEvent;
       if (e.runId !== c.runId) throw new Error("FIXTURES");
@@ -126,15 +126,12 @@ export async function cleanupFixtures(
           e.object !== prev.object ||
           e.principal !== prev.principal ||
           JSON.stringify(e.names) !== JSON.stringify(prev.names) ||
-          !e.id ||
-          !/^[A-Za-z0-9]{18}$/.test(e.id) ||
+          (e.kind === "rejected"
+            ? !!e.id || prev.kind !== "intent"
+            : !e.id || !/^[A-Za-z0-9]{18}$/.test(e.id)) ||
           (prev.id && prev.id !== e.id)
         )
           throw new Error("FIXTURES");
-        if (e.kind === "known" && !prev.id) {
-          if (ids.has(e.id)) throw new Error("FIXTURES");
-          ids.add(e.id);
-        }
         states.set(e.operationId, e);
       }
     }
@@ -142,6 +139,7 @@ export async function cleanupFixtures(
       (a, b) =>
         (a.object === "Contact" ? 0 : 1) - (b.object === "Contact" ? 0 : 1),
     )) {
+      if (e.kind === "rejected") continue;
       if (!e.id) {
         unknownIntents++;
         verified = false;
@@ -215,4 +213,27 @@ export async function createFixture(
     id: r.body.id,
   });
   return r.body.id as string;
+}
+
+export async function trackFixtureAttempt<T extends { id?: string }>(
+  path: string | undefined,
+  event: FixtureEvent,
+  perform: () => Promise<T>,
+  rejectedCodes: string[] = [],
+): Promise<T> {
+  if (path) await recordFixtureEvent(path, event);
+  try {
+    const result = await perform();
+    if (path && result.id)
+      await recordFixtureEvent(path, {
+        ...event,
+        kind: "known",
+        id: result.id,
+      });
+    return result;
+  } catch (error: any) {
+    if (path && rejectedCodes.includes(error?.errorCode))
+      await recordFixtureEvent(path, { ...event, kind: "rejected" });
+    throw error;
+  }
 }

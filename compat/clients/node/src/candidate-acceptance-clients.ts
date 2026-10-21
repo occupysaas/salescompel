@@ -19,6 +19,19 @@ export const stepResult = (
   exitCode: 0,
   tests: ids.map((id) => ({ id, outcome: "passed" })),
 });
+export function assertRestartBaseline(runId: string, before: any) {
+  const name = "p15-" + runId + "-restart";
+  assert.match(before.account, /^[A-Za-z0-9]{18}$/);
+  assert.match(before.contact, /^[A-Za-z0-9]{18}$/);
+  assert.equal(before.a.Id, before.account);
+  assert.equal(before.a.Name, name);
+  assert.equal(before.a.Compat_Text__c, "retained text");
+  assert.equal(before.a.Compat_Key__c, name);
+  assert.equal(before.b.Id, before.contact);
+  assert.equal(before.b.FirstName, "Restart");
+  assert.equal(before.b.LastName, name);
+  assert.equal(before.b.AccountId, before.account);
+}
 export async function seedRestartFixture(c: GateContext) {
   const name = "p15-" + c.runId + "-restart",
     account = await createFixture(
@@ -53,6 +66,7 @@ export async function seedRestartFixture(c: GateContext) {
       )
     ).body,
   };
+  assertRestartBaseline(c.runId, before);
   await writeFile(join(c.scratch, "restart.json"), JSON.stringify(before), {
     mode: 0o600,
     flag: "wx",
@@ -65,6 +79,7 @@ export async function verifyRestartFixture(
   const before = JSON.parse(
     await readFile(join(c.scratch, "restart.json"), "utf8"),
   );
+  assertRestartBaseline(c.runId, before);
   for (const [object, id, key] of [
     ["Account", before.account, "a"],
     ["Contact", before.contact, "b"],
@@ -85,7 +100,9 @@ export async function verifyRestartFixture(
         `SELECT Id,LastName,Account.Name FROM Contact WHERE AccountId = '${before.account}'`,
       ),
   );
+  assert.equal(q.status, 200);
   assert.equal(q.body.records.length, 1);
+  assert.equal(q.body.records[0].Id, before.contact);
   assert.equal(q.body.records[0].Account.Name, before.a.Name);
   assert.equal(
     (
