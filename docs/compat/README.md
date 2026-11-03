@@ -202,7 +202,12 @@ credentials private; obtain them through documented CLI commands, not chat.
 
 The suite creates roughly 2500 owned Accounts plus small supporting fixtures and
 uses public CRUD for setup/cleanup. One cursor is checked after 16 idle minutes;
-continued validity at that bound is reported as blocked expiry evidence. Two
+continued validity at that bound is reported as blocked expiry evidence. A
+non-200 JSON response accepted by the wire-observation checks (such as a 401 or
+429) also leaves expiry blocked: HTTP status alone cannot identify locator
+expiry. These responses are retained as observations. Server errors and non-JSON
+responses still fail the wire-observation checks. The probe does not claim a
+measured expiry without expiry-specific evidence. Two
 complete runs are necessary for repeatability. URL transport rejects redirects
 and off-origin continuation links, preserves encoded external IDs, and bounds
 responses at 8 MiB with a 15-second request timeout. Query traversal is bounded

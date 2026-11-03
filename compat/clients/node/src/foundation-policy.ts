@@ -198,7 +198,7 @@ export async function runExpiryObservation(
   start: () => Promise<string>,
   wait: () => Promise<void>,
   retrieve: (locator: string) => Promise<number>,
-): Promise<"measured" | "unmeasured"> {
+): Promise<"unmeasured"> {
   if (!expiryMeasurementRequired(policy)) return "unmeasured";
   const locator = await start();
   await wait();
@@ -207,5 +207,10 @@ export async function runExpiryObservation(
     throw new Error(
       "Locator still valid at 16-minute observation bound; expiry unmeasured",
     );
-  return "measured";
+  // A status alone cannot distinguish locator expiry from session expiry,
+  // authorization failures, rate limiting, or a server/proxy error. Retain the
+  // wire observation, but do not promote an unrelated failure to expiry evidence.
+  throw new Error(
+    `Locator returned HTTP ${status} at 16-minute observation bound; expiry unmeasured without expiry-specific evidence`,
+  );
 }

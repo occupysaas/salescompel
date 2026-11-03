@@ -79,3 +79,56 @@ test("assumed lifetime omits only the expiry-specific requests and wait", async 
   assert.deepEqual(calls, []);
   assert.equal(result, "unmeasured");
 });
+
+test("unrelated HTTP failures do not establish cursor expiry", async (t) => {
+  for (const status of [201, 204, 302, 400, 401, 403, 404, 429, 500, 503]) {
+    await t.test(`HTTP ${status}`, async () => {
+      await assert.rejects(
+        runExpiryObservation(
+          "observed-only",
+          async () => "locator",
+          async () => {},
+          async () => status,
+        ),
+        /expiry unmeasured/,
+      );
+    });
+  }
+});
+
+test("continued validity remains unmeasured after the observation wait", async () => {
+  const calls: string[] = [];
+  await assert.rejects(
+    runExpiryObservation(
+      "observed-only",
+      async () => {
+        calls.push("start");
+        return "original-locator";
+      },
+      async () => {
+        calls.push("wait");
+      },
+      async (locator) => {
+        calls.push(locator);
+        return 200;
+      },
+    ),
+    /Locator still valid at 16-minute observation bound; expiry unmeasured/,
+  );
+  assert.deepEqual(calls, ["start", "wait", "original-locator"]);
+});
+
+test("transport failure is propagated rather than recorded as measured expiry", async () => {
+  const failure = new Error("transport unavailable");
+  await assert.rejects(
+    runExpiryObservation(
+      "observed-only",
+      async () => "locator",
+      async () => {},
+      async () => {
+        throw failure;
+      },
+    ),
+    (error) => error === failure,
+  );
+});
