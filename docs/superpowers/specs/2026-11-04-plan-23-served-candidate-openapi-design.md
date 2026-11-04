@@ -1,6 +1,6 @@
 # Plan 23 — Served candidate OpenAPI contract
 
-Status: proposed, 2026-11-04. Planning only; implementation and candidate acceptance have not run.
+Status: implemented, independently reviewed, corrected and verified, 2026-11-04. All eleven full candidate acceptance gates passed on Go 1.25.0; [results and limits](../../compat/plan-23-served-candidate-openapi.md).
 Milestone: bounded M3 API-contract delivery; no milestone exit gate or Salesforce parity claim.
 
 ## Intent and selection
