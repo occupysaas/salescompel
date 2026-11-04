@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 	"unicode/utf8"
+
+	apicontract "salescompel/api"
 )
 
 const apiBase = "/services/data/v65.0/"
@@ -107,6 +109,14 @@ func NewHandler(s *Store, assetDir string) http.Handler {
 			return
 		}
 		path := strings.TrimSuffix("/"+strings.TrimLeft(r.URL.EscapedPath(), "/"), "/")
+		if path == apicontract.CandidateOpenAPIPath {
+			if method(w, r, "GET") {
+				w.Header().Set("Content-Type", apicontract.CandidateOpenAPIContentType)
+				w.WriteHeader(http.StatusOK)
+				_, _ = io.WriteString(w, apicontract.CandidateOpenAPI())
+			}
+			return
+		}
 		if path == "/services/data" {
 			if method(w, r, "GET") {
 				writeJSON(w, 200, []any{map[string]any{"version": "65.0", "label": "SalesCompel candidate", "url": strings.TrimSuffix(apiBase, "/")}})
@@ -128,7 +138,7 @@ func NewHandler(s *Store, assetDir string) http.Handler {
 		}
 		if path == strings.TrimSuffix(apiBase, "/") {
 			if method(w, r, "GET") {
-				writeJSON(w, 200, map[string]string{"sobjects": apiBase + "sobjects", "query": apiBase + "query"})
+				writeJSON(w, 200, map[string]string{"sobjects": apiBase + "sobjects", "query": apiBase + "query", "openapi": apicontract.CandidateOpenAPIPath})
 			}
 			return
 		}
