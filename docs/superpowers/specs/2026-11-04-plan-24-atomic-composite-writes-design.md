@@ -1,13 +1,13 @@
 # Plan 24 — Atomic Composite writes
 
-Status: proposed specification, 2026-11-04; implementation has not started.
+Status: implemented, independently reviewed, corrected and verified, 2026-11-04. [Measured acceptance and limits](../../compat/plan-24-atomic-composite-writes.md).
 Milestone: bounded M3 transaction slice; no M3 exit-gate or Salesforce parity claim.
 
 ## Intent and selection
 
 Allow a client to create an Account and its Contact in one atomic request, and prove that a later failure undoes earlier creates, updates and deletes. This closes the missing rollback portion of the roadmap's first vertical scenario while reusing the candidate's existing validation, permissions and PostgreSQL storage.
 
-Plan 24 has no preassigned topic in the repository. Atomic Composite writes are the author's recommended next package after [Plan 23](../../compat/plan-23-served-candidate-openapi.md), chosen from the [M3 roadmap](../../plans/2026-10-14-salesforce-compatibility-roadmap.md). This selection is an author decision for review, not a previously approved maintainer requirement. Plans 10/14, real target inventory and unimplemented Plan 20 retain their existing scope and status.
+Plan 24 has no preassigned topic in the repository. Atomic Composite writes are the author's recommended next package after [Plan 23](../../compat/plan-23-served-candidate-openapi.md), chosen from the [M3 roadmap](../../plans/2026-10-14-salesforce-compatibility-roadmap.md). This was an author recommendation in the draft; the maintainer subsequently requested implementation of the reviewed specification and plan. Plans 10/14, real target inventory and unimplemented Plan 20 retain their existing scope and status.
 
 The [accepted pilot observation](../../compat/observations/pilot-black-box-baseline.yaml) already records a create followed by an invalid-field write: both subresponses were 400, with PROCESSING_HALTED and INVALID_FIELD respectively, and zero Accounts remained. [The scenario](../../../compat/clients/node/src/scenarios.ts) supplies the precise request. Only that bounded observation supports a measured reference claim; it does not establish every behavior below.
 
@@ -118,4 +118,4 @@ Create `docs/compat/plan-24-atomic-composite-writes.md` only during execution, r
 
 ## Builder check
 
-A fresh builder reviewed both drafts on 2026-11-04. Its two material fixture questions are resolved in the acceptance contract: full expected subrequest metadata is required, and duplicate marker matches use distinct recovery identities while the original intent remains unresolved. Individually attributable IDs are recorded before global response validation. These are author decisions; no product implementation or acceptance run was performed.
+A fresh builder reviewed both drafts on 2026-11-04. Its two material fixture questions are resolved in the acceptance contract: full expected subrequest metadata is required, and duplicate marker matches use distinct recovery identities while the original intent remains unresolved. Individually attributable IDs are recorded before global response validation. These were author decisions at design review. Subsequent execution and acceptance are recorded in the linked report.
