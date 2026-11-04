@@ -1,6 +1,6 @@
 # Plan 22 — Package dependency feasibility
 
-Status: proposed, 2026-11-03. Planning only; no implementation or package compatibility decision is recorded.
+Status: implemented, independently reviewed and verified, 2026-11-04. Decision: Continue for synthetic dependency resolution only; [results and execution gaps](../../compat/plan-22-package-dependency-feasibility.md). Real-package execution remains unproven.
 Milestone: bounded M7 feasibility discovery with M0 inputs; all milestone gates remain open.
 
 ## Intent and selection

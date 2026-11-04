@@ -1,6 +1,7 @@
 # Plan 22 — Package dependency feasibility
 
-Status: implemented; full verification and independent review pending, 2026-11-04. Decision pending.
+Status: implemented, independently reviewed and verified, 2026-11-04.
+Decision: **Continue** for the synthetic declaration/resolution method only.
 Real-package execution remains **unproven**.
 
 [Design](../superpowers/specs/2026-11-03-plan-22-package-dependency-feasibility-design.md)
@@ -105,17 +106,25 @@ git diff --check
 | Baseline laboratory npm test | 369 events: 366 passed, 3 skipped, 0 failed. |
 | Focused Plan 22 tests | 39 passed, 0 failed/skipped. |
 | Typecheck through Task 3 | Exit 0. |
-| Full laboratory check | Pending final completion. |
+| Full laboratory check | Exit 0: typecheck and formatting passed; 408 test/subtest events, 405 passed, 3 skipped, 0 failed; offline validation passed with 11 reviewed pilot observations, not_run=0. No parity certification. |
 | Protected file hashes | All 385 pre-existing tracked files match. |
-| git diff --check | Exit 0. |
+| git diff --check (complete base-to-final change) | Exit 0 against base f0b30fb89907ac6d210d489f272b65213fcd8a64; includes committed additions. |
 
 No browser, database or live reference run is needed or implied for this pure
-new experiment. Baseline skips remain to be identified alongside final lab
-results; they are not counted as passing compatibility scenarios.
+new experiment. The three unchanged baseline skips are `candidate/jsforce/core`,
+`candidate/jsforce/policy` and `candidate/jsforce/isolation`, gated by
+`RUN_CANDIDATE !== "1"`. They are not passing live candidate or compatibility
+scenarios. The first full-check attempt stopped on Prettier formatting in the new
+resolver, before tests; applying the pinned formatter resolved it and the full
+check above passed. No existing file was changed to make a check pass.
 
 ## Decision and follow-up gates
 
-Synthetic-method decision awaits full check and fresh whole-change review.
+Decision: **Continue** for this bounded synthetic declaration/resolution method.
+All mandatory offline assertions and the full lab check passed, with independent
+review finding no implementation issue. The experiment shows that exact declared
+packages/references and their execution blockers can be represented without
+pretending missing runtime/source/service evidence exists.
 **Real-package execution remains unproven** regardless of that decision.
 
 Plan 19's tiny Apex interpreter and Plan 21's tiny imported UI interpreter provide
@@ -139,6 +148,26 @@ are owned blockers on real-package execution, rather than unfinished tests here.
 
 ## Independent review
 
-Pending fresh whole-change review of complete validation, graph identity/closure,
-namespace/direct imports, bounds, blocker ownership, isolation and truthful claims.
+A fresh-context reviewer inspected base f0b30fb through the complete implementation,
+independently ran all 39 focused tests (no failures/skips), and reported no Critical
+or Important findings. Its additional read-only checks passed 39 graph/identity
+cases and 20 trailing-line-terminator schema probes. These supplemental probes
+are separate from the checked-in suite and do not increase its test count.
 
+The sole Minor finding was report EOF whitespace missed by a clean-tree-only
+`git diff --check`. The base-to-final-change command reproduced it; removing the
+blank line during documentation finalization resolved it. No runtime code fix or
+new implementation test was needed. The full lab check was measured by the
+executor, not inferred from the reviewer's opinion.
+
+The executor accepted the review's explicit boundaries:
+
+| Ruling | Reason / remaining cost |
+| --- | --- |
+| Salesforce package execution/install/visibility/upgrade/eligibility remain unjudged | Synthetic declarations cannot supply target behavior; real-package execution remains unproven. |
+| Direct-main work and fixed-schema initialization reads are accepted | Approved plan follows repository convention; there is no branch isolation and module loading needs the fixed schema files. Assessment calls perform no I/O. |
+| Duplicate package identity errors precede further semantic resolution | Deterministic rejection avoids choosing an arbitrary version/namespace; diagnostics need not enumerate every other error on that invalid model. |
+| Forged/proxy resolver models and concurrent shared-memory input mutation are outside the contract | Resolver models must be parser-owned plain data and byte inputs must remain stable during synchronous assessment; arbitrary hostile in-process callers are not certified. |
+| Native parser peak heap and hard wall-clock isolation remain unjudged | The reviewed byte/AST/depth/alias limits do not establish a sandbox or aggregate allocation/time guarantees. |
+| Public documentation establishes vocabulary, not target compatibility or reuse permission | No source is reused and actual package eligibility/version evidence remains a future gate under CLEAN_ROOM.md. |
+| Final prose/checklists depend on measured checks and this review | Completed at handoff; future status claims must preserve these limits and actual commands. |
