@@ -1,6 +1,6 @@
 # Plan 21 — Imported UI hosting feasibility
 
-Status: proposed for maintainer review, 2026-11-03. Specification/planning only; no imported component runtime or browser experiment implemented.
+Status: implemented, independently reviewed, corrected and verified, 2026-11-03. Bounded decision: Continue; see [results and limitations](../../compat/plan-21-imported-ui-hosting-feasibility.md). No Salesforce reference observations collected.
 Milestone: bounded M7 feasibility work; full M7 remains open.
 
 ## Intent and selection

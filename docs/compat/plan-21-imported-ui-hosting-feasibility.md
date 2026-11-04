@@ -1,6 +1,7 @@
 # Plan 21 — Imported UI hosting feasibility
 
-Status: execution in progress; no feasibility decision yet.
+Status: implemented, independently reviewed, corrected and verified, 2026-11-03.
+Decision: **Continue** for the bounded independently interpreted subset only; full M7 remains open.
 
 Base: `b07ebc2b4b851dca98d39065afdc3908f7bf0c0a`, clean main, 2026-11-03.
 Node 26.8.1 satisfies the existing >=22.12 floor. Existing dependencies are used;
@@ -86,11 +87,10 @@ and record ID; there is no LDS/UI API, real auth, persistence, Flow or Apex brid
 ## Results
 
 The isolated implementation and initial verification ran on 2026-11-03.
-Current result: 43 experiment Node tests and 37 dedicated Chromium tests passed,
+Final result: 46 experiment Node tests and 40 dedicated Chromium tests passed,
 with no skips. The JSON matrix has 22 scenarios; each runs twice in both the
 Node model/host runner and real browser runner. Actual outcomes are recorded by
-the test runners, not inferred from expected JSON. Fresh whole-change review and
-final native-product verification are pending.
+the test runners, not inferred from expected JSON. Final native-product verification and fresh whole-change review/corrections are recorded below.
 
 Reproduction (from `web/`):
 
@@ -127,7 +127,7 @@ than mistaken for malformed supported statements.
 
 ## Architecture decision and follow-up gates
 
-Provisional decision pending review/final checks: **Continue** for this tiny
+Decision after fresh review and regression verification: **Continue** for this tiny
 independently interpreted subset only. Source-driven rendering and fixed record
 bindings work without hand-translating fixtures into Vue. The interpreter exposes
 no JavaScript evaluator or ambient APIs, and safe DOM sinks are inspectable.
@@ -153,3 +153,87 @@ Plan 19 results, Plan 20 implementation status, Plans 10/14 and all milestone ga
 and estimates remain unchanged. Native DOM allocation, aggregate heap protection,
 synchronous-instruction preemption and rollback after a delivered host save are
 not certified by this experiment.
+
+
+## Final verification record (after review corrections)
+
+On 2026-11-03 America/New_York (browser JSON timestamps are UTC), Node 26.8.1,
+Chromium 156.0.8078.79 and the pinned existing web dependencies:
+
+| Command | Actual outcome |
+| --- | --- |
+| Experiment Node test command above | 46 passed, 0 failed/skipped. |
+| Experiment tsc command above | Exit 0. |
+| Dedicated Playwright command above | 40 passed, 0 skipped/flaky/unexpected; includes 22 cases repeated twice. |
+| Experiment Vite build above | Exit 0; isolated compat/imported-ui/dist output is ignored. |
+| npm test | 5 native unit tests passed, no skips. |
+| npm run build | Exit 0; native entry/config/src unchanged. |
+| CHROMIUM_PATH=/usr/bin/chromium npm run test:preview | 11 native browser tests passed. |
+| GOTOOLCHAIN=go1.25.0 go test -json -count=1 ./... | Four tested packages passed; 214 passing and 23 skipped database test/subtest events; command package has no tests. |
+| git diff --check | Exit 0. |
+
+All 338 protected baseline hashes match. Changed paths remain within the new
+experiment, dedicated new browser config/test and truthful Plan 21 documents.
+Native source has no experiment import; its existing locale glob remains limited
+to locales/messages/*.json. Runtime imports are own modules/browser built-ins;
+only tooling/tests use existing Vite/Node/Playwright. The harness's scenario type
+import is erased; fixture JavaScript is raw data. No source is evaluated by a JS
+engine. Deprecation/terminal-color warnings from existing Node/tooling did not
+fail checks. No dependency or browser installation was needed.
+
+Database tests skipped because TEST_DATABASE_URL is unset (not database acceptance):
+
+- `TestCatalogFreshV2`
+- `TestCatalogUpgradeV1`
+- `TestCatalogUpgradeOversizedRollback/compat_text`
+- `TestCatalogUpgradeOversizedRollback/compat_key`
+- `TestCatalogRejectsUnknown/UPDATE_platform_catalog_SET_version=99`
+- `TestCatalogRejectsUnknown/UPDATE_platform_catalog_SET_definition='{}'`
+- `TestCatalogRejectsUnknown/DELETE_FROM_platform_catalog`
+- `TestCatalogV2PhysicalMismatch`
+- `TestCatalogConcurrentOpen`
+- `TestHTTPBoundary`
+- `TestHTTPExternalIDPreservesEscapedSlashes`
+- `TestHTTPRejectsUndeliverablePathsAndListings`
+- `TestHTTPCustomFieldLengths`
+- `TestHTTPUpsertBodyValidation`
+- `TestHTTPUpsertBodyBoundaryControls`
+- `TestHTTPOrdinaryExternalIDWrites`
+- `TestHTTPQueryColumns`
+- `TestHTTPQueryColumnsPolicy`
+- `TestStoreIsolationAndPersistence`
+- `TestStoreQueryPolicyAndRelationships`
+- `TestStoreConcurrentUpdatesAndUpsert`
+- `TestStoreBlankNillableStringsAreNull`
+- `TestStoreUpsertBodyValidation`
+
+
+## Fresh whole-change review and correction
+
+A separate fresh-context reviewer inspected base through the completed scenario
+matrix plus implementation/report context, independently ran the original 43 unit
+tests and typecheck, and used real Chromium for targeted edge-case probes. It
+reported no Critical issues and four Important/P2 issues. All four were reproduced
+with failing tests, corrected in one fix pass, and followed by the complete final
+checks above. No second review substitutes for those regression results.
+
+| Finding | Correction and observed regression |
+| --- | --- |
+| A line comment ended only at LF, allowing CR/U+2028/U+2029 to hide trailing unsupported source | Scanner ends comments at all four JavaScript line terminators (including CRLF handling); parser tests and the source-before-host regression failed before the fix and passed afterward with no host read/mount. |
+| Failed handlers restored only inputs with a value binding | Every handled input now retains its last accepted native value. The controller distinguishes pre-publication failure from post-publication host denial. Chromium regressions failed on the initial empty value and a later accepted value before correction, then passed; denied saves still keep local edits. |
+| A Symbol own key on an event threw native TypeError during key sorting | Host validates own-key types/cardinality before checking exact keys; malformed Symbol-keyed events now return the canonical host type Outcome and preserve the entire store. The regression failed before correction and passed after. |
+| A foreign closed shadow root threw native NotSupportedError | The specific native shadow-attachment failure becomes invalid-input; foreign root contents/identity remain unchanged. A Chromium regression failed before correction and passed after; open-root rejection and experiment-owned root reuse still pass. |
+
+No Minor findings were reported or deferred. These fixes cover the implemented
+subset; they do not enlarge it or establish general LWC/browser sandboxing.
+
+The executor accepted the review's excluded questions explicitly:
+
+| Ruling | Reason | Cost if this boundary is inappropriate |
+| --- | --- | --- |
+| Work directly on main | Authorized Plan 21 repository convention | No branch isolation. |
+| Full JavaScript/LWC/Aura/Visualforce and platform-service parity remain unjudged | Tiny subset, no real-target/reference observations | Real component compatibility remains unproven. |
+| Authoritative authentication, tenancy and hostile-code isolation remain unjudged | Host/policy are synthetic client-side harness data | No production isolation/security certification. |
+| Native allocation isolation, synchronous preemption and rollback after delivered saves remain excluded | Finite checkpoints and local-before-host publication are explicit limits | Memory/preemption and cross-layer rollback remain unproven. |
+| Forged Program objects and proxies/monkeypatched trusted APIs remain outside the calling contract | Callers must use compiler-owned Program and trusted browser/harness APIs | Hostile/forged harness inputs may throw raw exceptions; a forged empty Program currently does. |
+| Provisional status wording and final native evidence are resolved at handoff | All final checks were rerun after corrections and status updated from actual results | Stale future documentation could overstate readiness; use the recorded commands and boundaries. |
