@@ -40,6 +40,7 @@
 | Create `compat/clients/node/src/candidate-openapi-model.ts`, `candidate-openapi-traffic.ts` | Test-only exchange/result interfaces and bounded schema validation. |
 | Create `compat/clients/node/test/candidate-openapi-contract.test.ts`, `candidate-openapi-traffic.test.ts` | Offline document/validator regressions. |
 | Create `compat/clients/node/test/candidate-openapi.test.ts` | Opt-in live candidate HTTP inventory, behavior and schema assertions. |
+| Modify `compat/schemas/candidate-acceptance.schema.json` | Permit the exact new parent identity among offline allowed skips; preserve strict publication. |
 | Modify `compat/clients/node/src/validate.ts` | Add the candidate contract/invariants to normal offline validation. |
 | Append `docs/compat/sources.yaml` | New source/version/read-boundary records; existing entries unchanged. |
 | Modify `compat/clients/node/src/candidate-acceptance-{contract,results,run,preflight}.ts` | Required identities, identity preservation and explicit test-file invocation. |
@@ -116,7 +117,7 @@ assert.ok(unmatched.requestIssues.includes('method'));
 
 **Files:** Create candidate-openapi.test.ts; modify candidate-acceptance-{contract,results,run,preflight}.ts and the three corresponding test files. Update README/current candidate-guide text and complete the Plan 23 execution report; update this plan/spec status only from measured evidence.
 
-**Implementation ruling:** Include api/ in collectSourceBindings and regress both changed embedded inputs and untracked API code. The existing source roots omitted the new binary inputs; this is required to bind acceptance to the delivered contract.
+**Implementation ruling:** Include api/ in collectSourceBindings and regress both changed embedded inputs and untracked API code. Also add the exact new parent to the report schema allowedSkipped enum, with a real publication regression. The existing source roots omitted the new binary inputs; this is required to bind acceptance to the delivered contract.
 
 **Interfaces:**
 - Consumes: Task 2 serving path/bytes, Task 3 validator, existing CANDIDATE_URL/TOKEN/RESTRICTED_TOKEN/OTHER_TOKEN/RUN_ID/FIXTURE_JOURNAL environment, recordFixtureEvent/trackFixtureAttempt and acceptance reporter/coverage APIs.

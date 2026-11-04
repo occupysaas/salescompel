@@ -38,6 +38,28 @@ Implementation ruling: existing acceptance source roots excluded api/. Add api/
 so the newly embedded YAML and Go code affect the source digest and untracked API
 code prevents clean acceptance. A regression failed before the fix and passed
 afterward, checking both byte changes and untracked inputs. This adds only the
-preflight module/test to the planned file boundary. All 390 other protected
+preflight module/test to the planned file boundary. All 389 other protected
 pre-existing file hashes match; original source registry content is unchanged
 and new entries are append-only.
+
+## Review correction checkpoint
+
+The fresh review found one Important malformed-media issue and one constructor
+subset guard gap graded Minor. The executor treated the latter as a required
+subset-boundary correction because the constructor explicitly promises to reject
+recursive/unsupported schemas, independently of the canonical-document guard.
+Both reproductions failed before correction and now pass: full media parameter
+grammar is checked before essence normalization; additionalProperties must be
+false in the supported subset. The corrected focused suite has 35 passes, no
+skips, and typecheck passes. No second reviewer substitutes for these regressions.
+
+The first full acceptance attempt passed the database/race/vet stage and stopped
+in the lab at the existing metadata-discovery test “read process deadline and
+response bound fail closed.” Its isolated rerun passed, and that historical test
+and implementation remain unchanged. This attempt produced no public summary:
+the report schema still enumerated only the three legacy offline skip names.
+A new real publication regression failed with RESULT, then passed after adding
+exactly candidate/openapi/traffic to the allowedSkipped enum; unknown names still
+reject. This adds the report schema to the explicit modified-file boundary.
+Private first-attempt diagnostics are retained; full acceptance on the corrected
+clean revision is still pending.

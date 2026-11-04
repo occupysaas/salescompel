@@ -145,6 +145,7 @@
                 "type": "array",
                 "items": {
                   "enum": [
+                    "candidate/openapi/traffic",
                     "candidate/jsforce/core",
                     "candidate/jsforce/policy",
                     "candidate/jsforce/isolation"

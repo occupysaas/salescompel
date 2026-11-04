@@ -41,8 +41,24 @@ const issueOrder: CandidateTrafficIssueCode[] = [
   "response-body",
   "budget",
 ];
-const mediaType = (value: string | null) =>
-  value?.split(";", 1)[0].trim().toLowerCase();
+const mediaToken = "[!#$%&'*+.^_`|~0-9A-Za-z-]+";
+const mediaQuoted =
+  '"(?:[\\t\\x20\\x21\\x23-\\x5b\\x5d-\\x7e\\x80-\\xff]|\\\\[\\t\\x20-\\x7e\\x80-\\xff])*"';
+const mediaSyntax = new RegExp(
+  "^[ \\t]*(" +
+    mediaToken +
+    "/" +
+    mediaToken +
+    ")[ \\t]*(?:;[ \\t]*" +
+    mediaToken +
+    "=(?:" +
+    mediaToken +
+    "|" +
+    mediaQuoted +
+    ")[ \\t]*)*(?![\\s\\S])",
+);
+const mediaType = (value: string | null): string | undefined =>
+  value === null ? undefined : mediaSyntax.exec(value)?.[1].toLowerCase();
 const fail = (): never => {
   throw new Error("candidate-openapi-spec");
 };
@@ -104,6 +120,11 @@ export async function createCandidateTrafficValidator(
         "title",
       ]);
       for (const key of Object.keys(s)) if (!allowed.has(key)) return fail();
+      if (
+        Object.hasOwn(s, "additionalProperties") &&
+        s.additionalProperties !== false
+      )
+        return fail();
       if (s.$ref) {
         if (active.has(s.$ref) || !s.$ref.startsWith("#/components/schemas/"))
           return fail();
