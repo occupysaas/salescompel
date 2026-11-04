@@ -1,0 +1,245 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Independent synthetic package feasibility manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "classification",
+    "roots",
+    "packages"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "classification": {
+      "const": "synthetic"
+    },
+    "roots": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "items": {
+        "$ref": "#/$defs/id"
+      }
+    },
+    "packages": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 128,
+      "items": {
+        "$ref": "#/$defs/package"
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9-]{0,63}$"
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,63}$"
+    },
+    "componentKind": {
+      "enum": [
+        "object",
+        "field",
+        "apex",
+        "flow",
+        "imported-ui"
+      ]
+    },
+    "dependency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "packageId",
+        "version"
+      ],
+      "properties": {
+        "packageId": {
+          "$ref": "#/$defs/id"
+        },
+        "version": {
+          "$ref": "#/$defs/version"
+        }
+      }
+    },
+    "reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "packageId",
+        "kind",
+        "name"
+      ],
+      "properties": {
+        "packageId": {
+          "$ref": "#/$defs/id"
+        },
+        "kind": {
+          "$ref": "#/$defs/componentKind"
+        },
+        "name": {
+          "$ref": "#/$defs/name"
+        }
+      }
+    },
+    "component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "name",
+        "references"
+      ],
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/componentKind"
+        },
+        "name": {
+          "$ref": "#/$defs/name"
+        },
+        "references": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 128,
+          "items": {
+            "$ref": "#/$defs/reference"
+          }
+        }
+      }
+    },
+    "requirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "surface",
+        "evidence"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "surface": {
+          "enum": [
+            "metadata",
+            "apex",
+            "flow",
+            "imported-ui",
+            "platform-service",
+            "org-feature",
+            "installation",
+            "license-service"
+          ]
+        },
+        "evidence": {
+          "enum": [
+            "absent",
+            "subset-only",
+            "target-verified"
+          ]
+        }
+      }
+    },
+    "package": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "version",
+        "ownerId",
+        "kind",
+        "namespace",
+        "source",
+        "dependencyKnowledge",
+        "dependencies",
+        "components",
+        "requirements"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "version": {
+          "$ref": "#/$defs/version"
+        },
+        "ownerId": {
+          "$ref": "#/$defs/id"
+        },
+        "kind": {
+          "enum": [
+            "unmanaged",
+            "unlocked",
+            "managed-1gp",
+            "managed-2gp",
+            "unknown"
+          ]
+        },
+        "namespace": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 15,
+              "pattern": "^[A-Za-z][A-Za-z0-9]{0,14}$"
+            }
+          ]
+        },
+        "source": {
+          "enum": [
+            "available",
+            "unavailable",
+            "unknown"
+          ]
+        },
+        "dependencyKnowledge": {
+          "enum": [
+            "complete",
+            "unknown"
+          ]
+        },
+        "dependencies": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 128,
+          "items": {
+            "$ref": "#/$defs/dependency"
+          }
+        },
+        "components": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 256,
+          "items": {
+            "$ref": "#/$defs/component"
+          }
+        },
+        "requirements": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 32,
+          "items": {
+            "$ref": "#/$defs/requirement"
+          }
+        }
+      }
+    }
+  }
+}
