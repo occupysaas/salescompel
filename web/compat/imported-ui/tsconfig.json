@@ -1,0 +1,1 @@
+{"extends":"../../tsconfig.json","include":["./**/*.ts","../../playwright.imported-ui.config.ts"],"exclude":["./dist","./testdata"]}
