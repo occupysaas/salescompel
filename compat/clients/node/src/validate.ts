@@ -13,6 +13,7 @@ import { createHash } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
 import { parseDocument, validateCatalogs } from "./core.ts";
 import { validateOpenApi } from "./openapi.ts";
+import { loadCandidateOpenAPI } from "./candidate-openapi-contract.ts";
 import { ROOT, connectorVersions } from "./versions.ts";
 export { ROOT };
 import { suite, SUITE_IDS } from "./suites.ts";
@@ -337,6 +338,11 @@ export async function validateRepository(): Promise<string[]> {
     } catch (e) {
       issues.push(`${path}: ${String(e)}`);
     }
+  }
+  try {
+    await loadCandidateOpenAPI();
+  } catch {
+    issues.push("Invalid implemented candidate OpenAPI contract");
   }
   const provenance = await readDoc(
     "compat/fixtures/openapi/salesforce/provenance.json",

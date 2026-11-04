@@ -228,3 +228,53 @@ sources:
     version: version-sensitive; pin to reference org
     claim: Actionable lists built from data-platform segments with prospect status tracking
     extraction: reverify
+
+  # Plan 23 additions; existing extraction states remain unchanged.
+  - id: candidate-http-plan23
+    url: https://github.com/occupysaas/salescompel/blob/272883beffc37b7597e02ef6e7ff54d3d55688d4/internal/platform/http.go
+    accessedAt: 2026-11-04
+    version: 272883beffc37b7597e02ef6e7ff54d3d55688d4 (repository source reviewed locally)
+    claim: Independent candidate HTTP behavior, not a Salesforce reference oracle
+    extraction: documentation-reviewed
+  - id: candidate-catalog-plan23
+    url: https://github.com/occupysaas/salescompel/blob/272883beffc37b7597e02ef6e7ff54d3d55688d4/internal/platform/catalog.go
+    accessedAt: 2026-11-04
+    version: 272883beffc37b7597e02ef6e7ff54d3d55688d4 (repository source reviewed locally)
+    claim: Independent candidate field and describe shapes
+    extraction: documentation-reviewed
+  - id: candidate-select-plan23
+    url: https://github.com/occupysaas/salescompel/blob/272883beffc37b7597e02ef6e7ff54d3d55688d4/internal/platform/select.go
+    accessedAt: 2026-11-04
+    version: 272883beffc37b7597e02ef6e7ff54d3d55688d4 (repository source reviewed locally)
+    claim: Independent candidate projection and relationship shapes
+    extraction: documentation-reviewed
+  - id: candidate-columns-plan23
+    url: https://github.com/occupysaas/salescompel/blob/272883beffc37b7597e02ef6e7ff54d3d55688d4/internal/platform/query_columns.go
+    accessedAt: 2026-11-04
+    version: 272883beffc37b7597e02ef6e7ff54d3d55688d4 (repository source reviewed locally)
+    claim: Independent candidate CLI column metadata extension
+    extraction: documentation-reviewed
+  - id: candidate-serving-plan23
+    url: https://github.com/occupysaas/salescompel/blob/272883beffc37b7597e02ef6e7ff54d3d55688d4/docs/superpowers/specs/2026-11-04-plan-23-served-candidate-openapi-design.md
+    accessedAt: 2026-11-04
+    version: 272883beffc37b7597e02ef6e7ff54d3d55688d4 (repository source reviewed locally)
+    claim: Independent new serving contract reviewed locally; public locator not fetched
+    extraction: documentation-reviewed
+  - id: oas-3-2-1
+    url: https://spec.openapis.org/oas/v3.2.1.html
+    accessedAt: 2026-11-04
+    version: OpenAPI 3.2.1
+    claim: Paths, media, security, local reference and schema vocabulary; no copied examples
+    extraction: documentation-reviewed
+  - id: ajv-2020-plan23
+    url: https://ajv.js.org/json-schema.html
+    accessedAt: 2026-11-04
+    version: Ajv 8.20.0 pinned; current public documentation
+    claim: 2020-12 entry point and nullable types; bounded tests only
+    extraction: documentation-reviewed
+  - id: go-embed-plan23
+    url: https://pkg.go.dev/embed@go1.25.0
+    accessedAt: 2026-11-04
+    version: Go 1.25.0
+    claim: Embed canonical YAML in binary without runtime filesystem access
+    extraction: documentation-reviewed

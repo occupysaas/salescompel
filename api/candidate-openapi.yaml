@@ -1,0 +1,1104 @@
+openapi: 3.2.1
+jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
+info:
+  title: SalesCompel implemented candidate API
+  version: 0.1.0
+  description: Independent candidate contract, not Salesforce parity certification. Only the listed
+    canonical paths are implemented. Provisioned bearer credentials are not OAuth login/refresh.
+    Field policy, Unicode/nonblank validation, SOQL execution, own-user identity and tenant
+    isolation remain server checks. Null/omission and the columns extension reflect existing
+    candidate behavior. No Composite, collections, Bulk, pagination or metadata deployment is
+    provided.
+servers:
+  - url: /
+security:
+  - bearerAuth: []
+paths:
+  /services/data:
+    get:
+      operationId: candidateVersions
+      x-source:
+        - https://github.com/occupysaas/salescompel/blob/272883beffc37b7597e02ef6e7ff54d3d55688d4/internal/platform/http.go
+      responses:
+        "200":
+          description: Current candidate response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Versions"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+  /services/data/v65.0:
+    get:
+      operationId: candidateResources
+      x-source:
+        - https://github.com/occupysaas/salescompel/blob/272883beffc37b7597e02ef6e7ff54d3d55688d4/internal/platform/http.go
+        - https://github.com/occupysaas/salescompel/blob/272883beffc37b7597e02ef6e7ff54d3d55688d4/docs/superpowers/specs/2026-11-04-plan-23-served-candidate-openapi-design.md
+      responses:
+        "200":
+          description: Current candidate response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Resources"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+  /services/oauth2/userinfo:
+    get:
+      operationId: candidateUserInfo
+      x-source:
+        - https://github.com/occupysaas/salescompel/blob/272883beffc37b7597e02ef6e7ff54d3d55688d4/internal/platform/http.go
+      responses:
+        "200":
+          description: Current candidate response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserInfo"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+  /services/data/v51.0/sobjects/User/{userId}:
+    get:
+      operationId: candidateOwnUser51
+      x-source:
+        - https://github.com/occupysaas/salescompel/blob/272883beffc37b7597e02ef6e7ff54d3d55688d4/internal/platform/http.go
+      responses:
+        "200":
+          description: Current candidate response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OwnUser"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            minLength: 1
+  /services/data/v65.0/sobjects/User/{userId}:
+    get:
+      operationId: candidateOwnUser65
+      x-source:
+        - https://github.com/occupysaas/salescompel/blob/272883beffc37b7597e02ef6e7ff54d3d55688d4/internal/platform/http.go
+      responses:
+        "200":
+          description: Current candidate response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OwnUser"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            minLength: 1
+  /services/data/v65.0/sobjects:
+    get:
+      operationId: candidateDescribeGlobal
+      x-source:
+        - https://github.com/occupysaas/salescompel/blob/272883beffc37b7597e02ef6e7ff54d3d55688d4/internal/platform/http.go
+      responses:
+        "200":
+          description: Current candidate response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GlobalDescribe"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+  /services/data/v65.0/sobjects/Account/describe:
+    get:
+      operationId: candidateDescribeAccount
+      x-source:
+        - https://github.com/occupysaas/salescompel/blob/272883beffc37b7597e02ef6e7ff54d3d55688d4/internal/platform/http.go
+      responses:
+        "200":
+          description: Current candidate response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObjectDescribe"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+  /services/data/v65.0/sobjects/Account:
+    post:
+      operationId: candidateCreateAccount
+      x-source:
+        - https://github.com/occupysaas/salescompel/blob/272883beffc37b7597e02ef6e7ff54d3d55688d4/internal/platform/http.go
+      responses:
+        "201":
+          description: Current candidate response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateResult"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountCreate"
+  /services/data/v65.0/sobjects/Account/{recordId}:
+    get:
+      operationId: candidateReadAccount
+      x-source:
+        - https://github.com/occupysaas/salescompel/blob/272883beffc37b7597e02ef6e7ff54d3d55688d4/internal/platform/http.go
+      responses:
+        "200":
+          description: Current candidate response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountRead"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: recordId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            minLength: 1
+    patch:
+      operationId: candidateUpdateAccount
+      x-source:
+        - https://github.com/occupysaas/salescompel/blob/272883beffc37b7597e02ef6e7ff54d3d55688d4/internal/platform/http.go
+      responses:
+        "204":
+          description: No content
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountPatch"
+      parameters:
+        - name: recordId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            minLength: 1
+    delete:
+      operationId: candidateDeleteAccount
+      x-source:
+        - https://github.com/occupysaas/salescompel/blob/272883beffc37b7597e02ef6e7ff54d3d55688d4/internal/platform/http.go
+      responses:
+        "204":
+          description: No content
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: recordId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            minLength: 1
+  /services/data/v65.0/sobjects/Contact/describe:
+    get:
+      operationId: candidateDescribeContact
+      x-source:
+        - https://github.com/occupysaas/salescompel/blob/272883beffc37b7597e02ef6e7ff54d3d55688d4/internal/platform/http.go
+      responses:
+        "200":
+          description: Current candidate response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObjectDescribe"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+  /services/data/v65.0/sobjects/Contact:
+    post:
+      operationId: candidateCreateContact
+      x-source:
+        - https://github.com/occupysaas/salescompel/blob/272883beffc37b7597e02ef6e7ff54d3d55688d4/internal/platform/http.go
+      responses:
+        "201":
+          description: Current candidate response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateResult"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContactCreate"
+  /services/data/v65.0/sobjects/Contact/{recordId}:
+    get:
+      operationId: candidateReadContact
+      x-source:
+        - https://github.com/occupysaas/salescompel/blob/272883beffc37b7597e02ef6e7ff54d3d55688d4/internal/platform/http.go
+      responses:
+        "200":
+          description: Current candidate response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContactRead"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: recordId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            minLength: 1
+    patch:
+      operationId: candidateUpdateContact
+      x-source:
+        - https://github.com/occupysaas/salescompel/blob/272883beffc37b7597e02ef6e7ff54d3d55688d4/internal/platform/http.go
+      responses:
+        "204":
+          description: No content
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContactPatch"
+      parameters:
+        - name: recordId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            minLength: 1
+    delete:
+      operationId: candidateDeleteContact
+      x-source:
+        - https://github.com/occupysaas/salescompel/blob/272883beffc37b7597e02ef6e7ff54d3d55688d4/internal/platform/http.go
+      responses:
+        "204":
+          description: No content
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: recordId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            minLength: 1
+  /services/data/v65.0/sobjects/Account/Compat_Key__c/{externalId}:
+    patch:
+      operationId: candidateUpsertAccount
+      x-source:
+        - https://github.com/occupysaas/salescompel/blob/272883beffc37b7597e02ef6e7ff54d3d55688d4/internal/platform/http.go
+      responses:
+        "200":
+          description: Current candidate response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpsertResult"
+        "201":
+          description: Current candidate response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpsertResult"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountUpsert"
+      parameters:
+        - name: externalId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            minLength: 1
+  /services/data/v65.0/query:
+    get:
+      operationId: candidateQuery
+      x-source:
+        - https://github.com/occupysaas/salescompel/blob/272883beffc37b7597e02ef6e7ff54d3d55688d4/internal/platform/http.go
+      responses:
+        "200":
+          description: Current candidate response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QueryResult"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: q
+          in: query
+          required: true
+          style: form
+          explode: true
+          schema:
+            type: string
+            minLength: 1
+          description: Existing explicit projection, one equality filter, one ORDER BY and LIMIT 1..2000.
+            Repeated q uses its first value; unknown query options are ignored.
+        - name: columns
+          in: query
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: string
+            enum:
+              - "true"
+              - "false"
+          description: Optional bounded CLI metadata extension; repeated or malformed values reject.
+  /services/data/v65.0/openapi.yaml:
+    get:
+      operationId: candidateOpenAPI
+      x-source:
+        - https://github.com/occupysaas/salescompel/blob/272883beffc37b7597e02ef6e7ff54d3d55688d4/internal/platform/http.go
+        - https://github.com/occupysaas/salescompel/blob/272883beffc37b7597e02ef6e7ff54d3d55688d4/docs/superpowers/specs/2026-11-04-plan-23-served-candidate-openapi-design.md
+      responses:
+        "200":
+          description: Exact canonical YAML; static across authorized principals
+          content:
+            application/yaml:
+              schema:
+                type: string
+                minLength: 1
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Provisioned candidate token; no OAuth flow
+  schemas:
+    Error:
+      type: object
+      additionalProperties: false
+      required:
+        - errorCode
+        - message
+      properties:
+        errorCode:
+          type: string
+          minLength: 1
+        message:
+          type: string
+          minLength: 1
+        fields:
+          type: array
+          items:
+            type: string
+    Errors:
+      type: array
+      items:
+        $ref: "#/components/schemas/Error"
+      minItems: 1
+    AccountCreate:
+      type: object
+      additionalProperties: false
+      required:
+        - Name
+      properties:
+        Name:
+          type: string
+          maxLength: 255
+          minLength: 1
+        Compat_Text__c:
+          type:
+            - string
+            - "null"
+          maxLength: 80
+        Compat_Key__c:
+          type:
+            - string
+            - "null"
+          maxLength: 80
+    AccountPatch:
+      type: object
+      additionalProperties: false
+      required: []
+      properties:
+        Name:
+          type: string
+          maxLength: 255
+          minLength: 1
+        Compat_Text__c:
+          type:
+            - string
+            - "null"
+          maxLength: 80
+        Compat_Key__c:
+          type:
+            - string
+            - "null"
+          maxLength: 80
+    AccountUpsert:
+      type: object
+      additionalProperties: false
+      required: []
+      properties:
+        Name:
+          type: string
+          maxLength: 255
+          minLength: 1
+        Compat_Text__c:
+          type:
+            - string
+            - "null"
+          maxLength: 80
+        Compat_Key__c:
+          type: "null"
+    ContactCreate:
+      type: object
+      additionalProperties: false
+      required:
+        - LastName
+      properties:
+        FirstName:
+          type:
+            - string
+            - "null"
+          maxLength: 255
+        LastName:
+          type: string
+          maxLength: 255
+          minLength: 1
+        AccountId:
+          type:
+            - string
+            - "null"
+          maxLength: 18
+    ContactPatch:
+      type: object
+      additionalProperties: false
+      required: []
+      properties:
+        FirstName:
+          type:
+            - string
+            - "null"
+          maxLength: 255
+        LastName:
+          type: string
+          maxLength: 255
+          minLength: 1
+        AccountId:
+          type:
+            - string
+            - "null"
+          maxLength: 18
+    CreateResult:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - success
+        - errors
+      properties:
+        id:
+          type: string
+          minLength: 1
+        success:
+          const: true
+        errors:
+          type: array
+          maxItems: 0
+    UpsertResult:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - created
+        - success
+        - errors
+      properties:
+        id:
+          type: string
+          minLength: 1
+        created:
+          type: boolean
+        success:
+          const: true
+        errors:
+          type: array
+          maxItems: 0
+    AccountAttributes:
+      type: object
+      additionalProperties: false
+      required:
+        - type
+      properties:
+        type:
+          const: Account
+        url:
+          type: string
+    ContactAttributes:
+      type: object
+      additionalProperties: false
+      required:
+        - type
+      properties:
+        type:
+          const: Contact
+        url:
+          type: string
+    AccountRead:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+        - Id
+        - Name
+        - Compat_Key__c
+      properties:
+        attributes:
+          $ref: "#/components/schemas/AccountAttributes"
+        Id:
+          type: string
+          minLength: 1
+        Name:
+          type: string
+          maxLength: 255
+        Compat_Text__c:
+          type:
+            - string
+            - "null"
+          maxLength: 80
+        Compat_Key__c:
+          type:
+            - string
+            - "null"
+          maxLength: 80
+    ContactRead:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+        - Id
+        - FirstName
+        - LastName
+        - AccountId
+      properties:
+        attributes:
+          $ref: "#/components/schemas/ContactAttributes"
+        Id:
+          type: string
+          minLength: 1
+        FirstName:
+          type:
+            - string
+            - "null"
+          maxLength: 255
+        LastName:
+          type: string
+          maxLength: 255
+        AccountId:
+          type:
+            - string
+            - "null"
+          maxLength: 18
+    AccountProjection:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+      properties:
+        attributes:
+          $ref: "#/components/schemas/AccountAttributes"
+        Id:
+          type: string
+          minLength: 1
+        Name:
+          type: string
+          maxLength: 255
+        Compat_Text__c:
+          type:
+            - string
+            - "null"
+          maxLength: 80
+        Compat_Key__c:
+          type:
+            - string
+            - "null"
+          maxLength: 80
+    ContactProjection:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+      properties:
+        attributes:
+          $ref: "#/components/schemas/ContactAttributes"
+        Id:
+          type: string
+          minLength: 1
+        FirstName:
+          type:
+            - string
+            - "null"
+          maxLength: 255
+        LastName:
+          type: string
+          maxLength: 255
+        AccountId:
+          type:
+            - string
+            - "null"
+          maxLength: 18
+        Account:
+          anyOf:
+            - type: "null"
+            - type: object
+              additionalProperties: false
+              required:
+                - attributes
+                - Name
+              properties:
+                attributes:
+                  $ref: "#/components/schemas/AccountAttributes"
+                Name:
+                  type:
+                    - string
+                    - "null"
+                  maxLength: 255
+    Column:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required:
+            - columnName
+          properties:
+            columnName:
+              enum:
+                - Id
+                - Name
+                - Compat_Text__c
+                - Compat_Key__c
+                - FirstName
+                - LastName
+                - AccountId
+        - type: object
+          additionalProperties: false
+          required:
+            - columnName
+            - joinColumns
+          properties:
+            columnName:
+              const: Account
+            joinColumns:
+              type: array
+              items:
+                type: object
+                additionalProperties: false
+                required:
+                  - columnName
+                properties:
+                  columnName:
+                    const: Name
+              minItems: 1
+              maxItems: 1
+    QueryResult:
+      type: object
+      additionalProperties: false
+      required:
+        - done
+        - totalSize
+        - records
+      properties:
+        done:
+          const: true
+        totalSize:
+          type: integer
+          minimum: 0
+        records:
+          type: array
+          items:
+            oneOf:
+              - $ref: "#/components/schemas/AccountProjection"
+              - $ref: "#/components/schemas/ContactProjection"
+        columnMetadata:
+          type: array
+          items:
+            $ref: "#/components/schemas/Column"
+    Field:
+      type: object
+      additionalProperties: false
+      required:
+        - name
+        - label
+        - type
+        - nillable
+        - createable
+        - updateable
+        - externalId
+        - length
+        - referenceTo
+      properties:
+        name:
+          type: string
+          minLength: 1
+        label:
+          type: string
+        type:
+          enum:
+            - id
+            - string
+            - reference
+        nillable:
+          type: boolean
+        createable:
+          type: boolean
+        updateable:
+          type: boolean
+        externalId:
+          type: boolean
+        length:
+          type: integer
+          minimum: 0
+        referenceTo:
+          type: array
+          items:
+            type: string
+            minLength: 1
+    ObjectDescribe:
+      type: object
+      additionalProperties: false
+      required:
+        - name
+        - label
+        - fields
+        - createable
+        - updateable
+        - deletable
+        - queryable
+      properties:
+        name:
+          enum:
+            - Account
+            - Contact
+        label:
+          type: string
+          minLength: 1
+        fields:
+          type: array
+          items:
+            $ref: "#/components/schemas/Field"
+        createable:
+          const: true
+        updateable:
+          const: true
+        deletable:
+          const: true
+        queryable:
+          const: true
+    GlobalDescribe:
+      type: object
+      additionalProperties: false
+      required:
+        - sobjects
+        - encoding
+        - maxBatchSize
+      properties:
+        sobjects:
+          type: array
+          items:
+            $ref: "#/components/schemas/ObjectDescribe"
+          minItems: 2
+          maxItems: 2
+        encoding:
+          const: UTF-8
+        maxBatchSize:
+          const: 1
+    Versions:
+      type: array
+      items:
+        type: object
+        additionalProperties: false
+        required:
+          - version
+          - label
+          - url
+        properties:
+          version:
+            const: "65.0"
+          label:
+            const: SalesCompel candidate
+          url:
+            const: /services/data/v65.0
+      minItems: 1
+      maxItems: 1
+    Resources:
+      type: object
+      additionalProperties: false
+      required:
+        - sobjects
+        - query
+        - openapi
+      properties:
+        sobjects:
+          const: /services/data/v65.0/sobjects
+        query:
+          const: /services/data/v65.0/query
+        openapi:
+          const: /services/data/v65.0/openapi.yaml
+    UserInfo:
+      type: object
+      additionalProperties: false
+      required:
+        - user_id
+        - organization_id
+        - preferred_username
+        - username
+      properties:
+        user_id:
+          type: string
+          minLength: 1
+        organization_id:
+          type: string
+          minLength: 1
+        preferred_username:
+          type: string
+          minLength: 1
+        username:
+          type: string
+          minLength: 1
+    OwnUser:
+      type: object
+      additionalProperties: false
+      required:
+        - Id
+        - Username
+        - Name
+        - LanguageLocaleKey
+        - LocaleSidKey
+        - TimeZoneSidKey
+        - Email
+      properties:
+        Id:
+          type: string
+          minLength: 1
+        Username:
+          type: string
+          minLength: 1
+        Name:
+          type: string
+          minLength: 1
+        LanguageLocaleKey:
+          const: en_US
+        LocaleSidKey:
+          const: en_US
+        TimeZoneSidKey:
+          const: UTC
+        Email:
+          type: string
+          minLength: 1
+  responses:
+    Error:
+      description: Current candidate response
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Errors"
+    MethodError:
+      description: Current candidate response
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Errors"
+      headers:
+        Allow:
+          required: true
+          schema:
+            type: string
+            minLength: 1
+          description: Supported method(s)
