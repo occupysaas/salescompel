@@ -70,3 +70,14 @@ test('rejectHostCapabilities', () => {
         assert.deepEqual(s.snapshot(), [rows[0], rows[2], rows[1]]);
     }
 });
+test('symbol-keyed events return a bounded host diagnostic', () => {
+    const store = good(createStore(rows));
+    const owner = {};
+    const binding = good(bindRecord(store, identity, policy, '1', owner, defaultLimits()));
+    const event = {
+        type: 'save' as const, detail: 'Changed', [Symbol('PRIVATE_MARKER')]: true
+    };
+    const error = bad(binding.receive(owner, event), 'type');
+    assert.equal(error.phase, 'host');
+    assert.deepEqual(store.snapshot(), [rows[0], rows[2], rows[1]]);
+});

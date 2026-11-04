@@ -23,3 +23,24 @@ test('rejectsBeforeReadOrDOM', () => {
         assert.deepEqual(store.snapshot(), before);
     }
 });
+test('line-comment terminators cannot hide source before host access', () => {
+    const b = fixture();
+    const identity = { tenant: 'a', principal: 'writer' };
+    for (const ending of ['\r', '\u2028', '\u2029']) {
+        const store = good(createStore([{
+                tenant: 'a', id: '1', name: 'First'
+            }]));
+        const events: string[] = [];
+        const source = { ...b, js: b.js + '// comment' + ending + "fetch('PRIVATE_MARKER');" };
+        bad(openRecordObserved({} as HTMLDivElement, source, {
+            identity, policy: {
+                identity, readAllowed: true, nameWriteAllowed: true
+            }, recordId: '1'
+        }, store, defaultLimits(), undefined, label => events.push(label)));
+        assert(!events.includes('host-read'));
+        assert(!events.includes('mount'));
+        assert.deepEqual(store.snapshot(), [{
+                tenant: 'a', id: '1', name: 'First'
+            }]);
+    }
+});

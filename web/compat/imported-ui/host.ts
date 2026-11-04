@@ -105,7 +105,10 @@ export function bindRecord(store: SyntheticStore, id: Identity, policy: Policy, 
                     check(caller);
                     if (!context.read || !context.write)
                         fail('denied', 'host');
-                    if (!event || typeof event !== 'object' || ![Object.prototype, null].includes(Object.getPrototypeOf(event)) || Reflect.ownKeys(event).sort().join(',') !== 'detail,type')
+                    if (!event || typeof event !== 'object' || ![Object.prototype, null].includes(Object.getPrototypeOf(event)))
+                        fail('type', 'host');
+                    const keys = Reflect.ownKeys(event);
+                    if (keys.some(key => typeof key !== 'string') || keys.length !== 2 || !keys.includes('detail') || !keys.includes('type'))
                         fail('type', 'host');
                     const descriptors = Object.getOwnPropertyDescriptors(event);
                     if (!('value' in descriptors.type) || !('value' in descriptors.detail) || descriptors.type.value !== 'save')

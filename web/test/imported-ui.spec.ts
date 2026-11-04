@@ -224,3 +224,66 @@ test('stale DOM listeners cannot save after disposal', async ({ page }) => {
 test('raw fixture text is preserved by the harness loader', async ({ page }) => {
     expect(await page.evaluate(() => (window as any).probe.fixture)).toEqual(loadBundle('accountCard'));
 });
+test('failed input handlers restore unbound controls to their last accepted value', async ({ page }) => {
+    await page.evaluate(() => {
+        const p = (window as any).probe;
+        const source = { ...p.fixture, html: p.fixture.html.replace('value={draft}', '') };
+        const program = p.compileBundle(source, p.defaultLimits()).value;
+        const div = document.createElement('div');
+        document.querySelector('#mounts')!.append(div);
+        const cancel = new AbortController();
+        let armed = false;
+        const mounted = p.mountObserved(div, program, { recordId: '1', name: 'First' }, {
+            limits: p.defaultLimits(), signal: cancel.signal,
+            onEvent: (event: any) => {
+                p.events.push(event);
+                return { ok: true, value: undefined };
+            }
+        }, (label: string) => {
+            if (armed && label === 'publish')
+                cancel.abort();
+        });
+        p.instances.push(mounted.value);
+        p.arm = () => {
+            armed = true;
+        };
+    });
+    const input = page.getByRole('textbox');
+    await expect(input).toHaveValue('');
+    await page.evaluate(() => (window as any).probe.arm());
+    await input.fill('Changed');
+    await expect(input).toHaveValue('');
+    await expect(page.getByText('Draft: First', { exact: true })).toBeVisible();
+    expect(await page.evaluate(() => (window as any).probe.instances[0].diagnostic.code)).toBe('cancelled');
+    expect(await page.evaluate(() => (window as any).probe.events)).toEqual([]);
+});
+test('later failed unbound edits preserve earlier accepted input', async ({ page }) => {
+    await page.evaluate(() => {
+        const p = (window as any).probe;
+        const source = { ...p.fixture, html: p.fixture.html.replace('value={draft}', '') };
+        p.mount({ recordId: '1', name: 'First' }, source);
+    });
+    const input = page.getByRole('textbox');
+    await input.fill('Accepted');
+    await expect(page.getByText('Draft: Accepted', { exact: true })).toBeVisible();
+    await input.fill('x'.repeat(4096));
+    await expect(input).toHaveValue('Accepted');
+    await expect(page.getByText('Draft: Accepted', { exact: true })).toBeVisible();
+    expect(await page.evaluate(() => (window as any).probe.instances[0].diagnostic.code)).toBe('budget');
+});
+test('foreign closed roots reject with a diagnostic and retain their content', async ({ page }) => {
+    const result = await page.evaluate(() => {
+        const p = (window as any).probe;
+        const div = document.createElement('div');
+        const root = div.attachShadow({ mode: 'closed' });
+        const content = document.createTextNode('foreign');
+        root.append(content);
+        const mounted = p.mountInto(div);
+        return {
+            ok: mounted.ok, code: mounted.error?.code, same: root.firstChild === content, text: root.textContent, count: root.childNodes.length
+        };
+    });
+    expect(result).toEqual({
+        ok: false, code: 'invalid-input', same: true, text: 'foreign', count: 1
+    });
+});

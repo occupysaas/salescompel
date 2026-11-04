@@ -104,3 +104,10 @@ test('ordinary member names outside the explicit reserved set remain supported',
     const b = fixture();
     good(compileBundle({ ...b, js: b.js.replace('draft =', "event = 'unused'; draft =") }, defaultLimits()));
 });
+test('all JavaScript line terminators end line comments', () => {
+    const b = fixture();
+    for (const ending of ['\n', '\r', '\r\n', '\u2028', '\u2029']) {
+        good(compileBundle({ ...b, js: b.js + '// comment' + ending }, defaultLimits()));
+        bad(compileBundle({ ...b, js: b.js + "// comment" + ending + "fetch('PRIVATE_MARKER');" }, defaultLimits()));
+    }
+});

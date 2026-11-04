@@ -95,7 +95,7 @@ export class ScriptLexer extends Cursor {
         for (;;) {
             this.space();
             if (this.source.startsWith('//', this.i)) {
-                while (this.i < this.source.length && this.source[this.i] != '\n')
+                while (this.i < this.source.length && !['\n', '\r', '\u2028', '\u2029'].includes(this.source[this.i]))
                     this.i++;
             }
             else
