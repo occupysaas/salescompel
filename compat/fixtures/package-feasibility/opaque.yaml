@@ -1,0 +1,29 @@
+# Opaque required dependency remains visible and unproven; nothing is stubbed.
+schemaVersion: 1
+classification: synthetic
+roots: [sales]
+packages:
+  - id: sales
+    version: 1.0.0
+    ownerId: sales-owner
+    kind: unlocked
+    namespace: null
+    source: available
+    dependencyKnowledge: complete
+    dependencies:
+      - { packageId: vendor, version: 4.3.0 }
+    components: []
+    requirements:
+      - { id: install, surface: installation, evidence: absent }
+      - { id: currency, surface: org-feature, evidence: absent }
+  - id: vendor
+    version: 4.3.0
+    ownerId: vendor-owner
+    kind: managed-2gp
+    namespace: Vendor
+    source: unavailable
+    dependencyKnowledge: unknown
+    dependencies: []
+    components: []
+    requirements:
+      - { id: license, surface: license-service, evidence: absent }

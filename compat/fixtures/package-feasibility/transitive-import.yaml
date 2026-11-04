@@ -1,0 +1,42 @@
+# The root cannot import base solely through bridge's declared dependency.
+schemaVersion: 1
+classification: synthetic
+roots: [sales]
+packages:
+  - id: sales
+    version: 1.0.0
+    ownerId: sales-owner
+    kind: unlocked
+    namespace: null
+    source: available
+    dependencyKnowledge: complete
+    dependencies:
+      - { packageId: bridge, version: 1.0.0 }
+    components:
+      - kind: apex
+        name: Controller
+        references:
+          - { packageId: base, kind: object, name: Customer }
+    requirements: []
+  - id: bridge
+    version: 1.0.0
+    ownerId: bridge-owner
+    kind: unlocked
+    namespace: null
+    source: available
+    dependencyKnowledge: complete
+    dependencies:
+      - { packageId: base, version: 1.0.0 }
+    components: []
+    requirements: []
+  - id: base
+    version: 1.0.0
+    ownerId: base-owner
+    kind: unlocked
+    namespace: Foundation
+    source: available
+    dependencyKnowledge: complete
+    dependencies: []
+    components:
+      - { kind: object, name: Customer, references: [] }
+    requirements: []

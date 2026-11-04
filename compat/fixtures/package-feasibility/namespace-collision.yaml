@@ -1,0 +1,27 @@
+# A shared namespace alone is legal here; duplicate qualified symbols are not.
+schemaVersion: 1
+classification: synthetic
+roots: [sales]
+packages:
+  - id: sales
+    version: 1.0.0
+    ownerId: sales-owner
+    kind: unlocked
+    namespace: Suite
+    source: available
+    dependencyKnowledge: complete
+    dependencies: []
+    components:
+      - { kind: object, name: Customer, references: [] }
+    requirements: []
+  - id: other
+    version: 1.0.0
+    ownerId: other-owner
+    kind: unlocked
+    namespace: Suite
+    source: available
+    dependencyKnowledge: complete
+    dependencies: []
+    components:
+      - { kind: object, name: Customer, references: [] }
+    requirements: []

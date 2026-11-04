@@ -1,0 +1,33 @@
+# Independent synthetic declarations; no source, package installation or execution.
+schemaVersion: 1
+classification: synthetic
+roots: [sales]
+packages:
+  - id: sales
+    version: 2.0.0
+    ownerId: sales-owner
+    kind: unlocked
+    namespace: null
+    source: available
+    dependencyKnowledge: complete
+    dependencies:
+      - { packageId: base, version: 1.0.0 }
+    components:
+      - kind: apex
+        name: SalesController
+        references:
+          - { packageId: base, kind: object, name: Customer }
+          - { packageId: base, kind: field, name: Customer_Name }
+    requirements: []
+  - id: base
+    version: 1.0.0
+    ownerId: base-owner
+    kind: unlocked
+    namespace: Foundation
+    source: available
+    dependencyKnowledge: complete
+    dependencies: []
+    components:
+      - { kind: object, name: Customer, references: [] }
+      - { kind: field, name: Customer_Name, references: [] }
+    requirements: []

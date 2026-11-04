@@ -175,12 +175,10 @@ export function resolvePackageManifest(
   return {
     validation: "valid",
     issues: [],
-    closure: [...closure]
-      .sort(ordinal)
-      .map((packageId) => ({
-        packageId,
-        version: packages.get(packageId)!.version,
-      })),
+    closure: [...closure].sort(ordinal).map((packageId) => ({
+      packageId,
+      version: packages.get(packageId)!.version,
+    })),
     bindings: bindings.sort((a, b) => ordinal(bindingKey(a), bindingKey(b))),
   };
 }
