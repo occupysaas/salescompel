@@ -10,66 +10,95 @@ interface Tag {
     file: 'html' | 'metadata';
 }
 class Markup extends Cursor {
-    name(): string { const start = this.i; while (/[A-Za-z0-9_:-]/.test(this.source[this.i] ?? '') && this.i < this.source.length)
-        this.i++; if (this.i === start)
-        this.error('syntax'); this.token(start); return this.literal(this.source.slice(start, this.i), start); }
-    punctuation(s: string) { this.token(); if (!this.source.startsWith(s, this.i))
-        this.error('syntax'); this.i += s.length; }
-    tag(): Tag { const site = this.site(); this.punctuation('<'); const close = this.source[this.i] === '/'; if (close)
-        this.punctuation('/'); const name = this.name(); const attrs: Attr[] = []; const used = new Set<string>(); let self = false; for (;;) {
-        const before = this.i;
-        this.space();
-        if (this.source.startsWith('/>', this.i)) {
-            this.punctuation('/');
-            this.punctuation('>');
-            self = true;
-            break;
-        }
-        if (this.source[this.i] === '>') {
-            this.punctuation('>');
-            break;
-        }
-        if (close || before === this.i)
-            this.error('syntax');
+    name(): string {
         const start = this.i;
-        const key = this.name();
-        if (used.has(key))
-            this.error('invalid-model');
-        used.add(key);
-        this.space();
-        this.punctuation('=');
-        this.space();
-        let kind: 'literal' | 'binding' = 'literal';
-        let v: string;
-        if (this.source[this.i] === '"') {
-            this.token();
+        while (/[A-Za-z0-9_:-]/.test(this.source[this.i] ?? '') && this.i < this.source.length)
             this.i++;
-            const p = this.i;
-            while (this.i < this.source.length && this.source[this.i] !== '"') {
-                if (this.source[this.i] === '<')
+        if (this.i === start)
+            this.error('syntax');
+        this.token(start);
+        return this.literal(this.source.slice(start, this.i), start);
+    }
+    punctuation(s: string) {
+        this.token();
+        if (!this.source.startsWith(s, this.i))
+            this.error('syntax');
+        this.i += s.length;
+    }
+    tag(): Tag {
+        const site = this.site();
+        this.punctuation('<');
+        const close = this.source[this.i] === '/';
+        if (close)
+            this.punctuation('/');
+        const name = this.name();
+        const attrs: Attr[] = [];
+        const used = new Set<string>();
+        let self = false;
+        for (;;) {
+            const before = this.i;
+            this.space();
+            if (this.source.startsWith('/>', this.i)) {
+                this.punctuation('/');
+                this.punctuation('>');
+                self = true;
+                break;
+            }
+            if (this.source[this.i] === '>') {
+                this.punctuation('>');
+                break;
+            }
+            if (close || before === this.i)
+                this.error('syntax');
+            const start = this.i;
+            const key = this.name();
+            if (used.has(key))
+                this.error('invalid-model');
+            used.add(key);
+            this.space();
+            this.punctuation('=');
+            this.space();
+            let kind: 'literal' | 'binding' = 'literal';
+            let v: string;
+            if (this.source[this.i] === '"') {
+                this.token();
+                this.i++;
+                const p = this.i;
+                while (this.i < this.source.length && this.source[this.i] !== '"') {
+                    if (this.source[this.i] === '<')
+                        this.error('syntax');
+                    this.i++;
+                }
+                if (this.i >= this.source.length)
                     this.error('syntax');
+                v = entities(this.source.slice(p, this.i), this, p);
                 this.i++;
             }
-            if (this.i >= this.source.length)
-                this.error('syntax');
-            v = entities(this.source.slice(p, this.i), this, p);
-            this.i++;
+            else {
+                kind = 'binding';
+                this.punctuation('{');
+                v = this.name();
+                this.punctuation('}');
+            }
+            attrs.push({
+                ...this.site(start), name: key, kind, value: v
+            });
         }
-        else {
-            kind = 'binding';
-            this.punctuation('{');
-            v = this.name();
-            this.punctuation('}');
-        }
-        attrs.push({ ...this.site(start), name: key, kind, value: v });
-    } return { ...site, file: this.file as 'html' | 'metadata', name, attrs, close, self }; }
+        return {
+            ...site, file: this.file as 'html' | 'metadata', name, attrs, close, self
+        };
+    }
 }
 export function parseTemplate(source: string, meter: Meter): TemplateNode {
     const c = new Markup(source, 'html', meter);
     let count = 0;
     const allowed = new Set(['template', 'section', 'h2', 'p', 'span', 'label', 'input', 'button']);
-    const node = (n: TemplateNode): TemplateNode => { if (count >= meter.limits.templateNodes)
-        c.error('budget'); count++; return n; };
+    const node = (n: TemplateNode): TemplateNode => {
+        if (count >= meter.limits.templateNodes)
+            c.error('budget');
+        count++;
+        return n;
+    };
     const parse = (depth: number): TemplateNode => {
         c.depth(depth);
         const t = c.tag();
@@ -88,7 +117,9 @@ export function parseTemplate(source: string, meter: Meter): TemplateNode {
             if (!(kind === 'literal' && literal || kind === 'binding' && bound) || t.name === 'template')
                 c.error('unsupported');
         }
-        const n = node({ ...t, kind: 'element', tag: t.name, text: '', attrs: t.attrs, children: [] });
+        const n = node({
+            ...t, kind: 'element', tag: t.name, text: '', attrs: t.attrs, children: []
+        });
         const children = n.children as TemplateNode[];
         if (t.name === 'input')
             return n;
@@ -106,7 +137,9 @@ export function parseTemplate(source: string, meter: Meter): TemplateNode {
                 if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name))
                     c.error('unsupported');
                 c.punctuation('}');
-                children.push(node({ ...c.site(start), kind: 'binding', tag: '', text: name, attrs: [], children: [] }));
+                children.push(node({
+                    ...c.site(start), kind: 'binding', tag: '', text: name, attrs: [], children: []
+                }));
                 continue;
             }
             const start = c.i;
@@ -116,7 +149,9 @@ export function parseTemplate(source: string, meter: Meter): TemplateNode {
                 c.i++;
             }
             c.token(start);
-            children.push(node({ ...c.site(start), kind: 'text', tag: '', text: entities(source.slice(start, c.i), c, start), attrs: [], children: [] }));
+            children.push(node({
+                ...c.site(start), kind: 'text', tag: '', text: entities(source.slice(start, c.i), c, start), attrs: [], children: []
+            }));
         }
         const end = c.tag();
         if (!end.close || end.name !== t.name || end.attrs.length || end.self)
@@ -145,45 +180,57 @@ export function parseMetadata(source: string, meter: Meter): void {
         c.i = end + 2;
         c.space();
     }
-    const expected: Record<string, string[]> = { LightningComponentBundle: ['apiVersion', 'isExposed', 'targets'], targets: ['target'], apiVersion: [], isExposed: [], target: [] };
-    const parse = (name: string, depth: number): string => { c.depth(depth); const tag = c.tag(); if (tag.name !== name || tag.close || tag.self)
-        c.error('invalid-model'); if (depth === 1) {
-        if (tag.attrs.length !== 1 || tag.attrs[0].name !== 'xmlns' || tag.attrs[0].kind !== 'literal' || tag.attrs[0].value !== 'http://soap.sforce.com/2006/04/metadata')
-            c.error('unsupported');
-    }
-    else if (tag.attrs.length)
-        c.error('unsupported'); const children = expected[name]; if (children.length) {
-        const seen = new Set<string>();
-        while (true) {
-            c.space();
-            if (source.startsWith('</', c.i))
-                break;
-            const start = c.i;
-            const match = /^<([A-Za-z_][A-Za-z0-9_]*)/.exec(source.slice(start));
-            if (!match)
-                c.error('syntax');
-            const child = match![1];
-            if (!children.includes(child))
-                c.error('unsupported');
-            if (seen.has(child))
-                c.error('invalid-model');
-            seen.add(child);
-            parse(child, depth + 1);
-        }
-        if (seen.size !== children.length)
+    const expected: Record<string, string[]> = {
+        LightningComponentBundle: ['apiVersion', 'isExposed', 'targets'], targets: ['target'], apiVersion: [], isExposed: [], target: []
+    };
+    const parse = (name: string, depth: number): string => {
+        c.depth(depth);
+        const tag = c.tag();
+        if (tag.name !== name || tag.close || tag.self)
             c.error('invalid-model');
-    }
-    else {
-        const start = c.i;
-        while (c.i < source.length && source[c.i] !== '<')
-            c.i++;
-        c.token(start);
-        const text = entities(source.slice(start, c.i), c, start).trim();
-        const want = name === 'apiVersion' ? '65.0' : name === 'isExposed' ? 'true' : 'lightning__RecordPage';
-        if (text !== want)
+        if (depth === 1) {
+            if (tag.attrs.length !== 1 || tag.attrs[0].name !== 'xmlns' || tag.attrs[0].kind !== 'literal' || tag.attrs[0].value !== 'http://soap.sforce.com/2006/04/metadata')
+                c.error('unsupported');
+        }
+        else if (tag.attrs.length)
             c.error('unsupported');
-    } const end = c.tag(); if (!end.close || end.self || end.name !== name || end.attrs.length)
-        c.error('syntax'); return name; };
+        const children = expected[name];
+        if (children.length) {
+            const seen = new Set<string>();
+            while (true) {
+                c.space();
+                if (source.startsWith('</', c.i))
+                    break;
+                const start = c.i;
+                const match = /^<([A-Za-z_][A-Za-z0-9_]*)/.exec(source.slice(start));
+                if (!match)
+                    c.error('syntax');
+                const child = match![1];
+                if (!children.includes(child))
+                    c.error('unsupported');
+                if (seen.has(child))
+                    c.error('invalid-model');
+                seen.add(child);
+                parse(child, depth + 1);
+            }
+            if (seen.size !== children.length)
+                c.error('invalid-model');
+        }
+        else {
+            const start = c.i;
+            while (c.i < source.length && source[c.i] !== '<')
+                c.i++;
+            c.token(start);
+            const text = entities(source.slice(start, c.i), c, start).trim();
+            const want = name === 'apiVersion' ? '65.0' : name === 'isExposed' ? 'true' : 'lightning__RecordPage';
+            if (text !== want)
+                c.error('unsupported');
+        }
+        const end = c.tag();
+        if (!end.close || end.self || end.name !== name || end.attrs.length)
+            c.error('syntax');
+        return name;
+    };
     parse('LightningComponentBundle', 1);
     c.space();
     if (c.i !== source.length)

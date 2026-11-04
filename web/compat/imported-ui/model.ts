@@ -36,11 +36,18 @@ export interface Program {
     readonly template: TemplateNode;
 }
 const compiled = new WeakSet<object>();
-export function seal(program: Program): Program { const todo: object[] = [program]; while (todo.length) {
-    const o = todo.pop()!;
-    for (const v of Object.values(o))
-        if (v && typeof v === 'object')
-            todo.push(v);
-    Object.freeze(o);
-} compiled.add(program); return program; }
-export function isProgram(p: unknown): p is Program { return typeof p === 'object' && p !== null && compiled.has(p); }
+export function seal(program: Program): Program {
+    const todo: object[] = [program];
+    while (todo.length) {
+        const o = todo.pop()!;
+        for (const v of Object.values(o))
+            if (v && typeof v === 'object')
+                todo.push(v);
+        Object.freeze(o);
+    }
+    compiled.add(program);
+    return program;
+}
+export function isProgram(p: unknown): p is Program {
+    return typeof p === 'object' && p !== null && compiled.has(p);
+}

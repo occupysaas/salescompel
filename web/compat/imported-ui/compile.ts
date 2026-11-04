@@ -5,29 +5,31 @@ import { parseScript } from './script.ts';
 import { parseMetadata, parseTemplate } from './markup.ts';
 import { seal } from './model.ts';
 import type { Program, TemplateNode } from './model.ts';
-export function compileBundle(b: SourceBundle, l: Limits, signal?: AbortSignal): Outcome<Program> { return compileObserved(b, l, signal); }
+export function compileBundle(b: SourceBundle, l: Limits, signal?: AbortSignal): Outcome<Program> {
+    return compileObserved(b, l, signal);
+}
 export function compileObserved(b: SourceBundle, l: Limits, signal?: AbortSignal, observer?: (label: string) => void): Outcome<Program> {
     return attempt(() => {
         const m = unwrap(createMeter(l, signal, observer));
         if (!b || Object.keys(b).sort().join(',') !== 'html,js,metadata,name' || typeof b.name !== 'string' || !/^[a-z][A-Za-z0-9]*$/.test(b.name))
             fail('invalid-input');
+        const copy = { ...b };
         let total = 0;
         for (const f of ['html', 'js', 'metadata'] as const) {
-            if (typeof b[f] !== 'string')
+            if (typeof copy[f] !== 'string')
                 fail('invalid-input');
             let n: number;
             try {
-                n = bytes(b[f]);
+                n = bytes(copy[f]);
             }
             catch {
                 fail('syntax', phaseOf(f), { file: f, offset: 0 });
             }
-            if (n > l.fileBytes || n > l.bundleBytes - total)
+            if (n > m.limits.fileBytes || n > m.limits.bundleBytes - total)
                 fail('budget', phaseOf(f), { file: f, offset: 0 });
             total += n;
-            m.check({ file: f, offset: 0 }, phaseOf(f), 'file');
         }
-        const copy = { ...b };
+        m.check({ file: 'metadata', offset: 0 }, 'metadata', 'file');
         parseMetadata(copy.metadata, m);
         const script = parseScript(copy.js, m);
         const template = parseTemplate(copy.html, m);

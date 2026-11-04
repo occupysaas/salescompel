@@ -1,0 +1,4 @@
+body { font: 16px system-ui, sans-serif; margin: 2rem; color: #171717; background: white; }
+#mounts { display: flex; flex-wrap: wrap; gap: 2rem; }
+#mounts > div { border: 1px solid #888; padding: 1rem; }
+output { display: block; margin-top: 1rem; }

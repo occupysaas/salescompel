@@ -25,18 +25,30 @@ export function parseScript(source: string, meter: Meter): {
     const methods: Method[] = [];
     const names = new Set<string>();
     let statements = 0;
-    const value = (): ValueExpr => { const t = l.take(); if (t.kind === 'string')
-        return { ...t, kind: 'literal', value: t.text }; if (t.kind === 'word' && t.text === 'this') {
-        l.expect('.');
-        const n = l.word();
-        return { ...t, kind: 'field', value: n.text };
-    } if (t.kind === 'word' && t.text === 'event') {
-        l.expect('.');
-        l.expect('target');
-        l.expect('.');
-        l.expect('value');
-        return { ...t, kind: 'input', value: '' };
-    } return l.error('unsupported'); };
+    const value = (): ValueExpr => {
+        const t = l.take();
+        if (t.kind === 'string')
+            return {
+                ...t, kind: 'literal', value: t.text
+            };
+        if (t.kind === 'word' && t.text === 'this') {
+            l.expect('.');
+            const n = l.word();
+            return {
+                ...t, kind: 'field', value: n.text
+            };
+        }
+        if (t.kind === 'word' && t.text === 'event') {
+            l.expect('.');
+            l.expect('target');
+            l.expect('.');
+            l.expect('value');
+            return {
+                ...t, kind: 'input', value: ''
+            };
+        }
+        return l.error('unsupported');
+    };
     while (!l.at('}')) {
         if (l.peek().kind === 'eof')
             l.error('syntax');
@@ -56,7 +68,9 @@ export function parseScript(source: string, meter: Meter): {
             if (v.kind !== 'string')
                 l.error('unsupported');
             l.expect(';');
-            fields.push({ ...n, name: n.text, public: pub, initial: v.text });
+            fields.push({
+                ...n, name: n.text, public: pub, initial: v.text
+            });
             continue;
         }
         if (pub)
@@ -92,17 +106,23 @@ export function parseScript(source: string, meter: Meter): {
                 const v = value();
                 for (const s of ['}', ')', ')', ';'])
                     l.expect(s);
-                body.push({ ...t, kind: 'emit', value: v });
+                body.push({
+                    ...t, kind: 'emit', value: v
+                });
             }
             else {
                 l.expect('=');
                 const v = value();
                 l.expect(';');
-                body.push({ ...t, kind: 'assign', target: target.text, value: v });
+                body.push({
+                    ...t, kind: 'assign', target: target.text, value: v
+                });
             }
         }
         l.expect('}');
-        methods.push({ ...n, name: n.text, input, statements: body });
+        methods.push({
+            ...n, name: n.text, input, statements: body
+        });
     }
     l.expect('}');
     if (l.peek().kind !== 'eof')
