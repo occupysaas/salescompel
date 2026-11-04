@@ -1,3 +1,5 @@
+import { open, readFile, unlink } from "node:fs/promises";
+import { setTimeout as delay } from "node:timers/promises";
 import {
   recordFixtureEvent,
   type FixtureEvent,
@@ -38,7 +40,7 @@ export async function runCompositeFixtureAttempt(
       )
     )
       throw Error("FIXTURES");
-    for (const intent of intents) await recordFixtureEvent(journalPath, intent);
+    await reserveCompositeIntents(journalPath, intents);
     const response = await perform();
     const entries = response.body?.compositeResponse;
     // Resolve only independently attributable create IDs, before validating neighbors.
@@ -128,5 +130,47 @@ export async function runCompositeFixtureAttempt(
     return response;
   } catch {
     throw Error("FIXTURES");
+  }
+}
+
+// Reserve create identities before dispatch. A short sidecar lock serializes the
+// read/check/append across the independent owned Node test processes. A stale
+// lock fails closed rather than guessing whether another writer is alive.
+async function reserveCompositeIntents(
+  path: string,
+  intents: FixtureEvent[],
+): Promise<void> {
+  if (intents.length === 0) return;
+  const lockPath = path + ".composite-lock",
+    deadline = Date.now() + 5000;
+  let lock: Awaited<ReturnType<typeof open>> | undefined;
+  while (!lock) {
+    try {
+      lock = await open(lockPath, "wx", 0o600);
+    } catch (error: any) {
+      if (error?.code !== "EEXIST" || Date.now() >= deadline)
+        throw Error("FIXTURES");
+      await delay(10);
+    }
+  }
+  try {
+    const text = await readFile(path, "utf8");
+    if (text && !text.endsWith("\n")) throw Error("FIXTURES");
+    const used = new Set<string>();
+    for (const line of text.split("\n").filter(Boolean)) {
+      const event = JSON.parse(line) as FixtureEvent;
+      if (
+        !event ||
+        event.runId !== intents[0].runId ||
+        typeof event.operationId !== "string"
+      )
+        throw Error("FIXTURES");
+      used.add(event.operationId);
+    }
+    if (intents.some((e) => used.has(e.operationId))) throw Error("FIXTURES");
+    for (const intent of intents) await recordFixtureEvent(path, intent);
+  } finally {
+    await lock.close();
+    await unlink(lockPath);
   }
 }

@@ -314,3 +314,71 @@ test("Composite metadata mismatch prevents dispatch", async (t) => {
   assert.equal(dispatched, false);
   assert.equal((await events(path)).length, 0);
 });
+
+test("Composite rejects whole-run reused create identities before append or dispatch", async (t) => {
+  const path = await setup(t);
+  let dispatches = 0;
+  const perform = async () => {
+    dispatches++;
+    return { status: 200, body: { compositeResponse: [success("a", aid)] } };
+  };
+  await runCompositeFixtureAttempt(
+    path,
+    [intents[0]],
+    [expected[0]],
+    "commit",
+    perform,
+    async () => {},
+  );
+  const before = await readFile(path, "utf8");
+  await assert.rejects(
+    runCompositeFixtureAttempt(
+      path,
+      [intents[0]],
+      [expected[0]],
+      "commit",
+      perform,
+      async () => {},
+    ),
+    /^Error: FIXTURES$/,
+  );
+  assert.equal(dispatches, 1);
+  assert.equal(await readFile(path, "utf8"), before);
+  const cleanup = await cleanupFixtures(context(path), async () => ({
+    status: 404,
+    body: null,
+  }));
+  assert.equal(cleanup.verified, true);
+  assert.equal(cleanup.records, 1);
+});
+test("Composite concurrent reservation permits only one reused fixture identity", async (t) => {
+  const path = await setup(t);
+  let dispatches = 0;
+  const call = () =>
+    runCompositeFixtureAttempt(
+      path,
+      [intents[0]],
+      [expected[0]],
+      "commit",
+      async () => {
+        dispatches++;
+        return {
+          status: 200,
+          body: { compositeResponse: [success("a", aid)] },
+        };
+      },
+      async () => {},
+    );
+  const results = await Promise.allSettled([call(), call()]);
+  assert.equal(dispatches, 1);
+  assert.equal(results.filter((r) => r.status === "fulfilled").length, 1);
+  assert.equal(
+    (
+      await cleanupFixtures(context(path), async () => ({
+        status: 404,
+        body: null,
+      }))
+    ).verified,
+    true,
+  );
+});
