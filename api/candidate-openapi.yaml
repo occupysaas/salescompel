@@ -554,6 +554,43 @@ paths:
           $ref: "#/components/responses/MethodError"
         "500":
           $ref: "#/components/responses/Error"
+  /services/data/v65.0/composite:
+    post:
+      operationId: candidateCompositeAtomic
+      description: "Restricted atomic Account/Contact writes: allOrNone must be true;
+        collateSubrequests absent or false executes sequentially. Only earlier
+        POST id references in row URLs and Contact.AccountId are supported. No
+        partial success, reads, query, upsert, headers, or nested Composite.
+        References and transaction effects are checked separately from schemas.
+        Every result is rewritten on rollback; no committed success is reported
+        before commit."
+      x-source:
+        - https://github.com/occupysaas/salescompel/blob/059bc87/docs/superpowers/specs/2026-11-04-plan-24-atomic-composite-writes-design.md
+        - https://developer.salesforce.com/docs/platform/api-rest/guide/resources-composite-composite-post.html
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompositeRequest"
+      responses:
+        "200":
+          description: Committed transaction or completely rolled-back subrequest failure;
+            inspect every subresponse
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompositeResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
 components:
   securitySchemes:
     bearerAuth:
@@ -1024,6 +1061,7 @@ components:
         - sobjects
         - query
         - openapi
+        - composite
       properties:
         sobjects:
           const: /services/data/v65.0/sobjects
@@ -1031,6 +1069,8 @@ components:
           const: /services/data/v65.0/query
         openapi:
           const: /services/data/v65.0/openapi.yaml
+        composite:
+          const: /services/data/v65.0/composite
     UserInfo:
       type: object
       additionalProperties: false
@@ -1082,6 +1122,240 @@ components:
         Email:
           type: string
           minLength: 1
+    CompositeReferenceID:
+      type: string
+      pattern: ^[A-Za-z0-9][A-Za-z0-9_]{0,79}$
+      maxLength: 80
+    CompositeEmptyHeaders:
+      type: object
+      additionalProperties: false
+      properties: {}
+      maxProperties: 0
+    CompositeContactCreate:
+      type: object
+      additionalProperties: false
+      required:
+        - LastName
+      properties:
+        FirstName:
+          type:
+            - string
+            - "null"
+          maxLength: 255
+        LastName:
+          type: string
+          maxLength: 255
+          minLength: 1
+        AccountId:
+          anyOf:
+            - type:
+                - string
+                - "null"
+              maxLength: 18
+            - type: string
+              pattern: ^@\{[A-Za-z0-9][A-Za-z0-9_]{0,79}\.id\}$
+    CompositeContactPatch:
+      type: object
+      additionalProperties: false
+      required: []
+      properties:
+        FirstName:
+          type:
+            - string
+            - "null"
+          maxLength: 255
+        LastName:
+          type: string
+          maxLength: 255
+          minLength: 1
+        AccountId:
+          anyOf:
+            - type:
+                - string
+                - "null"
+              maxLength: 18
+            - type: string
+              pattern: ^@\{[A-Za-z0-9][A-Za-z0-9_]{0,79}\.id\}$
+    CompositeSubrequest:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required:
+            - method
+            - url
+            - referenceId
+            - body
+          properties:
+            method:
+              const: POST
+            url:
+              type: string
+              pattern: ^/services/data/v65\.0/sobjects/Account$
+            referenceId:
+              $ref: "#/components/schemas/CompositeReferenceID"
+            body:
+              $ref: "#/components/schemas/AccountCreate"
+        - type: object
+          additionalProperties: false
+          required:
+            - method
+            - url
+            - referenceId
+            - body
+          properties:
+            method:
+              const: PATCH
+            url:
+              type: string
+              pattern: ^/services/data/v65\.0/sobjects/Account/(?:[A-Za-z0-9]{18}|@\{[A-Za-z0-9][A-Za-z0-9_]{0,79}\.id\})$
+            referenceId:
+              $ref: "#/components/schemas/CompositeReferenceID"
+            body:
+              $ref: "#/components/schemas/AccountPatch"
+        - type: object
+          additionalProperties: false
+          required:
+            - method
+            - url
+            - referenceId
+          properties:
+            method:
+              const: DELETE
+            url:
+              type: string
+              pattern: ^/services/data/v65\.0/sobjects/Account/(?:[A-Za-z0-9]{18}|@\{[A-Za-z0-9][A-Za-z0-9_]{0,79}\.id\})$
+            referenceId:
+              $ref: "#/components/schemas/CompositeReferenceID"
+        - type: object
+          additionalProperties: false
+          required:
+            - method
+            - url
+            - referenceId
+            - body
+          properties:
+            method:
+              const: POST
+            url:
+              type: string
+              pattern: ^/services/data/v65\.0/sobjects/Contact$
+            referenceId:
+              $ref: "#/components/schemas/CompositeReferenceID"
+            body:
+              $ref: "#/components/schemas/CompositeContactCreate"
+        - type: object
+          additionalProperties: false
+          required:
+            - method
+            - url
+            - referenceId
+            - body
+          properties:
+            method:
+              const: PATCH
+            url:
+              type: string
+              pattern: ^/services/data/v65\.0/sobjects/Contact/(?:[A-Za-z0-9]{18}|@\{[A-Za-z0-9][A-Za-z0-9_]{0,79}\.id\})$
+            referenceId:
+              $ref: "#/components/schemas/CompositeReferenceID"
+            body:
+              $ref: "#/components/schemas/CompositeContactPatch"
+        - type: object
+          additionalProperties: false
+          required:
+            - method
+            - url
+            - referenceId
+          properties:
+            method:
+              const: DELETE
+            url:
+              type: string
+              pattern: ^/services/data/v65\.0/sobjects/Contact/(?:[A-Za-z0-9]{18}|@\{[A-Za-z0-9][A-Za-z0-9_]{0,79}\.id\})$
+            referenceId:
+              $ref: "#/components/schemas/CompositeReferenceID"
+    CompositeRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - allOrNone
+        - compositeRequest
+      properties:
+        allOrNone:
+          const: true
+        collateSubrequests:
+          const: false
+        compositeRequest:
+          type: array
+          minItems: 1
+          maxItems: 25
+          items:
+            $ref: "#/components/schemas/CompositeSubrequest"
+    CompositeSubresponse:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required:
+            - body
+            - httpHeaders
+            - httpStatusCode
+            - referenceId
+          properties:
+            body:
+              $ref: "#/components/schemas/CreateResult"
+            httpHeaders:
+              $ref: "#/components/schemas/CompositeEmptyHeaders"
+            httpStatusCode:
+              const: 201
+            referenceId:
+              $ref: "#/components/schemas/CompositeReferenceID"
+        - type: object
+          additionalProperties: false
+          required:
+            - body
+            - httpHeaders
+            - httpStatusCode
+            - referenceId
+          properties:
+            body:
+              type: "null"
+            httpHeaders:
+              $ref: "#/components/schemas/CompositeEmptyHeaders"
+            httpStatusCode:
+              const: 204
+            referenceId:
+              $ref: "#/components/schemas/CompositeReferenceID"
+        - type: object
+          additionalProperties: false
+          required:
+            - body
+            - httpHeaders
+            - httpStatusCode
+            - referenceId
+          properties:
+            body:
+              $ref: "#/components/schemas/Errors"
+            httpHeaders:
+              $ref: "#/components/schemas/CompositeEmptyHeaders"
+            httpStatusCode:
+              type: integer
+              enum:
+                - 400
+                - 404
+            referenceId:
+              $ref: "#/components/schemas/CompositeReferenceID"
+    CompositeResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - compositeResponse
+      properties:
+        compositeResponse:
+          type: array
+          minItems: 1
+          maxItems: 25
+          items:
+            $ref: "#/components/schemas/CompositeSubresponse"
   responses:
     Error:
       description: Current candidate response

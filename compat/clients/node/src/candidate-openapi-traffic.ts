@@ -111,6 +111,7 @@ export async function createCandidateTrafficValidator(
         "allOf",
         "minItems",
         "maxItems",
+        "maxProperties",
         "minLength",
         "maxLength",
         "minimum",

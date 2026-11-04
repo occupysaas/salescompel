@@ -10,6 +10,7 @@ import {
 import { ROOT } from "../src/versions.ts";
 
 const expected = [
+  ["/services/data/v65.0/composite", "post", "candidateCompositeAtomic"],
   ["/services/data", "get", "candidateVersions"],
   ["/services/data/v65.0", "get", "candidateResources"],
   ["/services/oauth2/userinfo", "get", "candidateUserInfo"],
@@ -87,7 +88,7 @@ test("candidateContractInventory", async () => {
   assert.deepEqual(d.security, [{ bearerAuth: [] }]);
   for (const mutate of [
     (x: any) =>
-      (x.paths["/services/data/v65.0/composite"] = {
+      (x.paths["/services/data/v65.0/composite/batch"] = {
         post: x.paths["/services/data/v65.0/sobjects/Account"].post,
       }),
     (x: any) => {
@@ -211,6 +212,7 @@ test("candidateContractShapes", async () => {
       sobjects: "/services/data/v65.0/sobjects",
       query: "/services/data/v65.0/query",
       openapi: "/services/data/v65.0/openapi.yaml",
+      composite: "/services/data/v65.0/composite",
     }),
     true,
   );
@@ -220,4 +222,28 @@ test("candidateContractShapes", async () => {
     ].content,
     undefined,
   );
+});
+
+test("atomic Composite contract fixes the restricted request and result envelopes", async () => {
+  const d = await doc();
+  const c = d.components.schemas;
+  assert.equal(c.CompositeRequest.properties.allOrNone.const, true);
+  assert.equal(c.CompositeRequest.properties.collateSubrequests.const, false);
+  assert.equal(c.CompositeRequest.properties.compositeRequest.minItems, 1);
+  assert.equal(c.CompositeRequest.properties.compositeRequest.maxItems, 25);
+  assert.equal(c.CompositeEmptyHeaders.maxProperties, 0);
+  assert.equal(c.CompositeEmptyHeaders.additionalProperties, false);
+  assert.equal(c.CompositeReferenceID.maxLength, 80);
+  assert.equal(
+    c.Resources.properties.composite.const,
+    "/services/data/v65.0/composite",
+  );
+  const mutated = structuredClone(d);
+  mutated.components.schemas.AccountRead = {
+    type: "object",
+    properties: {},
+    additionalProperties: false,
+    maxProperties: 0,
+  };
+  await assert.rejects(validateCandidateOpenAPI(mutated, await urls()));
 });

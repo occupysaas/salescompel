@@ -320,3 +320,118 @@ test("rejectsUnsupportedTrafficConstructs", async () => {
     );
   }
 });
+
+test("validates bounded atomic Composite traffic without permissive maps", async () => {
+  const v = await validator();
+  const sub = {
+    method: "POST",
+    url: base + "/sobjects/Account",
+    referenceId: "a",
+    body: { Name: "A" },
+  };
+  const result = {
+    body: { id: "001000000000000AAA", success: true, errors: [] },
+    httpHeaders: {},
+    httpStatusCode: 201,
+    referenceId: "a",
+  };
+  const make = (request: unknown, response: unknown) => {
+    const e = exchange("POST", base + "/composite", 200, response);
+    e.request = { contentType: "application/json", body: bytes(request) };
+    return e;
+  };
+  const req = { allOrNone: true, compositeRequest: [sub] };
+  const res = { compositeResponse: [result] };
+  valid(v.validate(make(req, res)));
+  for (const request of [
+    { ...req, allOrNone: false },
+    { ...req, compositeRequest: [] },
+    { ...req, compositeRequest: Array.from({ length: 26 }, () => sub) },
+    { ...req, unknown: true },
+    { ...req, compositeRequest: [{ ...sub, httpHeaders: {} }] },
+  ])
+    assert.ok(
+      v.validate(make(request, res)).requestIssues.includes("request-schema"),
+    );
+  for (const response of [
+    {
+      compositeResponse: [
+        { ...result, httpHeaders: { Authorization: "PRIVATE_MARKER" } },
+      ],
+    },
+    { compositeResponse: [{ ...result, body: { arbitrary: true } }] },
+    {
+      compositeResponse: [
+        { ...result, httpStatusCode: 204, body: { id: "bad" } },
+      ],
+    },
+  ])
+    assert.ok(
+      v
+        .validate(make(req, response))
+        .responseIssues.includes("response-schema"),
+    );
+  valid(
+    v.validate(
+      make(
+        {
+          allOrNone: true,
+          compositeRequest: [
+            {
+              method: "PATCH",
+              url: base + "/sobjects/Account/001000000000000AAA",
+              referenceId: "p",
+              body: { Name: "B" },
+            },
+            {
+              method: "DELETE",
+              url: base + "/sobjects/Contact/003000000000000AAA",
+              referenceId: "d",
+            },
+          ],
+        },
+        {
+          compositeResponse: [
+            { ...result, referenceId: "p", body: null, httpStatusCode: 204 },
+            { ...result, referenceId: "d", body: null, httpStatusCode: 204 },
+          ],
+        },
+      ),
+    ),
+  );
+  const invalid = {
+    allOrNone: true,
+    compositeRequest: [
+      sub,
+      {
+        method: "PATCH",
+        url: base + "/sobjects/Account/@{a.id}",
+        referenceId: "bad",
+        body: { Unknown: true },
+      },
+    ],
+  };
+  const rollback = {
+    compositeResponse: [
+      {
+        ...result,
+        httpStatusCode: 400,
+        body: [
+          {
+            errorCode: "PROCESSING_HALTED",
+            message: "Composite transaction rolled back",
+          },
+        ],
+      },
+      {
+        ...result,
+        referenceId: "bad",
+        httpStatusCode: 400,
+        body: [{ errorCode: "INVALID_FIELD", message: "Unavailable" }],
+      },
+    ],
+  };
+  const checked = v.validate(make(invalid, rollback));
+  assert.deepEqual(checked.requestIssues, ["request-schema"]);
+  assert.deepEqual(checked.responseIssues, []);
+});

@@ -11,6 +11,7 @@ export const candidateOperations: readonly (readonly [
   string,
   readonly string[],
 ])[] = [
+  [base + "/composite", "post", "candidateCompositeAtomic", ["200"]],
   ["/services/data", "get", "candidateVersions", ["200"]],
   [base, "get", "candidateResources", ["200"]],
   ["/services/oauth2/userinfo", "get", "candidateUserInfo", ["200"]],
@@ -126,7 +127,9 @@ export async function validateCandidateOpenAPI(
       if (
         types.includes("object") &&
         (!s.properties ||
-          !Object.keys(s.properties).length ||
+          (!Object.keys(s.properties).length &&
+            (s !== d.components.schemas.CompositeEmptyHeaders ||
+              s.maxProperties !== 0)) ||
           s.additionalProperties !== false)
       )
         throw 0;

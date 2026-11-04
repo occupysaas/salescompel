@@ -304,3 +304,9 @@ sources:
     version: 5df1d0ae9c65d3efabf46da1fb464c65997fd1eb reviewed locally
     claim: Existing accepted create and invalid-field rollback observation; public locator not fetched
     extraction: documentation-reviewed
+  - id: composite-design-plan24
+    url: https://github.com/occupysaas/salescompel/blob/059bc87/docs/superpowers/specs/2026-11-04-plan-24-atomic-composite-writes-design.md
+    accessedAt: 2026-11-04
+    version: 059bc87 reviewed locally
+    claim: Independent bounded candidate transaction contract; public locator not fetched
+    extraction: documentation-reviewed
