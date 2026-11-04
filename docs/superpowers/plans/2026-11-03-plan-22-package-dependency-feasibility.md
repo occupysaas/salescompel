@@ -113,7 +113,7 @@ Pin all model issue codes with separate cases: duplicate root/package/dependency
 - Consumes: Task 1 parser, Task 2 resolver, the spec's exact blocker table.
 - Produces: `assessPackageFeasibility(bytes:Uint8Array):PackageAssessment` from assess.ts, the only public bytes-to-report entry point. No clock/env/FS/network/CLI input.
 
-- [ ] **Step 1: Write failing policy tests** named `keepsExecutionUnproven`, `retainsOpaqueDependencies`, `ownsEveryBlocker`, `rejectsOptimisticEvidence`, `ignoresValidUnreachableBlockers` and `returnsDetachedDeterministicReports`. Example assertions:
+- [x] **Step 1: Write failing policy tests** named `keepsExecutionUnproven`, `retainsOpaqueDependencies`, `ownsEveryBlocker`, `rejectsOptimisticEvidence`, `ignoresValidUnreachableBlockers` and `returnsDetachedDeterministicReports`. Example assertions:
 
 ```ts
 assert.equal(report.execution, 'unproven');
@@ -125,10 +125,10 @@ assert.deepEqual(invalid.blockers, []);
 ```
 
 For all seven blocker rows assert complete object equality, owner/action and requirement fields, not only presence. Opaque dependencies remain in the closure and are not stubbed. Available source, empty components/requirements, and even target-verified claims never suppress universal blockers. Unknown source/kind/inventory produce separate blockers. A valid unreachable package yields no blockers. Invalid parsing/model returns no closure/bindings/blockers and keeps execution unproven. Run twice on fresh bytes; mutate old reports and source buffers after assessment to prove detachment. Permute roots/packages/dependencies/components/references/requirements: all semantic report fields stay equal after omitting digest.
-- [ ] **Step 2: Run RED.** `node --import tsx --test test/package-feasibility-assess.test.ts`; expect missing assessor failure.
-- [ ] **Step 3: Implement `assessPackageFeasibility`.** Compose parsing/resolution and derive blockers only from the validated root closure. Use exactly the literal codes/actions in the spec, ordinal sorting/deduplication and detached arrays/records. Never import runtime experiments, auto-read repository status or use declared evidence as measured target verification. No optional feature flag removes universal blockers.
-- [ ] **Step 4: Verify GREEN.** Run the three focused test files and `npm run typecheck`; exit 0/no skips. Format new TS files only.
-- [ ] **Step 5: Commit named files.** Commit `feat: report owned package execution blockers`.
+- [x] **Step 2: Run RED.** `node --import tsx --test test/package-feasibility-assess.test.ts`; expect missing assessor failure.
+- [x] **Step 3: Implement `assessPackageFeasibility`.** Compose parsing/resolution and derive blockers only from the validated root closure. Use exactly the literal codes/actions in the spec, ordinal sorting/deduplication and detached arrays/records. Never import runtime experiments, auto-read repository status or use declared evidence as measured target verification. No optional feature flag removes universal blockers.
+- [x] **Step 4: Verify GREEN.** Run the three focused test files and `npm run typecheck`; exit 0/no skips. Format new TS files only.
+- [x] **Step 5: Commit named files.** Commit `feat: report owned package execution blockers`.
 
 ### Task 4: Run repeatable fixtures and publish the bounded decision
 
