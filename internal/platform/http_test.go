@@ -48,7 +48,7 @@ func TestHTTPBoundary(t *testing.T) {
 		{"POST", base + "sobjects/Account", `{"Name":3}`, token, 400},
 		{"GET", "/services/data/v99.0/sobjects", "", token, 404},
 		{"POST", base + "query", "{}", token, 405},
-		{"POST", base + "composite", "{}", token, 404},
+		{"POST", base + "composite/batch", "{}", token, 404},
 	} {
 		code, _ := request(tt.method, tt.path, tt.body, tt.token)
 		if code != tt.status {

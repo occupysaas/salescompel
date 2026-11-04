@@ -1,9 +1,13 @@
 package platform
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 )
@@ -107,5 +111,80 @@ func TestValidateComposite(t *testing.T) {
 	r.CompositeRequest = append(r.CompositeRequest, CompositeSubrequest{Method: "DELETE", URL: "/services/data/v65.0/sobjects/Account/@{p.id}", ReferenceID: "d"})
 	if err := validateComposite(r); err == nil {
 		t.Fatal("reference to non-POST")
+	}
+}
+
+func TestHTTPCompositeAtomic(t *testing.T) {
+	s := testStore(t)
+	a, _ := principals(t, s)
+	ctx := context.Background()
+	server := httptest.NewServer(NewHandler(s, ""))
+	defer server.Close()
+	request := func(method, path, token, input string) (*http.Response, []byte) {
+		t.Helper()
+		r, e := http.NewRequest(method, server.URL+path, strings.NewReader(input))
+		if e != nil {
+			t.Fatal(e)
+		}
+		if token != "" {
+			r.Header.Set("Authorization", "Bearer "+token)
+		}
+		res, e := server.Client().Do(r)
+		if e != nil {
+			t.Fatal(e)
+		}
+		data, e := io.ReadAll(res.Body)
+		res.Body.Close()
+		if e != nil {
+			t.Fatal(e)
+		}
+		return res, data
+	}
+	path := apiBase + "composite"
+	token := "token-" + a.Tenant
+	for _, tc := range []struct {
+		method, path, token, input string
+		status                     int
+	}{{"POST", path, token, compositeJSON(compositeCreate), 200}, {"POST", path, "", compositeJSON(compositeCreate), 401}, {"POST", path, "bad", compositeJSON(compositeCreate), 401}, {"GET", path, token, "", 405}, {"HEAD", path, token, "", 405}, {"POST", "/services/data/v99.0/composite", token, "{}", 404}, {"POST", path, token, `{"private_marker":true}`, 400}, {"POST", path, token, strings.Repeat(" ", 1<<20) + "{}", 400}} {
+		res, data := request(tc.method, tc.path, tc.token, tc.input)
+		if res.StatusCode != tc.status {
+			t.Fatalf("%s: got %d want %d", tc.method, res.StatusCode, tc.status)
+		}
+		if res.Header.Get("Cache-Control") != "no-store" || res.Header.Get("X-Content-Type-Options") != "nosniff" || res.Header.Get("Content-Security-Policy") == "" {
+			t.Fatal("headers")
+		}
+		if tc.status == 405 && res.Header.Get("Allow") != "POST" {
+			t.Fatal("allow")
+		}
+		if tc.method == "HEAD" && len(data) != 0 {
+			t.Fatal("HEAD body")
+		}
+		if strings.Contains(string(data), "private_marker") {
+			t.Fatal("private diagnostic")
+		}
+		if tc.status == 200 {
+			var out map[string]any
+			if json.Unmarshal(data, &out) != nil || len(out) != 1 {
+				t.Fatal("envelope")
+			}
+			entry := out["compositeResponse"].([]any)[0].(map[string]any)
+			if len(entry) != 4 || entry["httpStatusCode"] != float64(201) || entry["referenceId"] != "a" || len(entry["httpHeaders"].(map[string]any)) != 0 {
+				t.Fatal("entry")
+			}
+		}
+	}
+	res, data := request("POST", path, token, compositeJSON(compositeCreate+`,{"method":"PATCH","url":"/services/data/v65.0/sobjects/Account/@{a.id}","referenceId":"bad","body":{"Unknown":true}}`))
+	if res.StatusCode != 200 || !strings.Contains(string(data), "PROCESSING_HALTED") || !strings.Contains(string(data), "INVALID_FIELD") {
+		t.Fatal("rollback envelope")
+	}
+	_, data = request("GET", strings.TrimSuffix(apiBase, "/"), token, "")
+	var resources map[string]string
+	_ = json.Unmarshal(data, &resources)
+	if resources["composite"] != path || len(resources) != 4 {
+		t.Fatal("discovery")
+	}
+	var n int
+	if e := s.pool.QueryRow(ctx, "SELECT count(*) FROM accounts WHERE tenant_id=$1", a.Tenant).Scan(&n); e != nil || n != 1 {
+		t.Fatal("HTTP partial writes", e, n)
 	}
 }

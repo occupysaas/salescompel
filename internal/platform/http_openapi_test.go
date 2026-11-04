@@ -98,7 +98,7 @@ func TestHTTPServedOpenAPI(t *testing.T) {
 	if json.NewDecoder(res.Body).Decode(&resources) != nil {
 		t.Fatal("bad discovery")
 	}
-	if len(resources) != 3 || resources["openapi"] != apicontract.CandidateOpenAPIPath {
+	if len(resources) != 4 || resources["openapi"] != apicontract.CandidateOpenAPIPath {
 		t.Fatal("missing or widened resource discovery")
 	}
 }

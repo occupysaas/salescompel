@@ -138,7 +138,7 @@ func NewHandler(s *Store, assetDir string) http.Handler {
 		}
 		if path == strings.TrimSuffix(apiBase, "/") {
 			if method(w, r, "GET") {
-				writeJSON(w, 200, map[string]string{"sobjects": apiBase + "sobjects", "query": apiBase + "query", "openapi": apicontract.CandidateOpenAPIPath})
+				writeJSON(w, 200, map[string]string{"sobjects": apiBase + "sobjects", "query": apiBase + "query", "openapi": apicontract.CandidateOpenAPIPath, "composite": apiBase + "composite"})
 			}
 			return
 		}
@@ -154,6 +154,23 @@ func NewHandler(s *Store, assetDir string) http.Handler {
 				return
 			}
 			parts[i] = decoded
+		}
+		if parts[0] == "composite" && len(parts) == 1 {
+			if !method(w, r, "POST") {
+				return
+			}
+			req, e := decodeComposite(r.Body)
+			if e != nil {
+				writeError(w, e)
+				return
+			}
+			result, e := s.Composite(ctx, p, req)
+			if e != nil {
+				writeError(w, e)
+				return
+			}
+			writeJSON(w, 200, result)
+			return
 		}
 		if parts[0] == "query" && len(parts) == 1 {
 			if !method(w, r, "GET") {

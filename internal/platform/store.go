@@ -234,10 +234,13 @@ func (s *Store) Update(ctx context.Context, p Principal, object, id string, data
 	return update(ctx, s.pool, p, object, id, data)
 }
 func (s *Store) Delete(ctx context.Context, p Principal, object, id string) error {
+	return deleteRecord(ctx, s.pool, p, object, id)
+}
+func deleteRecord(ctx context.Context, db database, p Principal, object, id string) error {
 	if _, err := Describe(p, object); err != nil {
 		return err
 	}
-	tag, err := s.pool.Exec(ctx, "DELETE FROM "+table(object)+" WHERE tenant_id=$1 AND id=$2", p.Tenant, id)
+	tag, err := db.Exec(ctx, "DELETE FROM "+table(object)+" WHERE tenant_id=$1 AND id=$2", p.Tenant, id)
 	if err != nil {
 		return dbError(err)
 	}
