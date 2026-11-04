@@ -19,6 +19,25 @@ source. There is no generated JSON twin or regeneration dependency. Existing
 OpenAPI 3.2 minor tooling accepted the minimal 3.2.1 planning probe and the full
 candidate document. Request business rules and authorization remain server checks.
 
-Task 1: three document/inventory/provenance/schema tests pass; typecheck and offline
-repository validation pass. Authenticated route, traffic validation, full candidate
+## Implementation verification so far
+
+The authenticated route and immutable embedded bytes pass two real Go tests against
+an owned disposable PostgreSQL 17 database, with zero skips. Nine offline document
+and traffic tests pass, along with typecheck. The acceptance-wiring tests pass;
+the new candidate/openapi/traffic parent also passes against a real owned HTTPS
+candidate and asserts exact coverage of all nineteen fixed operationIds. This
+focused development run reused the existing preflight/service/fixture helpers.
+
+The offline lab check passed: 422 test/subtest events, 418 passed, four opt-in
+candidate tests skipped, zero failed. Typecheck, formatting and offline validation
+passed, including eleven reviewed historical pilot observations/not_run=0. These
+are not new Salesforce observations or parity certification. Full candidate
 acceptance and independent review remain pending.
+
+Implementation ruling: existing acceptance source roots excluded api/. Add api/
+so the newly embedded YAML and Go code affect the source digest and untracked API
+code prevents clean acceptance. A regression failed before the fix and passed
+afterward, checking both byte changes and untracked inputs. This adds only the
+preflight module/test to the planned file boundary. All 390 other protected
+pre-existing file hashes match; original source registry content is unchanged
+and new entries are append-only.

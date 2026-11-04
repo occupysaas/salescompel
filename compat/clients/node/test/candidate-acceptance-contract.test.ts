@@ -12,6 +12,38 @@ import {
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+test("coverage requires the OpenAPI parent and database route measurement", () => {
+  for (const [suite, id] of [
+    ["jsforce", "candidate/openapi/traffic"],
+    ["database", "TestHTTPServedOpenAPI"],
+  ] as const) {
+    const complete: ParsedResult = {
+      schemaVersion: 1,
+      runId: "a".repeat(24),
+      suite,
+      complete: true,
+      exitCode: 0,
+      tests: [...new Set([...requiredCoverage[suite], id])].map((id) => ({
+        id,
+        outcome: "passed",
+      })),
+    };
+    assert.equal(assessCoverage(suite, complete).outcome, "passed");
+    for (const tests of [
+      complete.tests.filter((t) => t.id !== id),
+      complete.tests.map((t) =>
+        t.id === id ? { ...t, outcome: "skipped" as const } : t,
+      ),
+      complete.tests.map((t) =>
+        t.id === id ? { ...t, id: "wrong-file::" + id } : t,
+      ),
+    ])
+      assert.equal(
+        assessCoverage(suite, { ...complete, tests }).outcome,
+        "failed",
+      );
+  }
+});
 test("coverage refuses empty, skipped and incomplete required client results", () => {
   const base = {
     schemaVersion: 1 as const,

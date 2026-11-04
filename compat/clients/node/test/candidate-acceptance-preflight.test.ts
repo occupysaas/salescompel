@@ -3,6 +3,63 @@ import assert from "node:assert/strict";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+test("source binding includes embedded API bytes and refuses untracked API code", async (t) => {
+  const { mkdir, copyFile, writeFile } = await import("node:fs/promises");
+  const { execFileSync } = await import("node:child_process");
+  const { ROOT } = await import("../src/versions.ts");
+  const dir = await mkdtemp(join(tmpdir(), "p23-bindings-"));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  for (const file of [
+    "go.mod",
+    "go.sum",
+    "web/package-lock.json",
+    "compat/clients/node/package-lock.json",
+    "compat/clients/python/requirements.lock",
+    "internal/platform/catalog.go",
+    "internal/platform/metadata.go",
+    "internal/platform/catalog_migration.go",
+    "internal/platform/catalog_v1.json",
+    "internal/platform/schema.sql",
+    "api/candidate-openapi.yaml",
+    "api/candidate_contract.go",
+  ]) {
+    const { dirname } = await import("node:path");
+    await mkdir(dirname(join(dir, file)), { recursive: true });
+    await copyFile(join(ROOT, file), join(dir, file));
+  }
+  const git = (args: string[]) =>
+    execFileSync("git", args, { cwd: dir, stdio: "ignore" });
+  git(["init", "-q"]);
+  git(["add", "."]);
+  git([
+    "-c",
+    "user.name=Fixture",
+    "-c",
+    "user.email=fixture@example.invalid",
+    "commit",
+    "-qm",
+    "fixture",
+  ]);
+  const initial = await collectSourceBindings(dir);
+  assert.equal(initial.clean, true);
+  await writeFile(join(dir, "api/new.go"), "package apicontract\n");
+  assert.equal((await collectSourceBindings(dir)).clean, false);
+  await rm(join(dir, "api/new.go"));
+  await writeFile(
+    join(dir, "api/candidate-openapi.yaml"),
+    "changed contract\n",
+  );
+  assert.notEqual((await collectSourceBindings(dir)).source, initial.source);
+  await copyFile(
+    join(ROOT, "api/candidate-openapi.yaml"),
+    join(dir, "api/candidate-openapi.yaml"),
+  );
+  await writeFile(
+    join(dir, "api/candidate_contract.go"),
+    "package apicontract\n",
+  );
+  assert.notEqual((await collectSourceBindings(dir)).source, initial.source);
+});
 import {
   preflightAcceptance,
   collectSourceBindings,

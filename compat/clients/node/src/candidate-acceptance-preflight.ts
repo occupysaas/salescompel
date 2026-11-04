@@ -46,7 +46,7 @@ export interface GateContext {
   out: string;
 }
 const roots =
-  /^(go\.(mod|sum)$|cmd\/|internal\/|scripts\/|compat\/|web\/|locales\/|\.github\/workflows\/platform\.yml$)/;
+  /^(go\.(mod|sum)$|api\/|cmd\/|internal\/|scripts\/|compat\/|web\/|locales\/|\.github\/workflows\/platform\.yml$)/;
 export async function collectSourceBindings(root = ROOT): Promise<Bindings> {
   const git = async (args: string[]) =>
     (await exec("git", args, { cwd: root, maxBuffer: 16 * 1024 * 1024 }))

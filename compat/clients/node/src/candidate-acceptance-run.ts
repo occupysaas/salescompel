@@ -106,6 +106,21 @@ export async function withAcceptanceSignals<T>(
     process.off("SIGTERM", handler);
   }
 }
+export function candidateNodeTestArgs(
+  reporterPath: string,
+  reportPath: string,
+): string[] {
+  return [
+    "--import",
+    "tsx",
+    "--test",
+    "--test-reporter=" + reporterPath,
+    "--test-reporter-destination=" + reportPath,
+    "test/candidate.test.ts",
+    "test/candidate-openapi.test.ts",
+  ];
+}
+
 export async function runAcceptance(
   options: AcceptanceOptions,
   env: NodeJS.ProcessEnv,
@@ -276,18 +291,13 @@ export async function runAcceptance(
       const path = join(ctx.scratch, "jsforce.jsonl"),
         r = await command(
           process.execPath,
-          [
-            "--import",
-            "tsx",
-            "--test",
-            "--test-reporter=" +
-              join(
-                ROOT,
-                "compat/clients/node/src/candidate-acceptance-node-reporter.mjs",
-              ),
-            "--test-reporter-destination=" + path,
-            "test/candidate.test.ts",
-          ],
+          candidateNodeTestArgs(
+            join(
+              ROOT,
+              "compat/clients/node/src/candidate-acceptance-node-reporter.mjs",
+            ),
+            path,
+          ),
           "jsforce",
           { RUN_CANDIDATE: "1" },
           join(ROOT, "compat/clients/node"),

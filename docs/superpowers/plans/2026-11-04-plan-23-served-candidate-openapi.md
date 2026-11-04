@@ -42,8 +42,8 @@
 | Create `compat/clients/node/test/candidate-openapi.test.ts` | Opt-in live candidate HTTP inventory, behavior and schema assertions. |
 | Modify `compat/clients/node/src/validate.ts` | Add the candidate contract/invariants to normal offline validation. |
 | Append `docs/compat/sources.yaml` | New source/version/read-boundary records; existing entries unchanged. |
-| Modify `compat/clients/node/src/candidate-acceptance-{contract,results,run}.ts` | Required identities, identity preservation and explicit test-file invocation. |
-| Modify `compat/clients/node/test/candidate-acceptance-{contract,results,run}.test.ts` | Prove new identity/Go test coverage and runner inclusion. |
+| Modify `compat/clients/node/src/candidate-acceptance-{contract,results,run,preflight}.ts` | Required identities, identity preservation and explicit test-file invocation. |
+| Modify `compat/clients/node/test/candidate-acceptance-{contract,results,run,preflight}.test.ts` | Prove new identity/Go test coverage and runner inclusion. |
 | Modify `README.md`, `docs/compat/plan-2-implementation.md` | Current serving/setup statements only; preserve historical evidence. |
 | Create `docs/compat/plan-23-served-candidate-openapi.md` | Actual commands, coverage/results, sources, limitations and review. |
 
@@ -114,7 +114,9 @@ assert.ok(unmatched.requestIssues.includes('method'));
 
 ### Task 4: Require live contract coverage in candidate acceptance and publish results
 
-**Files:** Create candidate-openapi.test.ts; modify candidate-acceptance-{contract,results,run}.ts and the three corresponding test files. Update README/current candidate-guide text and complete the Plan 23 execution report; update this plan/spec status only from measured evidence.
+**Files:** Create candidate-openapi.test.ts; modify candidate-acceptance-{contract,results,run,preflight}.ts and the three corresponding test files. Update README/current candidate-guide text and complete the Plan 23 execution report; update this plan/spec status only from measured evidence.
+
+**Implementation ruling:** Include api/ in collectSourceBindings and regress both changed embedded inputs and untracked API code. The existing source roots omitted the new binary inputs; this is required to bind acceptance to the delivered contract.
 
 **Interfaces:**
 - Consumes: Task 2 serving path/bytes, Task 3 validator, existing CANDIDATE_URL/TOKEN/RESTRICTED_TOKEN/OTHER_TOKEN/RUN_ID/FIXTURE_JOURNAL environment, recordFixtureEvent/trackFixtureAttempt and acceptance reporter/coverage APIs.

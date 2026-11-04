@@ -65,10 +65,14 @@ Generated IDs are stable 18-character IDs with case checksum. Null is preserved;
 omitted PATCH fields remain unchanged. A blank string in an optional field is stored
 as null, so blank external IDs never collide and match `= null`. Deleting a referenced Account is rejected.
 
-The broader `api/openapi.yaml` remains a proposed contract and is **not served** by
-the candidate, although the roadmap assigned serving it to M2; this is deferred to
-M3, together with per-operation `x-source` provenance and validating HTTP test
-traffic against the document. Composite, collections,
+The candidate serves its [bounded OpenAPI contract](../../api/candidate-openapi.yaml)
+through authenticated GET `/services/data/v65.0/openapi.yaml`; the v65.0 resource
+map includes its `openapi` link. The canonical YAML is embedded in the binary.
+[Plan 23](plan-23-served-candidate-openapi.md) records candidate request/response
+validation and its acceptance boundary. The broader `api/openapi.yaml` remains
+a proposal and is not served. A general Go traffic-validation library remains
+unselected; candidate Node tests validate the bounded document/schema subset.
+Composite, collections,
 Metadata/SOAP, Bulk, pagination, user-setting writes, full SOQL, dynamic schema,
 Migration and production identity are **not implemented**. Unsupported routes
 return errors. Do not run the full pilot capture expecting every M3/M4 scenario

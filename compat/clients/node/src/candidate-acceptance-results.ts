@@ -58,9 +58,11 @@ export function parseGateEvents(
     for (const e of events) {
       if (!["test:pass", "test:fail"].includes(e.type)) continue;
       const d = e.data;
-      const id = d.name.startsWith("candidate/jsforce/")
-        ? d.name
-        : `${basename(d.file ?? "unknown")}::${d.name}`;
+      const id =
+        d.name.startsWith("candidate/jsforce/") ||
+        d.name === "candidate/openapi/traffic"
+          ? d.name
+          : `${basename(d.file ?? "unknown")}::${d.name}`;
       out.push({
         id,
         outcome: d.skip

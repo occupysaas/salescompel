@@ -1,6 +1,28 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { parseGateEvents } from "../src/candidate-acceptance-results.ts";
+test("OpenAPI parent identity survives Node result parsing without changing ordinary identities", () => {
+  const events = [
+    {
+      type: "test:pass",
+      data: {
+        name: "candidate/openapi/traffic",
+        file: "candidate-openapi.test.ts",
+      },
+    },
+    {
+      type: "test:pass",
+      data: { name: "ordinary", file: "candidate-openapi.test.ts" },
+    },
+    { type: "test:summary", data: {} },
+  ]
+    .map((e) => JSON.stringify(e))
+    .join("\n");
+  assert.deepEqual(parseGateEvents("node", events, "jsforce"), [
+    { id: "candidate/openapi/traffic", outcome: "passed" },
+    { id: "candidate-openapi.test.ts::ordinary", outcome: "passed" },
+  ]);
+});
 test("native event adapters require terminal evidence and preserve failures and skips", () => {
   assert.throws(() => parseGateEvents("node", "", "lab"));
   const events = [

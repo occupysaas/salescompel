@@ -29,6 +29,7 @@ export interface ParsedResult {
   tests: { id: string; outcome: "passed" | "failed" | "skipped" }[];
 }
 export const candidateNames = [
+  "candidate/openapi/traffic",
   "candidate/jsforce/core",
   "candidate/jsforce/policy",
   "candidate/jsforce/isolation",
@@ -36,6 +37,7 @@ export const candidateNames = [
 export const requiredCoverage: Record<GateID, readonly string[]> = {
   bindings: ["bindings/source", "bindings/tools", "bindings/artifacts"],
   database: [
+    "TestHTTPServedOpenAPI",
     "TestCatalogFreshV2",
     "TestCatalogUpgradeV1",
     "TestCatalogUpgradeOversizedRollback",
