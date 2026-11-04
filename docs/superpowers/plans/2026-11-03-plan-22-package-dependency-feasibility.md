@@ -87,7 +87,7 @@ Use proper union narrowing in actual tests. Exercise exactly/over 1,048,576 byte
 - Consumes: `PackageManifest` from a successful Task 1 parse; input is trusted parser-owned plain data, not forged/proxy objects.
 - Produces: `resolvePackageManifest(manifest:PackageManifest):PackageResolution` from resolve.ts. It does not mutate the input and has no I/O.
 
-- [ ] **Step 1: Write failing graph tests** named `resolvesExactClosure`, `rejectsWholeInvalidModel`, `bindsExplicitProvider`, `preservesNamespaceIdentity` and `requiresDirectDependency`. Include the following checks, using test helpers to parse before resolving:
+- [x] **Step 1: Write failing graph tests** named `resolvesExactClosure`, `rejectsWholeInvalidModel`, `bindsExplicitProvider`, `preservesNamespaceIdentity` and `requiresDirectDependency`. Include the following checks, using test helpers to parse before resolving:
 
 ```ts
 assert.deepEqual(linked.closure, [
@@ -100,10 +100,10 @@ assert.deepEqual(badUnreachable.bindings, []);
 ```
 
 Pin all model issue codes with separate cases: duplicate root/package/dependency/component/reference/requirement, missing root/provider/component, version mismatch, self/multi-node cycle, exact symbol collision and undeclared dependency. Diamond closure deduplicates. Same namespace/different symbols and same names/different namespaces or kinds pass; same `(namespace,kind,name)` fails, including null namespace. Explicit provider wins over another namespace's matching name. Shared namespace and transitive reachability confer no implicit import. Validate references in unused components and packages. Allowed `constructor` IDs/member names work via Maps/structural tuples. Invalid outputs have no partial results.
-- [ ] **Step 2: Run RED.** `node --import tsx --test test/package-feasibility-resolve.test.ts`; expect missing resolver failure.
-- [ ] **Step 3: Implement `resolvePackageManifest`.** Validate the complete manifest before publishing results. Use Maps and tuple keys, indexed exact versions, iterative cycle/closure traversal and explicit provider lookup. Repeated package IDs invalidate even when versions differ. Sort closure by packageId; sort bindings ordinally by consumer package/kind/name then provider package/kind/name/namespace (null before strings). Sort/deduplicate issues exactly as the spec requires. Never return an installation order or treat synthetic binding as real visibility.
-- [ ] **Step 4: Verify GREEN.** Run both parser and resolver test files, then `npm run typecheck`; expect exit 0/no skips. Format only touched new TS files.
-- [ ] **Step 5: Commit named files.** Commit `feat: resolve synthetic package graphs and qualified symbols`.
+- [x] **Step 2: Run RED.** `node --import tsx --test test/package-feasibility-resolve.test.ts`; expect missing resolver failure.
+- [x] **Step 3: Implement `resolvePackageManifest`.** Validate the complete manifest before publishing results. Use Maps and tuple keys, indexed exact versions, iterative cycle/closure traversal and explicit provider lookup. Repeated package IDs invalidate even when versions differ. Sort closure by packageId; sort bindings ordinally by consumer package/kind/name then provider package/kind/name/namespace (null before strings). Sort/deduplicate issues exactly as the spec requires. Never return an installation order or treat synthetic binding as real visibility.
+- [x] **Step 4: Verify GREEN.** Run both parser and resolver test files, then `npm run typecheck`; expect exit 0/no skips. Format only touched new TS files.
+- [x] **Step 5: Commit named files.** Commit `feat: resolve synthetic package graphs and qualified symbols`.
 
 ### Task 3: Compose deterministic execution blocker assessments
 
