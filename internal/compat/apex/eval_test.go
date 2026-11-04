@@ -239,3 +239,20 @@ func TestRunInputs(t *testing.T) {
 		t.Fatal("inputs changed")
 	}
 }
+
+func TestRunRejectsOutOfSubsetBeforeHost(t *testing.T) {
+	for _, body := range []string{"Integer x = 1; (x) = 2;", "null.Name = 'x';", "String s = ('x').Name;"} {
+		for _, replacement := range []string{body + " return 0;", "return 0; if (false) { " + body + " }"} {
+			req := request(strings.Replace(fixture(t, "rename.cls"), "return 0;", replacement, 1), "Rename.run", String("g"), String("new"))
+			store := makeStore(t, hostRows())
+			before := store.Snapshot()
+			var events []string
+			_, err := run(context.Background(), req, store, hostPolicy(), func(event string) { events = append(events, event) })
+			wantCode(t, err, "syntax")
+			if len(events) != 0 {
+				t.Fatal("out-of-subset source reached host", events)
+			}
+			sameStore(t, store, before)
+		}
+	}
+}

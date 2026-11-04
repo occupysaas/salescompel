@@ -99,3 +99,26 @@ func TestCompileRejectsQuotedGrammar(t *testing.T) {
 		}
 	}
 }
+
+func TestCompileRestrictsAssignmentAndFieldGrammar(t *testing.T) {
+	for _, body := range []string{
+		"Integer x = 1; (x) = 2; return x;",
+		"null.Name = 'x'; return 0;",
+		"String s = ('x').Name; return 0;",
+		"Account a = null; String s = (a).Name; return 0;",
+		"String s = 1.Name; return 0;",
+		"String s = 'x'.Name; return 0;",
+	} {
+		for _, prefix := range []string{"", "return 0; if (false) { "} {
+			suffix := ""
+			if prefix != "" {
+				suffix = " }"
+			}
+			p, err := compile(source(prefix+body+suffix), DefaultLimits())
+			wantCode(t, err, "syntax")
+			if p != nil {
+				t.Fatal("out-of-subset program accepted")
+			}
+		}
+	}
+}

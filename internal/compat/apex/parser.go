@@ -193,11 +193,21 @@ func (p *parser) stmt() *statement {
 		p.expect(";")
 	default:
 		s.op = "assign"
-		s.target = p.primary()
-		if p.err == nil && (s.target == nil || (s.target.op != "variable" && s.target.op != "field")) {
+		if t.kind != "word" {
 			p.fail("syntax")
+			return s
 		}
-		if s.target != nil && s.target.op == "field" && s.target.name != "Name" {
+		s.target = p.node(t, "variable", nil, nil)
+		s.target.name = p.identifier()
+		if p.accept(".") {
+			f := p.peek()
+			if !p.accept("Name") {
+				p.fail("unsupported")
+			}
+			s.target = p.node(f, "field", s.target, nil)
+			s.target.name = "Name"
+		}
+		if p.at("(") || p.at(".") {
 			p.fail("unsupported")
 		}
 		p.expect("=")
@@ -318,6 +328,10 @@ func (p *parser) primary() *expression {
 	default:
 		p.fail("syntax")
 		return nil
+	}
+	if p.at(".") && (n == nil || n.op != "variable" || t.kind != "word") {
+		p.fail("syntax")
+		return n
 	}
 	if p.accept(".") {
 		f := p.take()
