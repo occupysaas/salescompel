@@ -1,7 +1,7 @@
 import { ScriptLexer } from './lex.ts';
 import type { Meter } from './limits.ts';
 import type { Field, Method, Statement, ValueExpr } from './model.ts';
-const reserved = new Set(['constructor', 'prototype', '__proto__', 'dispatchEvent', 'LightningElement', 'api', 'render', 'renderedCallback', 'disconnectedCallback', 'errorCallback', 'import', 'export', 'class', 'extends', 'static', 'get', 'set', 'this', 'event']);
+const reserved = new Set(['constructor', 'prototype', '__proto__', 'dispatchEvent', 'LightningElement', 'api', 'render', 'renderedCallback', 'disconnectedCallback', 'errorCallback']);
 export function parseScript(source: string, meter: Meter): {
     fields: Field[];
     methods: Method[];
@@ -89,6 +89,8 @@ export function parseScript(source: string, meter: Meter): {
             if (statements >= meter.limits.statements)
                 l.error('budget');
             statements++;
+            if (!l.at('this'))
+                l.error('unsupported');
             const t = l.expect('this');
             l.expect('.');
             const target = l.word();

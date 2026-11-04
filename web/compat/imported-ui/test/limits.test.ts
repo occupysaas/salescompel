@@ -21,3 +21,21 @@ test('meterBounds', () => {
     assert.throws(() => cancelled.step(), { code: 'cancelled' });
     assert.equal(cancelled.used.steps, 0);
 });
+test('default counters and decoded UTF8 boundaries are exact', async () => {
+    const { ScriptLexer } = await import('../lex.ts');
+    const { parseTemplate } = await import('../markup.ts');
+    const text = "'" + 'é'.repeat(2048) + "'";
+    assert.equal(new ScriptLexer(text, 'js', good(createMeter(defaultLimits()))).take().text.length, 2048);
+    assert.throws(() => new ScriptLexer(text.slice(0, -1) + "é'", 'js', good(createMeter(defaultLimits()))).take(), { code: 'budget' });
+    const one = new ScriptLexer("'x'", 'js', good(createMeter({ ...defaultLimits(), tokens: 1 })));
+    one.take();
+    assert.equal(one.take().kind, 'eof');
+    const two = new ScriptLexer("'x' 'y'", 'js', good(createMeter({ ...defaultLimits(), tokens: 1 })));
+    two.take();
+    assert.throws(() => two.take(), { code: 'budget' });
+    const html = '<template>' + '<span></span>'.repeat(584) + 'x</template>';
+    parseTemplate(html, good(createMeter({ ...defaultLimits(), templateNodes: 1000 })));
+    assert.throws(() => parseTemplate(html, good(createMeter({
+        ...defaultLimits(), templateNodes: 1000, tokens: 4095
+    }))), { code: 'budget' });
+});

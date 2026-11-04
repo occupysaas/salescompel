@@ -1,4 +1,5 @@
-import { openRecord } from './record-controller.ts';
+import type { Scenario } from './test/scenario-data.ts';
+import { openRecord, openRecordObserved } from './record-controller.ts';
 import { createStore } from './host.ts';
 // Trusted developer harness. Fixture JavaScript is imported only as inert raw text.
 import html from './testdata/accountCard/accountCard.html?raw';
@@ -68,7 +69,45 @@ document.querySelector('#mounts')!.addEventListener('click', () => queueMicrotas
     const error = instances.map(i => i.diagnostic).find(e => e !== undefined);
     document.querySelector('#status')!.textContent = error?.message ?? 'Action completed';
 }));
+function runScenario(s: Scenario, bundle: SourceBundle) {
+    const created = createStore(s.records);
+    if (!created.ok)
+        throw created.error;
+    const store = created.value;
+    const div = document.createElement('div');
+    const events: string[] = [];
+    const out = openRecordObserved(div, bundle, {
+        identity: s.identity, policy: s.policy, recordId: s.recordId
+    }, store, s.limits, undefined, label => {
+        if (label === 'host-save')
+            events.push('save');
+    });
+    if (!out.ok)
+        return {
+            text: null, input: null, events, store: store.snapshot(), diagnostic: out.error.code
+        };
+    document.querySelector('#mounts')!.append(div);
+    const instance = out.value;
+    for (const action of s.actions) {
+        if (action.type === 'props')
+            instance.updatePublic(action.value);
+        else if (action.type === 'click')
+            div.shadowRoot!.querySelector('button')!.click();
+        else {
+            const input = div.shadowRoot!.querySelector('input')!;
+            input.value = action.value;
+            input.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+        }
+    }
+    const result = {
+        text: div.shadowRoot!.textContent, input: div.shadowRoot!.querySelector('input')?.value ?? null, events, store: store.snapshot(), diagnostic: instance.diagnostic?.code ?? null
+    };
+    instance.dispose();
+    div.remove();
+    return result;
+}
 const probe = {
+    runScenario,
     store, open,
     fixture, events, instances, containers, mountInto, mount(props = { recordId: '1', name: 'First' }, source: SourceBundle = fixture, limits: Limits = defaultLimits()) {
         const div = document.createElement('div');

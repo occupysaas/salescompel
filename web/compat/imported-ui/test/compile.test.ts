@@ -77,3 +77,30 @@ test('source is captured before invocation observer can mutate caller bundle', (
     }));
     assert.equal(p.template.children[0].tag, 'section');
 });
+test('all member statement model and bundle limits pass exactly then fail', () => {
+    const b = fixture();
+    const size = ['html', 'js', 'metadata'].reduce((n, k) => n + new TextEncoder().encode(b[k as 'html' | 'js' | 'metadata']).length, 0);
+    good(compileBundle(b, { ...defaultLimits(), bundleBytes: size }));
+    bad(compileBundle(b, { ...defaultLimits(), bundleBytes: size - 1 }), 'budget');
+    good(compileBundle(b, { ...defaultLimits(), templateNodes: 12 }));
+    bad(compileBundle(b, { ...defaultLimits(), templateNodes: 11 }), 'budget');
+    for (const [count, key, addition] of [[13, 'fields', (i: number) => `f${i} = '';`], [5, 'methods', (i: number) => `m${i}() {}`], [61, 'statements', (_i: number) => `this.draft = 'x';`]] as const) {
+        const extra = (n: number) => key === 'statements' ? `extra() {${Array.from({ length: n }, (_, i) => addition(i)).join('')}}` : Array.from({ length: n }, (_, i) => addition(i)).join('');
+        good(compileBundle({ ...b, js: b.js.replace(/}\s*$/, extra(count) + '}') }, defaultLimits()));
+        bad(compileBundle({ ...b, js: b.js.replace(/}\s*$/, extra(count + 1) + '}') }, defaultLimits()), 'budget');
+    }
+});
+test('abort during token processing does not produce a program', () => {
+    const c = new AbortController();
+    let tokens = 0;
+    const err = bad(compileObserved(fixture(), defaultLimits(), c.signal, label => {
+        if (label === 'token' && ++tokens === 8)
+            c.abort();
+    }), 'cancelled');
+    assert.equal(tokens, 8);
+    assert(err.offset > 0);
+});
+test('ordinary member names outside the explicit reserved set remain supported', () => {
+    const b = fixture();
+    good(compileBundle({ ...b, js: b.js.replace('draft =', "event = 'unused'; draft =") }, defaultLimits()));
+});

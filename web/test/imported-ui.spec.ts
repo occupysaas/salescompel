@@ -1,3 +1,4 @@
+import { scenarios, loadBundle } from '../compat/imported-ui/test/scenario-data.ts';
 import { test, expect } from '@playwright/test';
 test.beforeEach(async ({ page }) => {
     await page.goto('/');
@@ -135,4 +136,91 @@ test('trusted callback exceptions become bounded host diagnostics', async ({ pag
     await page.getByRole('button', { name: 'Save', exact: true }).click();
     const message = await page.evaluate(() => (window as any).probe.instances[0].diagnostic.message);
     expect(message).toBe('host host none -1');
+});
+test('cancellation before publication restores input and emits no event', async ({ page }) => {
+    await page.evaluate(() => {
+        const p = (window as any).probe;
+        const div = document.createElement('div');
+        document.querySelector('#mounts')!.append(div);
+        const c = new AbortController();
+        let armed = false;
+        const model = p.compileBundle(p.fixture, p.defaultLimits()).value;
+        const out = p.mountObserved(div, model, { recordId: '1', name: 'First' }, {
+            limits: p.defaultLimits(), signal: c.signal, onEvent: (e: any) => {
+                p.events.push(e);
+                return { ok: true, value: undefined };
+            }
+        }, (label: string) => {
+            if (armed && label === 'publish')
+                c.abort();
+        });
+        p.instances.push(out.value);
+        armed = true;
+    });
+    await page.getByRole('textbox').fill('Changed');
+    await expect(page.getByRole('textbox')).toHaveValue('First');
+    await expect(page.getByText('Draft: First', { exact: true })).toBeVisible();
+    expect(await page.evaluate(() => (window as any).probe.instances[0].diagnostic.code)).toBe('cancelled');
+    expect(await page.evaluate(() => (window as any).probe.events)).toEqual([]);
+});
+test('step exhaustion after staged assignments never publishes', async ({ page }) => {
+    const out = await page.evaluate(() => {
+        const p = (window as any).probe;
+        const source = { ...p.fixture, js: p.fixture.js.replace("handleSave() {", "handleSave() { " + "this.draft = 'Changed';".repeat(30)) };
+        return p.mount({ recordId: '1', name: 'First' }, source, { ...p.defaultLimits(), steps: 50 }).ok;
+    });
+    expect(out).toBe(true);
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    await expect(page.getByRole('textbox')).toHaveValue('First');
+    expect(await page.evaluate(() => (window as any).probe.instances[0].diagnostic.code)).toBe('budget');
+    expect(await page.evaluate(() => (window as any).probe.events)).toEqual([]);
+});
+test('one compiled model serves independent live instances', async ({ page }) => {
+    await page.evaluate(() => {
+        const p = (window as any).probe;
+        const model = p.compileBundle(p.fixture, p.defaultLimits()).value;
+        for (const name of ['First', 'Second']) {
+            const div = document.createElement('div');
+            document.querySelector('#mounts')!.append(div);
+            const out = p.mountComponent(div, model, { recordId: name, name }, { limits: p.defaultLimits(), onEvent: (e: any) => {
+                    p.events.push(e);
+                    return { ok: true, value: undefined };
+                } });
+            p.instances.push(out.value);
+        }
+    });
+    await page.getByRole('textbox').first().fill('Edit A');
+    await page.evaluate(() => (window as any).probe.instances[0].updatePublic({ name: 'Refreshed' }));
+    await expect(page.getByRole('heading', { name: 'Refreshed', exact: true })).toBeVisible();
+    await expect(page.getByRole('textbox').first()).toHaveValue('Edit A');
+    await expect(page.getByRole('textbox').last()).toHaveValue('Second');
+    await page.evaluate(() => (window as any).probe.instances[0].dispose());
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    expect(await page.evaluate(() => (window as any).probe.events)).toEqual([{ type: 'save', detail: 'Second' }]);
+});
+// JSON expectations are independent inputs; every browser assertion runs on live DOM.
+for (const scenario of scenarios)
+    test('browser scenario ' + scenario.id, async ({ page }) => {
+        const bundle = loadBundle(scenario.bundle);
+        for (let repeat = 0; repeat < 2; repeat++) {
+            if (repeat)
+                await page.goto('/');
+            await page.waitForFunction(() => !!(window as any).probe?.runScenario);
+            const result = await page.evaluate(({ scenario, bundle }) => (window as any).probe.runScenario(scenario, bundle), { scenario, bundle });
+            expect(result).toEqual(scenario.expected);
+        }
+    });
+test('stale DOM listeners cannot save after disposal', async ({ page }) => {
+    await page.evaluate(() => (window as any).probe.open());
+    await page.getByRole('textbox').fill('Changed');
+    expect(await page.evaluate(() => {
+        const p = (window as any).probe;
+        const button = p.containers[0].shadowRoot.querySelector('button');
+        p.instances[0].dispose();
+        button.click();
+        return p.store.snapshot()[0].name;
+    })).toBe('First');
+});
+test('raw fixture text is preserved by the harness loader', async ({ page }) => {
+    expect(await page.evaluate(() => (window as any).probe.fixture)).toEqual(loadBundle('accountCard'));
 });

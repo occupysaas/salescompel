@@ -85,4 +85,71 @@ and record ID; there is no LDS/UI API, real auth, persistence, Flow or Apex brid
 
 ## Results
 
-Pending implementation, browser execution and fresh whole-change review.
+The isolated implementation and initial verification ran on 2026-11-03.
+Current result: 43 experiment Node tests and 37 dedicated Chromium tests passed,
+with no skips. The JSON matrix has 22 scenarios; each runs twice in both the
+Node model/host runner and real browser runner. Actual outcomes are recorded by
+the test runners, not inferred from expected JSON. Fresh whole-change review and
+final native-product verification are pending.
+
+Reproduction (from `web/`):
+
+```sh
+node --experimental-strip-types --test compat/imported-ui/test/*.test.ts
+node_modules/.bin/tsc -p compat/imported-ui/tsconfig.json --noEmit
+CHROMIUM_PATH=/usr/bin/chromium node_modules/.bin/playwright test -c playwright.imported-ui.config.ts
+node_modules/.bin/vite build --config compat/imported-ui/vite.config.ts
+```
+
+| Required experiment | Actual tests / assertions | Result |
+| --- | --- | --- |
+| Unchanged source → DOM | `compilePreservedBundle`, JSON load/edit-save/tenant-b, `rendersAndEditsPreservedBundle`, raw loader equality | Passed: original per-file SHA-256 remains identical across inputs/repeats; actual keyboard/input/click updates draft, emits exact String detail and changes only bound Name. |
+| Public/private lifecycle | `initializePrivateState`, `prepareOrderedAction`, public-update scenario, compiled-model browser reuse | Passed: one connected callback, private edits retained across public updates, no shared model/state/listeners. |
+| Browser usability | `retainsInputFocusAndCaret`, `rendersMarkupAsText`, root/disposal tests | Passed: actual Chromium node identity/focus/caret retained, accessible named controls, markup-shaped text inert, other instance remains usable. |
+| Host boundary | `recordBoundReadAndSave`, `rejectHostCapabilities`, source-first integration/browser session tests | Passed: same ID across tenants, complete-store equality on denied/missing/wrong-owner/stale/malformed events, fixed captured record ID. Denied save keeps draft and preserves all records. |
+| Complete rejection | `rejectWholeBundle`, `rejectsBeforeReadOrDOM`, unsupported JSON bundles, browser DOM absence | Passed: connected/unused/trailing bad source rejects before host read or component DOM/listeners. No fixture-name dispatch. |
+| Bounds/failure atomicity | compile/meter exact boundaries, UTF-8/entity counters, event/steps cases, `discardsFailedPatch` | Passed: configured byte/token/depth/member/statement/node/String/step/event checks; failed staged edits restore prior model/DOM/native input and emit nothing. |
+| Cancellation/disposal | token abort, `abortPreparedAction`, browser cancellation before publication, reused/disposed roots, stale DOM click | Passed: deterministic private checkpoints, no sleeps, no late store write from disposed component. |
+| Repeatability/isolation | all 22 JSON cases ×2 per runner, compiled-model browser reuse | Passed: model/host assertions are Node measurements; DOM/focus/listener behavior is measured in Chromium, never claimed from Node tests. |
+
+All fixtures are independently authored and synthetic. Dedicated Node tests also
+check malformed scenario schemas and safe fixture basenames. Error messages expose
+only category/phase/file/offset; injected source/data markers are never returned.
+The controller's private observer labels include host-read, mount and host-save,
+without values. This is instrumentation for the experiment, not a production API.
+
+During implementation, regressions exposed and corrected three boundary details:
+script nesting must count nested event-call delimiters; source strings must be
+captured before observer callbacks can mutate the caller bundle; ordinary member
+names outside the explicitly reserved set remain legal. Tests failed first and
+passed after correction. Unknown general calls are classified unsupported rather
+than mistaken for malformed supported statements.
+
+## Architecture decision and follow-up gates
+
+Provisional decision pending review/final checks: **Continue** for this tiny
+independently interpreted subset only. Source-driven rendering and fixed record
+bindings work without hand-translating fixtures into Vue. The interpreter exposes
+no JavaScript evaluator or ambient APIs, and safe DOM sinks are inspectable.
+This supplies evidence for a next bounded slice; it does not answer full-JavaScript
+execution or real-target LWC hosting. The synthetic event queue is deliberately
+published after local state/DOM, and host denial has different rollback scope.
+
+An eligible existing LWC runtime would require an explicit license/provenance
+decision plus platform-service and version evidence. An isolated full-JavaScript
+host would require a process/origin/capability design and real resource/security
+verification. Neither alternative was installed, implemented or benchmarked;
+passing this interpreter does not establish either alternative's feasibility.
+
+| Owner | Gate / next action |
+| --- | --- |
+| maintainer | Select a real target and assign imported-component inventory owner; collect exact bundle/API versions, required modules/components, locales and permitted source. |
+| platform-implementer | Design evidence-backed expansion for full JS, dependency resolution, reactivity/event/lifecycle ordering, real services and protected execution. No current DOM/client-policy security claim. |
+| maintainer | Decide eligibility/provenance before any future runtime/SDK reuse; this package adds no such dependency. |
+| platform-implementer | Separate studies for Aura/Visualforce, base components/wire/LDS/UI API, Apex/Flow, styles/navigation/packages and full locale/accessibility fidelity. |
+
+No reference org, database or live client was used. Native Vue/i18n/product routes,
+Plan 19 results, Plan 20 implementation status, Plans 10/14 and all milestone gates
+and estimates remain unchanged. Native DOM allocation, aggregate heap protection,
+synchronous-instruction preemption and rollback after a delivered host save are
+not certified by this experiment.

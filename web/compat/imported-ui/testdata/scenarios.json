@@ -1,0 +1,1790 @@
+[
+  {
+    "id": "load",
+    "bundle": "accountCard",
+    "records": [
+      {
+        "tenant": "a",
+        "id": "1",
+        "name": "First"
+      },
+      {
+        "tenant": "a",
+        "id": "2",
+        "name": "Unrelated"
+      },
+      {
+        "tenant": "b",
+        "id": "1",
+        "name": "Second"
+      }
+    ],
+    "identity": {
+      "tenant": "a",
+      "principal": "writer"
+    },
+    "policy": {
+      "identity": {
+        "tenant": "a",
+        "principal": "writer"
+      },
+      "readAllowed": true,
+      "nameWriteAllowed": true
+    },
+    "recordId": "1",
+    "limits": {
+      "bundleBytes": 49152,
+      "fileBytes": 16384,
+      "tokens": 4096,
+      "nesting": 32,
+      "fields": 16,
+      "methods": 8,
+      "statements": 64,
+      "templateNodes": 128,
+      "stringBytes": 4096,
+      "steps": 512,
+      "events": 1
+    },
+    "actions": [],
+    "expected": {
+      "text": "FirstDraft: FirstName Save",
+      "input": "First",
+      "events": [],
+      "store": [
+        {
+          "tenant": "a",
+          "id": "1",
+          "name": "First"
+        },
+        {
+          "tenant": "a",
+          "id": "2",
+          "name": "Unrelated"
+        },
+        {
+          "tenant": "b",
+          "id": "1",
+          "name": "Second"
+        }
+      ],
+      "diagnostic": null
+    },
+    "basis": "Independent synthetic expectation; source docs inform vocabulary only; no Salesforce observation.",
+    "sourceRefs": [
+      "html",
+      "script",
+      "props",
+      "events",
+      "metadata"
+    ]
+  },
+  {
+    "id": "edit-save",
+    "bundle": "accountCard",
+    "records": [
+      {
+        "tenant": "a",
+        "id": "1",
+        "name": "First"
+      },
+      {
+        "tenant": "a",
+        "id": "2",
+        "name": "Unrelated"
+      },
+      {
+        "tenant": "b",
+        "id": "1",
+        "name": "Second"
+      }
+    ],
+    "identity": {
+      "tenant": "a",
+      "principal": "writer"
+    },
+    "policy": {
+      "identity": {
+        "tenant": "a",
+        "principal": "writer"
+      },
+      "readAllowed": true,
+      "nameWriteAllowed": true
+    },
+    "recordId": "1",
+    "limits": {
+      "bundleBytes": 49152,
+      "fileBytes": 16384,
+      "tokens": 4096,
+      "nesting": 32,
+      "fields": 16,
+      "methods": 8,
+      "statements": 64,
+      "templateNodes": 128,
+      "stringBytes": 4096,
+      "steps": 512,
+      "events": 1
+    },
+    "actions": [
+      {
+        "type": "input",
+        "value": "Changed"
+      },
+      {
+        "type": "click"
+      }
+    ],
+    "expected": {
+      "text": "FirstDraft: ChangedName Save",
+      "input": "Changed",
+      "events": [
+        "save"
+      ],
+      "store": [
+        {
+          "tenant": "a",
+          "id": "1",
+          "name": "Changed"
+        },
+        {
+          "tenant": "a",
+          "id": "2",
+          "name": "Unrelated"
+        },
+        {
+          "tenant": "b",
+          "id": "1",
+          "name": "Second"
+        }
+      ],
+      "diagnostic": null
+    },
+    "basis": "Independent synthetic expectation; source docs inform vocabulary only; no Salesforce observation.",
+    "sourceRefs": [
+      "html",
+      "script",
+      "props",
+      "events",
+      "metadata"
+    ]
+  },
+  {
+    "id": "public-update-retains-edit",
+    "bundle": "accountCard",
+    "records": [
+      {
+        "tenant": "a",
+        "id": "1",
+        "name": "First"
+      },
+      {
+        "tenant": "a",
+        "id": "2",
+        "name": "Unrelated"
+      },
+      {
+        "tenant": "b",
+        "id": "1",
+        "name": "Second"
+      }
+    ],
+    "identity": {
+      "tenant": "a",
+      "principal": "writer"
+    },
+    "policy": {
+      "identity": {
+        "tenant": "a",
+        "principal": "writer"
+      },
+      "readAllowed": true,
+      "nameWriteAllowed": true
+    },
+    "recordId": "1",
+    "limits": {
+      "bundleBytes": 49152,
+      "fileBytes": 16384,
+      "tokens": 4096,
+      "nesting": 32,
+      "fields": 16,
+      "methods": 8,
+      "statements": 64,
+      "templateNodes": 128,
+      "stringBytes": 4096,
+      "steps": 512,
+      "events": 1
+    },
+    "actions": [
+      {
+        "type": "input",
+        "value": "Draft"
+      },
+      {
+        "type": "props",
+        "value": {
+          "name": "Refreshed"
+        }
+      }
+    ],
+    "expected": {
+      "text": "RefreshedDraft: DraftName Save",
+      "input": "Draft",
+      "events": [],
+      "store": [
+        {
+          "tenant": "a",
+          "id": "1",
+          "name": "First"
+        },
+        {
+          "tenant": "a",
+          "id": "2",
+          "name": "Unrelated"
+        },
+        {
+          "tenant": "b",
+          "id": "1",
+          "name": "Second"
+        }
+      ],
+      "diagnostic": null
+    },
+    "basis": "Independent synthetic expectation; source docs inform vocabulary only; no Salesforce observation.",
+    "sourceRefs": [
+      "html",
+      "script",
+      "props",
+      "events",
+      "metadata"
+    ]
+  },
+  {
+    "id": "denied-save",
+    "bundle": "accountCard",
+    "records": [
+      {
+        "tenant": "a",
+        "id": "1",
+        "name": "First"
+      },
+      {
+        "tenant": "a",
+        "id": "2",
+        "name": "Unrelated"
+      },
+      {
+        "tenant": "b",
+        "id": "1",
+        "name": "Second"
+      }
+    ],
+    "identity": {
+      "tenant": "a",
+      "principal": "writer"
+    },
+    "policy": {
+      "identity": {
+        "tenant": "a",
+        "principal": "writer"
+      },
+      "readAllowed": true,
+      "nameWriteAllowed": false
+    },
+    "recordId": "1",
+    "limits": {
+      "bundleBytes": 49152,
+      "fileBytes": 16384,
+      "tokens": 4096,
+      "nesting": 32,
+      "fields": 16,
+      "methods": 8,
+      "statements": 64,
+      "templateNodes": 128,
+      "stringBytes": 4096,
+      "steps": 512,
+      "events": 1
+    },
+    "actions": [
+      {
+        "type": "input",
+        "value": "Draft"
+      },
+      {
+        "type": "click"
+      }
+    ],
+    "expected": {
+      "text": "FirstDraft: DraftName Save",
+      "input": "Draft",
+      "events": [
+        "save"
+      ],
+      "store": [
+        {
+          "tenant": "a",
+          "id": "1",
+          "name": "First"
+        },
+        {
+          "tenant": "a",
+          "id": "2",
+          "name": "Unrelated"
+        },
+        {
+          "tenant": "b",
+          "id": "1",
+          "name": "Second"
+        }
+      ],
+      "diagnostic": "denied"
+    },
+    "basis": "Independent synthetic expectation; source docs inform vocabulary only; no Salesforce observation.",
+    "sourceRefs": [
+      "html",
+      "script",
+      "props",
+      "events",
+      "metadata"
+    ]
+  },
+  {
+    "id": "denied-read",
+    "bundle": "accountCard",
+    "records": [
+      {
+        "tenant": "a",
+        "id": "1",
+        "name": "First"
+      },
+      {
+        "tenant": "a",
+        "id": "2",
+        "name": "Unrelated"
+      },
+      {
+        "tenant": "b",
+        "id": "1",
+        "name": "Second"
+      }
+    ],
+    "identity": {
+      "tenant": "a",
+      "principal": "writer"
+    },
+    "policy": {
+      "identity": {
+        "tenant": "a",
+        "principal": "writer"
+      },
+      "readAllowed": false,
+      "nameWriteAllowed": true
+    },
+    "recordId": "1",
+    "limits": {
+      "bundleBytes": 49152,
+      "fileBytes": 16384,
+      "tokens": 4096,
+      "nesting": 32,
+      "fields": 16,
+      "methods": 8,
+      "statements": 64,
+      "templateNodes": 128,
+      "stringBytes": 4096,
+      "steps": 512,
+      "events": 1
+    },
+    "actions": [],
+    "expected": {
+      "text": null,
+      "input": null,
+      "events": [],
+      "store": [
+        {
+          "tenant": "a",
+          "id": "1",
+          "name": "First"
+        },
+        {
+          "tenant": "a",
+          "id": "2",
+          "name": "Unrelated"
+        },
+        {
+          "tenant": "b",
+          "id": "1",
+          "name": "Second"
+        }
+      ],
+      "diagnostic": "denied"
+    },
+    "basis": "Independent synthetic expectation; source docs inform vocabulary only; no Salesforce observation.",
+    "sourceRefs": [
+      "html",
+      "script",
+      "props",
+      "events",
+      "metadata"
+    ]
+  },
+  {
+    "id": "missing",
+    "bundle": "accountCard",
+    "records": [
+      {
+        "tenant": "a",
+        "id": "1",
+        "name": "First"
+      },
+      {
+        "tenant": "a",
+        "id": "2",
+        "name": "Unrelated"
+      },
+      {
+        "tenant": "b",
+        "id": "1",
+        "name": "Second"
+      }
+    ],
+    "identity": {
+      "tenant": "a",
+      "principal": "writer"
+    },
+    "policy": {
+      "identity": {
+        "tenant": "a",
+        "principal": "writer"
+      },
+      "readAllowed": true,
+      "nameWriteAllowed": true
+    },
+    "recordId": "missing",
+    "limits": {
+      "bundleBytes": 49152,
+      "fileBytes": 16384,
+      "tokens": 4096,
+      "nesting": 32,
+      "fields": 16,
+      "methods": 8,
+      "statements": 64,
+      "templateNodes": 128,
+      "stringBytes": 4096,
+      "steps": 512,
+      "events": 1
+    },
+    "actions": [],
+    "expected": {
+      "text": null,
+      "input": null,
+      "events": [],
+      "store": [
+        {
+          "tenant": "a",
+          "id": "1",
+          "name": "First"
+        },
+        {
+          "tenant": "a",
+          "id": "2",
+          "name": "Unrelated"
+        },
+        {
+          "tenant": "b",
+          "id": "1",
+          "name": "Second"
+        }
+      ],
+      "diagnostic": "not-found"
+    },
+    "basis": "Independent synthetic expectation; source docs inform vocabulary only; no Salesforce observation.",
+    "sourceRefs": [
+      "html",
+      "script",
+      "props",
+      "events",
+      "metadata"
+    ]
+  },
+  {
+    "id": "tenant-b",
+    "bundle": "accountCard",
+    "records": [
+      {
+        "tenant": "a",
+        "id": "1",
+        "name": "First"
+      },
+      {
+        "tenant": "a",
+        "id": "2",
+        "name": "Unrelated"
+      },
+      {
+        "tenant": "b",
+        "id": "1",
+        "name": "Second"
+      }
+    ],
+    "identity": {
+      "tenant": "b",
+      "principal": "writer"
+    },
+    "policy": {
+      "identity": {
+        "tenant": "b",
+        "principal": "writer"
+      },
+      "readAllowed": true,
+      "nameWriteAllowed": true
+    },
+    "recordId": "1",
+    "limits": {
+      "bundleBytes": 49152,
+      "fileBytes": 16384,
+      "tokens": 4096,
+      "nesting": 32,
+      "fields": 16,
+      "methods": 8,
+      "statements": 64,
+      "templateNodes": 128,
+      "stringBytes": 4096,
+      "steps": 512,
+      "events": 1
+    },
+    "actions": [
+      {
+        "type": "input",
+        "value": "Tenant B"
+      },
+      {
+        "type": "click"
+      }
+    ],
+    "expected": {
+      "text": "SecondDraft: Tenant BName Save",
+      "input": "Tenant B",
+      "events": [
+        "save"
+      ],
+      "store": [
+        {
+          "tenant": "a",
+          "id": "1",
+          "name": "First"
+        },
+        {
+          "tenant": "a",
+          "id": "2",
+          "name": "Unrelated"
+        },
+        {
+          "tenant": "b",
+          "id": "1",
+          "name": "Tenant B"
+        }
+      ],
+      "diagnostic": null
+    },
+    "basis": "Independent synthetic expectation; source docs inform vocabulary only; no Salesforce observation.",
+    "sourceRefs": [
+      "html",
+      "script",
+      "props",
+      "events",
+      "metadata"
+    ]
+  },
+  {
+    "id": "literal-data",
+    "bundle": "accountCard",
+    "records": [
+      {
+        "tenant": "a",
+        "id": "1",
+        "name": "First"
+      },
+      {
+        "tenant": "a",
+        "id": "2",
+        "name": "Unrelated"
+      },
+      {
+        "tenant": "b",
+        "id": "1",
+        "name": "Second"
+      }
+    ],
+    "identity": {
+      "tenant": "a",
+      "principal": "writer"
+    },
+    "policy": {
+      "identity": {
+        "tenant": "a",
+        "principal": "writer"
+      },
+      "readAllowed": true,
+      "nameWriteAllowed": true
+    },
+    "recordId": "1",
+    "limits": {
+      "bundleBytes": 49152,
+      "fileBytes": 16384,
+      "tokens": 4096,
+      "nesting": 32,
+      "fields": 16,
+      "methods": 8,
+      "statements": 64,
+      "templateNodes": 128,
+      "stringBytes": 4096,
+      "steps": 512,
+      "events": 1
+    },
+    "actions": [
+      {
+        "type": "input",
+        "value": "<img src=x onerror=PRIVATE_MARKER>"
+      }
+    ],
+    "expected": {
+      "text": "FirstDraft: <img src=x onerror=PRIVATE_MARKER>Name Save",
+      "input": "<img src=x onerror=PRIVATE_MARKER>",
+      "events": [],
+      "store": [
+        {
+          "tenant": "a",
+          "id": "1",
+          "name": "First"
+        },
+        {
+          "tenant": "a",
+          "id": "2",
+          "name": "Unrelated"
+        },
+        {
+          "tenant": "b",
+          "id": "1",
+          "name": "Second"
+        }
+      ],
+      "diagnostic": null
+    },
+    "basis": "Independent synthetic expectation; source docs inform vocabulary only; no Salesforce observation.",
+    "sourceRefs": [
+      "html",
+      "script",
+      "props",
+      "events",
+      "metadata"
+    ]
+  },
+  {
+    "id": "event-budget",
+    "bundle": "doubleSave",
+    "records": [
+      {
+        "tenant": "a",
+        "id": "1",
+        "name": "First"
+      },
+      {
+        "tenant": "a",
+        "id": "2",
+        "name": "Unrelated"
+      },
+      {
+        "tenant": "b",
+        "id": "1",
+        "name": "Second"
+      }
+    ],
+    "identity": {
+      "tenant": "a",
+      "principal": "writer"
+    },
+    "policy": {
+      "identity": {
+        "tenant": "a",
+        "principal": "writer"
+      },
+      "readAllowed": true,
+      "nameWriteAllowed": true
+    },
+    "recordId": "1",
+    "limits": {
+      "bundleBytes": 49152,
+      "fileBytes": 16384,
+      "tokens": 4096,
+      "nesting": 32,
+      "fields": 16,
+      "methods": 8,
+      "statements": 64,
+      "templateNodes": 128,
+      "stringBytes": 4096,
+      "steps": 512,
+      "events": 1
+    },
+    "actions": [
+      {
+        "type": "click"
+      }
+    ],
+    "expected": {
+      "text": "FirstDraft: FirstName Save",
+      "input": "First",
+      "events": [],
+      "store": [
+        {
+          "tenant": "a",
+          "id": "1",
+          "name": "First"
+        },
+        {
+          "tenant": "a",
+          "id": "2",
+          "name": "Unrelated"
+        },
+        {
+          "tenant": "b",
+          "id": "1",
+          "name": "Second"
+        }
+      ],
+      "diagnostic": "budget"
+    },
+    "basis": "Independent synthetic expectation; source docs inform vocabulary only; no Salesforce observation.",
+    "sourceRefs": [
+      "html",
+      "script",
+      "props",
+      "events",
+      "metadata"
+    ]
+  },
+  {
+    "id": "reject-unusedBad",
+    "bundle": "unusedBad",
+    "records": [
+      {
+        "tenant": "a",
+        "id": "1",
+        "name": "First"
+      },
+      {
+        "tenant": "a",
+        "id": "2",
+        "name": "Unrelated"
+      },
+      {
+        "tenant": "b",
+        "id": "1",
+        "name": "Second"
+      }
+    ],
+    "identity": {
+      "tenant": "a",
+      "principal": "writer"
+    },
+    "policy": {
+      "identity": {
+        "tenant": "a",
+        "principal": "writer"
+      },
+      "readAllowed": true,
+      "nameWriteAllowed": true
+    },
+    "recordId": "1",
+    "limits": {
+      "bundleBytes": 49152,
+      "fileBytes": 16384,
+      "tokens": 4096,
+      "nesting": 32,
+      "fields": 16,
+      "methods": 8,
+      "statements": 64,
+      "templateNodes": 128,
+      "stringBytes": 4096,
+      "steps": 512,
+      "events": 1
+    },
+    "actions": [],
+    "expected": {
+      "text": null,
+      "input": null,
+      "events": [],
+      "store": [
+        {
+          "tenant": "a",
+          "id": "1",
+          "name": "First"
+        },
+        {
+          "tenant": "a",
+          "id": "2",
+          "name": "Unrelated"
+        },
+        {
+          "tenant": "b",
+          "id": "1",
+          "name": "Second"
+        }
+      ],
+      "diagnostic": "unsupported"
+    },
+    "basis": "Independent synthetic expectation; source docs inform vocabulary only; no Salesforce observation.",
+    "sourceRefs": [
+      "html",
+      "script",
+      "props",
+      "events",
+      "metadata"
+    ]
+  },
+  {
+    "id": "reject-badTemplate",
+    "bundle": "badTemplate",
+    "records": [
+      {
+        "tenant": "a",
+        "id": "1",
+        "name": "First"
+      },
+      {
+        "tenant": "a",
+        "id": "2",
+        "name": "Unrelated"
+      },
+      {
+        "tenant": "b",
+        "id": "1",
+        "name": "Second"
+      }
+    ],
+    "identity": {
+      "tenant": "a",
+      "principal": "writer"
+    },
+    "policy": {
+      "identity": {
+        "tenant": "a",
+        "principal": "writer"
+      },
+      "readAllowed": true,
+      "nameWriteAllowed": true
+    },
+    "recordId": "1",
+    "limits": {
+      "bundleBytes": 49152,
+      "fileBytes": 16384,
+      "tokens": 4096,
+      "nesting": 32,
+      "fields": 16,
+      "methods": 8,
+      "statements": 64,
+      "templateNodes": 128,
+      "stringBytes": 4096,
+      "steps": 512,
+      "events": 1
+    },
+    "actions": [],
+    "expected": {
+      "text": null,
+      "input": null,
+      "events": [],
+      "store": [
+        {
+          "tenant": "a",
+          "id": "1",
+          "name": "First"
+        },
+        {
+          "tenant": "a",
+          "id": "2",
+          "name": "Unrelated"
+        },
+        {
+          "tenant": "b",
+          "id": "1",
+          "name": "Second"
+        }
+      ],
+      "diagnostic": "unsupported"
+    },
+    "basis": "Independent synthetic expectation; source docs inform vocabulary only; no Salesforce observation.",
+    "sourceRefs": [
+      "html",
+      "script",
+      "props",
+      "events",
+      "metadata"
+    ]
+  },
+  {
+    "id": "reject-badMetadata",
+    "bundle": "badMetadata",
+    "records": [
+      {
+        "tenant": "a",
+        "id": "1",
+        "name": "First"
+      },
+      {
+        "tenant": "a",
+        "id": "2",
+        "name": "Unrelated"
+      },
+      {
+        "tenant": "b",
+        "id": "1",
+        "name": "Second"
+      }
+    ],
+    "identity": {
+      "tenant": "a",
+      "principal": "writer"
+    },
+    "policy": {
+      "identity": {
+        "tenant": "a",
+        "principal": "writer"
+      },
+      "readAllowed": true,
+      "nameWriteAllowed": true
+    },
+    "recordId": "1",
+    "limits": {
+      "bundleBytes": 49152,
+      "fileBytes": 16384,
+      "tokens": 4096,
+      "nesting": 32,
+      "fields": 16,
+      "methods": 8,
+      "statements": 64,
+      "templateNodes": 128,
+      "stringBytes": 4096,
+      "steps": 512,
+      "events": 1
+    },
+    "actions": [],
+    "expected": {
+      "text": null,
+      "input": null,
+      "events": [],
+      "store": [
+        {
+          "tenant": "a",
+          "id": "1",
+          "name": "First"
+        },
+        {
+          "tenant": "a",
+          "id": "2",
+          "name": "Unrelated"
+        },
+        {
+          "tenant": "b",
+          "id": "1",
+          "name": "Second"
+        }
+      ],
+      "diagnostic": "unsupported"
+    },
+    "basis": "Independent synthetic expectation; source docs inform vocabulary only; no Salesforce observation.",
+    "sourceRefs": [
+      "html",
+      "script",
+      "props",
+      "events",
+      "metadata"
+    ]
+  },
+  {
+    "id": "limit-bundleBytes",
+    "bundle": "accountCard",
+    "records": [
+      {
+        "tenant": "a",
+        "id": "1",
+        "name": "First"
+      },
+      {
+        "tenant": "a",
+        "id": "2",
+        "name": "Unrelated"
+      },
+      {
+        "tenant": "b",
+        "id": "1",
+        "name": "Second"
+      }
+    ],
+    "identity": {
+      "tenant": "a",
+      "principal": "writer"
+    },
+    "policy": {
+      "identity": {
+        "tenant": "a",
+        "principal": "writer"
+      },
+      "readAllowed": true,
+      "nameWriteAllowed": true
+    },
+    "recordId": "1",
+    "limits": {
+      "bundleBytes": 1,
+      "fileBytes": 16384,
+      "tokens": 4096,
+      "nesting": 32,
+      "fields": 16,
+      "methods": 8,
+      "statements": 64,
+      "templateNodes": 128,
+      "stringBytes": 4096,
+      "steps": 512,
+      "events": 1
+    },
+    "actions": [],
+    "expected": {
+      "text": null,
+      "input": null,
+      "events": [],
+      "store": [
+        {
+          "tenant": "a",
+          "id": "1",
+          "name": "First"
+        },
+        {
+          "tenant": "a",
+          "id": "2",
+          "name": "Unrelated"
+        },
+        {
+          "tenant": "b",
+          "id": "1",
+          "name": "Second"
+        }
+      ],
+      "diagnostic": "budget"
+    },
+    "basis": "Independent synthetic expectation; source docs inform vocabulary only; no Salesforce observation.",
+    "sourceRefs": [
+      "html",
+      "script",
+      "props",
+      "events",
+      "metadata"
+    ]
+  },
+  {
+    "id": "limit-fileBytes",
+    "bundle": "accountCard",
+    "records": [
+      {
+        "tenant": "a",
+        "id": "1",
+        "name": "First"
+      },
+      {
+        "tenant": "a",
+        "id": "2",
+        "name": "Unrelated"
+      },
+      {
+        "tenant": "b",
+        "id": "1",
+        "name": "Second"
+      }
+    ],
+    "identity": {
+      "tenant": "a",
+      "principal": "writer"
+    },
+    "policy": {
+      "identity": {
+        "tenant": "a",
+        "principal": "writer"
+      },
+      "readAllowed": true,
+      "nameWriteAllowed": true
+    },
+    "recordId": "1",
+    "limits": {
+      "bundleBytes": 49152,
+      "fileBytes": 1,
+      "tokens": 4096,
+      "nesting": 32,
+      "fields": 16,
+      "methods": 8,
+      "statements": 64,
+      "templateNodes": 128,
+      "stringBytes": 4096,
+      "steps": 512,
+      "events": 1
+    },
+    "actions": [],
+    "expected": {
+      "text": null,
+      "input": null,
+      "events": [],
+      "store": [
+        {
+          "tenant": "a",
+          "id": "1",
+          "name": "First"
+        },
+        {
+          "tenant": "a",
+          "id": "2",
+          "name": "Unrelated"
+        },
+        {
+          "tenant": "b",
+          "id": "1",
+          "name": "Second"
+        }
+      ],
+      "diagnostic": "budget"
+    },
+    "basis": "Independent synthetic expectation; source docs inform vocabulary only; no Salesforce observation.",
+    "sourceRefs": [
+      "html",
+      "script",
+      "props",
+      "events",
+      "metadata"
+    ]
+  },
+  {
+    "id": "limit-tokens",
+    "bundle": "accountCard",
+    "records": [
+      {
+        "tenant": "a",
+        "id": "1",
+        "name": "First"
+      },
+      {
+        "tenant": "a",
+        "id": "2",
+        "name": "Unrelated"
+      },
+      {
+        "tenant": "b",
+        "id": "1",
+        "name": "Second"
+      }
+    ],
+    "identity": {
+      "tenant": "a",
+      "principal": "writer"
+    },
+    "policy": {
+      "identity": {
+        "tenant": "a",
+        "principal": "writer"
+      },
+      "readAllowed": true,
+      "nameWriteAllowed": true
+    },
+    "recordId": "1",
+    "limits": {
+      "bundleBytes": 49152,
+      "fileBytes": 16384,
+      "tokens": 1,
+      "nesting": 32,
+      "fields": 16,
+      "methods": 8,
+      "statements": 64,
+      "templateNodes": 128,
+      "stringBytes": 4096,
+      "steps": 512,
+      "events": 1
+    },
+    "actions": [],
+    "expected": {
+      "text": null,
+      "input": null,
+      "events": [],
+      "store": [
+        {
+          "tenant": "a",
+          "id": "1",
+          "name": "First"
+        },
+        {
+          "tenant": "a",
+          "id": "2",
+          "name": "Unrelated"
+        },
+        {
+          "tenant": "b",
+          "id": "1",
+          "name": "Second"
+        }
+      ],
+      "diagnostic": "budget"
+    },
+    "basis": "Independent synthetic expectation; source docs inform vocabulary only; no Salesforce observation.",
+    "sourceRefs": [
+      "html",
+      "script",
+      "props",
+      "events",
+      "metadata"
+    ]
+  },
+  {
+    "id": "limit-nesting",
+    "bundle": "accountCard",
+    "records": [
+      {
+        "tenant": "a",
+        "id": "1",
+        "name": "First"
+      },
+      {
+        "tenant": "a",
+        "id": "2",
+        "name": "Unrelated"
+      },
+      {
+        "tenant": "b",
+        "id": "1",
+        "name": "Second"
+      }
+    ],
+    "identity": {
+      "tenant": "a",
+      "principal": "writer"
+    },
+    "policy": {
+      "identity": {
+        "tenant": "a",
+        "principal": "writer"
+      },
+      "readAllowed": true,
+      "nameWriteAllowed": true
+    },
+    "recordId": "1",
+    "limits": {
+      "bundleBytes": 49152,
+      "fileBytes": 16384,
+      "tokens": 4096,
+      "nesting": 1,
+      "fields": 16,
+      "methods": 8,
+      "statements": 64,
+      "templateNodes": 128,
+      "stringBytes": 4096,
+      "steps": 512,
+      "events": 1
+    },
+    "actions": [],
+    "expected": {
+      "text": null,
+      "input": null,
+      "events": [],
+      "store": [
+        {
+          "tenant": "a",
+          "id": "1",
+          "name": "First"
+        },
+        {
+          "tenant": "a",
+          "id": "2",
+          "name": "Unrelated"
+        },
+        {
+          "tenant": "b",
+          "id": "1",
+          "name": "Second"
+        }
+      ],
+      "diagnostic": "budget"
+    },
+    "basis": "Independent synthetic expectation; source docs inform vocabulary only; no Salesforce observation.",
+    "sourceRefs": [
+      "html",
+      "script",
+      "props",
+      "events",
+      "metadata"
+    ]
+  },
+  {
+    "id": "limit-fields",
+    "bundle": "accountCard",
+    "records": [
+      {
+        "tenant": "a",
+        "id": "1",
+        "name": "First"
+      },
+      {
+        "tenant": "a",
+        "id": "2",
+        "name": "Unrelated"
+      },
+      {
+        "tenant": "b",
+        "id": "1",
+        "name": "Second"
+      }
+    ],
+    "identity": {
+      "tenant": "a",
+      "principal": "writer"
+    },
+    "policy": {
+      "identity": {
+        "tenant": "a",
+        "principal": "writer"
+      },
+      "readAllowed": true,
+      "nameWriteAllowed": true
+    },
+    "recordId": "1",
+    "limits": {
+      "bundleBytes": 49152,
+      "fileBytes": 16384,
+      "tokens": 4096,
+      "nesting": 32,
+      "fields": 2,
+      "methods": 8,
+      "statements": 64,
+      "templateNodes": 128,
+      "stringBytes": 4096,
+      "steps": 512,
+      "events": 1
+    },
+    "actions": [],
+    "expected": {
+      "text": null,
+      "input": null,
+      "events": [],
+      "store": [
+        {
+          "tenant": "a",
+          "id": "1",
+          "name": "First"
+        },
+        {
+          "tenant": "a",
+          "id": "2",
+          "name": "Unrelated"
+        },
+        {
+          "tenant": "b",
+          "id": "1",
+          "name": "Second"
+        }
+      ],
+      "diagnostic": "budget"
+    },
+    "basis": "Independent synthetic expectation; source docs inform vocabulary only; no Salesforce observation.",
+    "sourceRefs": [
+      "html",
+      "script",
+      "props",
+      "events",
+      "metadata"
+    ]
+  },
+  {
+    "id": "limit-methods",
+    "bundle": "accountCard",
+    "records": [
+      {
+        "tenant": "a",
+        "id": "1",
+        "name": "First"
+      },
+      {
+        "tenant": "a",
+        "id": "2",
+        "name": "Unrelated"
+      },
+      {
+        "tenant": "b",
+        "id": "1",
+        "name": "Second"
+      }
+    ],
+    "identity": {
+      "tenant": "a",
+      "principal": "writer"
+    },
+    "policy": {
+      "identity": {
+        "tenant": "a",
+        "principal": "writer"
+      },
+      "readAllowed": true,
+      "nameWriteAllowed": true
+    },
+    "recordId": "1",
+    "limits": {
+      "bundleBytes": 49152,
+      "fileBytes": 16384,
+      "tokens": 4096,
+      "nesting": 32,
+      "fields": 16,
+      "methods": 2,
+      "statements": 64,
+      "templateNodes": 128,
+      "stringBytes": 4096,
+      "steps": 512,
+      "events": 1
+    },
+    "actions": [],
+    "expected": {
+      "text": null,
+      "input": null,
+      "events": [],
+      "store": [
+        {
+          "tenant": "a",
+          "id": "1",
+          "name": "First"
+        },
+        {
+          "tenant": "a",
+          "id": "2",
+          "name": "Unrelated"
+        },
+        {
+          "tenant": "b",
+          "id": "1",
+          "name": "Second"
+        }
+      ],
+      "diagnostic": "budget"
+    },
+    "basis": "Independent synthetic expectation; source docs inform vocabulary only; no Salesforce observation.",
+    "sourceRefs": [
+      "html",
+      "script",
+      "props",
+      "events",
+      "metadata"
+    ]
+  },
+  {
+    "id": "limit-statements",
+    "bundle": "accountCard",
+    "records": [
+      {
+        "tenant": "a",
+        "id": "1",
+        "name": "First"
+      },
+      {
+        "tenant": "a",
+        "id": "2",
+        "name": "Unrelated"
+      },
+      {
+        "tenant": "b",
+        "id": "1",
+        "name": "Second"
+      }
+    ],
+    "identity": {
+      "tenant": "a",
+      "principal": "writer"
+    },
+    "policy": {
+      "identity": {
+        "tenant": "a",
+        "principal": "writer"
+      },
+      "readAllowed": true,
+      "nameWriteAllowed": true
+    },
+    "recordId": "1",
+    "limits": {
+      "bundleBytes": 49152,
+      "fileBytes": 16384,
+      "tokens": 4096,
+      "nesting": 32,
+      "fields": 16,
+      "methods": 8,
+      "statements": 2,
+      "templateNodes": 128,
+      "stringBytes": 4096,
+      "steps": 512,
+      "events": 1
+    },
+    "actions": [],
+    "expected": {
+      "text": null,
+      "input": null,
+      "events": [],
+      "store": [
+        {
+          "tenant": "a",
+          "id": "1",
+          "name": "First"
+        },
+        {
+          "tenant": "a",
+          "id": "2",
+          "name": "Unrelated"
+        },
+        {
+          "tenant": "b",
+          "id": "1",
+          "name": "Second"
+        }
+      ],
+      "diagnostic": "budget"
+    },
+    "basis": "Independent synthetic expectation; source docs inform vocabulary only; no Salesforce observation.",
+    "sourceRefs": [
+      "html",
+      "script",
+      "props",
+      "events",
+      "metadata"
+    ]
+  },
+  {
+    "id": "limit-templateNodes",
+    "bundle": "accountCard",
+    "records": [
+      {
+        "tenant": "a",
+        "id": "1",
+        "name": "First"
+      },
+      {
+        "tenant": "a",
+        "id": "2",
+        "name": "Unrelated"
+      },
+      {
+        "tenant": "b",
+        "id": "1",
+        "name": "Second"
+      }
+    ],
+    "identity": {
+      "tenant": "a",
+      "principal": "writer"
+    },
+    "policy": {
+      "identity": {
+        "tenant": "a",
+        "principal": "writer"
+      },
+      "readAllowed": true,
+      "nameWriteAllowed": true
+    },
+    "recordId": "1",
+    "limits": {
+      "bundleBytes": 49152,
+      "fileBytes": 16384,
+      "tokens": 4096,
+      "nesting": 32,
+      "fields": 16,
+      "methods": 8,
+      "statements": 64,
+      "templateNodes": 11,
+      "stringBytes": 4096,
+      "steps": 512,
+      "events": 1
+    },
+    "actions": [],
+    "expected": {
+      "text": null,
+      "input": null,
+      "events": [],
+      "store": [
+        {
+          "tenant": "a",
+          "id": "1",
+          "name": "First"
+        },
+        {
+          "tenant": "a",
+          "id": "2",
+          "name": "Unrelated"
+        },
+        {
+          "tenant": "b",
+          "id": "1",
+          "name": "Second"
+        }
+      ],
+      "diagnostic": "budget"
+    },
+    "basis": "Independent synthetic expectation; source docs inform vocabulary only; no Salesforce observation.",
+    "sourceRefs": [
+      "html",
+      "script",
+      "props",
+      "events",
+      "metadata"
+    ]
+  },
+  {
+    "id": "limit-stringBytes",
+    "bundle": "accountCard",
+    "records": [
+      {
+        "tenant": "a",
+        "id": "1",
+        "name": "First"
+      },
+      {
+        "tenant": "a",
+        "id": "2",
+        "name": "Unrelated"
+      },
+      {
+        "tenant": "b",
+        "id": "1",
+        "name": "Second"
+      }
+    ],
+    "identity": {
+      "tenant": "a",
+      "principal": "writer"
+    },
+    "policy": {
+      "identity": {
+        "tenant": "a",
+        "principal": "writer"
+      },
+      "readAllowed": true,
+      "nameWriteAllowed": true
+    },
+    "recordId": "1",
+    "limits": {
+      "bundleBytes": 49152,
+      "fileBytes": 16384,
+      "tokens": 4096,
+      "nesting": 32,
+      "fields": 16,
+      "methods": 8,
+      "statements": 64,
+      "templateNodes": 128,
+      "stringBytes": 20,
+      "steps": 512,
+      "events": 1
+    },
+    "actions": [],
+    "expected": {
+      "text": null,
+      "input": null,
+      "events": [],
+      "store": [
+        {
+          "tenant": "a",
+          "id": "1",
+          "name": "First"
+        },
+        {
+          "tenant": "a",
+          "id": "2",
+          "name": "Unrelated"
+        },
+        {
+          "tenant": "b",
+          "id": "1",
+          "name": "Second"
+        }
+      ],
+      "diagnostic": "budget"
+    },
+    "basis": "Independent synthetic expectation; source docs inform vocabulary only; no Salesforce observation.",
+    "sourceRefs": [
+      "html",
+      "script",
+      "props",
+      "events",
+      "metadata"
+    ]
+  },
+  {
+    "id": "limit-steps",
+    "bundle": "accountCard",
+    "records": [
+      {
+        "tenant": "a",
+        "id": "1",
+        "name": "First"
+      },
+      {
+        "tenant": "a",
+        "id": "2",
+        "name": "Unrelated"
+      },
+      {
+        "tenant": "b",
+        "id": "1",
+        "name": "Second"
+      }
+    ],
+    "identity": {
+      "tenant": "a",
+      "principal": "writer"
+    },
+    "policy": {
+      "identity": {
+        "tenant": "a",
+        "principal": "writer"
+      },
+      "readAllowed": true,
+      "nameWriteAllowed": true
+    },
+    "recordId": "1",
+    "limits": {
+      "bundleBytes": 49152,
+      "fileBytes": 16384,
+      "tokens": 4096,
+      "nesting": 32,
+      "fields": 16,
+      "methods": 8,
+      "statements": 64,
+      "templateNodes": 128,
+      "stringBytes": 4096,
+      "steps": 1,
+      "events": 1
+    },
+    "actions": [],
+    "expected": {
+      "text": null,
+      "input": null,
+      "events": [],
+      "store": [
+        {
+          "tenant": "a",
+          "id": "1",
+          "name": "First"
+        },
+        {
+          "tenant": "a",
+          "id": "2",
+          "name": "Unrelated"
+        },
+        {
+          "tenant": "b",
+          "id": "1",
+          "name": "Second"
+        }
+      ],
+      "diagnostic": "budget"
+    },
+    "basis": "Independent synthetic expectation; source docs inform vocabulary only; no Salesforce observation.",
+    "sourceRefs": [
+      "html",
+      "script",
+      "props",
+      "events",
+      "metadata"
+    ]
+  }
+]

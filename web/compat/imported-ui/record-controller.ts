@@ -35,7 +35,10 @@ export function openRecordObserved(container: HTMLDivElement, bundle: SourceBund
             m.check();
             observer?.('mount');
             const component = unwrap(mountComponent(container, p, props, {
-                limits: m.limits, signal, onEvent: event => binding.receive(owner, event)
+                limits: m.limits, signal, onEvent: event => {
+                    observer?.('host-save');
+                    return binding.receive(owner, event);
+                }
             }));
             let closed = false;
             return Object.freeze({
