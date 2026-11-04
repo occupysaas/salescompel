@@ -278,3 +278,29 @@ sources:
     version: Go 1.25.0
     claim: Embed canonical YAML in binary without runtime filesystem access
     extraction: documentation-reviewed
+
+  # Plan 24 additions; preserve earlier provenance.
+  - id: composite-endpoint-plan24
+    url: https://developer.salesforce.com/docs/platform/api-rest/guide/resources-composite-composite-post.html
+    accessedAt: 2026-11-04
+    version: Public mutable REST guide read 2026-11-04
+    claim: Endpoint, common user and 25-subrequest bound; independently summarized
+    extraction: documentation-reviewed
+  - id: composite-request-plan24
+    url: https://developer.salesforce.com/docs/platform/api-rest/guide/requests-composite.html
+    accessedAt: 2026-11-04
+    version: Public mutable REST guide read 2026-11-04
+    claim: Request vocabulary and wider reference/collation behavior; restricted candidate subset
+    extraction: documentation-reviewed
+  - id: composite-result-plan24
+    url: https://developer.salesforce.com/docs/platform/api-rest/guide/resources-composite-subrequest-result.html
+    accessedAt: 2026-11-04
+    version: Public mutable REST guide read 2026-11-04
+    claim: Result vocabulary and all-or-none status behavior
+    extraction: documentation-reviewed
+  - id: composite-observation-plan24
+    url: https://github.com/occupysaas/salescompel/blob/5df1d0ae9c65d3efabf46da1fb464c65997fd1eb/docs/compat/observations/pilot-black-box-baseline.yaml
+    accessedAt: 2026-11-04
+    version: 5df1d0ae9c65d3efabf46da1fb464c65997fd1eb reviewed locally
+    claim: Existing accepted create and invalid-field rollback observation; public locator not fetched
+    extraction: documentation-reviewed
