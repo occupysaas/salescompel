@@ -1,0 +1,1729 @@
+[
+  {
+    "id": "compute-0",
+    "sourceFile": "compute.cls",
+    "entry": "Compute.run",
+    "args": [
+      {
+        "type": "integer",
+        "integer": 0
+      }
+    ],
+    "identity": {
+      "Tenant": "a",
+      "Principal": "writer"
+    },
+    "policy": {
+      "Identity": {
+        "Tenant": "a",
+        "Principal": "writer"
+      },
+      "QueryAllowed": true,
+      "NameWriteAllowed": true,
+      "DeniedWriteIDs": []
+    },
+    "accounts": [],
+    "limits": {
+      "SourceBytes": 32768,
+      "ParseDepth": 64,
+      "Steps": 10000,
+      "CallDepth": 2,
+      "Rows": 100,
+      "Writes": 100,
+      "StringBytes": 4096,
+      "CollectionItems": 100
+    },
+    "expectedCode": "",
+    "expectedReturn": {
+      "type": "integer",
+      "integer": 0
+    },
+    "expectedAccounts": [],
+    "basis": "Independently authored synthetic expectation; documentation informs construct syntax only. No reference observation.",
+    "sourceRefs": [
+      "classes",
+      "methods",
+      "operators",
+      "loops"
+    ]
+  },
+  {
+    "id": "compute-1",
+    "sourceFile": "compute.cls",
+    "entry": "Compute.run",
+    "args": [
+      {
+        "type": "integer",
+        "integer": 1
+      }
+    ],
+    "identity": {
+      "Tenant": "a",
+      "Principal": "writer"
+    },
+    "policy": {
+      "Identity": {
+        "Tenant": "a",
+        "Principal": "writer"
+      },
+      "QueryAllowed": true,
+      "NameWriteAllowed": true,
+      "DeniedWriteIDs": []
+    },
+    "accounts": [],
+    "limits": {
+      "SourceBytes": 32768,
+      "ParseDepth": 64,
+      "Steps": 10000,
+      "CallDepth": 2,
+      "Rows": 100,
+      "Writes": 100,
+      "StringBytes": 4096,
+      "CollectionItems": 100
+    },
+    "expectedCode": "",
+    "expectedReturn": {
+      "type": "integer",
+      "integer": 0
+    },
+    "expectedAccounts": [],
+    "basis": "Independently authored synthetic expectation; documentation informs construct syntax only. No reference observation.",
+    "sourceRefs": [
+      "classes",
+      "methods",
+      "operators",
+      "loops"
+    ]
+  },
+  {
+    "id": "compute-4",
+    "sourceFile": "compute.cls",
+    "entry": "Compute.run",
+    "args": [
+      {
+        "type": "integer",
+        "integer": 4
+      }
+    ],
+    "identity": {
+      "Tenant": "a",
+      "Principal": "writer"
+    },
+    "policy": {
+      "Identity": {
+        "Tenant": "a",
+        "Principal": "writer"
+      },
+      "QueryAllowed": true,
+      "NameWriteAllowed": true,
+      "DeniedWriteIDs": []
+    },
+    "accounts": [],
+    "limits": {
+      "SourceBytes": 32768,
+      "ParseDepth": 64,
+      "Steps": 10000,
+      "CallDepth": 2,
+      "Rows": 100,
+      "Writes": 100,
+      "StringBytes": 4096,
+      "CollectionItems": 100
+    },
+    "expectedCode": "",
+    "expectedReturn": {
+      "type": "integer",
+      "integer": 6
+    },
+    "expectedAccounts": [],
+    "basis": "Independently authored synthetic expectation; documentation informs construct syntax only. No reference observation.",
+    "sourceRefs": [
+      "classes",
+      "methods",
+      "operators",
+      "loops"
+    ]
+  },
+  {
+    "id": "rename-empty",
+    "sourceFile": "rename.cls",
+    "entry": "Rename.run",
+    "args": [
+      {
+        "type": "string",
+        "string": "g"
+      },
+      {
+        "type": "string",
+        "string": "new"
+      }
+    ],
+    "identity": {
+      "Tenant": "a",
+      "Principal": "writer"
+    },
+    "policy": {
+      "Identity": {
+        "Tenant": "a",
+        "Principal": "writer"
+      },
+      "QueryAllowed": true,
+      "NameWriteAllowed": true,
+      "DeniedWriteIDs": []
+    },
+    "accounts": [],
+    "limits": {
+      "SourceBytes": 32768,
+      "ParseDepth": 64,
+      "Steps": 10000,
+      "CallDepth": 2,
+      "Rows": 100,
+      "Writes": 100,
+      "StringBytes": 4096,
+      "CollectionItems": 100
+    },
+    "expectedCode": "",
+    "expectedReturn": {
+      "type": "integer",
+      "integer": 0
+    },
+    "expectedAccounts": [],
+    "basis": "Independently authored synthetic expectation; documentation informs construct syntax only. No reference observation.",
+    "sourceRefs": [
+      "query",
+      "binds",
+      "lists",
+      "dml"
+    ]
+  },
+  {
+    "id": "rename-one",
+    "sourceFile": "rename.cls",
+    "entry": "Rename.run",
+    "args": [
+      {
+        "type": "string",
+        "string": "g"
+      },
+      {
+        "type": "string",
+        "string": "new"
+      }
+    ],
+    "identity": {
+      "Tenant": "a",
+      "Principal": "writer"
+    },
+    "policy": {
+      "Identity": {
+        "Tenant": "a",
+        "Principal": "writer"
+      },
+      "QueryAllowed": true,
+      "NameWriteAllowed": true,
+      "DeniedWriteIDs": []
+    },
+    "accounts": [
+      {
+        "Tenant": "a",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "one"
+      }
+    ],
+    "limits": {
+      "SourceBytes": 32768,
+      "ParseDepth": 64,
+      "Steps": 10000,
+      "CallDepth": 2,
+      "Rows": 100,
+      "Writes": 100,
+      "StringBytes": 4096,
+      "CollectionItems": 100
+    },
+    "expectedCode": "",
+    "expectedReturn": {
+      "type": "integer",
+      "integer": 0
+    },
+    "expectedAccounts": [
+      {
+        "Tenant": "a",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "new"
+      }
+    ],
+    "basis": "Independently authored synthetic expectation; documentation informs construct syntax only. No reference observation.",
+    "sourceRefs": [
+      "query",
+      "binds",
+      "lists",
+      "dml"
+    ]
+  },
+  {
+    "id": "rename-multiple-tenants",
+    "sourceFile": "rename.cls",
+    "entry": "Rename.run",
+    "args": [
+      {
+        "type": "string",
+        "string": "g"
+      },
+      {
+        "type": "string",
+        "string": "new"
+      }
+    ],
+    "identity": {
+      "Tenant": "a",
+      "Principal": "writer"
+    },
+    "policy": {
+      "Identity": {
+        "Tenant": "a",
+        "Principal": "writer"
+      },
+      "QueryAllowed": true,
+      "NameWriteAllowed": true,
+      "DeniedWriteIDs": []
+    },
+    "accounts": [
+      {
+        "Tenant": "a",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "one"
+      },
+      {
+        "Tenant": "a",
+        "ID": "2",
+        "Cohort": "g",
+        "Name": "two"
+      },
+      {
+        "Tenant": "a",
+        "ID": "3",
+        "Cohort": "G",
+        "Name": "case"
+      },
+      {
+        "Tenant": "b",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "other"
+      }
+    ],
+    "limits": {
+      "SourceBytes": 32768,
+      "ParseDepth": 64,
+      "Steps": 10000,
+      "CallDepth": 2,
+      "Rows": 100,
+      "Writes": 100,
+      "StringBytes": 4096,
+      "CollectionItems": 100
+    },
+    "expectedCode": "",
+    "expectedReturn": {
+      "type": "integer",
+      "integer": 0
+    },
+    "expectedAccounts": [
+      {
+        "Tenant": "a",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "new"
+      },
+      {
+        "Tenant": "a",
+        "ID": "2",
+        "Cohort": "g",
+        "Name": "new"
+      },
+      {
+        "Tenant": "a",
+        "ID": "3",
+        "Cohort": "G",
+        "Name": "case"
+      },
+      {
+        "Tenant": "b",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "other"
+      }
+    ],
+    "basis": "Independently authored synthetic expectation; documentation informs construct syntax only. No reference observation.",
+    "sourceRefs": [
+      "query",
+      "binds",
+      "loops",
+      "dml"
+    ]
+  },
+  {
+    "id": "principal-denied-query",
+    "sourceFile": "rename.cls",
+    "entry": "Rename.run",
+    "args": [
+      {
+        "type": "string",
+        "string": "g"
+      },
+      {
+        "type": "string",
+        "string": "new"
+      }
+    ],
+    "identity": {
+      "Tenant": "a",
+      "Principal": "reader"
+    },
+    "policy": {
+      "Identity": {
+        "Tenant": "a",
+        "Principal": "reader"
+      },
+      "QueryAllowed": false,
+      "NameWriteAllowed": true,
+      "DeniedWriteIDs": []
+    },
+    "accounts": [
+      {
+        "Tenant": "a",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "one"
+      },
+      {
+        "Tenant": "a",
+        "ID": "2",
+        "Cohort": "g",
+        "Name": "two"
+      },
+      {
+        "Tenant": "a",
+        "ID": "3",
+        "Cohort": "G",
+        "Name": "case"
+      },
+      {
+        "Tenant": "b",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "other"
+      }
+    ],
+    "limits": {
+      "SourceBytes": 32768,
+      "ParseDepth": 64,
+      "Steps": 10000,
+      "CallDepth": 2,
+      "Rows": 100,
+      "Writes": 100,
+      "StringBytes": 4096,
+      "CollectionItems": 100
+    },
+    "expectedCode": "denied",
+    "expectedReturn": null,
+    "expectedAccounts": [
+      {
+        "Tenant": "a",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "one"
+      },
+      {
+        "Tenant": "a",
+        "ID": "2",
+        "Cohort": "g",
+        "Name": "two"
+      },
+      {
+        "Tenant": "a",
+        "ID": "3",
+        "Cohort": "G",
+        "Name": "case"
+      },
+      {
+        "Tenant": "b",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "other"
+      }
+    ],
+    "basis": "Independently authored synthetic expectation; documentation informs construct syntax only. No reference observation.",
+    "sourceRefs": [
+      "query",
+      "binds"
+    ]
+  },
+  {
+    "id": "principal-denied-write",
+    "sourceFile": "rename.cls",
+    "entry": "Rename.run",
+    "args": [
+      {
+        "type": "string",
+        "string": "g"
+      },
+      {
+        "type": "string",
+        "string": "new"
+      }
+    ],
+    "identity": {
+      "Tenant": "a",
+      "Principal": "reader"
+    },
+    "policy": {
+      "Identity": {
+        "Tenant": "a",
+        "Principal": "reader"
+      },
+      "QueryAllowed": true,
+      "NameWriteAllowed": false,
+      "DeniedWriteIDs": []
+    },
+    "accounts": [
+      {
+        "Tenant": "a",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "one"
+      },
+      {
+        "Tenant": "a",
+        "ID": "2",
+        "Cohort": "g",
+        "Name": "two"
+      },
+      {
+        "Tenant": "a",
+        "ID": "3",
+        "Cohort": "G",
+        "Name": "case"
+      },
+      {
+        "Tenant": "b",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "other"
+      }
+    ],
+    "limits": {
+      "SourceBytes": 32768,
+      "ParseDepth": 64,
+      "Steps": 10000,
+      "CallDepth": 2,
+      "Rows": 100,
+      "Writes": 100,
+      "StringBytes": 4096,
+      "CollectionItems": 100
+    },
+    "expectedCode": "denied",
+    "expectedReturn": null,
+    "expectedAccounts": [
+      {
+        "Tenant": "a",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "one"
+      },
+      {
+        "Tenant": "a",
+        "ID": "2",
+        "Cohort": "g",
+        "Name": "two"
+      },
+      {
+        "Tenant": "a",
+        "ID": "3",
+        "Cohort": "G",
+        "Name": "case"
+      },
+      {
+        "Tenant": "b",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "other"
+      }
+    ],
+    "basis": "Independently authored synthetic expectation; documentation informs construct syntax only. No reference observation.",
+    "sourceRefs": [
+      "query",
+      "dml"
+    ]
+  },
+  {
+    "id": "staged-runtime",
+    "sourceFile": "fail-after-write.cls",
+    "entry": "FailAfterWrite.run",
+    "args": [
+      {
+        "type": "string",
+        "string": "g"
+      },
+      {
+        "type": "string",
+        "string": "new"
+      }
+    ],
+    "identity": {
+      "Tenant": "a",
+      "Principal": "writer"
+    },
+    "policy": {
+      "Identity": {
+        "Tenant": "a",
+        "Principal": "writer"
+      },
+      "QueryAllowed": true,
+      "NameWriteAllowed": true,
+      "DeniedWriteIDs": []
+    },
+    "accounts": [
+      {
+        "Tenant": "a",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "one"
+      },
+      {
+        "Tenant": "a",
+        "ID": "2",
+        "Cohort": "g",
+        "Name": "two"
+      },
+      {
+        "Tenant": "a",
+        "ID": "3",
+        "Cohort": "G",
+        "Name": "case"
+      },
+      {
+        "Tenant": "b",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "other"
+      }
+    ],
+    "limits": {
+      "SourceBytes": 32768,
+      "ParseDepth": 64,
+      "Steps": 10000,
+      "CallDepth": 2,
+      "Rows": 100,
+      "Writes": 100,
+      "StringBytes": 4096,
+      "CollectionItems": 100
+    },
+    "expectedCode": "runtime",
+    "expectedReturn": null,
+    "expectedAccounts": [
+      {
+        "Tenant": "a",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "one"
+      },
+      {
+        "Tenant": "a",
+        "ID": "2",
+        "Cohort": "g",
+        "Name": "two"
+      },
+      {
+        "Tenant": "a",
+        "ID": "3",
+        "Cohort": "G",
+        "Name": "case"
+      },
+      {
+        "Tenant": "b",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "other"
+      }
+    ],
+    "basis": "Independently authored synthetic expectation; documentation informs construct syntax only. No reference observation.",
+    "sourceRefs": [
+      "operators",
+      "query",
+      "dml"
+    ]
+  },
+  {
+    "id": "staged-budget",
+    "sourceFile": "budget-after-write.cls",
+    "entry": "BudgetAfterWrite.run",
+    "args": [
+      {
+        "type": "string",
+        "string": "g"
+      },
+      {
+        "type": "string",
+        "string": "new"
+      }
+    ],
+    "identity": {
+      "Tenant": "a",
+      "Principal": "writer"
+    },
+    "policy": {
+      "Identity": {
+        "Tenant": "a",
+        "Principal": "writer"
+      },
+      "QueryAllowed": true,
+      "NameWriteAllowed": true,
+      "DeniedWriteIDs": []
+    },
+    "accounts": [
+      {
+        "Tenant": "a",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "one"
+      },
+      {
+        "Tenant": "a",
+        "ID": "2",
+        "Cohort": "g",
+        "Name": "two"
+      },
+      {
+        "Tenant": "a",
+        "ID": "3",
+        "Cohort": "G",
+        "Name": "case"
+      },
+      {
+        "Tenant": "b",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "other"
+      }
+    ],
+    "limits": {
+      "SourceBytes": 32768,
+      "ParseDepth": 64,
+      "Steps": 120,
+      "CallDepth": 2,
+      "Rows": 100,
+      "Writes": 100,
+      "StringBytes": 4096,
+      "CollectionItems": 100
+    },
+    "expectedCode": "budget",
+    "expectedReturn": null,
+    "expectedAccounts": [
+      {
+        "Tenant": "a",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "one"
+      },
+      {
+        "Tenant": "a",
+        "ID": "2",
+        "Cohort": "g",
+        "Name": "two"
+      },
+      {
+        "Tenant": "a",
+        "ID": "3",
+        "Cohort": "G",
+        "Name": "case"
+      },
+      {
+        "Tenant": "b",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "other"
+      }
+    ],
+    "basis": "Independently authored synthetic expectation; documentation informs construct syntax only. No reference observation.",
+    "sourceRefs": [
+      "loops",
+      "query",
+      "dml"
+    ]
+  },
+  {
+    "id": "late-batch-denial",
+    "sourceFile": "bulk-failure.cls",
+    "entry": "BulkFailure.run",
+    "args": [
+      {
+        "type": "string",
+        "string": "g"
+      },
+      {
+        "type": "string",
+        "string": "new"
+      }
+    ],
+    "identity": {
+      "Tenant": "a",
+      "Principal": "writer"
+    },
+    "policy": {
+      "Identity": {
+        "Tenant": "a",
+        "Principal": "writer"
+      },
+      "QueryAllowed": true,
+      "NameWriteAllowed": true,
+      "DeniedWriteIDs": [
+        "2"
+      ]
+    },
+    "accounts": [
+      {
+        "Tenant": "a",
+        "ID": "0",
+        "Cohort": "first",
+        "Name": "earlier"
+      },
+      {
+        "Tenant": "a",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "one"
+      },
+      {
+        "Tenant": "a",
+        "ID": "2",
+        "Cohort": "g",
+        "Name": "two"
+      },
+      {
+        "Tenant": "a",
+        "ID": "3",
+        "Cohort": "G",
+        "Name": "case"
+      },
+      {
+        "Tenant": "b",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "other"
+      }
+    ],
+    "limits": {
+      "SourceBytes": 32768,
+      "ParseDepth": 64,
+      "Steps": 10000,
+      "CallDepth": 2,
+      "Rows": 100,
+      "Writes": 100,
+      "StringBytes": 4096,
+      "CollectionItems": 100
+    },
+    "expectedCode": "denied",
+    "expectedReturn": null,
+    "expectedAccounts": [
+      {
+        "Tenant": "a",
+        "ID": "0",
+        "Cohort": "first",
+        "Name": "earlier"
+      },
+      {
+        "Tenant": "a",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "one"
+      },
+      {
+        "Tenant": "a",
+        "ID": "2",
+        "Cohort": "g",
+        "Name": "two"
+      },
+      {
+        "Tenant": "a",
+        "ID": "3",
+        "Cohort": "G",
+        "Name": "case"
+      },
+      {
+        "Tenant": "b",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "other"
+      }
+    ],
+    "basis": "Independently authored synthetic expectation; documentation informs construct syntax only. No reference observation.",
+    "sourceRefs": [
+      "query",
+      "dml"
+    ]
+  },
+  {
+    "id": "limit-calldepth",
+    "sourceFile": "rename.cls",
+    "entry": "Rename.run",
+    "args": [
+      {
+        "type": "string",
+        "string": "g"
+      },
+      {
+        "type": "string",
+        "string": "new"
+      }
+    ],
+    "identity": {
+      "Tenant": "a",
+      "Principal": "writer"
+    },
+    "policy": {
+      "Identity": {
+        "Tenant": "a",
+        "Principal": "writer"
+      },
+      "QueryAllowed": true,
+      "NameWriteAllowed": true,
+      "DeniedWriteIDs": []
+    },
+    "accounts": [
+      {
+        "Tenant": "a",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "one"
+      },
+      {
+        "Tenant": "a",
+        "ID": "2",
+        "Cohort": "g",
+        "Name": "two"
+      },
+      {
+        "Tenant": "a",
+        "ID": "3",
+        "Cohort": "G",
+        "Name": "case"
+      },
+      {
+        "Tenant": "b",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "other"
+      }
+    ],
+    "limits": {
+      "SourceBytes": 32768,
+      "ParseDepth": 64,
+      "Steps": 10000,
+      "CallDepth": 1,
+      "Rows": 100,
+      "Writes": 100,
+      "StringBytes": 4096,
+      "CollectionItems": 100
+    },
+    "expectedCode": "budget",
+    "expectedReturn": null,
+    "expectedAccounts": [
+      {
+        "Tenant": "a",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "one"
+      },
+      {
+        "Tenant": "a",
+        "ID": "2",
+        "Cohort": "g",
+        "Name": "two"
+      },
+      {
+        "Tenant": "a",
+        "ID": "3",
+        "Cohort": "G",
+        "Name": "case"
+      },
+      {
+        "Tenant": "b",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "other"
+      }
+    ],
+    "basis": "Independently authored synthetic expectation; documentation informs construct syntax only. No reference observation.",
+    "sourceRefs": [
+      "query",
+      "binds",
+      "dml"
+    ]
+  },
+  {
+    "id": "limit-rows",
+    "sourceFile": "rename.cls",
+    "entry": "Rename.run",
+    "args": [
+      {
+        "type": "string",
+        "string": "g"
+      },
+      {
+        "type": "string",
+        "string": "new"
+      }
+    ],
+    "identity": {
+      "Tenant": "a",
+      "Principal": "writer"
+    },
+    "policy": {
+      "Identity": {
+        "Tenant": "a",
+        "Principal": "writer"
+      },
+      "QueryAllowed": true,
+      "NameWriteAllowed": true,
+      "DeniedWriteIDs": []
+    },
+    "accounts": [
+      {
+        "Tenant": "a",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "one"
+      },
+      {
+        "Tenant": "a",
+        "ID": "2",
+        "Cohort": "g",
+        "Name": "two"
+      },
+      {
+        "Tenant": "a",
+        "ID": "3",
+        "Cohort": "G",
+        "Name": "case"
+      },
+      {
+        "Tenant": "b",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "other"
+      }
+    ],
+    "limits": {
+      "SourceBytes": 32768,
+      "ParseDepth": 64,
+      "Steps": 10000,
+      "CallDepth": 2,
+      "Rows": 1,
+      "Writes": 100,
+      "StringBytes": 4096,
+      "CollectionItems": 100
+    },
+    "expectedCode": "budget",
+    "expectedReturn": null,
+    "expectedAccounts": [
+      {
+        "Tenant": "a",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "one"
+      },
+      {
+        "Tenant": "a",
+        "ID": "2",
+        "Cohort": "g",
+        "Name": "two"
+      },
+      {
+        "Tenant": "a",
+        "ID": "3",
+        "Cohort": "G",
+        "Name": "case"
+      },
+      {
+        "Tenant": "b",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "other"
+      }
+    ],
+    "basis": "Independently authored synthetic expectation; documentation informs construct syntax only. No reference observation.",
+    "sourceRefs": [
+      "query",
+      "binds",
+      "dml"
+    ]
+  },
+  {
+    "id": "limit-writes",
+    "sourceFile": "rename.cls",
+    "entry": "Rename.run",
+    "args": [
+      {
+        "type": "string",
+        "string": "g"
+      },
+      {
+        "type": "string",
+        "string": "new"
+      }
+    ],
+    "identity": {
+      "Tenant": "a",
+      "Principal": "writer"
+    },
+    "policy": {
+      "Identity": {
+        "Tenant": "a",
+        "Principal": "writer"
+      },
+      "QueryAllowed": true,
+      "NameWriteAllowed": true,
+      "DeniedWriteIDs": []
+    },
+    "accounts": [
+      {
+        "Tenant": "a",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "one"
+      },
+      {
+        "Tenant": "a",
+        "ID": "2",
+        "Cohort": "g",
+        "Name": "two"
+      },
+      {
+        "Tenant": "a",
+        "ID": "3",
+        "Cohort": "G",
+        "Name": "case"
+      },
+      {
+        "Tenant": "b",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "other"
+      }
+    ],
+    "limits": {
+      "SourceBytes": 32768,
+      "ParseDepth": 64,
+      "Steps": 10000,
+      "CallDepth": 2,
+      "Rows": 100,
+      "Writes": 1,
+      "StringBytes": 4096,
+      "CollectionItems": 100
+    },
+    "expectedCode": "budget",
+    "expectedReturn": null,
+    "expectedAccounts": [
+      {
+        "Tenant": "a",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "one"
+      },
+      {
+        "Tenant": "a",
+        "ID": "2",
+        "Cohort": "g",
+        "Name": "two"
+      },
+      {
+        "Tenant": "a",
+        "ID": "3",
+        "Cohort": "G",
+        "Name": "case"
+      },
+      {
+        "Tenant": "b",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "other"
+      }
+    ],
+    "basis": "Independently authored synthetic expectation; documentation informs construct syntax only. No reference observation.",
+    "sourceRefs": [
+      "query",
+      "binds",
+      "dml"
+    ]
+  },
+  {
+    "id": "limit-collectionitems",
+    "sourceFile": "rename.cls",
+    "entry": "Rename.run",
+    "args": [
+      {
+        "type": "string",
+        "string": "g"
+      },
+      {
+        "type": "string",
+        "string": "new"
+      }
+    ],
+    "identity": {
+      "Tenant": "a",
+      "Principal": "writer"
+    },
+    "policy": {
+      "Identity": {
+        "Tenant": "a",
+        "Principal": "writer"
+      },
+      "QueryAllowed": true,
+      "NameWriteAllowed": true,
+      "DeniedWriteIDs": []
+    },
+    "accounts": [
+      {
+        "Tenant": "a",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "one"
+      },
+      {
+        "Tenant": "a",
+        "ID": "2",
+        "Cohort": "g",
+        "Name": "two"
+      },
+      {
+        "Tenant": "a",
+        "ID": "3",
+        "Cohort": "G",
+        "Name": "case"
+      },
+      {
+        "Tenant": "b",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "other"
+      }
+    ],
+    "limits": {
+      "SourceBytes": 32768,
+      "ParseDepth": 64,
+      "Steps": 10000,
+      "CallDepth": 2,
+      "Rows": 100,
+      "Writes": 100,
+      "StringBytes": 4096,
+      "CollectionItems": 1
+    },
+    "expectedCode": "budget",
+    "expectedReturn": null,
+    "expectedAccounts": [
+      {
+        "Tenant": "a",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "one"
+      },
+      {
+        "Tenant": "a",
+        "ID": "2",
+        "Cohort": "g",
+        "Name": "two"
+      },
+      {
+        "Tenant": "a",
+        "ID": "3",
+        "Cohort": "G",
+        "Name": "case"
+      },
+      {
+        "Tenant": "b",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "other"
+      }
+    ],
+    "basis": "Independently authored synthetic expectation; documentation informs construct syntax only. No reference observation.",
+    "sourceRefs": [
+      "query",
+      "binds",
+      "dml"
+    ]
+  },
+  {
+    "id": "limit-stringbytes",
+    "sourceFile": "rename.cls",
+    "entry": "Rename.run",
+    "args": [
+      {
+        "type": "string",
+        "string": "g"
+      },
+      {
+        "type": "string",
+        "string": "new"
+      }
+    ],
+    "identity": {
+      "Tenant": "a",
+      "Principal": "writer"
+    },
+    "policy": {
+      "Identity": {
+        "Tenant": "a",
+        "Principal": "writer"
+      },
+      "QueryAllowed": true,
+      "NameWriteAllowed": true,
+      "DeniedWriteIDs": []
+    },
+    "accounts": [
+      {
+        "Tenant": "a",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "one"
+      },
+      {
+        "Tenant": "a",
+        "ID": "2",
+        "Cohort": "g",
+        "Name": "two"
+      },
+      {
+        "Tenant": "a",
+        "ID": "3",
+        "Cohort": "G",
+        "Name": "case"
+      },
+      {
+        "Tenant": "b",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "other"
+      }
+    ],
+    "limits": {
+      "SourceBytes": 32768,
+      "ParseDepth": 64,
+      "Steps": 10000,
+      "CallDepth": 2,
+      "Rows": 100,
+      "Writes": 100,
+      "StringBytes": 1,
+      "CollectionItems": 100
+    },
+    "expectedCode": "budget",
+    "expectedReturn": null,
+    "expectedAccounts": [
+      {
+        "Tenant": "a",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "one"
+      },
+      {
+        "Tenant": "a",
+        "ID": "2",
+        "Cohort": "g",
+        "Name": "two"
+      },
+      {
+        "Tenant": "a",
+        "ID": "3",
+        "Cohort": "G",
+        "Name": "case"
+      },
+      {
+        "Tenant": "b",
+        "ID": "1",
+        "Cohort": "g",
+        "Name": "other"
+      }
+    ],
+    "basis": "Independently authored synthetic expectation; documentation informs construct syntax only. No reference observation.",
+    "sourceRefs": [
+      "query",
+      "binds",
+      "dml"
+    ]
+  },
+  {
+    "id": "limit-steps",
+    "sourceFile": "infinite.cls",
+    "entry": "Infinite.run",
+    "args": [],
+    "identity": {
+      "Tenant": "a",
+      "Principal": "writer"
+    },
+    "policy": {
+      "Identity": {
+        "Tenant": "a",
+        "Principal": "writer"
+      },
+      "QueryAllowed": true,
+      "NameWriteAllowed": true,
+      "DeniedWriteIDs": []
+    },
+    "accounts": [],
+    "limits": {
+      "SourceBytes": 32768,
+      "ParseDepth": 64,
+      "Steps": 10,
+      "CallDepth": 2,
+      "Rows": 100,
+      "Writes": 100,
+      "StringBytes": 4096,
+      "CollectionItems": 100
+    },
+    "expectedCode": "budget",
+    "expectedReturn": null,
+    "expectedAccounts": [],
+    "basis": "Independently authored synthetic expectation; documentation informs construct syntax only. No reference observation.",
+    "sourceRefs": [
+      "loops"
+    ]
+  },
+  {
+    "id": "limit-sourcebytes",
+    "sourceFile": "infinite.cls",
+    "entry": "Infinite.run",
+    "args": [],
+    "identity": {
+      "Tenant": "a",
+      "Principal": "writer"
+    },
+    "policy": {
+      "Identity": {
+        "Tenant": "a",
+        "Principal": "writer"
+      },
+      "QueryAllowed": true,
+      "NameWriteAllowed": true,
+      "DeniedWriteIDs": []
+    },
+    "accounts": [],
+    "limits": {
+      "SourceBytes": 30,
+      "ParseDepth": 64,
+      "Steps": 10000,
+      "CallDepth": 2,
+      "Rows": 100,
+      "Writes": 100,
+      "StringBytes": 4096,
+      "CollectionItems": 100
+    },
+    "expectedCode": "budget",
+    "expectedReturn": null,
+    "expectedAccounts": [],
+    "basis": "Independently authored synthetic expectation; documentation informs construct syntax only. No reference observation.",
+    "sourceRefs": [
+      "loops"
+    ]
+  },
+  {
+    "id": "limit-parsedepth",
+    "sourceFile": "infinite.cls",
+    "entry": "Infinite.run",
+    "args": [],
+    "identity": {
+      "Tenant": "a",
+      "Principal": "writer"
+    },
+    "policy": {
+      "Identity": {
+        "Tenant": "a",
+        "Principal": "writer"
+      },
+      "QueryAllowed": true,
+      "NameWriteAllowed": true,
+      "DeniedWriteIDs": []
+    },
+    "accounts": [],
+    "limits": {
+      "SourceBytes": 32768,
+      "ParseDepth": 1,
+      "Steps": 10000,
+      "CallDepth": 2,
+      "Rows": 100,
+      "Writes": 100,
+      "StringBytes": 4096,
+      "CollectionItems": 100
+    },
+    "expectedCode": "budget",
+    "expectedReturn": null,
+    "expectedAccounts": [],
+    "basis": "Independently authored synthetic expectation; documentation informs construct syntax only. No reference observation.",
+    "sourceRefs": [
+      "loops"
+    ]
+  },
+  {
+    "id": "concat-exact",
+    "sourceFile": "concat.cls",
+    "entry": "Concat.run",
+    "args": [
+      {
+        "type": "string",
+        "string": "ab"
+      },
+      {
+        "type": "string",
+        "string": "cd"
+      }
+    ],
+    "identity": {
+      "Tenant": "a",
+      "Principal": "writer"
+    },
+    "policy": {
+      "Identity": {
+        "Tenant": "a",
+        "Principal": "writer"
+      },
+      "QueryAllowed": true,
+      "NameWriteAllowed": true,
+      "DeniedWriteIDs": []
+    },
+    "accounts": [],
+    "limits": {
+      "SourceBytes": 32768,
+      "ParseDepth": 64,
+      "Steps": 10000,
+      "CallDepth": 2,
+      "Rows": 100,
+      "Writes": 100,
+      "StringBytes": 4,
+      "CollectionItems": 100
+    },
+    "expectedCode": "",
+    "expectedReturn": {
+      "type": "integer",
+      "integer": 1
+    },
+    "expectedAccounts": [],
+    "basis": "Independently authored synthetic expectation; documentation informs construct syntax only. No reference observation.",
+    "sourceRefs": [
+      "classes",
+      "methods",
+      "primitives",
+      "operators"
+    ]
+  },
+  {
+    "id": "concat-over",
+    "sourceFile": "concat-over.cls",
+    "entry": "ConcatOver.run",
+    "args": [
+      {
+        "type": "string",
+        "string": "ab"
+      },
+      {
+        "type": "string",
+        "string": "cd"
+      }
+    ],
+    "identity": {
+      "Tenant": "a",
+      "Principal": "writer"
+    },
+    "policy": {
+      "Identity": {
+        "Tenant": "a",
+        "Principal": "writer"
+      },
+      "QueryAllowed": true,
+      "NameWriteAllowed": true,
+      "DeniedWriteIDs": []
+    },
+    "accounts": [],
+    "limits": {
+      "SourceBytes": 32768,
+      "ParseDepth": 64,
+      "Steps": 10000,
+      "CallDepth": 2,
+      "Rows": 100,
+      "Writes": 100,
+      "StringBytes": 3,
+      "CollectionItems": 100
+    },
+    "expectedCode": "budget",
+    "expectedReturn": null,
+    "expectedAccounts": [],
+    "basis": "Independently authored synthetic expectation; documentation informs construct syntax only. No reference observation.",
+    "sourceRefs": [
+      "classes",
+      "methods",
+      "primitives",
+      "operators"
+    ]
+  },
+  {
+    "id": "unsupported",
+    "sourceFile": "unsupported.cls",
+    "entry": "Unsupported.run",
+    "args": [],
+    "identity": {
+      "Tenant": "a",
+      "Principal": "writer"
+    },
+    "policy": {
+      "Identity": {
+        "Tenant": "a",
+        "Principal": "writer"
+      },
+      "QueryAllowed": true,
+      "NameWriteAllowed": true,
+      "DeniedWriteIDs": []
+    },
+    "accounts": [],
+    "limits": {
+      "SourceBytes": 32768,
+      "ParseDepth": 64,
+      "Steps": 10000,
+      "CallDepth": 2,
+      "Rows": 100,
+      "Writes": 100,
+      "StringBytes": 4096,
+      "CollectionItems": 100
+    },
+    "expectedCode": "unsupported",
+    "expectedReturn": null,
+    "expectedAccounts": [],
+    "basis": "Independently authored synthetic expectation; documentation informs construct syntax only. No reference observation.",
+    "sourceRefs": [
+      "classes",
+      "methods",
+      "primitives",
+      "operators"
+    ]
+  },
+  {
+    "id": "dynamic-query",
+    "sourceFile": "dynamic-query.cls",
+    "entry": "DynamicQuery.run",
+    "args": [],
+    "identity": {
+      "Tenant": "a",
+      "Principal": "writer"
+    },
+    "policy": {
+      "Identity": {
+        "Tenant": "a",
+        "Principal": "writer"
+      },
+      "QueryAllowed": true,
+      "NameWriteAllowed": true,
+      "DeniedWriteIDs": []
+    },
+    "accounts": [],
+    "limits": {
+      "SourceBytes": 32768,
+      "ParseDepth": 64,
+      "Steps": 10000,
+      "CallDepth": 2,
+      "Rows": 100,
+      "Writes": 100,
+      "StringBytes": 4096,
+      "CollectionItems": 100
+    },
+    "expectedCode": "unsupported",
+    "expectedReturn": null,
+    "expectedAccounts": [],
+    "basis": "Independently authored synthetic expectation; documentation informs construct syntax only. No reference observation.",
+    "sourceRefs": [
+      "classes",
+      "methods",
+      "primitives",
+      "operators"
+    ]
+  },
+  {
+    "id": "inheritance",
+    "sourceFile": "inheritance.cls",
+    "entry": "Inheritance.run",
+    "args": [],
+    "identity": {
+      "Tenant": "a",
+      "Principal": "writer"
+    },
+    "policy": {
+      "Identity": {
+        "Tenant": "a",
+        "Principal": "writer"
+      },
+      "QueryAllowed": true,
+      "NameWriteAllowed": true,
+      "DeniedWriteIDs": []
+    },
+    "accounts": [],
+    "limits": {
+      "SourceBytes": 32768,
+      "ParseDepth": 64,
+      "Steps": 10000,
+      "CallDepth": 2,
+      "Rows": 100,
+      "Writes": 100,
+      "StringBytes": 4096,
+      "CollectionItems": 100
+    },
+    "expectedCode": "unsupported",
+    "expectedReturn": null,
+    "expectedAccounts": [],
+    "basis": "Independently authored synthetic expectation; documentation informs construct syntax only. No reference observation.",
+    "sourceRefs": [
+      "classes",
+      "methods",
+      "primitives",
+      "operators"
+    ]
+  },
+  {
+    "id": "malformed",
+    "sourceFile": "malformed.cls",
+    "entry": "Malformed.run",
+    "args": [],
+    "identity": {
+      "Tenant": "a",
+      "Principal": "writer"
+    },
+    "policy": {
+      "Identity": {
+        "Tenant": "a",
+        "Principal": "writer"
+      },
+      "QueryAllowed": true,
+      "NameWriteAllowed": true,
+      "DeniedWriteIDs": []
+    },
+    "accounts": [],
+    "limits": {
+      "SourceBytes": 32768,
+      "ParseDepth": 64,
+      "Steps": 10000,
+      "CallDepth": 2,
+      "Rows": 100,
+      "Writes": 100,
+      "StringBytes": 4096,
+      "CollectionItems": 100
+    },
+    "expectedCode": "syntax",
+    "expectedReturn": null,
+    "expectedAccounts": [],
+    "basis": "Independently authored synthetic expectation; documentation informs construct syntax only. No reference observation.",
+    "sourceRefs": [
+      "classes",
+      "methods",
+      "primitives",
+      "operators"
+    ]
+  }
+]

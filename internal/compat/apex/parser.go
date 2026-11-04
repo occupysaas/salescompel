@@ -102,6 +102,10 @@ func (p *parser) enter() bool {
 }
 func (p *parser) typeName(scalar bool) string {
 	t := p.take()
+	if t.kind != "word" {
+		p.err = t.err("syntax")
+		return ""
+	}
 	switch t.text {
 	case "Integer", "Boolean", "String":
 		return t.text
@@ -149,6 +153,10 @@ func (p *parser) declare(n string) {
 func (p *parser) stmt() *statement {
 	t := p.peek()
 	s := &statement{tok: t}
+	if t.kind == "string" || t.kind == "number" {
+		p.fail("syntax")
+		return s
+	}
 	switch t.text {
 	case "{":
 		return p.block(nil)
@@ -313,7 +321,7 @@ func (p *parser) primary() *expression {
 	}
 	if p.accept(".") {
 		f := p.take()
-		if f.text != "Id" && f.text != "Name" && f.text != "Probe_Group__c" {
+		if f.kind != "word" || (f.text != "Id" && f.text != "Name" && f.text != "Probe_Group__c") {
 			if p.err == nil {
 				p.err = f.err("unsupported")
 			}

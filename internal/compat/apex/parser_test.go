@@ -89,3 +89,13 @@ func TestCompileBounds(t *testing.T) {
 	_, e = compile(source("String s = 'abcd'; return 0;"), l)
 	wantCode(t, e, "budget")
 }
+
+// Quoted keyword/field text must remain a string, never acquire grammar authority.
+func TestCompileRejectsQuotedGrammar(t *testing.T) {
+	for _, s := range []string{source("'return' 1;"), source("'Integer' x = 1; return x;"), source("'if' (true) {return 1;} return 0;"), source("Account a = null; String s = a.'Name'; return 0;"), "public class Probe { public static Integer run('Integer' n) { return n; } }"} {
+		_, err := compile(s, DefaultLimits())
+		if err == nil {
+			t.Errorf("quoted grammar accepted: %s", s)
+		}
+	}
+}

@@ -127,6 +127,65 @@ Plan 17 has an inventory format, no real target requirements or class API versio
 
 ## Results and decision
 
-Pending execution and fresh whole-change review. Full M7, M0/M1R gates, estimates
-and Plans 10/14 remain unchanged. Flow, imported UI hosting and required packages
-need separate feasibility studies.
+Executed 2026-11-03: 25 manifest scenarios each passed twice on fresh state,
+and 12 parallel invocations on separate stores passed. Expected outcomes in
+`internal/compat/apex/testdata/scenarios.json` are independent synthetic inputs;
+the actual outcomes below were observed from Go tests, not Salesforce.
+Fresh whole-change review and final scope checks are pending.
+
+Reproduce with `GOTOOLCHAIN=go1.25.0 go test ./internal/compat/apex -count=1 -v`.
+The command ran and passed; each scenario logs its actual error/result and host
+trace. All rows below use that command unless a focused test is named.
+
+| Required experiment | Fixtures / tests | Actual result and assertion |
+| --- | --- | --- |
+| Source execution | `compute.cls`; `TestRunCompute`, `TestScenarios/compute-{0,1,4}` | Passed: same bytes return 0,0,6 from inputs 0,1,4; SHA-256 checked across variants. |
+| Record workflow | `rename.cls`; `rename-empty`, `rename-one`, `rename-multiple-tenants` | Passed: empty, one and two matching rows; exactly one commit; every store field compared, other tenant and differently cased cohort unchanged. |
+| Failed transaction | `fail-after-write.cls`, `budget-after-write.cls`, `bulk-failure.cls`; `staged-runtime`, `staged-budget`, `late-batch-denial` | Passed: traces show staged then discard, never commit; entire store unchanged after division-by-zero, infinite-loop budget failure, or later denied row after an earlier update. |
+| Tenant/principal separation | `TestHostTenantAndPolicy`, `TestHostHandles`; manifest principal/tenant cases | Passed: same local IDs across tenants remain separate; denied query/write principals fail; unknown, cross-tenant and previous-invocation handles rejected. |
+| Resource termination | `TestCompileBounds`, `TestMeterBoundaries`, `TestHostBudgets`, `TestRunBudgets`, `TestRunStringBounds`; manifest `limit-*`, `concat-*` | Passed: source, nesting/unary/flat-tree depth, steps, host call depth, cumulative rows/writes, collection size and UTF-8 byte size produce budget errors; exact boundaries pass; staged budget failure rolls back. |
+| Cancellation | `TestRunCancellation/{before,staged,before-commit}` | Passed: deterministic synchronous event observer cancels at each point, entire store unchanged; no sleep or timing assumption. |
+| Unsupported/malformed | `unsupported.cls`, `dynamic-query.cls`, `inheritance.cls`, `malformed.cls`; `TestCompileRejectsWholeProgram`, `TestRunUnsupportedBeforeHost`, `TestCompileRejectsQuotedGrammar` | Passed: whole program rejected including unreachable exclusions, structured locations, no host begin/query/stage. A regression initially accepted quoted keywords/fields; token-kind checks corrected it and the regression passed. |
+| Repeatability/isolation | `TestScenarios`, `TestParallelInvocations`, `TestHostSnapshotIsolation` | Passed: every manifest case twice; 12 concurrent invocations have separate identities/stores/parameters/budgets; inputs and detached snapshots unchanged. Shared-store concurrency is unsupported and untested. |
+
+`TestRunTypes` additionally verifies checked arithmetic (including minimum-int
+negation/division), short circuit, exact string equality, null errors/equality,
+lexical scope and missing returns. Argument/entry errors occur before host begin.
+Trace labels contain no record IDs or source values. Scalar/null equality is
+supported; two non-null records/lists cannot be compared. Null can inhabit a
+String variable, but the synthetic `Account.Name` store field requires a String
+value; assigning null to it fails with `type`. Parser columns count UTF-8 bytes.
+
+## Architecture and follow-up gates
+
+Provisional decision pending review: **Continue**, limited to the tested synthetic
+subset. A hand-written parser and tree interpreter made complete-source rejection,
+per-node checkpoints, invocation-local scopes and one host boundary directly
+inspectable. The observed rollback/cancellation tests support keeping this design
+for the next discriminating experiment. Transpilation would need equivalent
+instrumentation and host restrictions; bytecode could centralize instruction
+accounting but adds lowering/verification machinery. Neither alternative was
+implemented or benchmarked; no performance advantage is claimed.
+
+Production blockers remain: unsupported language/types and platform calls;
+full static checking; metadata and version resolution; actual sharing/CRUD/FLS
+semantics; transaction/trigger ordering; heap accounting and hostile-program
+sandboxing; database/concurrency integration; deployment and target relevance.
+The harness trusts store size and configured limits. Parser token/AST storage,
+all retained locals/issued handles and store snapshot copies have no aggregate
+heap budget; finite source/steps/rows limits bound this experiment but do not
+constitute production memory isolation. Cancellation is checked between steps
+and immediately before publication, not during Go allocation/sort/compilation.
+An external cancellation racing after that last check may occur after publication;
+no atomic cancellation/commit guarantee is claimed. No database/live client or
+reference-org run was performed.
+
+| Owner | Next action / promotion prerequisite |
+| --- | --- |
+| maintainer | Select a real target and assign its Plan 17 inventory owner; collect required Apex classes, exact class/API versions and authorized reference access. |
+| platform-implementer | Resolve the dedicated while documentation gap and pin language sources to selected versions. Compare independently authored fixtures through authorized public interfaces; synthetic results cannot settle parity. |
+| platform-implementer | Design invocation-wide database ownership, metadata/type resolution, security context, query adapter, error mapping and aggregate metering at the candidate attachment points above. Require reference evidence on ordering/limits/security before wiring into product. |
+| platform-implementer | Plan separate Flow execution, imported component hosting and package feasibility experiments with actual target requirements and package availability. |
+
+Full M7, M0/M1R gates, program estimates and Plans 10/14 remain unchanged.
+No compatibility certification or product promotion follows from this study.
