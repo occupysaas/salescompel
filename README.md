@@ -2,7 +2,7 @@
 
 An open-source, free-to-use Salesforce replacement project, with an initial tenant-isolated Go/PostgreSQL candidate and Vue record workflow.
 
-See the [compatibility roadmap](docs/plans/2026-10-14-salesforce-compatibility-roadmap.md) for the proposed architecture, migration strategy, and milestones.
+See the [first release roadmap](docs/superpowers/specs/2026-11-04-salescompel-first-release-roadmap-design.md) for the current order of work, and the [compatibility roadmap](docs/plans/2026-10-14-salesforce-compatibility-roadmap.md) for the proposed architecture, migration strategy, and certification milestones.
 
 ## UI prototype
 
@@ -17,11 +17,21 @@ locally and understand its scope.
 
 ## Roadmap and progress
 
-As of October 20, 2026, completed work packages include the compatibility
-laboratory, the Go/PostgreSQL candidate walking slice, an accepted eleven-scenario
-reference baseline, bounded metadata/catalog improvements, external-ID body
-validation and the early UI prototype. These are subsystem deliveries; no full
-program milestone has a recorded exit-gate pass yet.
+The next goal is a `0.x` early preview for new teams and simple Salesforce orgs:
+a working sales CRM with a Salesforce-compatible API that standard clients can
+use, and an import with a dry-run report naming what will not carry over.
+
+Apex, Flow and custom UI (LWC, Aura, Visualforce) are excluded from that first
+release and come later. Orgs that rely on them will not be able to move yet. The
+preview is not certified and does not claim 1:1 Salesforce compatibility. See the
+[first release roadmap](docs/superpowers/specs/2026-11-04-salescompel-first-release-roadmap-design.md).
+
+The table below tracks the longer-term certification milestones. Completed work
+packages include the compatibility laboratory, the Go/PostgreSQL candidate
+walking slice, an accepted eleven-scenario reference baseline, bounded
+metadata/catalog improvements, external-ID body validation, atomic Composite
+writes and the early UI prototype. These are subsystem deliveries; no full program
+milestone has a recorded exit-gate pass yet.
 
 | Milestone | Current status | Remaining focus |
 | --- | --- | --- |
@@ -38,14 +48,15 @@ program milestone has a recorded exit-gate pass yet.
 | M9 — Production certification | Not reached | Migration rehearsals, security, performance, recovery and cutover |
 | M10 — Wider Salesforce coverage | Scope-dependent | Separate inventories and certification for additional clouds/profiles |
 
-The draft budget is **roughly 185–350 additional plan equivalents through M9**,
-including discovery and rework reserve. This is a rough scope estimate, not a
-delivery-date forecast; M10 needs separately bounded inventories. An early UI
-track runs alongside foundation work so feedback can shape the product sooner.
+The first release budget is **roughly 21–31 feature-sized plans**, or about 26–42
+with a rework reserve. Full certification through M9 remains a much larger effort:
+the earlier estimate was **185–350 narrower plan equivalents**. These are rough
+scope estimates, not delivery-date forecasts, and they are not directly comparable.
+M10 needs separately bounded inventories.
 
-Next priorities are closing foundation evidence gaps, resolving external-ID
-equality and migration behavior, completing the target inventory, and testing
-Apex/Flow/custom-UI feasibility early. See the
+The next priority is Plan 25, which settles open REST and external-ID behavior
+from the documentation and logs what remains unobserved, followed by OAuth login
+and dynamic objects and fields. See the
 [progress roadmap and estimate assumptions](docs/plans/2026-10-20-progress-and-remaining-roadmap.md)
 and the [full architecture and milestone gates](docs/plans/2026-10-14-salesforce-compatibility-roadmap.md).
 

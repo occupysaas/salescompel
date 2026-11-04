@@ -1,5 +1,7 @@
 # SalesCompel progress and remaining roadmap
 
+> **Superseded for order of work:** the [first release roadmap](../superpowers/specs/2026-11-04-salescompel-first-release-roadmap-design.md) (accepted 2026-11-04) replaces this document's recommended sequence and next steps, and revises its direct-on-main policy. The budgets below still describe the path to full M9 certification, and this document stays as the record of Plans 1–13.
+
 As of 2026-10-20. Brainstorming draft for review, based on repository decisions through completed Plan 11 and drafted Plan 12. This supplements the [original roadmap](2026-10-14-salesforce-compatibility-roadmap.md); it does not reduce its acceptance gates or authorize implementation.
 
 ## What is complete

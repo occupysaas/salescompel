@@ -1,5 +1,7 @@
 # SalesCompel Salesforce compatibility roadmap
 
+> **Current order of work:** the [first release roadmap](../superpowers/specs/2026-11-04-salescompel-first-release-roadmap-design.md) (accepted 2026-11-04) sets the path to a `0.x` early preview and changes how evidence, inventory and release-history work are sequenced. This document still defines the architecture, policies and M0–M10 certification gates.
+
 Date: 2026-10-14. Status: proposed architecture and milestone plan; Plan 1 offline laboratory and the Plan 2 M2 candidate walking slice implemented on 2026-10-15. Plan 2 proceeded without M0/M1 reference evidence, so no milestone exit gate has passed and no live parity certification has occurred. Revised after a plan review on 2026-10-15 (see [Coverage assignments](#coverage-assignments-from-the-2026-10-15-review)). Update 2026-10-16: [Plan 4](../compat/plan-4-reference-baseline.md) completed the eleven-scenario pilot reference baseline with two repeatable captures; full M0/M1 obligations and candidate parity remain open.
 
 ## Objective and planning assumptions
@@ -12,7 +14,7 @@ The long-term objective is 1:1 replacement. The proposed first certification tar
 
 The repository contains the Plan 1 laboratory and the Plan 2 candidate service (`cmd/salescompel`, `internal/platform`, `web`). Team size, target org, data volumes, hosting constraints, downtime allowance, and required Salesforce versions are not yet established. Milestones below are dependency and acceptance driven, not delivery-date promises.
 
-**Branch policy:** all work is committed directly on `main` until every milestone below is complete. Only then does the project become usable and testable by humans; until that point, plans must not require feature branches or merge-based review.
+**Branch policy (revised 2026-11-04):** all work is committed directly on `main` until Plan 49 of the [first release roadmap](../superpowers/specs/2026-11-04-salescompel-first-release-roadmap-design.md) adds a release branch; publishing then happens only from that branch. This replaces the earlier rule that work stays on `main` until every milestone is complete. Until Plan 49, plans must not require feature branches or merge-based review.
 
 ## What “drop-in” means
 
