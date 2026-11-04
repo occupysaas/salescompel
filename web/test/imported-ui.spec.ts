@@ -62,3 +62,77 @@ test('discardsFailedPatch', async ({ page }) => {
     expect(await page.evaluate(() => (window as any).probe.instances[0].diagnostic.code)).toBe('budget');
     expect(await page.evaluate(() => (window as any).probe.events)).toEqual([]);
 });
+test('loadsAndSavesBoundRecord', async ({ page }) => {
+    await page.evaluate(() => (window as any).probe.open({ tenant: 'a' }));
+    await page.getByRole('textbox').fill('Changed');
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    expect(await page.evaluate(() => (window as any).probe.store.snapshot())).toEqual([{
+            tenant: 'a', id: '1', name: 'Changed'
+        }, {
+            tenant: 'a', id: '2', name: 'Unrelated'
+        }, {
+            tenant: 'b', id: '1', name: 'Second'
+        }]);
+});
+test('deniedSaveKeepsLocalEdit', async ({ page }) => {
+    await page.evaluate(() => (window as any).probe.open({ write: false }));
+    await page.getByRole('textbox').fill('Draft');
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    await expect(page.getByRole('textbox')).toHaveValue('Draft');
+    expect(await page.evaluate(() => (window as any).probe.instances[0].diagnostic.code)).toBe('denied');
+    expect(await page.evaluate(() => (window as any).probe.store.snapshot()[0].name)).toBe('First');
+});
+test('isolatesRecordSessions', async ({ page }) => {
+    expect(await page.evaluate(() => {
+        const p = (window as any).probe;
+        const read = p.open({ read: false });
+        const missing = p.open({ recordId: 'missing' });
+        p.open({ tenant: 'a' });
+        p.open({ tenant: 'b' });
+        const patch = p.instances[0].updatePublic({ recordId: '2' });
+        return {
+            read: read.error.code, missing: missing.error.code, count: p.containers.length, patch: patch.error.code
+        };
+    })).toEqual({
+        read: 'denied', missing: 'not-found', count: 2, patch: 'invalid-input'
+    });
+    await page.getByRole('textbox').last().fill('Tenant B');
+    await page.getByRole('button', { name: 'Save', exact: true }).last().click();
+    expect(await page.evaluate(() => (window as any).probe.store.snapshot().map((a: any) => a.name))).toEqual(['First', 'Unrelated', 'Tenant B']);
+    await page.evaluate(() => (window as any).probe.instances[0].dispose());
+    await page.getByRole('textbox').fill('Still B');
+    await expect(page.getByText('Draft: Still B', { exact: true })).toBeVisible();
+});
+test('source rejection leaves browser DOM and host untouched', async ({ page }) => {
+    expect(await page.evaluate(() => {
+        const p = (window as any).probe;
+        const source = { ...p.fixture, js: p.fixture.js + " fetch('PRIVATE_MARKER');" };
+        const out = p.open({ source });
+        return {
+            ok: out.ok, children: document.querySelector('#mounts')!.childElementCount, rows: p.store.snapshot()
+        };
+    })).toEqual({
+        ok: false, children: 0, rows: [{
+                tenant: 'a', id: '1', name: 'First'
+            }, {
+                tenant: 'a', id: '2', name: 'Unrelated'
+            }, {
+                tenant: 'b', id: '1', name: 'Second'
+            }]
+    });
+});
+test('trusted callback exceptions become bounded host diagnostics', async ({ page }) => {
+    await page.evaluate(() => {
+        const p = (window as any).probe;
+        const div = document.createElement('div');
+        document.querySelector('#mounts')!.append(div);
+        const model = p.compileBundle(p.fixture, p.defaultLimits()).value;
+        const out = p.mountComponent(div, model, { recordId: '1', name: 'First' }, { limits: p.defaultLimits(), onEvent: () => {
+                throw Error('PRIVATE_MARKER');
+            } });
+        p.instances.push(out.value);
+    });
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    const message = await page.evaluate(() => (window as any).probe.instances[0].diagnostic.message);
+    expect(message).toBe('host host none -1');
+});
