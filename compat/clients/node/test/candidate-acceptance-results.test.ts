@@ -184,3 +184,26 @@ test("Playwright expected-failure annotations cannot turn a failed assertion int
     "failed",
   );
 });
+
+test("Composite parent identity survives Node result parsing without changing ordinary identities", () => {
+  const events = [
+    {
+      type: "test:pass",
+      data: {
+        name: "candidate/composite/atomic",
+        file: "candidate-composite.test.ts",
+      },
+    },
+    {
+      type: "test:pass",
+      data: { name: "ordinary", file: "candidate-composite.test.ts" },
+    },
+    { type: "test:summary", data: {} },
+  ]
+    .map((e) => JSON.stringify(e))
+    .join("\n");
+  assert.deepEqual(parseGateEvents("node", events, "jsforce"), [
+    { id: "candidate/composite/atomic", outcome: "passed" },
+    { id: "candidate-composite.test.ts::ordinary", outcome: "passed" },
+  ]);
+});

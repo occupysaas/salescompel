@@ -4,7 +4,7 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { candidateAcceptanceMain } from "../src/candidate-acceptance-command.ts";
-test("candidate client process includes both client and OpenAPI tests with its bound reporter", async () => {
+test("candidate client process includes client, OpenAPI and Composite tests with its bound reporter", async () => {
   const { candidateNodeTestArgs } =
     await import("../src/candidate-acceptance-run.ts");
   assert.deepEqual(candidateNodeTestArgs("reporter.mjs", "report.json"), [
@@ -15,6 +15,7 @@ test("candidate client process includes both client and OpenAPI tests with its b
     "--test-reporter-destination=report.json",
     "test/candidate.test.ts",
     "test/candidate-openapi.test.ts",
+    "test/candidate-composite.test.ts",
   ]);
 });
 test("full command blocks before fixture work and publishes only a sanitized report", async (t) => {

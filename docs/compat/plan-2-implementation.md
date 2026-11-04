@@ -72,7 +72,9 @@ map includes its `openapi` link. The canonical YAML is embedded in the binary.
 validation and its acceptance boundary. The broader `api/openapi.yaml` remains
 a proposal and is not served. A general Go traffic-validation library remains
 unselected; candidate Node tests validate the bounded document/schema subset.
-Composite, collections,
+The bounded Plan 24 POST `/services/data/v65.0/composite` supports atomic Account/Contact POST/PATCH/DELETE with explicit `allOrNone: true`, absent/false `collateSubrequests` and earlier-create `.id` references in row URLs or Contact.AccountId. Every write uses one principal and one PostgreSQL transaction. A failed subrequest rolls back all writes; an outer 200 requires inspection of every subresponse. Partial-success mode, collation, read/query/upsert subrequests and other Composite resources remain deferred.
+
+Collections,
 Metadata/SOAP, Bulk, pagination, user-setting writes, full SOQL, dynamic schema,
 Migration and production identity are **not implemented**. Unsupported routes
 return errors. Do not run the full pilot capture expecting every M3/M4 scenario

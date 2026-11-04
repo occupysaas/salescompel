@@ -3,8 +3,9 @@ package platform
 import (
 	"context"
 	"errors"
-	"github.com/jackc/pgx/v5"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 )
 
 type CompositeRequest struct {

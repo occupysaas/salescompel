@@ -6,6 +6,7 @@ import { parse } from "yaml";
 import { ROOT } from "../src/versions.ts";
 import { createCandidateTrafficValidator } from "../src/candidate-openapi-traffic.ts";
 import type { CandidateExchange } from "../src/candidate-openapi-model.ts";
+import { runCompositeFixtureAttempt } from "../src/candidate-composite-fixtures.ts";
 import {
   recordFixtureEvent,
   trackFixtureAttempt,
@@ -32,6 +33,7 @@ const expectedIds = [
   "candidateUpsertAccount",
   "candidateQuery",
   "candidateOpenAPI",
+  "candidateCompositeAtomic",
 ];
 const base = "/services/data/v65.0";
 type Measured = CandidateExchange & { allow: string | null };
@@ -199,6 +201,47 @@ test(
       return result.e;
     }
     try {
+      const event: FixtureEvent = {
+        schemaVersion: 1,
+        runId,
+        operationId: "p24openapi",
+        principal: "admin",
+        object: "Account",
+        names: [fixtureName("composite")],
+        kind: "intent",
+      };
+      let compositeExchange: Measured | undefined;
+      const compositeResponse = await runCompositeFixtureAttempt(
+        journal,
+        [event],
+        [{ referenceId: event.operationId, method: "POST" }],
+        "commit",
+        async () => {
+          compositeExchange = await measure("POST", base + "/composite", {
+            body: {
+              allOrNone: true,
+              compositeRequest: [
+                {
+                  method: "POST",
+                  url: base + "/sobjects/Account",
+                  referenceId: event.operationId,
+                  body: { Name: event.names[0] },
+                },
+              ],
+            },
+          });
+          return {
+            status: compositeExchange.response.status,
+            body: json(compositeExchange),
+          };
+        },
+        async () => {
+          throw Error("FIXTURES");
+        },
+      );
+      const compositeId = compositeResponse.body.compositeResponse[0].body.id;
+      rows.set("Account" + compositeId, { id: compositeId, event });
+      checked(compositeExchange!, 200);
       for (const role of ["restricted", "other"] as const) {
         const e = checked(
           await measure("GET", base + "/openapi.yaml", { role }),

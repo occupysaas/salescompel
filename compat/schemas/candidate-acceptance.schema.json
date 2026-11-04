@@ -146,6 +146,7 @@
                 "items": {
                   "enum": [
                     "candidate/openapi/traffic",
+                    "candidate/composite/atomic",
                     "candidate/jsforce/core",
                     "candidate/jsforce/policy",
                     "candidate/jsforce/isolation"

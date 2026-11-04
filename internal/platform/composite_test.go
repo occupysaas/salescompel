@@ -3,9 +3,10 @@ package platform
 import (
 	"context"
 	"errors"
+	"testing"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	"testing"
 )
 
 func compSub(method, object, id, ref string, data map[string]any) CompositeSubrequest {

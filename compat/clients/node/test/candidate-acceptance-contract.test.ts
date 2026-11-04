@@ -44,6 +44,9 @@ test("coverage requires the OpenAPI parent and database route measurement", () =
   for (const [suite, id] of [
     ["jsforce", "candidate/openapi/traffic"],
     ["database", "TestHTTPServedOpenAPI"],
+    ["database", "TestCompositeAtomic"],
+    ["database", "TestHTTPCompositeAtomic"],
+    ["jsforce", "candidate/composite/atomic"],
   ] as const) {
     const complete: ParsedResult = {
       schemaVersion: 1,
@@ -157,4 +160,33 @@ test("coverage requires query metadata regressions", () => {
       }
     }
   }
+});
+
+test("acceptance publication permits the exact new offline Composite skip", async (t) => {
+  const dir = await mkdtemp(join(tmpdir(), "p23-report-"));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  let r = newReport("a".repeat(24), "full");
+  const gate = assessCoverage("lab", {
+    schemaVersion: 1,
+    runId: r.runId,
+    suite: "lab",
+    complete: true,
+    exitCode: 0,
+    tests: [
+      ...requiredCoverage.lab.map((id) => ({ id, outcome: "passed" as const })),
+      { id: "candidate/composite/atomic", outcome: "skipped" },
+    ],
+  });
+  assert.equal(gate.outcome, "passed");
+  r.gates[r.gates.findIndex((g) => g.id === "lab")] = gate;
+  r = aggregateReport(r);
+  const path = join(dir, "summary.json");
+  await publishAcceptanceReport(path, r);
+  const published = JSON.parse(await readFile(path, "utf8"));
+  assert.deepEqual(
+    published.gates.find((g: any) => g.id === "lab").coverage.allowedSkipped,
+    ["candidate/composite/atomic"],
+  );
+  gate.coverage.allowedSkipped = ["candidate/composite/unknown"];
+  assert.throws(() => validateAcceptanceReport(r), /RESULT/);
 });

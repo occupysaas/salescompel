@@ -102,7 +102,8 @@ export function parseGateEvents(
       const d = e.data;
       const id =
         d.name.startsWith("candidate/jsforce/") ||
-        d.name === "candidate/openapi/traffic"
+        d.name === "candidate/openapi/traffic" ||
+        d.name === "candidate/composite/atomic"
           ? d.name
           : `${basename(d.file ?? "unknown")}::${d.nesting > 0 ? nestedName(d) : d.name}`;
       out.push({

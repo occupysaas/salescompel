@@ -118,6 +118,7 @@ export function candidateNodeTestArgs(
     "--test-reporter-destination=" + reportPath,
     "test/candidate.test.ts",
     "test/candidate-openapi.test.ts",
+    "test/candidate-composite.test.ts",
   ];
 }
 

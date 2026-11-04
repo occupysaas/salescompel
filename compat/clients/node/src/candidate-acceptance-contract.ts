@@ -30,6 +30,7 @@ export interface ParsedResult {
 }
 export const candidateNames = [
   "candidate/openapi/traffic",
+  "candidate/composite/atomic",
   "candidate/jsforce/core",
   "candidate/jsforce/policy",
   "candidate/jsforce/isolation",
@@ -38,6 +39,8 @@ export const requiredCoverage: Record<GateID, readonly string[]> = {
   bindings: ["bindings/source", "bindings/tools", "bindings/artifacts"],
   database: [
     "TestHTTPServedOpenAPI",
+    "TestCompositeAtomic",
+    "TestHTTPCompositeAtomic",
     "TestCatalogFreshV2",
     "TestCatalogUpgradeV1",
     "TestCatalogUpgradeOversizedRollback",
