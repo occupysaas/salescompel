@@ -55,6 +55,48 @@ export function parseGateEvents(
   if (kind === "node") {
     if (!events.some((e) => e.type === "test:summary"))
       throw new Error("RESULT");
+    const terminal = events.filter((e) =>
+      ["test:pass", "test:fail"].includes(e.type),
+    );
+    const fileOf = (d: any): string => d.entryFile ?? d.file ?? "unknown";
+    const byID = new Map<string, any>();
+    for (const e of terminal)
+      if (Number.isSafeInteger(e.data.testId))
+        byID.set(JSON.stringify([fileOf(e.data), e.data.testId]), e.data);
+    // Older Node releases lack parentId/testId. Their declaration-ordered
+    // terminal stream closes each parent after its children, so reconstruct
+    // ancestry backwards. Missing ancestry fails closed rather than invent IDs.
+    const legacyNames = new Map<object, string[]>();
+    const stacks = new Map<string, string[]>();
+    for (const e of [...terminal].reverse()) {
+      const d = e.data,
+        n = d.nesting ?? 0,
+        stack = stacks.get(fileOf(d)) ?? [];
+      if (!Number.isSafeInteger(n) || n < 0) throw new Error("RESULT");
+      if (stack.length >= n) legacyNames.set(d, [...stack.slice(0, n), d.name]);
+      stack[n] = d.name;
+      stack.length = n + 1;
+      stacks.set(fileOf(d), stack);
+    }
+    const nestedName = (d: any): string => {
+      let names: string[] | undefined;
+      if (Number.isSafeInteger(d.testId) && Number.isSafeInteger(d.parentId)) {
+        names = [d.name];
+        const seen = new Set<number>([d.testId]);
+        let parent = d.parentId;
+        while (parent > 0) {
+          if (seen.has(parent)) throw new Error("RESULT");
+          seen.add(parent);
+          const p = byID.get(JSON.stringify([fileOf(d), parent]));
+          if (!p) throw new Error("RESULT");
+          names.unshift(p.name);
+          parent = p.parentId ?? 0;
+        }
+      } else names = legacyNames.get(d);
+      if (!names || names.length !== (d.nesting ?? 0) + 1)
+        throw new Error("RESULT");
+      return JSON.stringify([...names, d.testNumber ?? 0]);
+    };
     for (const e of events) {
       if (!["test:pass", "test:fail"].includes(e.type)) continue;
       const d = e.data;
@@ -62,7 +104,7 @@ export function parseGateEvents(
         d.name.startsWith("candidate/jsforce/") ||
         d.name === "candidate/openapi/traffic"
           ? d.name
-          : `${basename(d.file ?? "unknown")}::${d.name}`;
+          : `${basename(d.file ?? "unknown")}::${d.nesting > 0 ? nestedName(d) : d.name}`;
       out.push({
         id,
         outcome: d.skip

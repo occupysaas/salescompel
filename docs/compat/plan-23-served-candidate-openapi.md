@@ -63,3 +63,15 @@ exactly candidate/openapi/traffic to the allowedSkipped enum; unknown names stil
 reject. This adds the report schema to the explicit modified-file boundary.
 Private first-attempt diagnostics are retained; full acceptance on the corrected
 clean revision is still pending.
+
+The next corrected full run passed all lab tests but correctly failed the strict
+coverage gate: the old result adapter flattened repeated nested Plan 22 leaf names
+into duplicate identities. Its published summary records lab failure and verified
+cleanup, not acceptance. A new adapter regression failed before correction;
+lineage-aware IDs now preserve parent names and ordinals while duplicate results
+still fail coverage. Current Node parentId/testId fields handle interleaved groups;
+older event streams use declaration-ordered parent closure, verified with the
+existing local Node 22.23.3 image (34 real terminal events, all passing/unique).
+The actual previously rejected 431-event lab output now has 431 unique IDs and
+passes unchanged coverage rules. No historical Plan 22 file or required test was
+changed. Full acceptance on the final corrected revision remains pending.

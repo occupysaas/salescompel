@@ -1,6 +1,85 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { parseGateEvents } from "../src/candidate-acceptance-results.ts";
+test("nested repeats keep ancestry while replayed terminal results still fail coverage", async () => {
+  const { assessCoverage, requiredCoverage } =
+    await import("../src/candidate-acceptance-contract.ts");
+  const terminal = (
+    name: string,
+    nesting: number,
+    testId: number,
+    parentId: number,
+    testNumber: number,
+  ) => ({
+    type: "test:pass",
+    data: {
+      name,
+      nesting,
+      testId,
+      parentId,
+      testNumber,
+      file: "repeat.test.ts",
+    },
+  });
+  const cases = [
+    terminal("leaf", 1, 2, 1, 1),
+    terminal("first", 0, 1, 0, 1),
+    terminal("leaf", 1, 4, 3, 1),
+    terminal("second", 0, 3, 0, 2),
+  ];
+  for (const legacy of [false, true]) {
+    const events = cases.map((e) => {
+      const c = structuredClone(e);
+      if (legacy) {
+        delete (c.data as any).testId;
+        delete (c.data as any).parentId;
+      }
+      return c;
+    });
+    const encode = (es: unknown[]) =>
+      [...es, { type: "test:summary", data: {} }]
+        .map((e) => JSON.stringify(e))
+        .join("\n");
+    const parsed = parseGateEvents("node", encode(events), "lab");
+    assert.equal(new Set(parsed.map((t) => t.id)).size, 4);
+    assert.ok(parsed[0].id.includes('"first","leaf"'));
+    assert.ok(parsed[2].id.includes('"second","leaf"'));
+    const result = {
+      schemaVersion: 1 as const,
+      runId: "a".repeat(24),
+      suite: "lab" as const,
+      complete: true,
+      exitCode: 0,
+      tests: [
+        ...requiredCoverage.lab.map((id) => ({
+          id,
+          outcome: "passed" as const,
+        })),
+        ...parsed,
+      ],
+    };
+    assert.equal(assessCoverage("lab", result).outcome, "passed");
+    assert.equal(
+      assessCoverage("lab", { ...result, tests: [...result.tests, parsed[0]] })
+        .outcome,
+      "failed",
+    );
+  }
+  // Parent IDs distinguish interleaved concurrent sibling groups.
+  const interleaved = [
+    cases[0],
+    cases[2],
+    cases[1],
+    cases[3],
+    { type: "test:summary", data: {} },
+  ]
+    .map((e) => JSON.stringify(e))
+    .join("\n");
+  assert.equal(
+    new Set(parseGateEvents("node", interleaved, "lab").map((t) => t.id)).size,
+    4,
+  );
+});
 test("OpenAPI parent identity survives Node result parsing without changing ordinary identities", () => {
   const events = [
     {
