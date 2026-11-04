@@ -1,6 +1,7 @@
 # Plan 19 — Apex execution feasibility
 
-Status: execution in progress. No feasibility decision yet.
+Status: implemented, independently reviewed, corrected and verified, 2026-11-03.
+Decision: **Continue** for the bounded synthetic subset only; full M7 remains open.
 
 Execution base: `2aa326536f38768c24744079398966d325bb6589`, clean `main`.
 Execution date: 2026-11-03. Commands use `GOTOOLCHAIN=go1.25.0`, matching
@@ -131,7 +132,7 @@ Executed 2026-11-03: 25 manifest scenarios each passed twice on fresh state,
 and 12 parallel invocations on separate stores passed. Expected outcomes in
 `internal/compat/apex/testdata/scenarios.json` are independent synthetic inputs;
 the actual outcomes below were observed from Go tests, not Salesforce.
-Fresh whole-change review and final scope checks are pending.
+Fresh whole-change review and final scope checks are recorded below.
 
 Reproduce with `GOTOOLCHAIN=go1.25.0 go test ./internal/compat/apex -count=1 -v`.
 The command ran and passed; each scenario logs its actual error/result and host
@@ -145,7 +146,7 @@ trace. All rows below use that command unless a focused test is named.
 | Tenant/principal separation | `TestHostTenantAndPolicy`, `TestHostHandles`; manifest principal/tenant cases | Passed: same local IDs across tenants remain separate; denied query/write principals fail; unknown, cross-tenant and previous-invocation handles rejected. |
 | Resource termination | `TestCompileBounds`, `TestMeterBoundaries`, `TestHostBudgets`, `TestRunBudgets`, `TestRunStringBounds`; manifest `limit-*`, `concat-*` | Passed: source, nesting/unary/flat-tree depth, steps, host call depth, cumulative rows/writes, collection size and UTF-8 byte size produce budget errors; exact boundaries pass; staged budget failure rolls back. |
 | Cancellation | `TestRunCancellation/{before,staged,before-commit}` | Passed: deterministic synchronous event observer cancels at each point, entire store unchanged; no sleep or timing assumption. |
-| Unsupported/malformed | `unsupported.cls`, `dynamic-query.cls`, `inheritance.cls`, `malformed.cls`; `TestCompileRejectsWholeProgram`, `TestRunUnsupportedBeforeHost`, `TestCompileRejectsQuotedGrammar` | Passed: whole program rejected including unreachable exclusions, structured locations, no host begin/query/stage. A regression initially accepted quoted keywords/fields; token-kind checks corrected it and the regression passed. |
+| Unsupported/malformed | `unsupported.cls`, `dynamic-query.cls`, `inheritance.cls`, `malformed.cls`; `TestCompileRejectsWholeProgram`, `TestRunUnsupportedBeforeHost`, `TestCompileRejectsQuotedGrammar`, `TestCompileRestrictsAssignmentAndFieldGrammar`, `TestRunRejectsOutOfSubsetBeforeHost` | Passed: whole program rejected including unreachable exclusions, structured locations, no host begin/query/stage. A regression initially accepted quoted keywords/fields; token-kind checks corrected it and the regression passed. |
 | Repeatability/isolation | `TestScenarios`, `TestParallelInvocations`, `TestHostSnapshotIsolation` | Passed: every manifest case twice; 12 concurrent invocations have separate identities/stores/parameters/budgets; inputs and detached snapshots unchanged. Shared-store concurrency is unsupported and untested. |
 
 `TestRunTypes` additionally verifies checked arithmetic (including minimum-int
@@ -158,7 +159,7 @@ value; assigning null to it fails with `type`. Parser columns count UTF-8 bytes.
 
 ## Architecture and follow-up gates
 
-Provisional decision pending review: **Continue**, limited to the tested synthetic
+Decision after review and correction: **Continue**, limited to the tested synthetic
 subset. A hand-written parser and tree interpreter made complete-source rejection,
 per-node checkpoints, invocation-local scopes and one host boundary directly
 inspectable. The observed rollback/cancellation tests support keeping this design
@@ -189,3 +190,84 @@ reference-org run was performed.
 
 Full M7, M0/M1R gates, program estimates and Plans 10/14 remain unchanged.
 No compatibility certification or product promotion follows from this study.
+
+
+## Verification record
+
+On 2026-11-03, using the pinned Go 1.25.0 toolchain:
+
+- `go test -race ./internal/compat/apex -count=1`: passed; 103 passing
+  test/subtest events in the focused package, no skips or race reported.
+- `go test -json -count=1 ./...`: exit 0; four tested packages passed,
+  214 passing test/subtest events and 23 skipped database test/subtest events;
+  the command package has no tests. No failures.
+- `go vet ./...`: exit 0, no diagnostics.
+- `git diff --check`: exit 0.
+- All 28 protected-file SHA-256 hashes match execution base. Changed paths are
+  limited to the new package, this report and truthful spec/plan status changes.
+- `go list -deps ./cmd/... ./internal/platform`: no experiment import. Every
+  direct package import is standard library. Local report links resolve.
+
+Database integration was unavailable (`TEST_DATABASE_URL` unset), so these
+existing tests/subtests were skipped; no database acceptance is claimed:
+
+- `TestCatalogFreshV2`
+- `TestCatalogUpgradeV1`
+- `TestCatalogUpgradeOversizedRollback/compat_text`
+- `TestCatalogUpgradeOversizedRollback/compat_key`
+- `TestCatalogRejectsUnknown/UPDATE_platform_catalog_SET_version=99`
+- `TestCatalogRejectsUnknown/UPDATE_platform_catalog_SET_definition='{}'`
+- `TestCatalogRejectsUnknown/DELETE_FROM_platform_catalog`
+- `TestCatalogV2PhysicalMismatch`
+- `TestCatalogConcurrentOpen`
+- `TestHTTPBoundary`
+- `TestHTTPExternalIDPreservesEscapedSlashes`
+- `TestHTTPRejectsUndeliverablePathsAndListings`
+- `TestHTTPCustomFieldLengths`
+- `TestHTTPUpsertBodyValidation`
+- `TestHTTPUpsertBodyBoundaryControls`
+- `TestHTTPOrdinaryExternalIDWrites`
+- `TestHTTPQueryColumns`
+- `TestHTTPQueryColumnsPolicy`
+- `TestStoreIsolationAndPersistence`
+- `TestStoreQueryPolicyAndRelationships`
+- `TestStoreConcurrentUpdatesAndUpsert`
+- `TestStoreBlankNillableStringsAreNull`
+- `TestStoreUpsertBodyValidation`
+
+## Fresh whole-change review and correction
+
+A separate fresh-context reviewer inspected execution base through the matrix
+commit plus the final report/status updates. Review covered complete-source
+rejection, host bypass/handle ownership, aliases, late bulk denial, rollback,
+pre-allocation budgets, cancellation at commit and evidence claims. It ran focused
+and race tests and independently exercised 1,372,370 temporary-copy malformed-source
+fuzz inputs without a panic; this was exploratory review, not a shipped fuzz target.
+
+No critical issue was found. One important finding reproduced an out-of-subset
+program reaching the host: parenthesized assignment targets and fields on arbitrary
+primaries were accepted, even after an executed return. The fix restricts assignment
+targets to identifiers with optional `.Name`, and field reads to identifiers.
+`TestCompileRestrictsAssignmentAndFieldGrammar` and
+`TestRunRejectsOutOfSubsetBeforeHost` both failed before correction and passed
+afterward, including assertions of zero host events and full-store preservation.
+The full Go suite, focused race suite and vet passed after this fix. No second
+review was substituted for those regression checks.
+
+One minor finding is deferred: errors during commit finalization return diagnostic
+position `0,0` despite occurring after source execution. Error codes remain
+`budget`/`cancelled`, and all staged effects are discarded. This location gap does
+not affect parser diagnostics or rollback; it remains a diagnostic limitation for
+a future slice rather than an undisclosed parity or isolation claim.
+
+The review's excluded questions were explicitly accepted as scope boundaries:
+
+| Ruling | Reason | Cost if this boundary is inappropriate |
+| --- | --- | --- |
+| Work directly on main | User authorized Plan 19's explicit repository convention | No branch isolation. |
+| Do not judge Salesforce parity, security modes or governor limits | Synthetic experiment; no reference observations | Compatibility remains unmeasured. |
+| Do not judge static type errors in unreachable supported syntax | Executed-path checking is documented | Dead type errors remain accepted. |
+| Do not judge aggregate heap isolation or trusted harness sizes/limits | Documented production blockers | Production memory safety remains unproven. |
+| Do not judge shared-store concurrency or overlapping transactions | Only separate-store concurrency is supported/tested | Shared-store lost updates remain possible. |
+| Do not judge cancellation inside compilation/allocation/sorting or after publication checkpoint | Cancellation occurs between explicit checkpoints | Cancellation can arrive after effects publish. |
+| Do not judge database integration, triggers, Flow, imported UI or packages | Separate follow-up studies with no positive claim | Real-target execution/integration remains unproven. |

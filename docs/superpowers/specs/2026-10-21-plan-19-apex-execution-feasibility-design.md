@@ -1,6 +1,6 @@
 # Plan 19 — Apex execution feasibility
 
-Status: proposed for maintainer review; specification only, no implementation or reference collection performed.
+Status: implemented, independently reviewed, corrected and verified, 2026-11-03. Bounded decision: Continue; see [results and limitations](../../compat/plan-19-apex-execution-feasibility.md). No reference-org observations collected.
 Milestone: bounded M7 feasibility work brought forward under the existing roadmap; full M7 remains open.
 
 ## Intent and selection
