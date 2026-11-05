@@ -154,19 +154,9 @@ func newID(object string) (string, error) {
 	}
 	out.WriteByte(alphabet[int(b[8])%62])
 	base := out.String()
-	checksum := "ABCDEFGHIJKLMNOPQRSTUVWXYZ012345"
-	for group := 0; group < 3; group++ {
-		bits := 0
-		for j := 0; j < 5; j++ {
-			c := base[group*5+j]
-			if c >= 'A' && c <= 'Z' {
-				bits |= 1 << j
-			}
-		}
-		out.WriteByte(checksum[bits])
-	}
-	return out.String(), nil
+	return base + idChecksum(base), nil
 }
+
 func columns(p Principal, object string, data map[string]any) ([]string, []any) {
 	keys := make([]string, 0, len(data))
 	for k := range data {
@@ -188,6 +178,11 @@ func columns(p Principal, object string, data map[string]any) ([]string, []any) 
 	return cols, values
 }
 func create(ctx context.Context, db database, p Principal, object string, data map[string]any) (string, error) {
+	var err error
+	data, err = normalizeReferences(p, object, data)
+	if err != nil {
+		return "", err
+	}
 	if err := Validate(p, object, data, true); err != nil {
 		return "", err
 	}
@@ -209,6 +204,15 @@ func (s *Store) Create(ctx context.Context, p Principal, object string, data map
 	return create(ctx, s.pool, p, object, data)
 }
 func update(ctx context.Context, db database, p Principal, object, id string, data map[string]any) error {
+	var err error
+	id, err = NormalizeRecordID(object, id)
+	if err != nil {
+		return dbError(pgx.ErrNoRows)
+	}
+	data, err = normalizeReferences(p, object, data)
+	if err != nil {
+		return err
+	}
 	if err := Validate(p, object, data, false); err != nil {
 		return err
 	}
@@ -240,6 +244,10 @@ func deleteRecord(ctx context.Context, db database, p Principal, object, id stri
 	if _, err := Describe(p, object); err != nil {
 		return err
 	}
+	id, err := NormalizeRecordID(object, id)
+	if err != nil {
+		return dbError(pgx.ErrNoRows)
+	}
 	tag, err := db.Exec(ctx, "DELETE FROM "+table(object)+" WHERE tenant_id=$1 AND id=$2", p.Tenant, id)
 	if err != nil {
 		return dbError(err)
@@ -253,6 +261,10 @@ func (s *Store) Read(ctx context.Context, p Principal, object, id string) (map[s
 	d, err := Describe(p, object)
 	if err != nil {
 		return nil, err
+	}
+	id, err = NormalizeRecordID(object, id)
+	if err != nil {
+		return nil, dbError(pgx.ErrNoRows)
 	}
 	q := Query{Object: object, HasWhere: true, WhereField: "Id", WhereValue: &id, Limit: 1}
 	for _, f := range d.Fields {

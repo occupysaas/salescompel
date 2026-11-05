@@ -375,3 +375,50 @@ func TestHTTPOrdinaryExternalIDWrites(t *testing.T) {
 		t.Fatalf("ordinary write affected peer: %s", rows)
 	}
 }
+
+func TestHTTPRecordIDForms(t *testing.T) {
+	s := testStore(t)
+	p, _ := principals(t, s)
+	h := NewHandler(s, "")
+	token := "token-" + p.Tenant
+	req := func(method, path, data string) *httptest.ResponseRecorder {
+		return bodyValidationRequest(t, h, method, apiBase+"sobjects/"+path, data, token)
+	}
+	id, e := s.Create(context.Background(), p, "Account", map[string]any{"Name": "Before"})
+	if e != nil {
+		t.Fatal(e)
+	}
+	for _, bad := range []string{"bad", "003" + id[3:], strings.ToLower(id[:15])} {
+		w := req("GET", "Account/"+bad, "")
+		if w.Code != 404 || !strings.Contains(w.Body.String(), "NOT_FOUND") {
+			t.Fatal(w.Code, w.Body.String())
+		}
+	}
+	w := req("GET", "Account/"+id[:15], "")
+	if w.Code != 200 || !strings.Contains(w.Body.String(), id) {
+		t.Fatal(w.Code, w.Body.String())
+	}
+	w = req("PATCH", "Account/"+id[:15], `{"Name":"After"}`)
+	if w.Code != 204 {
+		t.Fatal(w.Code, w.Body.String())
+	}
+	w = req("POST", "Contact", `{"LastName":"Child","AccountId":"bad"}`)
+	if w.Code != 400 || !strings.Contains(w.Body.String(), `"fields":["AccountId"]`) || !strings.Contains(w.Body.String(), "MALFORMED_ID") {
+		t.Fatal(w.Code, w.Body.String())
+	}
+	w = req("POST", "Contact", `{"LastName":"Child","AccountId":"`+id[:15]+`"}`)
+	if w.Code != 201 {
+		t.Fatal(w.Code, w.Body.String())
+	}
+	var result map[string]any
+	json.Unmarshal(w.Body.Bytes(), &result)
+	w = req("GET", "Contact/"+result["id"].(string), "")
+	if !strings.Contains(w.Body.String(), id) {
+		t.Fatal(w.Body.String())
+	}
+	req("DELETE", "Contact/"+result["id"].(string), "")
+	w = req("DELETE", "Account/"+id[:15], "")
+	if w.Code != 204 {
+		t.Fatal(w.Code, w.Body.String())
+	}
+}
