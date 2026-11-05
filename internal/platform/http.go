@@ -87,6 +87,9 @@ func method(w http.ResponseWriter, r *http.Request, allowed ...string) bool {
 	return false
 }
 func NewHandler(s *Store, assetDir string) http.Handler {
+	return NewHandlerWithOptions(s, assetDir, Options{})
+}
+func NewHandlerWithOptions(s *Store, assetDir string, o Options) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// CLI joins its trailing-slash instance URL with absolute service paths.
 		// Preserve RawPath so encoded slashes inside external IDs remain data.
@@ -95,6 +98,25 @@ func NewHandler(s *Store, assetDir string) http.Handler {
 		w.Header().Set("Referrer-Policy", "no-referrer")
 		w.Header().Set("Cache-Control", "no-store")
 		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'")
+		if o.PublicURL != "" {
+			var oauth func(*Store, Options, http.ResponseWriter, *http.Request)
+			switch requestPath {
+			case "/services/oauth2/token":
+				oauth = handleToken
+			case "/services/oauth2/revoke":
+				oauth = handleRevoke
+			case "/services/oauth2/introspect":
+				oauth = handleIntrospect
+			}
+			if oauth != nil {
+				ctx, cancel := timeBound(r)
+				defer cancel()
+				r = r.WithContext(ctx)
+				r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
+				oauth(s, o, w, r)
+				return
+			}
+		}
 		if r.URL.Path == "/healthz" {
 			if !method(w, r, "GET") {
 				return

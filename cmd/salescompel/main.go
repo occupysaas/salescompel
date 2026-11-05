@@ -37,6 +37,8 @@ func dispatch(args []string, out io.Writer) error {
 	case "serve":
 		fs := flag.NewFlagSet("serve", flag.ContinueOnError)
 		addr := fs.String("addr", "127.0.0.1:8080", "listen address")
+		publicURL := fs.String("public-url", "", "public OAuth origin")
+		accessTTL := fs.Duration("access-token-ttl", 2*time.Hour, "OAuth access token lifetime")
 		assets := fs.String("assets", "web/dist", "built web assets; empty disables UI")
 		cert := fs.String("tls-cert", "", "TLS certificate")
 		key := fs.String("tls-key", "", "TLS private key")
@@ -54,10 +56,17 @@ func dispatch(args []string, out io.Writer) error {
 		if *cert == "" && host != "localhost" && (ip == nil || !ip.IsLoopback()) {
 			return errors.New("non-loopback listeners require TLS")
 		}
+		resolvedURL, err := platform.ResolvePublicURL(*publicURL, *addr, *cert != "")
+		if err != nil {
+			return err
+		}
+		if *accessTTL <= 0 {
+			return errors.New("access-token-ttl must be positive")
+		}
 		if err = platform.AssetDir(*assets); err != nil {
 			return err
 		}
-		server := &http.Server{Addr: *addr, Handler: platform.NewHandler(s, *assets), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 20 * time.Second, WriteTimeout: 30 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 1 << 16}
+		server := &http.Server{Addr: *addr, Handler: platform.NewHandlerWithOptions(s, *assets, platform.Options{PublicURL: resolvedURL, AccessTokenTTL: *accessTTL}), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 20 * time.Second, WriteTimeout: 30 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 1 << 16}
 		done, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 		defer stop()
 		errCh := make(chan error, 1)
