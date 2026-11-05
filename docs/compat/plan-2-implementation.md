@@ -8,6 +8,11 @@ records pilot reference observations, but full candidate parity and the M2 roadm
 exit gate are not certified. No Salesforce org was accessed during Plan 2.
 Product translations are drafts requiring human review.
 
+> Current setup: Plan 27 replaces startup upgrades and owner-backed serving.
+> Follow the [Plan 27 operator guide](plan-27-dynamic-schema.md#operator-setup-and-upgrade)
+> for explicit migrations and the three separate connection roles. The commands
+> and verification below are the historical Plan 2 delivery record.
+
 ## Local setup
 
 Requires Go 1.25+, Node 22.12+, PostgreSQL 17, Python 3.12+, OpenSSL and curl.

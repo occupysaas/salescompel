@@ -8,6 +8,7 @@ import (
 	"os"
 	"salescompel/internal/migration"
 	"testing"
+	"time"
 )
 
 func TestRuntimeRoleRejectsOwner(t *testing.T) {
@@ -180,5 +181,71 @@ func TestRuntimeRejectsColumnSecretGrant(t *testing.T) {
 	if e == nil {
 		runtime.Close()
 		t.Fatal("column credential grant escaped role checks")
+	}
+}
+func TestRuntimeRejectsPrivilegedBuiltinRole(t *testing.T) {
+	s := testStore(t)
+	urls := limitedURLs(t)
+	cfg, e := pgxpool.ParseConfig(urls[0])
+	if e != nil {
+		t.Fatal(e)
+	}
+	role := pgx.Identifier{cfg.ConnConfig.User}.Sanitize()
+	ctx := context.Background()
+	if _, e = s.pool.Exec(ctx, "GRANT pg_execute_server_program TO "+role); e != nil {
+		t.Fatal(e)
+	}
+	defer s.pool.Exec(ctx, "REVOKE pg_execute_server_program FROM "+role)
+	runtime, e := OpenRuntime(ctx, StoreConfig{urls[0], urls[1]})
+	if e == nil {
+		runtime.Close()
+		t.Fatal("accepted operating-system program execution privilege")
+	}
+}
+func TestOAuthRuntimeConfidentialIssuance(t *testing.T) {
+	owner := testStore(t)
+	p, _ := principals(t, owner)
+	ctx := context.Background()
+	now := time.Now()
+	username := p.Tenant + "@example.invalid"
+	if _, e := owner.CreateUser(ctx, p.Tenant, username, "synthetic-private-password", "admin"); e != nil {
+		t.Fatal(e)
+	}
+	user, e := owner.VerifyLogin(ctx, username, "synthetic-private-password", now)
+	if e != nil {
+		t.Fatal(e)
+	}
+	client, _, e := owner.CreateApp(ctx, AppInput{Tenant: p.Tenant, Name: "Runtime app", Grants: []string{"client_credentials"}, Scopes: []string{"api"}, RunAs: username}, now)
+	if e != nil {
+		t.Fatal(e)
+	}
+	urls := limitedURLs(t)
+	runtime, e := OpenRuntime(ctx, StoreConfig{urls[0], urls[1]})
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer runtime.Close()
+	tokens, e := runtime.IssueTokens(ctx, TokenGrant{ClientID: client, User: user, Scope: "api"}, now, time.Hour)
+	if e != nil || tokens.Access == "" {
+		t.Fatalf("restricted identity role could not issue confidential-app tokens: %v", e)
+	}
+}
+func TestRuntimeRejectsAppSecurityColumnGrant(t *testing.T) {
+	owner := testStore(t)
+	urls := limitedURLs(t)
+	cfg, e := pgxpool.ParseConfig(urls[1])
+	if e != nil {
+		t.Fatal(e)
+	}
+	role := pgx.Identifier{cfg.ConnConfig.User}.Sanitize()
+	ctx := context.Background()
+	if _, e = owner.pool.Exec(ctx, "GRANT UPDATE(active) ON public.oauth_apps TO "+role); e != nil {
+		t.Fatal(e)
+	}
+	defer owner.pool.Exec(ctx, "REVOKE UPDATE(active) ON public.oauth_apps FROM "+role)
+	runtime, e := OpenRuntime(ctx, StoreConfig{urls[0], urls[1]})
+	if e == nil {
+		runtime.Close()
+		t.Fatal("accepted app security write beyond the lock column")
 	}
 }

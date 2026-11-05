@@ -96,6 +96,11 @@ byte-identical with `observationStatus: not_run`.
 
 ## Operator guide
 
+For Plan 27 and later, first follow the [migration and role setup](plan-27-dynamic-schema.md#operator-setup-and-upgrade).
+User/app administration now uses `MIGRATION_DATABASE_URL`; serve uses separate
+`DATABASE_URL` and `AUTH_DATABASE_URL` runtime credentials. The startup-upgrade
+instructions below describe Plan 26's historical release.
+
 Set `DATABASE_URL` to the PostgreSQL database. Before upgrade, stop old instances
 and back up the database. Start the new binary; startup adds eight identity and
 OAuth tables inside the existing advisory-locked transaction. Catalog version

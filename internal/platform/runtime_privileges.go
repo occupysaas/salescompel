@@ -11,6 +11,7 @@ import (
 func runtimeTablesSafe(ctx context.Context, p *pgxpool.Pool, group string) (bool, error) {
 	rows, e := p.Query(ctx, `SELECT n.nspname,c.relname,c.relrowsecurity,c.relforcerowsecurity,
  (SELECT count(*)=1 AND bool_and(polname='tenant_isolation' AND polcmd='*' AND polpermissive AND polroles=ARRAY[0::oid] AND pg_get_expr(polqual,polrelid)=$1 AND pg_get_expr(polwithcheck,polrelid)=$1) FROM pg_policy WHERE polrelid=c.oid),
+ ARRAY(SELECT a.attname::text FROM pg_attribute a WHERE a.attrelid=c.oid AND a.attnum>0 AND NOT a.attisdropped AND has_column_privilege(current_user,c.oid,a.attnum,'UPDATE') ORDER BY a.attnum),
  ARRAY[has_any_column_privilege(current_user,c.oid,'SELECT'),has_any_column_privilege(current_user,c.oid,'INSERT'),has_any_column_privilege(current_user,c.oid,'UPDATE'),has_any_column_privilege(current_user,c.oid,'REFERENCES')],
  ARRAY[has_table_privilege(current_user,c.oid,'SELECT'),has_table_privilege(current_user,c.oid,'INSERT'),has_table_privilege(current_user,c.oid,'UPDATE'),has_table_privilege(current_user,c.oid,'DELETE'),has_table_privilege(current_user,c.oid,'TRUNCATE'),has_table_privilege(current_user,c.oid,'REFERENCES'),has_table_privilege(current_user,c.oid,'TRIGGER'),has_table_privilege(current_user,c.oid,'MAINTAIN')]
  FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname IN ('public','sc_catalog','sc_records','sc_control') AND c.relkind IN ('r','p','v','m')`, "(tenant_id = NULLIF(current_setting('salescompel.tenant_id'::text, true), ''::text))")
@@ -25,7 +26,8 @@ func runtimeTablesSafe(ctx context.Context, p *pgxpool.Pool, group string) (bool
 		var schema, table string
 		var rls, force, closed bool
 		var got, columns []bool
-		if e = rows.Scan(&schema, &table, &rls, &force, &closed, &columns, &got); e != nil {
+		var writable []string
+		if e = rows.Scan(&schema, &table, &rls, &force, &closed, &writable, &columns, &got); e != nil {
 			return false, e
 		}
 		want := make([]bool, 8)
@@ -59,8 +61,12 @@ func runtimeTablesSafe(ctx context.Context, p *pgxpool.Pool, group string) (bool
 				want[2] = true
 			}
 		}
+		appLockColumn := group == "salescompel_identity" && schema == "public" && table == "oauth_apps"
+		if appLockColumn && (len(writable) != 1 || writable[0] != "name") {
+			return false, nil
+		}
 		for i, wantIndex := range []int{0, 1, 2, 5} {
-			if !want[wantIndex] && columns[i] {
+			if !want[wantIndex] && columns[i] && !(appLockColumn && wantIndex == 2) {
 				return false, nil
 			}
 		}

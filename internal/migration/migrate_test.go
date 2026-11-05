@@ -229,3 +229,42 @@ func TestMigrationRejectsPolicyAtRLSInstall(t *testing.T) {
 		t.Fatal(head, e)
 	}
 }
+func TestMigrationRejectsPartialIdentity(t *testing.T) {
+	p := testPool(t)
+	ctx := context.Background()
+	tx, _ := p.Begin(ctx)
+	if e := legacy.Install(ctx, tx); e != nil {
+		t.Fatal(e)
+	}
+	if _, e := tx.Exec(ctx, "DROP TABLE oauth_jwt_ids"); e != nil {
+		t.Fatal(e)
+	}
+	tx.Commit(ctx)
+	if e := Up(ctx, p); e == nil {
+		t.Fatal("accepted incomplete identity tables")
+	}
+	var absent bool
+	if e := p.QueryRow(ctx, "SELECT to_regclass('sc_control.schema_migrations') IS NULL AND to_regclass('oauth_jwt_ids') IS NULL").Scan(&absent); e != nil || !absent {
+		t.Fatal("partial adoption changed schema", e)
+	}
+}
+func TestLegacyOptionalAuthVersion(t *testing.T) {
+	p := testPool(t)
+	ctx := context.Background()
+	tx, _ := p.Begin(ctx)
+	if e := legacy.Install(ctx, tx); e != nil {
+		t.Fatal(e)
+	}
+	if _, e := tx.Exec(ctx, "INSERT INTO tenants VALUES('legacy');INSERT INTO users(id,tenant_id,username,username_canonical,password_hash,role)VALUES('005000000000001AAA','legacy','legacy@example.invalid','legacy@example.invalid','retain-hash','admin');ALTER TABLE users DROP COLUMN auth_version"); e != nil {
+		t.Fatal(e)
+	}
+	tx.Commit(ctx)
+	if e := Up(ctx, p); e != nil {
+		t.Fatal(e)
+	}
+	var version int64
+	var hash string
+	if e := p.QueryRow(ctx, "SELECT auth_version,password_hash FROM users WHERE username_canonical='legacy@example.invalid'").Scan(&version, &hash); e != nil || version != 0 || hash != "retain-hash" {
+		t.Fatal("optional auth_version upgrade rewrote credentials", version, e)
+	}
+}

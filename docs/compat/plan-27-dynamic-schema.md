@@ -170,3 +170,16 @@ Two cosmetic findings remain deferred: custom-object lists retain Contact's
 secondary column/list headings, and seed-name translation matching can override
 a tenant label for Compat_Text__c/Compat_Key__c on another object. Values and
 API identities remain correct; these do not add permissions or change storage.
+
+The resumed full run passed database, lab, web, JSforce, Python and CLI gates,
+then exposed confidential-app issuance under the restricted identity role.
+PostgreSQL requires UPDATE on at least one selected column for row locking
+([SELECT privileges](https://www.postgresql.org/docs/17/sql-select.html)). The
+identity role now receives UPDATE on `oauth_apps.name` only, solely to permit the
+existing app-row lock; active state, secrets, grant lists and user bindings remain
+read-only to that role. Startup accepts exactly that column exception, and a new
+integration test issues confidential-app tokens using the real restricted role.
+A separate real probe caught membership in `pg_execute_server_program` escaping
+table-only checks. Startup now rejects all reachable PostgreSQL built-in privilege
+roles in addition to owner/dangerous role attributes. Both regressions failed
+before their fixes and pass afterward.

@@ -5,6 +5,9 @@ GRANT USAGE ON SCHEMA sc_catalog,sc_records TO salescompel_records;
 GRANT USAGE ON SCHEMA sc_control TO salescompel_records,salescompel_identity;
 GRANT SELECT ON sc_control.schema_migrations TO salescompel_records,salescompel_identity;
 GRANT SELECT ON public.principals,public.oauth_apps,public.oauth_app_jwt_users TO salescompel_identity;
+-- PostgreSQL row locks require UPDATE on at least one column. App names are
+-- display-only; runtime cannot alter active, secrets, grants or user bindings.
+GRANT UPDATE(name) ON public.oauth_apps TO salescompel_identity;
 GRANT SELECT,UPDATE ON public.users TO salescompel_identity;
 GRANT SELECT,INSERT,UPDATE,DELETE ON public.oauth_requests,public.oauth_codes,public.oauth_refresh_tokens,public.oauth_access_tokens,public.oauth_jwt_ids TO salescompel_identity;
 DO $$
