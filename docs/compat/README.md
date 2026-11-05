@@ -332,3 +332,12 @@ candidate matching, uniqueness or catalog behavior.
 Use the [offline target inventory guide](plan-17-target-inventory.md) to record
 requirements, provenance, owners and open questions. The checked-in example is
 synthetic; successful validation does not complete M0 or certify compatibility.
+
+## OAuth login and identity (Plan 26)
+
+[Plan 26](plan-26-oauth-login.md) records candidate OAuth decisions, client
+observations, operator commands, upgrade/rollback and remaining identity gaps.
+CLI and JSforce use the configured login URL. simple-salesforce uses a token
+obtained from the candidate with `instance_url` and `session_id`; its own login
+is outside this delivery. Historical identity contracts retain their original
+unobserved status.
