@@ -450,3 +450,27 @@ func TestIntrospectProvisionedAndRevoked(t *testing.T) {
 		}
 	}
 }
+
+func TestIssueCodeRejectsStaleLogin(t *testing.T) {
+	s, g, n := tokenFixture(t)
+	ctx := context.Background()
+	if e := s.SetPassword(ctx, g.User.Username, "new-password"); e != nil {
+		t.Fatal(e)
+	}
+	in := CodeInput{ClientID: g.ClientID, UserID: g.User.ID, RedirectURI: "https://example.com/cb", Scope: g.Scope, loginVersion: &g.User.authVersion}
+	if _, e := s.IssueCode(ctx, in, n); e == nil {
+		t.Fatal("stale login issued code after password reset")
+	}
+	u, e := s.VerifyLogin(ctx, g.User.Username, "new-password", n)
+	if e != nil {
+		t.Fatal(e)
+	}
+	in.loginVersion = &u.authVersion
+	c, e := s.IssueCode(ctx, in, n)
+	if e != nil {
+		t.Fatal(e)
+	}
+	if _, e = s.RedeemCode(ctx, c, g.ClientID, in.RedirectURI, "", n, time.Hour); e != nil {
+		t.Fatal(e)
+	}
+}

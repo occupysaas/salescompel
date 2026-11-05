@@ -21,7 +21,10 @@ type IssuedTokens struct {
 	User                   User
 	IssuedAt               time.Time
 }
-type CodeInput struct{ ClientID, UserID, RedirectURI, Scope, Challenge string }
+type CodeInput struct {
+	ClientID, UserID, RedirectURI, Scope, Challenge string
+	loginVersion                                    *int64
+}
 type Introspection struct {
 	Active    bool   `json:"active"`
 	Scope     string `json:"scope,omitempty"`
@@ -174,8 +177,12 @@ func (s *Store) IssueCode(ctx context.Context, in CodeInput, now time.Time) (str
 		return "", e
 	}
 	defer tx.Rollback(ctx)
-	if _, e = lockTokenUser(ctx, tx, in.ClientID, in.UserID); e != nil {
+	u, e := lockTokenUser(ctx, tx, in.ClientID, in.UserID)
+	if e != nil {
 		return "", e
+	}
+	if in.loginVersion != nil && *in.loginVersion != u.authVersion {
+		return "", grantError("invalid_grant")
 	}
 	code, e := newSecret()
 	if e != nil {
