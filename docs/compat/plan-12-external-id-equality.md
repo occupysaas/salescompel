@@ -143,3 +143,7 @@ The implementer retained three review exclusions as explicit scope decisions:
   unrelated database regressions would therefore remain undetected by this run.
 
 These limits do not prevent completion of the bounded offline experiment.
+
+## Plan 25 closure — 2026-11-04
+
+[Plan 25](plan-25-foundation-decisions.md) chose candidate defaults and implemented the bounded REST, query and external-ID decisions, closing this plan's evidence wait. Earlier evidence, captures and outcomes remain unchanged; unobserved dimensions remain gaps. Pagination decisions are recorded for Plan 29.

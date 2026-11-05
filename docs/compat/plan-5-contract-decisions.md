@@ -169,3 +169,7 @@ existing observed-evidence validators must not silently treat assumptions as pas
 ## Documentary follow-up — 2026-10-21
 
 [Plan 18](plan-18-foundation-release-reconciliation.md) records fresh official-source attempts and current-guide context for all twelve foundation contracts. Release-pinned bodies remain unavailable; historical reconciliation and all existing live gates remain blocked. This dated follow-up qualifies the earlier source-access record without replacing its observations or the existing cursor-lifetime waiver.
+
+## Plan 25 closure — 2026-11-04
+
+[Plan 25](plan-25-foundation-decisions.md) chose candidate defaults and implemented the bounded REST, query and external-ID decisions, closing this plan's evidence wait. Earlier evidence, captures and outcomes remain unchanged; unobserved dimensions remain gaps. Pagination decisions are recorded for Plan 29.

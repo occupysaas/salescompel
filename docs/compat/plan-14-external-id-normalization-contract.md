@@ -104,3 +104,7 @@ The baseline lab run exposed three pre-existing failures caused by preview keys 
 Keep Plan 12's no-trim helper offline. No new evidence here selects NFC/full-fold plus trimming or proves that lookup and uniqueness share one rule. The next runtime design still needs accepted finite observations, explicit supported scope, stored spelling, duplicate responses, all-write uniqueness/locking, tenant isolation, collision-blocking transactional migration from catalog v2, rollback and mixed-version deployment.
 
 Missing-key races, tabs/NBSP/other whitespace, reverse Unicode directions, arbitrary Unicode, query equality and full compatibility remain unmeasured. Plan 10 and Plan 13's visual acceptance retain their independent status.
+
+## Plan 25 closure — 2026-11-04
+
+[Plan 25](plan-25-foundation-decisions.md) chose candidate defaults and implemented the bounded REST, query and external-ID decisions, closing this plan's evidence wait. Earlier evidence, captures and outcomes remain unchanged; unobserved dimensions remain gaps. Pagination decisions are recorded for Plan 29.

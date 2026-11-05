@@ -54,9 +54,9 @@ the earlier estimate was **185–350 narrower plan equivalents**. These are roug
 scope estimates, not delivery-date forecasts, and they are not directly comparable.
 M10 needs separately bounded inventories.
 
-The next priority is Plan 25, which settles open REST and external-ID behavior
-from the documentation and logs what remains unobserved, followed by OAuth login
-and dynamic objects and fields. See the
+The next priority is Plan 26, OAuth login and identity, followed by dynamic
+objects and fields. [Plan 25 foundation decisions](docs/compat/plan-25-foundation-decisions.md)
+now define the bounded REST, query and external-ID defaults and remaining gaps. See the
 [progress roadmap and estimate assumptions](docs/plans/2026-10-20-progress-and-remaining-roadmap.md)
 and the [full architecture and milestone gates](docs/plans/2026-10-14-salesforce-compatibility-roadmap.md).
 
@@ -89,7 +89,9 @@ The candidate is not production-ready or certified Salesforce-compatible. The el
 
 ## Catalog upgrades
 
-The candidate now uses catalog version 2 with 80-character bounds for both synthetic
-Account custom fields. Existing databases upgrade transactionally at startup;
-oversized values block the upgrade without changing data. Stop old instances and
-back up before upgrading. See the [Plan 8 upgrade and rollback guide](docs/compat/plan-8-active-field-metadata.md).
+The candidate uses catalog version 3 with 80-character supplied-value bounds for
+both synthetic Account custom fields and a derived canonical external-ID key.
+Fresh installs and versions 1/2 upgrade transactionally at startup. Oversized
+values, whitespace-only keys and canonical collisions within a tenant refuse the
+upgrade without changing data. Stop old instances and back up first; rollback
+requires restoring that backup. See the [Plan 25 upgrade and rollback notes](docs/compat/plan-25-foundation-decisions.md#catalog-v3-operation).

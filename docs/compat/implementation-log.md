@@ -451,3 +451,10 @@ sanitization review is claimed.
   concurrent assertion order. Regression tests reproduce each case; the capture
   preflight now requires private expected tenant/persona IDs and verifies prior
   foundation recovery markers and exact-ID absence before collection.
+
+## Plan 25 foundation decisions — 2026-11-04
+
+- Implemented case-sensitive 15-character ID normalization, case-insensitive API names, ordered REST duplicate handling, canonical response keys and field error envelopes.
+- Implemented bounded query text equality and null ordering, canonical external-ID storage and transactional catalog v3 upgrades with collision refusal, and serialized tenant-scoped upserts preserving stored spelling.
+- Required `candidate/foundation/decisions` through real JSforce and measured HTTP. Full acceptance passed every gate, with verified cleanup and zero unknown intents; Go race tests/vet and offline/web checks passed. Independent review found no actionable issues.
+- Closed Plans 5/10/12/14 with dated notes, preserving historical evidence and blocked outcomes. [Decision record, remaining gaps, upgrade/rollback and exact verification](plan-25-foundation-decisions.md). Plan 26 is next; Plan 29 owns pagination.
