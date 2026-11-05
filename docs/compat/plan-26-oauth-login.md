@@ -20,12 +20,12 @@ afterward. Only externally visible traffic and commands were inspected.
 | Web client ID | `PlatformCLI` |
 | Redirect URI | `http://localhost:1717/OauthRedirect` |
 | Requested scopes | `refresh_token api web` |
-| PKCE challenge method | Absent; challenge is S256, 43 characters |
+| PKCE challenge method | Absent; SHA256(verifier) equals the 43-character base64url challenge |
 | PKCE verifier length | 171 characters |
 | Browser completion | `/OauthSuccess`, CLI exit 0 |
 | JWT algorithm | `RS256` |
 | JWT audience | Mock login URL with trailing slash |
-| JWT expiry / issue time | Millisecond `exp`, seconds `iat`; exp minus iat×1000 was 965 ms |
+| JWT expiry / issue time | Millisecond `exp`, seconds `iat`; exp minus iat×1000 was 465 ms in the final repeat |
 | JWT completion | CLI exit 0 |
 | Browser launcher on this KDE system | `kde-open` |
 
