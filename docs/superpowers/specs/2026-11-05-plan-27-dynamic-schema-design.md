@@ -1,6 +1,6 @@
 # Plan 27 — Forward migrations, tenant RLS and dynamic schema
 
-**Status:** Approved for implementation by the maintainer on 2026-11-05; verification in progress.
+**Status:** Approved, implemented and verified 2026-11-05. See [decisions, evidence and operator guide](../../compat/plan-27-dynamic-schema.md).
 **Date:** 2026-11-05
 **Depends on:** Plan 25; preserves the implemented Plan 26 identity system.
 **Roadmap:** [first release roadmap](2026-11-04-salescompel-first-release-roadmap-design.md), Plan 27 and §6.

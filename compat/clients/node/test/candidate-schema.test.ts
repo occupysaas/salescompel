@@ -67,3 +67,49 @@ test("record server environment excludes owner and database-test credentials", (
   assert.equal(env.PATH, "/bin");
   assert.ok(!JSON.stringify(env).includes("owner"));
 });
+
+test("database acceptance cannot omit or skip tenant-schema security proofs", () => {
+  const base = {
+    schemaVersion: 1 as const,
+    runId: "a".repeat(24),
+    suite: "database" as const,
+    complete: true,
+    exitCode: 0,
+    tests: requiredCoverage.database.map((id) => ({
+      id,
+      outcome: "passed" as const,
+    })),
+  };
+  assert.equal(assessCoverage("database", base).outcome, "passed");
+  for (const id of [
+    "TestFreshMigration",
+    "TestLegacyAdoption",
+    "TestRuntimeRejectsStartupRoleMask",
+    "TestRuntimeRejectsColumnSecretGrant",
+    "TestRuntimeRejectsPrivilegedBuiltinRole",
+    "TestOAuthRuntimeConfidentialIssuance",
+    "TestRLSOmittedTenantPredicate",
+    "TestSchemaAtomicDDL",
+    "TestDynamicCompatKeyIsOrdinaryText",
+    "TestTenantTxCleanup",
+  ]) {
+    assert.equal(
+      assessCoverage("database", {
+        ...base,
+        tests: base.tests.filter((t) => t.id !== id),
+      }).outcome,
+      "failed",
+      id,
+    );
+    assert.equal(
+      assessCoverage("database", {
+        ...base,
+        tests: base.tests.map((t) =>
+          t.id === id ? { ...t, outcome: "skipped" as const } : t,
+        ),
+      }).outcome,
+      "failed",
+      id,
+    );
+  }
+});

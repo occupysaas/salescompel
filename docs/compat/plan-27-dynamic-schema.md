@@ -1,6 +1,6 @@
 # Plan 27 — Dynamic schema decisions and execution record
 
-Status: implementation in progress; no Salesforce compatibility certification.
+Status: implemented and verified, 2026-11-05; no Salesforce compatibility certification.
 
 ## Reference review (2026-11-05)
 
@@ -62,8 +62,10 @@ claims. The typed-layout decision is unchanged.
 
 ## Verification
 
-Baseline Go suite passed against disposable PostgreSQL 17. Migration, catalog,
-role, client and final acceptance evidence will be recorded as those tasks pass.
+Full acceptance passed against disposable PostgreSQL 17 with Go 1.25.0,
+pinned real clients and Chromium. No required database, OAuth, schema, restart
+or browser proof was skipped. The six existing offline skips are required live
+parents and pass in the JSforce gate.
 
 ## Operator setup and upgrade
 
@@ -154,7 +156,7 @@ Unknown REST object routes retain 404 NOT_FOUND for the established boundary and
 identity-enumeration contract; query unknown types return 400 INVALID_TYPE.
 This corrects the implementation plan's initial REST 400 expectation.
 
-## Review and verification in progress
+## Review and verification
 
 The independent whole-change review found four issues, reproduced before fixes:
 ordinary Compat_Key__c fields on other objects were incorrectly given Account's
@@ -185,3 +187,37 @@ A separate real probe caught membership in `pg_execute_server_program` escaping
 table-only checks. Startup now rejects all reachable PostgreSQL built-in privilege
 roles in addition to owner/dangerous role attributes. Both regressions failed
 before their fixes and pass afterward.
+
+## Full acceptance evidence
+
+Runtime revision `f56d8e8d1c78e198c162f6497a7f1e6573dcce90` passed the complete entry point
+from 2026-11-05T17:20:02.711Z through 2026-11-05T17:22:12.626Z.
+Report `/tmp/salescompel-plan27-results/acceptance-5.json`, SHA-256
+`3133d7189eba287da88f0e0dd61409403afd6ebac45af0629b1f3d87792a4c69`.
+
+| Gate | Passed | Failed | Skipped |
+| --- | ---: | ---: | ---: |
+| bindings | 3 | 0 | 0 |
+| database | 573 | 0 | 0 |
+| lab | 462 | 0 | 6 |
+| web | 6 | 0 | 0 |
+| jsforce | 8 | 0 | 0 |
+| python | 4 | 0 | 0 |
+| cli | 9 | 0 | 0 |
+| oauth | 16 | 0 | 0 |
+| schema | 9 | 0 | 0 |
+| restart | 5 | 0 | 0 |
+| connected-browser | 11 | 0 | 0 |
+| preview | 11 | 0 | 0 |
+| cleanup | 2 | 0 | 0 |
+
+Cleanup verified 43 journaled data operations, zero unknown intents, all owned
+processes stopped, schema tables/columns removed and temporary runtime roles
+dropped. Provisioned principals remain retained under the harness contract.
+The OAuth evidence secret scan passed. Standalone Go race/vet, web units/build
+and the full offline lab check also passed during execution.
+
+The final closure strengthens mandatory coverage for the new migration, RLS,
+privilege, dynamic-record and transaction-cleanup tests. Its revision is tested
+again through full acceptance after integration; that final report is recorded
+separately from the runtime evidence above.
