@@ -3,47 +3,11 @@ package platform
 
 import (
 	"fmt"
-	"net/http"
+
 	"sort"
 	"strings"
 	"unicode/utf8"
 )
-
-type Principal struct{ Tenant, User, Role, Username, Scope string }
-type APIError struct {
-	Status  int      `json:"-"`
-	Code    string   `json:"errorCode"`
-	Message string   `json:"message"`
-	Fields  []string `json:"fields,omitempty"`
-}
-
-func (e *APIError) Error() string { return e.Code + ": " + e.Message }
-func problem(status int, code, message string) error {
-	return &APIError{Status: status, Code: code, Message: message}
-}
-func invalid(code, message string) error { return problem(http.StatusBadRequest, code, message) }
-
-type Field struct {
-	Name        string   `json:"name"`
-	Label       string   `json:"label"`
-	Type        string   `json:"type"`
-	Nillable    bool     `json:"nillable"`
-	Createable  bool     `json:"createable"`
-	Updateable  bool     `json:"updateable"`
-	ExternalID  bool     `json:"externalId"`
-	Length      int      `json:"length"`
-	ReferenceTo []string `json:"referenceTo"`
-	Column      string   `json:"-"`
-}
-type Object struct {
-	Name       string  `json:"name"`
-	Label      string  `json:"label"`
-	Fields     []Field `json:"fields"`
-	Createable bool    `json:"createable"`
-	Updateable bool    `json:"updateable"`
-	Deletable  bool    `json:"deletable"`
-	Queryable  bool    `json:"queryable"`
-}
 
 var catalog = func() map[string][]Field {
 	c, err := buildCatalog()
@@ -78,7 +42,7 @@ func allowed(p Principal, object, name string) bool {
 	return !(p.Role != "admin" && object == "Account" && name == "Compat_Text__c")
 }
 func field(p Principal, object, name string) (Field, error) {
-	fields, ok := catalog[object]
+	fields, ok := catalogFields(p, object)
 	if !ok {
 		return Field{}, invalid("INVALID_TYPE", "Unsupported object")
 	}
@@ -90,14 +54,16 @@ func field(p Principal, object, name string) (Field, error) {
 	return Field{}, fieldProblem("INVALID_FIELD", "Field is unavailable", name)
 }
 func Describe(p Principal, object string) (Object, error) {
-	fields, ok := catalog[object]
+	fields, ok := catalogFields(p, object)
 	if !ok {
 		return Object{}, invalid("INVALID_TYPE", "Unsupported object")
 	}
 	d := Object{Name: object, Label: object, Fields: []Field{}, Createable: true, Updateable: true, Deletable: true, Queryable: true}
 	for _, f := range fields {
 		if allowed(p, object, f.Name) {
-			f.Label = f.Name
+			if f.Label == "" {
+				f.Label = f.Name
+			}
 			f.Createable = f.Name != "Id"
 			f.Updateable = f.Createable
 			if f.ReferenceTo == nil {
@@ -109,7 +75,7 @@ func Describe(p Principal, object string) (Object, error) {
 	return d, nil
 }
 func Validate(p Principal, object string, data map[string]any, create bool) error {
-	if _, ok := catalog[object]; !ok {
+	if _, ok := catalogFields(p, object); !ok {
 		return invalid("INVALID_TYPE", "Unsupported object")
 	}
 	keys := make([]string, 0, len(data))
@@ -144,7 +110,7 @@ func Validate(p Principal, object string, data map[string]any, create bool) erro
 		}
 	}
 	if create {
-		for _, f := range catalog[object] {
+		for _, f := range fieldsFor(p, object) {
 			if f.Name != "Id" && !f.Nillable {
 				if v, ok := data[f.Name]; !ok || v == nil {
 					return fieldProblem("REQUIRED_FIELD_MISSING", "Required value is missing", f.Name)
@@ -153,4 +119,21 @@ func Validate(p Principal, object string, data map[string]any, create bool) erro
 		}
 	}
 	return nil
+}
+
+func catalogFields(p Principal, object string) ([]Field, bool) {
+	if p.Catalog != nil {
+		o, e := p.Catalog.Object(object)
+		return o.Fields, e == nil
+	}
+	f, ok := catalog[object]
+	return f, ok
+}
+func fieldsFor(p Principal, object string) []Field { f, _ := catalogFields(p, object); return f }
+func canonicalObject(p Principal, input string) (string, bool) {
+	if p.Catalog != nil {
+		o, e := p.Catalog.Object(input)
+		return o.Name, e == nil
+	}
+	return CanonicalObject(input)
 }

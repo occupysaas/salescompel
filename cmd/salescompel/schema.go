@@ -26,6 +26,10 @@ func schemaCommand(ctx context.Context, args []string, out io.Writer) error {
 		return errors.New("invalid owner database configuration")
 	}
 	defer pool.Close()
+	var owner bool
+	if e = pool.QueryRow(ctx, "SELECT pg_has_role(current_user,'salescompel_owner','MEMBER')").Scan(&owner); e != nil || !owner {
+		return errors.New("schema operations require owner membership")
+	}
 	if e = migration.CheckHead(ctx, pool); e != nil {
 		return e
 	}
@@ -48,8 +52,8 @@ func schemaCommand(ctx context.Context, args []string, out io.Writer) error {
 	length := fs.Int("length", 0, "length")
 	seen := map[string]bool{}
 	for _, arg := range args[offset:] {
-		if strings.HasPrefix(arg, "--") {
-			k := strings.SplitN(arg, "=", 2)[0]
+		if strings.HasPrefix(arg, "-") {
+			k := "--" + strings.TrimLeft(strings.SplitN(arg, "=", 2)[0], "-")
 			if seen[k] {
 				return errors.New("duplicate schema flag")
 			}

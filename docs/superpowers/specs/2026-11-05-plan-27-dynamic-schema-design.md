@@ -1,6 +1,6 @@
 # Plan 27 — Forward migrations, tenant RLS and dynamic schema
 
-**Status:** Draft for maintainer review; implementation is not authorized by this document.
+**Status:** Approved for implementation by the maintainer on 2026-11-05; verification in progress.
 **Date:** 2026-11-05
 **Depends on:** Plan 25; preserves the implemented Plan 26 identity system.
 **Roadmap:** [first release roadmap](2026-11-04-salescompel-first-release-roadmap-design.md), Plan 27 and §6.
@@ -47,7 +47,7 @@ Anti-goals: silently dropping legacy data or credentials, serving a field that s
 
 A tenant's field names may coincide with another tenant's, but have distinct metadata IDs and columns. Other tenants cannot address that column through metadata. Standard table column growth and per-object table growth are deliberate early-preview tradeoffs, not a multi-tenant scale claim.
 
-Before implementing storage, benchmark this layout against a shared JSONB-record alternative in a disposable database: 10 tenants × 10,000 records with 20 populated text fields; repeat at 100 fields. Include 1 and 8 concurrent workers, a skewed tenant holding half the total rows, create/read/update, case-insensitive filtered ordered queries, existing Account/Contact joins, uniqueness checks, and field-add latency. Run 3 measured repetitions after warmup and retain workload seed, environment, schema, indexes, EXPLAIN plans, p50/p95, throughput, bytes and errors. No host-specific absolute latency is a release gate. Correctness, database-enforced uniqueness/relationships and isolation are mandatory; a repeatable >2× p95 disadvantage in a required operation triggers a written tradeoff review before committing the physical storage migration. JSONB is not selected merely because it is quicker to implement. Record the decision in `docs/compat/plan-27-dynamic-schema.md`; change this spec and plan together if measurement warrants a different layout. No benchmark has been run while drafting.
+Before implementing storage, benchmark this layout against a shared JSONB-record alternative in a disposable database: 10 tenants × 10,000 records with 20 populated text fields; repeat at 100 fields. Include 1 and 8 concurrent workers, a skewed tenant holding half the total rows, create/read/update, case-insensitive filtered ordered queries, existing Account/Contact joins, uniqueness checks, and field-add latency. Run 3 measured repetitions after warmup and retain workload seed, environment, schema, indexes, EXPLAIN plans, p50/p95, throughput, bytes and errors. No host-specific absolute latency is a release gate. Correctness, database-enforced uniqueness/relationships and isolation are mandatory; a repeatable >2× p95 disadvantage in a required operation triggers a written tradeoff review before committing the physical storage migration. JSONB is not selected merely because it is quicker to implement. Record the decision in `docs/compat/plan-27-dynamic-schema.md`; change this spec and plan together if measurement warrants a different layout. The drafting phase ran no benchmark; execution measurements and the tradeoff decision are recorded in the operator/decision guide.
 
 ## 2. Migrations and operational roles
 

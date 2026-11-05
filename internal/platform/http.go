@@ -8,6 +8,8 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"salescompel/internal/query"
+	"salescompel/internal/records"
 	"strings"
 	"unicode/utf8"
 
@@ -239,6 +241,12 @@ func NewHandlerWithOptions(s *Store, assetDir string, o Options) http.Handler {
 			}
 			parts[i] = decoded
 		}
+		catalog, e := s.Catalog(ctx, p)
+		if e != nil {
+			writeError(w, e)
+			return
+		}
+		p.Catalog = &catalog
 		if parts[0] == "composite" && len(parts) == 1 {
 			if !method(w, r, "POST") {
 				return
@@ -286,7 +294,7 @@ func NewHandlerWithOptions(s *Store, assetDir string, o Options) http.Handler {
 			}
 			result := map[string]any{"totalSize": len(rows), "done": true, "records": rows}
 			if columns {
-				metadata, err := queryColumnMetadata(p, q)
+				metadata, err := query.ColumnMetadata(p, q)
 				if err != nil {
 					writeError(w, err)
 					return
@@ -305,21 +313,22 @@ func NewHandlerWithOptions(s *Store, assetDir string, o Options) http.Handler {
 				return
 			}
 			objects := []Object{}
-			for _, name := range []string{"Account", "Contact"} {
-				d, _ := Describe(p, name)
+			for _, object := range catalog.Objects {
+				d, _ := records.Describe(p, object.Name)
 				objects = append(objects, d)
 			}
 			writeJSON(w, 200, map[string]any{"sobjects": objects, "encoding": "UTF-8", "maxBatchSize": 1})
 			return
 		}
-		object, known := CanonicalObject(parts[1])
+		definition, lookupErr := catalog.Object(parts[1])
+		object, known := definition.Name, lookupErr == nil
 		if !known {
 			writeError(w, problem(404, "NOT_FOUND", "Object not found"))
 			return
 		}
 		if len(parts) == 3 && parts[2] == "describe" {
 			if method(w, r, "GET") {
-				d, _ := Describe(p, object)
+				d, _ := records.Describe(p, object)
 				writeJSON(w, 200, d)
 			}
 			return

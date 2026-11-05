@@ -103,6 +103,7 @@ export async function createCandidateTrafficValidator(
         "const",
         "enum",
         "properties",
+        "patternProperties",
         "required",
         "additionalProperties",
         "items",
@@ -134,6 +135,8 @@ export async function createCandidateTrafficValidator(
         schemaWalk(lookup(s.$ref), next);
       }
       for (const child of Object.values(s.properties ?? {}))
+        schemaWalk(child, active);
+      for (const child of Object.values(s.patternProperties ?? {}))
         schemaWalk(child, active);
       if (s.items) schemaWalk(s.items, active);
       for (const key of ["oneOf", "anyOf", "allOf"])

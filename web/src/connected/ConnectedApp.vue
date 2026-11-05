@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, onUnmounted } from "vue";
+import { loadCatalog, type ObjectSummary } from "./catalog";
 import {
   api as request,
   setToken,
@@ -9,6 +10,8 @@ import {
 } from "../api";
 import { language, languages, setLanguage, t } from "../i18n";
 const lifetime = new AbortController();
+const objects = ref<ObjectSummary[]>([]);
+let generation = 0;
 onUnmounted(() => {
   lifetime.abort();
   setToken("");
@@ -44,11 +47,40 @@ const languageNames: Record<string, string> = {
   iw: "עברית",
 };
 function label(field: Field) {
-  return t(`field.${field.name}`);
+  const known = [
+    "Id",
+    "Name",
+    "FirstName",
+    "LastName",
+    "AccountId",
+    "Compat_Text__c",
+    "Compat_Key__c",
+  ];
+  return known.includes(field.name)
+    ? t(`field.${field.name}`)
+    : field.label || field.name;
+}
+function objectLabel(item?: ObjectSummary) {
+  if (!item) return object.value;
+  if (item.name === "Account") return t("nav.accounts");
+  if (item.name === "Contact") return t("nav.contacts");
+  return item.labelPlural || item.label || item.name;
+}
+async function refreshCatalog() {
+  await action(async () => {
+    generation++;
+    editing.value = false;
+    records.value = [];
+    description.value = null;
+    objects.value = await loadCatalog(lifetime.signal);
+    if (!objects.value.some((o) => o.name === object.value))
+      object.value = objects.value[0]?.name ?? "";
+    if (object.value) await load();
+  });
 }
 function recordName(row: RecordData) {
   return String(
-    row[object.value === "Account" ? "Name" : "LastName"] ?? row.Id,
+    row[object.value === "Contact" ? "LastName" : "Name"] ?? row.Id,
   );
 }
 async function action(fn: () => Promise<void>) {
@@ -64,19 +96,27 @@ async function action(fn: () => Promise<void>) {
   }
 }
 async function load() {
+  const current = ++generation;
   records.value = [];
   description.value = null;
+  editing.value = false;
   const d = await api<Description>(`sobjects/${object.value}/describe`);
-  const q = `SELECT ${d.fields.map((f) => f.name).join(",")} FROM ${object.value} ORDER BY ${object.value === "Account" ? "Name" : "LastName"} LIMIT 2000`;
+  const q = `SELECT ${d.fields.map((f) => f.name).join(",")} FROM ${object.value} ORDER BY ${object.value === "Contact" ? "LastName" : "Name"} LIMIT 2000`;
   const result = await api<{ records: RecordData[] }>(
     `query?q=${encodeURIComponent(q)}`,
   );
+  if (current !== generation || lifetime.signal.aborted) return;
   description.value = d;
   records.value = result.records;
 }
 async function connect() {
   await action(async () => {
     setToken(draftToken.value.trim());
+    objects.value = await loadCatalog(lifetime.signal);
+    object.value = objects.value.some((o) => o.name === "Account")
+      ? "Account"
+      : (objects.value[0]?.name ?? "");
+    if (!object.value) throw new Error("INVALID_TYPE");
     await load();
     connected.value = true;
     draftToken.value = "";
@@ -84,6 +124,8 @@ async function connect() {
   if (!lifetime.signal.aborted && !connected.value) setToken("");
 }
 function disconnect() {
+  generation++;
+  objects.value = [];
   setToken("");
   draftToken.value = "";
   connected.value = false;
@@ -213,24 +255,23 @@ async function changeLanguage(event: Event) {
       <template v-else>
         <nav :aria-label="t('app.subtitle')">
           <button
-            :class="{ active: object === 'Account' }"
+            v-for="item in objects"
+            :key="item.name"
+            :class="{ active: object === item.name }"
             :disabled="busy"
-            @click="switchObject('Account')"
+            @click="switchObject(item.name)"
           >
-            {{ t("nav.accounts") }}</button
-          ><button
-            :class="{ active: object === 'Contact' }"
-            :disabled="busy"
-            @click="switchObject('Contact')"
-          >
-            {{ t("nav.contacts") }}
+            {{ objectLabel(item) }}
+          </button>
+          <button class="quiet" :disabled="busy" @click="refreshCatalog">
+            {{ t("action.refreshObjects") }}
           </button>
         </nav>
         <div class="section-heading">
           <div>
             <p class="eyebrow">SalesCompel</p>
             <h1>
-              {{ t(object === "Account" ? "nav.accounts" : "nav.contacts") }}
+              {{ objectLabel(objects.find((o) => o.name === object)) }}
             </h1>
           </div>
           <button

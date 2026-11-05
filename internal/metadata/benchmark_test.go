@@ -139,8 +139,25 @@ func benchLayout(b *testing.B, ctx context.Context, pool *pgxpool.Pool, layout s
 			b.Log(string(encoded))
 		}
 	}
+	must("CREATE TABLE sc_benchmark.field_definitions(name text PRIMARY KEY,length integer NOT NULL)")
 	start := time.Now()
-	must("ALTER TABLE sc_benchmark.records ADD COLUMN extra varchar(80)")
+	tx, e := pool.Begin(ctx)
+	if e != nil {
+		b.Fatal(e)
+	}
+	if layout == "typed" {
+		if _, e = tx.Exec(ctx, "ALTER TABLE sc_benchmark.records ADD COLUMN extra varchar(80)"); e != nil {
+			tx.Rollback(ctx)
+			b.Fatal(e)
+		}
+	}
+	if _, e = tx.Exec(ctx, "INSERT INTO sc_benchmark.field_definitions VALUES('extra',80)"); e != nil {
+		tx.Rollback(ctx)
+		b.Fatal(e)
+	}
+	if e = tx.Commit(ctx); e != nil {
+		b.Fatal(e)
+	}
 	b.Logf("field_add_us=%d", time.Since(start).Microseconds())
 	// Every loaded child has a same-tenant parent; duplicate and cross-tenant FK are enforced in SQL.
 	var count int

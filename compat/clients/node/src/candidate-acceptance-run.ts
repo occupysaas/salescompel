@@ -1,4 +1,10 @@
 import {
+  bootstrapSchemaDatabase,
+  runSchemaGate,
+  verifySchemaRestart,
+  cleanupSchema,
+} from "./candidate-schema.ts";
+import {
   runOAuthGate,
   verifyOAuthRestart,
   verifyOAuthEvidence,
@@ -58,7 +64,7 @@ export const databaseTestArgs = () => [
 // Step results use a separate namespace from persistence fixtures (restart.json).
 export async function publishStepResult(
   c: GateContext,
-  id: "cli" | "oauth" | "restart",
+  id: "cli" | "oauth" | "schema" | "restart",
   parsed: ParsedResult,
 ) {
   const path = join(c.scratch, id + "-result.json");
@@ -153,7 +159,7 @@ export async function runAcceptance(
     const startedAt = new Date().toISOString();
     report.gates.find((g) => g.id === id)!.startedAt = startedAt;
     let parsed = await fn();
-    if (id === "cli" || id === "oauth" || id === "restart") {
+    if (id === "cli" || id === "oauth" || id === "schema" || id === "restart") {
       const saved = await publishStepResult(c!, id, parsed);
       parsed = saved.parsed;
       report.evidence.push({ gate: id, sha256: saved.sha256 });
@@ -225,6 +231,7 @@ export async function runAcceptance(
               : "PROCESS",
         );
     };
+    await bootstrapSchemaDatabase(ctx);
     if (options.scope === "full") {
       await step("database", async () => {
         const tests = await command("go", databaseTestArgs(), "database");
@@ -325,12 +332,14 @@ export async function runAcceptance(
     });
     await step("cli", () => runNativeCLI(ctx));
     await step("oauth", () => runOAuthGate(ctx));
+    await step("schema", () => runSchemaGate(ctx));
     await step("restart", async () => {
       await seedRestartFixture(ctx);
       service = await restartCandidate(ctx, service!);
       return mergeGateResults("restart", [
         await verifyRestartFixture(ctx),
         await verifyOAuthRestart(ctx),
+        await verifySchemaRestart(ctx),
       ]);
     });
     await step("connected-browser", async () => {
@@ -402,12 +411,14 @@ export async function runAcceptance(
     if (c) {
       try {
         report.cleanup = await cleanupFixtures(c);
+        await cleanupSchema(c);
       } catch {
         report.cleanup.verified = false;
       }
       try {
         if (service) await stopCandidate(service);
         await stopOwnedProcesses(c.processes);
+        await cleanupSchema(c, true);
         report.cleanup.processesStopped = true;
       } catch {
         report.cleanup.processesStopped = false;

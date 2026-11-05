@@ -2,18 +2,16 @@ package platform
 
 import (
 	"context"
-	"crypto/rand"
+
 	"crypto/sha256"
 	_ "embed"
 	"encoding/hex"
 	"errors"
-	"fmt"
-	"sort"
-	"strings"
+
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 	"salescompel/internal/metadata"
 	"salescompel/internal/migration"
@@ -24,12 +22,9 @@ var schema string
 
 type Store struct {
 	pool         *pgxpool.Pool
+	auth         *pgxpool.Pool
+	tx           pgx.Tx
 	passwordWork chan struct{}
-}
-type database interface {
-	Exec(context.Context, string, ...any) (pgconn.CommandTag, error)
-	Query(context.Context, string, ...any) (pgx.Rows, error)
-	QueryRow(context.Context, string, ...any) pgx.Row
 }
 
 func OpenOperator(ctx context.Context, url string) (*Store, error) {
@@ -40,19 +35,29 @@ func OpenOperator(ctx context.Context, url string) (*Store, error) {
 	if e != nil {
 		return nil, errors.New("invalid database configuration")
 	}
+	var owner bool
+	if e = pool.QueryRow(ctx, "SELECT pg_has_role(current_user,'salescompel_owner','MEMBER')").Scan(&owner); e != nil || !owner {
+		pool.Close()
+		return nil, errors.New("operator connection requires salescompel_owner membership")
+	}
 	if e = migration.CheckHead(ctx, pool); e != nil {
 		pool.Close()
 		return nil, e
 	}
 	return &Store{pool: pool, passwordWork: make(chan struct{}, 4)}, nil
 }
-func (s *Store) Close()          { s.pool.Close() }
+func (s *Store) Close() {
+	s.pool.Close()
+	if s.auth != nil && s.auth != s.pool {
+		s.auth.Close()
+	}
+}
 func digest(token string) string { v := sha256.Sum256([]byte(token)); return hex.EncodeToString(v[:]) }
 func (s *Store) Provision(ctx context.Context, token string, p Principal) error {
 	if len(token) < 16 || p.Tenant == "" || p.User == "" || (p.Role != "admin" && p.Role != "restricted") {
 		return errors.New("token must be at least 16 characters; tenant, user and valid role required")
 	}
-	tx, err := s.pool.Begin(ctx)
+	tx, err := s.begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -80,257 +85,4 @@ func (s *Store) Provision(ctx context.Context, token string, p Principal) error 
 }
 func (s *Store) Authenticate(ctx context.Context, token string) (Principal, error) {
 	return s.AuthenticateAt(ctx, token, time.Now())
-}
-func dbError(err error) error {
-	if err == nil {
-		return nil
-	}
-	if errors.Is(err, pgx.ErrNoRows) {
-		return problem(404, "NOT_FOUND", "Record not found")
-	}
-	var pe *pgconn.PgError
-	if errors.As(err, &pe) {
-		switch pe.Code {
-		case "23505":
-			return fieldProblem("DUPLICATE_VALUE", "External ID already exists", "Compat_Key__c")
-		case "23503":
-			return invalid("INVALID_CROSS_REFERENCE_KEY", "Relationship is unavailable or still referenced")
-		case "23502", "23514":
-			return invalid("REQUIRED_FIELD_MISSING", "Required value is missing")
-		case "22001":
-			return invalid("STRING_TOO_LONG", "Field value too long")
-		}
-	}
-	return problem(500, "SERVER_UNAVAILABLE", "Storage operation failed")
-}
-func table(object string) string {
-	if object == "Account" {
-		return "accounts"
-	}
-	return "contacts"
-}
-func newID(object string) (string, error) {
-	var b [9]byte
-	if _, err := rand.Read(b[:]); err != nil {
-		return "", err
-	}
-	alphabet := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-	prefix := "001"
-	if object == "Contact" {
-		prefix = "003"
-	}
-	var out strings.Builder
-	out.WriteString(prefix)
-	// 72 random bits, represented by twelve base64-like alphanumeric characters.
-	var acc uint64
-	for _, x := range b[:8] {
-		acc = acc<<8 | uint64(x)
-	}
-	for i := 0; i < 11; i++ {
-		out.WriteByte(alphabet[acc%62])
-		acc /= 62
-	}
-	out.WriteByte(alphabet[int(b[8])%62])
-	base := out.String()
-	return base + idChecksum(base), nil
-}
-
-func columns(p Principal, object string, data map[string]any) ([]string, []any) {
-	keys := make([]string, 0, len(data))
-	for k := range data {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	cols := []string{}
-	values := []any{}
-	for _, k := range keys {
-		f, _ := field(p, object, k)
-		v := data[k]
-		// Salesforce does not distinguish a blank optional text value from null.
-		if v == "" && f.Nillable {
-			v = nil
-		}
-		if f.Name == "Compat_Key__c" {
-			var canonical any
-			if text, ok := v.(string); ok {
-				key, _ := canonicalExternalID(text)
-				if key != "" {
-					canonical = key
-				} else {
-					v = nil
-				}
-			}
-			cols = append(cols, "compat_key_canonical")
-			values = append(values, canonical)
-		}
-		cols = append(cols, f.Column)
-		values = append(values, v)
-	}
-	return cols, values
-}
-func create(ctx context.Context, db database, p Principal, object string, data map[string]any) (string, error) {
-	var err error
-	data, err = canonicalFields(p, object, data)
-	if err != nil {
-		return "", err
-	}
-	data, err = normalizeReferences(p, object, data)
-	if err != nil {
-		return "", err
-	}
-	if err := Validate(p, object, data, true); err != nil {
-		return "", err
-	}
-	id, err := newID(object)
-	if err != nil {
-		return "", dbError(err)
-	}
-	cols, values := columns(p, object, data)
-	cols = append([]string{"tenant_id", "id"}, cols...)
-	values = append([]any{p.Tenant, id}, values...)
-	marks := make([]string, len(values))
-	for i := range marks {
-		marks[i] = fmt.Sprintf("$%d", i+1)
-	}
-	_, err = db.Exec(ctx, "INSERT INTO "+table(object)+" ("+strings.Join(cols, ",")+") VALUES ("+strings.Join(marks, ",")+")", values...)
-	return id, dbError(err)
-}
-func (s *Store) Create(ctx context.Context, p Principal, object string, data map[string]any) (string, error) {
-	return create(ctx, s.pool, p, object, data)
-}
-func update(ctx context.Context, db database, p Principal, object, id string, data map[string]any) error {
-	var err error
-	id, err = NormalizeRecordID(object, id)
-	if err != nil {
-		return dbError(pgx.ErrNoRows)
-	}
-	data, err = canonicalFields(p, object, data)
-	if err != nil {
-		return err
-	}
-	data, err = normalizeReferences(p, object, data)
-	if err != nil {
-		return err
-	}
-	if err := Validate(p, object, data, false); err != nil {
-		return err
-	}
-	cols, values := columns(p, object, data)
-	sets := []string{}
-	for i, c := range cols {
-		sets = append(sets, fmt.Sprintf("%s=$%d", c, i+3))
-	}
-	if len(sets) == 0 {
-		sets = append(sets, "id=id")
-	}
-	values = append([]any{p.Tenant, id}, values...)
-	tag, err := db.Exec(ctx, "UPDATE "+table(object)+" SET "+strings.Join(sets, ",")+" WHERE tenant_id=$1 AND id=$2", values...)
-	if err != nil {
-		return dbError(err)
-	}
-	if tag.RowsAffected() == 0 {
-		return dbError(pgx.ErrNoRows)
-	}
-	return nil
-}
-func (s *Store) Update(ctx context.Context, p Principal, object, id string, data map[string]any) error {
-	return update(ctx, s.pool, p, object, id, data)
-}
-func (s *Store) Delete(ctx context.Context, p Principal, object, id string) error {
-	return deleteRecord(ctx, s.pool, p, object, id)
-}
-func deleteRecord(ctx context.Context, db database, p Principal, object, id string) error {
-	if _, err := Describe(p, object); err != nil {
-		return err
-	}
-	id, err := NormalizeRecordID(object, id)
-	if err != nil {
-		return dbError(pgx.ErrNoRows)
-	}
-	tag, err := db.Exec(ctx, "DELETE FROM "+table(object)+" WHERE tenant_id=$1 AND id=$2", p.Tenant, id)
-	if err != nil {
-		return dbError(err)
-	}
-	if tag.RowsAffected() == 0 {
-		return dbError(pgx.ErrNoRows)
-	}
-	return nil
-}
-func (s *Store) Read(ctx context.Context, p Principal, object, id string) (map[string]any, error) {
-	d, err := Describe(p, object)
-	if err != nil {
-		return nil, err
-	}
-	id, err = NormalizeRecordID(object, id)
-	if err != nil {
-		return nil, dbError(pgx.ErrNoRows)
-	}
-	q := Query{Object: object, HasWhere: true, WhereField: "Id", WhereValue: &id, Limit: 1}
-	for _, f := range d.Fields {
-		q.Fields = append(q.Fields, f.Name)
-	}
-	rows, err := s.Select(ctx, p, q)
-	if err != nil {
-		return nil, err
-	}
-	if len(rows) == 0 {
-		return nil, dbError(pgx.ErrNoRows)
-	}
-	return rows[0], nil
-}
-func (s *Store) Upsert(ctx context.Context, p Principal, key string, data map[string]any) (string, bool, error) {
-	var err error
-	data, err = canonicalFields(p, "Account", data)
-	if err != nil {
-		return "", false, err
-	}
-	if supplied := data["Compat_Key__c"]; supplied != nil {
-		switch supplied.(type) {
-		case map[string]any, []any:
-			return "", false, invalid("JSON_PARSER_ERROR", "External ID requires a scalar value or null")
-		default:
-			return "", false, invalid("INVALID_FIELD", "External ID value must be supplied in the upsert URL")
-		}
-	}
-	copyData := map[string]any{}
-	for k, v := range data {
-		copyData[k] = v
-	}
-	copyData["Compat_Key__c"] = key
-	if err := Validate(p, "Account", copyData, false); err != nil {
-		return "", false, err
-	}
-	canonical, err := canonicalExternalID(key)
-	if err != nil || canonical == "" {
-		return "", false, fieldProblem("INVALID_FIELD", "External ID must not be blank", "Compat_Key__c")
-	}
-	tx, err := s.pool.Begin(ctx)
-	if err != nil {
-		return "", false, dbError(err)
-	}
-	defer tx.Rollback(ctx)
-	// Serialize the read/create decision for this tenant/key, across all server processes.
-	if _, err = tx.Exec(ctx, "SELECT pg_advisory_xact_lock(hashtextextended($1,0))", p.Tenant+"\x1f"+canonical); err != nil {
-		return "", false, dbError(err)
-	}
-	var id string
-	err = tx.QueryRow(ctx, "SELECT id FROM accounts WHERE tenant_id=$1 AND compat_key_canonical=$2 FOR UPDATE", p.Tenant, canonical).Scan(&id)
-	created := errors.Is(err, pgx.ErrNoRows)
-	if created {
-		id, err = create(ctx, tx, p, "Account", copyData)
-	} else if err == nil {
-		delete(copyData, "Compat_Key__c")
-		err = update(ctx, tx, p, "Account", id, copyData)
-	}
-	if err != nil {
-		return "", false, dbErrorPreserve(err)
-	}
-	return id, created, dbError(tx.Commit(ctx))
-}
-func dbErrorPreserve(err error) error {
-	var api *APIError
-	if errors.As(err, &api) {
-		return err
-	}
-	return dbError(err)
 }

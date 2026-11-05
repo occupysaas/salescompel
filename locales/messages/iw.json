@@ -44,5 +44,6 @@
   "oauth.scope.phone": "קריאת פרטי הטלפון שלך.",
   "oauth.scope.web": "בקשת גישה לאינטרנט (ללא גישה נוספת בגרסה זו).",
   "oauth.scope.refresh_token": "שמירת הגישה באמצעות אסימון רענון עד לביטולה.",
-  "oauth.scope.offline_access": "שמירת הגישה באמצעות אסימון רענון עד לביטולה."
+  "oauth.scope.offline_access": "שמירת הגישה באמצעות אסימון רענון עד לביטולה.",
+  "action.refreshObjects": "רענון אובייקטים"
 }

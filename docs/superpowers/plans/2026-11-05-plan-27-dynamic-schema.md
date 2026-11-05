@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Status:** Draft for review; no implementation performed.
+**Status:** Approved for implementation 2026-11-05; implementation and final acceptance in progress.
 
 **Goal:** Replace startup catalog mutation with explicit migrations and make tenant-defined objects/text fields usable through JSforce and the connected editor under PostgreSQL RLS.
 
@@ -151,7 +151,7 @@ Include currently valid v1/v2 fixtures and their existing refusal cases. Populat
 
 **Interfaces:** Existing public URLs, request/response formats and OAuth scope classification remain; object path parameters resolve a tenant snapshot and dynamic text maps are validated at runtime. This adds no schema-write HTTP endpoint.
 
-- [ ] **Step 1: Write failing HTTP/traffic tests.** `TestHTTPDynamicCatalog` asserts A discovery/describe includes A's custom definitions only; B sees B's; unknown object -> 400 INVALID_TYPE; absent field -> 400 INVALID_FIELD; another tenant's record -> 404 NOT_FOUND. Validate dynamic POST 201, GET/PATCH/DELETE, JSON/error shapes, restricted field denial, unsupported type failure and Composite rollback. Assert id-only OAuth token receives 403 for dynamic data/discovery too. Exercise canonical case behavior through the same routes as seeds.
+- [ ] **Step 1: Write failing HTTP/traffic tests.** `TestHTTPDynamicCatalog` asserts A discovery/describe includes A's custom definitions only; B sees B's; unknown REST object -> 404 NOT_FOUND (preserve the existing boundary; query INVALID_TYPE remains 400); absent field -> 400 INVALID_FIELD; another tenant's record -> 404 NOT_FOUND. Validate dynamic POST 201, GET/PATCH/DELETE, JSON/error shapes, restricted field denial, unsupported type failure and Composite rollback. Assert id-only OAuth token receives 403 for dynamic data/discovery too. Exercise canonical case behavior through the same routes as seeds.
 - [ ] **Step 2: Run `TEST_DATABASE_URL=<disposable-url> GOTOOLCHAIN=go1.25.0 go test ./internal/platform -run 'HTTPDynamic|HTTPComposite|HTTPServedOpenAPI|Scope' -count=1` and `npm --prefix compat/clients/node run typecheck`.** Expected: new dynamic traffic assertions fail until handlers/schema support them.
 - [ ] **Step 3: Implement dynamic discovery/describe and contract changes.** Populate labels/flags/urls from catalog, retaining User/Organization bridge precedence. Generalize OpenAPI path/map schemas without allowing arbitrary unchecked properties in effective record writes; describe runtime field validation and operator-only schema control. Add x-source URLs and source status; preserve OpenAPI 3.2.1. Remove stale candidate-contract prose claiming Composite is unavailable. Extend traffic validators to dynamically resolved object names rather than adding tenant fixtures to the static schema.
 - [ ] **Step 4: Run Step 2 and `npm --prefix compat/clients/node run check`.** Expected: Go tests, schema validation, typecheck, formatting and offline tests pass with only the established documented offline skips. Dynamic success and failure traffic must both be measured.
@@ -198,4 +198,4 @@ Set TEST_DATABASE_URL to the dedicated disposable owner database; the harness de
 
 Coverage: migration/upgrade -> Task 2; dynamic definitions/DDL -> Task 3; runtime roles/RLS/context -> Task 4; one write path, query and Composite -> Task 5; HTTP/provenance -> Task 6; localized UI -> Task 7; actual clients/restart/cleanup/docs -> Task 8. Task 1 owns source availability and the physical-storage decision before schema commitment. All five Review Focus conditions have owning tests.
 
-Execution order is sequential, Tasks 1–8. Metadata migration 0002 precedes role/RLS migration 0003; do not run those manifest edits in parallel. Native execution is a reasonable default for this tightly coupled package extraction; any delegation must follow the user's chosen execution approach. This request creates planning documents only. Review both drafts before authorizing implementation.
+Execution order is sequential, Tasks 1–8. Metadata migration 0002 precedes role/RLS migration 0003; do not run those manifest edits in parallel. Native execution is a reasonable default for this tightly coupled package extraction; any delegation must follow the user's chosen execution approach. The maintainer authorized implementation after the planning commit was pushed. Execute to completion using the preserved native approach.

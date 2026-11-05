@@ -44,5 +44,6 @@
   "oauth.scope.phone": "Ler suas informações de telefone.",
   "oauth.scope.web": "Solicitar acesso à web (sem acesso adicional nesta versão).",
   "oauth.scope.refresh_token": "Manter o acesso com um token de atualização até a revogação.",
-  "oauth.scope.offline_access": "Manter o acesso com um token de atualização até a revogação."
+  "oauth.scope.offline_access": "Manter o acesso com um token de atualização até a revogação.",
+  "action.refreshObjects": "Atualizar objetos"
 }

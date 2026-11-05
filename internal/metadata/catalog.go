@@ -1,8 +1,10 @@
 package metadata
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -25,8 +27,15 @@ func Load(ctx context.Context, tx pgx.Tx, tenant string) (Snapshot, error) {
 		if e = rows.Scan(&o.ID, &o.Name, &o.Label, &o.PluralLabel, &o.Standard, &o.Schema, &o.Table, &o.Prefix, &data); e != nil {
 			return out, e
 		}
-		if e = json.Unmarshal(data, &o.Fields); e != nil {
+		decoder := json.NewDecoder(bytes.NewReader(data))
+		decoder.DisallowUnknownFields()
+		if e = decoder.Decode(&o.Fields); e != nil {
 			return out, e
+		}
+		for _, f := range o.Fields {
+			if f.Type != "id" && f.Type != "string" && f.Type != "reference" {
+				return out, errors.New("unsupported active field type")
+			}
 		}
 		// Physical field mappings are separate from public describe JSON.
 		out.Objects = append(out.Objects, o)
@@ -37,16 +46,17 @@ func Load(ctx context.Context, tx pgx.Tx, tenant string) (Snapshot, error) {
 	rows.Close()
 	for i := range out.Objects {
 		o := &out.Objects[i]
-		r, e := tx.Query(ctx, "SELECT api_name,physical_column FROM sc_catalog.fields WHERE tenant_id=$1 AND object_id=$2", tenant, o.ID)
+		r, e := tx.Query(ctx, "SELECT id,api_name,physical_column FROM sc_catalog.fields WHERE tenant_id=$1 AND object_id=$2", tenant, o.ID)
 		if e != nil {
 			return out, e
 		}
 		for r.Next() {
-			var name, col string
-			r.Scan(&name, &col)
+			var id, name, col string
+			r.Scan(&id, &name, &col)
 			for j := range o.Fields {
 				if o.Fields[j].Name == name {
 					o.Fields[j].Column = col
+					o.Fields[j].ID = id
 				}
 			}
 		}

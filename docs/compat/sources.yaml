@@ -323,3 +323,9 @@ sources:
     version: bf67743 reviewed locally
     claim: Candidate OAuth authorization form and redirect implementation; public locator not fetched
     extraction: documentation-reviewed
+  - id: dynamic-schema-plan27
+    url: https://github.com/occupysaas/salescompel/blob/2f5be2a6059e0a285cb167731a292e466ffdb668/docs/superpowers/specs/2026-11-05-plan-27-dynamic-schema-design.md
+    accessedAt: 2026-11-05
+    version: Plan 27 candidate defaults
+    claim: Tenant-defined Text schema, operator commands and bounded dynamic data routes; not live reference evidence
+    extraction: documentation-reviewed

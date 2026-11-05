@@ -1,6 +1,8 @@
 package platform
 
-import "net/url"
+import (
+	"net/url"
+)
 
 // queryColumnsRequested implements the bounded candidate option contract. It
 // deliberately rejects ambiguous values instead of silently picking the first.
@@ -24,26 +26,3 @@ func queryColumnsRequested(values url.Values) (bool, error) {
 // must also complete Select successfully so filter/order policy remains enforced.
 // This minimal candidate schema serves the pinned CLI's nonaggregate consumer;
 // it is not a claim about undocumented Salesforce metadata properties.
-func queryColumnMetadata(p Principal, q Query) ([]map[string]any, error) {
-	var err error
-	q, err = canonicalQuery(p, q)
-	if err != nil {
-		return nil, err
-	}
-	out := make([]map[string]any, 0, len(q.Fields))
-	for _, name := range q.Fields {
-		if q.Object == "Contact" && name == "Account.Name" {
-			if _, err := field(p, "Account", "Name"); err != nil {
-				return nil, err
-			}
-			out = append(out, map[string]any{"columnName": "Account", "joinColumns": []map[string]any{{"columnName": "Name"}}})
-			continue
-		}
-		f, err := field(p, q.Object, name)
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, map[string]any{"columnName": f.Name})
-	}
-	return out, nil
-}

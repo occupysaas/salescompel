@@ -20,15 +20,16 @@ type Field struct {
 	ID          string   `json:"-"`
 }
 type Object struct {
-	ID, Tenant, Schema, Table, Prefix, PluralLabel string
-	Standard                                       bool
-	Name                                           string  `json:"name"`
-	Label                                          string  `json:"label"`
-	Fields                                         []Field `json:"fields"`
-	Createable                                     bool    `json:"createable"`
-	Updateable                                     bool    `json:"updateable"`
-	Deletable                                      bool    `json:"deletable"`
-	Queryable                                      bool    `json:"queryable"`
+	ID, Tenant, Schema, Table, Prefix string  `json:"-"`
+	PluralLabel                       string  `json:"labelPlural"`
+	Standard                          bool    `json:"-"`
+	Name                              string  `json:"name"`
+	Label                             string  `json:"label"`
+	Fields                            []Field `json:"fields"`
+	Createable                        bool    `json:"createable"`
+	Updateable                        bool    `json:"updateable"`
+	Deletable                         bool    `json:"deletable"`
+	Queryable                         bool    `json:"queryable"`
 }
 
 type Snapshot struct {

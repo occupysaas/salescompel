@@ -218,7 +218,8 @@ test("acceptance publication permits only the exact offline foundation skip", as
 test("OAuth acceptance requires every client and policy proof before restart", async () => {
   const { gateIDs } = await import("../src/candidate-acceptance-contract.ts");
   assert.equal(gateIDs[gateIDs.indexOf("cli") + 1], "oauth");
-  assert.equal(gateIDs[gateIDs.indexOf("cli") + 2], "restart");
+  assert.equal(gateIDs[gateIDs.indexOf("cli") + 2], "schema");
+  assert.equal(gateIDs[gateIDs.indexOf("cli") + 3], "restart");
   const ids = [
     "oauth/provision",
     "oauth/sf-web",
@@ -274,6 +275,7 @@ test("OAuth acceptance requires every client and policy proof before restart", a
       "restart/values",
       "restart/policy",
       "restart/oauth-refresh",
+      "restart/schema",
     ].map((id) => ({ id, outcome: "passed" })),
   };
   assert.equal(assessCoverage("restart", restart).outcome, "passed");

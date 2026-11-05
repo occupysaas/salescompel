@@ -6,11 +6,11 @@ import {
 } from "../../../compat/clients/node/src/candidate-acceptance-fixtures.ts";
 export async function createBrowserFixture(
   request: APIRequestContext,
-  object: "Account" | "Contact",
+  object: string,
   data: Record<string, string>,
   names?: string[],
 ) {
-  const name = data[object === "Account" ? "Name" : "LastName"];
+  const name = data[object === "Contact" ? "LastName" : "Name"];
   const e: FixtureEvent = {
     schemaVersion: 1,
     runId: process.env.CANDIDATE_RUN_ID!,
@@ -51,10 +51,11 @@ export const test = base.extend<{ fixtureJournal: void }>({
             object = req.url().split("/").at(-1);
           if (
             req.method() === "POST" &&
-            (object === "Account" || object === "Contact")
+            !!object &&
+            /^(Account|Contact|[A-Za-z][A-Za-z0-9_]*__c)$/.test(object)
           ) {
             const data = req.postDataJSON();
-            const name = data[object === "Account" ? "Name" : "LastName"];
+            const name = data[object === "Contact" ? "LastName" : "Name"];
             const e: FixtureEvent = {
               schemaVersion: 1,
               runId: process.env.CANDIDATE_RUN_ID!,

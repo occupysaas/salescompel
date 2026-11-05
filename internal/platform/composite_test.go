@@ -172,6 +172,11 @@ func (t *compositeTestTx) Exec(ctx context.Context, sql string, args ...any) (pg
 func TestCompositeInfrastructure(t *testing.T) {
 	s := testStore(t)
 	a, _ := principals(t, s)
+	snapshot, err := s.Catalog(context.Background(), a)
+	if err != nil {
+		t.Fatal(err)
+	}
+	a.Catalog = &snapshot
 	for _, mode := range []string{"begin", "commit", "rollback", "cancel"} {
 		t.Run(mode, func(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())

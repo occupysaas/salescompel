@@ -1,12 +1,18 @@
-package platform
+package query
 
 import (
 	"context"
 	"fmt"
+	"github.com/jackc/pgx/v5"
+	"salescompel/internal/contract"
+	"salescompel/internal/metadata"
+	"salescompel/internal/policy"
 	"strings"
 )
 
-func (s *Store) Select(ctx context.Context, p Principal, q Query) ([]map[string]any, error) {
+func Select(ctx context.Context, tx pgx.Tx, execution policy.ExecutionContext, catalog metadata.Snapshot, q Query) ([]map[string]any, error) {
+	p := execution.Principal
+	p.Catalog = &catalog
 	var err error
 	q, err = canonicalQuery(p, q)
 	if err != nil {
@@ -27,9 +33,9 @@ func (s *Store) Select(ctx context.Context, p Principal, q Query) ([]map[string]
 		if err != nil {
 			return nil, err
 		}
-		expressions = append(expressions, "r."+f.Column)
+		expressions = append(expressions, "r."+pgx.Identifier{f.Column}.Sanitize())
 	}
-	from := table(q.Object) + " r"
+	from := table(p, q.Object) + " r"
 	if join {
 		from += " LEFT JOIN accounts a ON a.tenant_id=r.tenant_id AND a.id=r.account_id"
 	}
@@ -41,12 +47,12 @@ func (s *Store) Select(ctx context.Context, p Principal, q Query) ([]map[string]
 			return nil, err
 		}
 		if q.WhereValue == nil {
-			sql += " AND r." + f.Column + " IS NULL"
+			sql += " AND r." + pgx.Identifier{f.Column}.Sanitize() + " IS NULL"
 		} else {
 			if f.Type == "string" {
 				sql += " AND lower(r." + f.Column + " COLLATE pg_c_utf8) = lower($2 COLLATE pg_c_utf8)"
 			} else {
-				sql += " AND r." + f.Column + "=$2"
+				sql += " AND r." + pgx.Identifier{f.Column}.Sanitize() + "=$2"
 			}
 			args = append(args, *q.WhereValue)
 		}
@@ -56,7 +62,7 @@ func (s *Store) Select(ctx context.Context, p Principal, q Query) ([]map[string]
 		if err != nil {
 			return nil, err
 		}
-		sql += " ORDER BY r." + f.Column
+		sql += " ORDER BY r." + pgx.Identifier{f.Column}.Sanitize()
 		if q.Desc {
 			sql += " DESC"
 		}
@@ -74,7 +80,7 @@ func (s *Store) Select(ctx context.Context, p Principal, q Query) ([]map[string]
 	}
 	args = append(args, limit)
 	sql += fmt.Sprintf(" LIMIT $%d", len(args))
-	rows, err := s.pool.Query(ctx, sql, args...)
+	rows, err := tx.Query(ctx, sql, args...)
 	if err != nil {
 		return nil, dbError(err)
 	}
@@ -110,4 +116,12 @@ func (s *Store) Select(ctx context.Context, p Principal, q Query) ([]map[string]
 		return nil, invalid("QUERY_TOO_COMPLICATED", "Result exceeds candidate limit; add LIMIT or a narrower filter")
 	}
 	return out, nil
+}
+
+func table(p Principal, object string) string { o, _ := p.Catalog.Object(object); return o.TableSQL() }
+func dbError(e error) error {
+	if e == nil {
+		return nil
+	}
+	return contract.Problem(500, "SERVER_UNAVAILABLE", "Storage operation failed")
 }

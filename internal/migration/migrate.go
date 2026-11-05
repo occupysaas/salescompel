@@ -10,12 +10,11 @@ import (
 	"fmt"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"salescompel/internal/metadata"
-	"salescompel/internal/migration/legacy"
+
 	"time"
 )
 
-//go:embed legacy/* migrations/*
+//go:embed legacy/* migrations/* v1.go
 var sources embed.FS
 
 const LockID int64 = 739102
@@ -39,70 +38,17 @@ func manifest() []change {
 		hash.Write([]byte(f.Name()))
 		hash.Write(v)
 	}
+	v1, _ := sources.ReadFile("v1.go")
+	hash.Write(v1)
 	sql, _ := sources.ReadFile("migrations/0002_tenant_catalog.sql")
 	sum := sha256.Sum256(sql)
-	return []change{{Entry{1, "legacy baseline", hex.EncodeToString(hash.Sum(nil)), false}, adopt}, {Entry{2, "tenant catalog", hex.EncodeToString(sum[:]), false}, func(ctx context.Context, tx pgx.Tx) error {
-		if _, e := tx.Exec(ctx, string(sql)); e != nil {
-			return e
-		}
-		rows, e := tx.Query(ctx, "SELECT id FROM tenants")
-		if e != nil {
-			return e
-		}
-		var tenants []string
-		for rows.Next() {
-			var t string
-			rows.Scan(&t)
-			tenants = append(tenants, t)
-		}
-		e = rows.Err()
-		rows.Close()
-		if e != nil {
-			return e
-		}
-		for _, t := range tenants {
-			if e = metadata.SeedTenant(ctx, tx, t); e != nil {
-				return e
-			}
-		}
-		return nil
-	}}}
-}
-func adopt(ctx context.Context, tx pgx.Tx) error {
-	var tables []string
-	rows, e := tx.Query(ctx, "SELECT tablename FROM pg_tables WHERE schemaname=current_schema() ORDER BY tablename")
-	if e != nil {
-		return e
-	}
-	for rows.Next() {
-		var n string
-		rows.Scan(&n)
-		tables = append(tables, n)
-	}
-	e = rows.Err()
-	rows.Close()
-	if e != nil {
-		return e
-	}
-	base := map[string]bool{"accounts": true, "contacts": true, "tenants": true, "principals": true, "platform_catalog": true}
-	identity := map[string]bool{"users": true, "oauth_apps": true, "oauth_app_jwt_users": true, "oauth_requests": true, "oauth_codes": true, "oauth_refresh_tokens": true, "oauth_access_tokens": true, "oauth_jwt_ids": true}
-	b, i := 0, 0
-	for _, t := range tables {
-		if base[t] {
-			b++
-		} else if identity[t] {
-			i++
-		} else {
-			return errors.New("unexplained application table; migration refused")
-		}
-	}
-	if len(tables) > 0 && (b != 5 || (i != 0 && i != 8)) {
-		return errors.New("partial legacy database; migration refused")
-	}
-	if e = legacy.Install(ctx, tx); e != nil {
-		return e
-	}
-	return nil
+	m := []change{{Entry{1, "legacy baseline", hex.EncodeToString(hash.Sum(nil)), false}, adopt}, {Entry{2, "tenant catalog", hex.EncodeToString(sum[:]), false}, func(ctx context.Context, tx pgx.Tx) error { _, e := tx.Exec(ctx, string(sql)); return e }}}
+
+	sql3, _ := sources.ReadFile("migrations/0003_tenant_rls.sql")
+	sum3 := sha256.Sum256(sql3)
+	m = append(m, change{Entry{3, "tenant row security", hex.EncodeToString(sum3[:]), false}, func(ctx context.Context, tx pgx.Tx) error { _, e := tx.Exec(ctx, string(sql3)); return e }})
+	return m
+
 }
 func history(ctx context.Context, db interface {
 	Query(context.Context, string, ...any) (pgx.Rows, error)
@@ -174,7 +120,8 @@ func CheckHead(ctx context.Context, pool *pgxpool.Pool) error {
 	}
 	return nil
 }
-func Up(ctx context.Context, pool *pgxpool.Pool) error {
+func Up(ctx context.Context, pool *pgxpool.Pool) error { return up(ctx, pool, manifest()) }
+func up(ctx context.Context, pool *pgxpool.Pool, changes []change) error {
 	c, e := pool.Acquire(ctx)
 	if e != nil {
 		return e
@@ -198,7 +145,8 @@ func Up(ctx context.Context, pool *pgxpool.Pool) error {
 	if e != nil {
 		return e
 	}
-	for _, v := range m[len(h):] {
+	_ = m
+	for _, v := range changes[len(h):] {
 		tx, e := c.Begin(ctx)
 		if e != nil {
 			return e

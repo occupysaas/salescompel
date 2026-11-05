@@ -34,7 +34,13 @@ func dispatch(args []string, out io.Writer) error {
 		defer stop()
 		return schemaCommand(schemaCtx, args, out)
 	}
-	s, err := platform.OpenOperator(ctx, os.Getenv("MIGRATION_DATABASE_URL"))
+	var s *platform.Store
+	var err error
+	if args[0] == "serve" {
+		s, err = platform.OpenRuntime(ctx, platform.StoreConfig{RecordsURL: os.Getenv("DATABASE_URL"), IdentityURL: os.Getenv("AUTH_DATABASE_URL")})
+	} else {
+		s, err = platform.OpenOperator(ctx, os.Getenv("MIGRATION_DATABASE_URL"))
+	}
 	if err != nil {
 		return err
 	}

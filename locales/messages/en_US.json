@@ -165,5 +165,6 @@
   "oauth.scope.phone": "Read your phone information.",
   "oauth.scope.web": "Request web access (no additional access in this release).",
   "oauth.scope.refresh_token": "Keep access with a refresh token until revoked.",
-  "oauth.scope.offline_access": "Keep access with a refresh token until revoked."
+  "oauth.scope.offline_access": "Keep access with a refresh token until revoked.",
+  "action.refreshObjects": "Refresh objects"
 }

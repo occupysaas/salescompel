@@ -37,7 +37,7 @@ func (s *Store) SaveAuthRequest(ctx context.Context, in AuthRequest, now time.Ti
 	if err != nil {
 		return
 	}
-	tx, e := s.pool.Begin(ctx)
+	tx, e := s.authPool().Begin(ctx)
 	if e != nil {
 		return "", "", e
 	}
@@ -57,14 +57,14 @@ func (s *Store) LoadAuthRequest(ctx context.Context, id, binding string, now tim
 	if id == "" || binding == "" {
 		return in, grantError("invalid_request")
 	}
-	err := s.pool.QueryRow(ctx, "SELECT client_id,redirect_uri,scope,state,code_challenge FROM oauth_requests WHERE request_hash=$1 AND cookie_hash=$2 AND expires_at>$3", digest(id), digest(binding), now).Scan(&in.ClientID, &in.RedirectURI, &in.Scope, &in.State, &in.Challenge)
+	err := s.authPool().QueryRow(ctx, "SELECT client_id,redirect_uri,scope,state,code_challenge FROM oauth_requests WHERE request_hash=$1 AND cookie_hash=$2 AND expires_at>$3", digest(id), digest(binding), now).Scan(&in.ClientID, &in.RedirectURI, &in.Scope, &in.State, &in.Challenge)
 	if err != nil {
 		return AuthRequest{}, grantError("invalid_request")
 	}
 	return in, nil
 }
 func (s *Store) DeleteAuthRequest(ctx context.Context, id string) error {
-	tag, err := s.pool.Exec(ctx, "DELETE FROM oauth_requests WHERE request_hash=$1", digest(id))
+	tag, err := s.authPool().Exec(ctx, "DELETE FROM oauth_requests WHERE request_hash=$1", digest(id))
 	if err != nil {
 		return err
 	}

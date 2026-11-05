@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"salescompel/internal/migration"
+	"salescompel/internal/recordid"
 )
 
 func bootstrapLegacyTest(ctx context.Context, url string) (*Store, error) {
@@ -57,4 +58,11 @@ func Open(ctx context.Context, url string) (*Store, error) {
 		return nil, e
 	}
 	return OpenOperator(ctx, url)
+}
+func newID(object string) (string, error) {
+	prefix := "001"
+	if object == "Contact" {
+		prefix = "003"
+	}
+	return recordid.New(prefix)
 }

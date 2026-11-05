@@ -56,8 +56,8 @@ M10 needs separately bounded inventories.
 
 OAuth login and identity now support authorization code with PKCE, refresh, JWT
 bearer and client credentials. See the [Plan 26 operator guide and gaps](docs/compat/plan-26-oauth-login.md).
-The next priority is Plan 27: migrations, tenant row-level security and dynamic
-objects and fields. [Plan 25 foundation decisions](docs/compat/plan-25-foundation-decisions.md)
+Plan 27 implementation adds explicit migrations, tenant row-level security and
+dynamic objects and fields; see the [operator guide and current verification](docs/compat/plan-27-dynamic-schema.md). [Plan 25 foundation decisions](docs/compat/plan-25-foundation-decisions.md)
 now define the bounded REST, query and external-ID defaults and remaining gaps. See the
 [progress roadmap and estimate assumptions](docs/plans/2026-10-20-progress-and-remaining-roadmap.md)
 and the [full architecture and milestone gates](docs/plans/2026-10-14-salesforce-compatibility-roadmap.md).
@@ -91,9 +91,9 @@ The candidate is not production-ready or certified Salesforce-compatible. The el
 
 ## Catalog upgrades
 
-The candidate uses catalog version 3 with 80-character supplied-value bounds for
-both synthetic Account custom fields and a derived canonical external-ID key.
-Fresh installs and versions 1/2 upgrade transactionally at startup. Oversized
-values, whitespace-only keys and canonical collisions within a tenant refuse the
-upgrade without changing data. Stop old instances and back up first; rollback
-requires restoring that backup. See the [Plan 25 upgrade and rollback notes](docs/compat/plan-25-foundation-decisions.md#catalog-v3-operation).
+Plan 27 uses explicit, forward-only migrations rather than startup catalog
+mutation. Stop old instances and back up first, then run `salescompel migrate up`
+with `MIGRATION_DATABASE_URL`. Serve uses separate record (`DATABASE_URL`) and
+identity (`AUTH_DATABASE_URL`) credentials and refuses owner privileges. Exact
+legacy catalog v1/v2/v3 layouts are adopted without rewriting business or OAuth
+state. Rollback restores the backup. See the [operator guide](docs/compat/plan-27-dynamic-schema.md#operator-setup-and-upgrade).

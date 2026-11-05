@@ -79,14 +79,14 @@ func (s *Store) AuthenticateAt(ctx context.Context, token string, now time.Time)
 	if token == "" {
 		return p, problem(401, "INVALID_SESSION_ID", "Bearer token required")
 	}
-	e := s.pool.QueryRow(ctx, `SELECT u.tenant_id,u.id,u.role,u.username,t.scope FROM oauth_access_tokens t JOIN users u ON u.id=t.user_id LEFT JOIN oauth_apps a ON a.client_id=t.client_id WHERE t.token_hash=$1 AND t.expires_at>$2 AND u.active AND (t.client_id=$3 OR (a.active AND a.tenant_id=u.tenant_id))`, digest(token), now, PlatformCLIClientID).Scan(&p.Tenant, &p.User, &p.Role, &p.Username, &p.Scope)
+	e := s.authPool().QueryRow(ctx, `SELECT u.tenant_id,u.id,u.role,u.username,t.scope FROM oauth_access_tokens t JOIN users u ON u.id=t.user_id LEFT JOIN oauth_apps a ON a.client_id=t.client_id WHERE t.token_hash=$1 AND t.expires_at>$2 AND u.active AND (t.client_id=$3 OR (a.active AND a.tenant_id=u.tenant_id))`, digest(token), now, PlatformCLIClientID).Scan(&p.Tenant, &p.User, &p.Role, &p.Username, &p.Scope)
 	if e == nil {
 		return p, nil
 	}
 	if !errors.Is(e, pgx.ErrNoRows) {
 		return Principal{}, dbError(e)
 	}
-	e = s.pool.QueryRow(ctx, "SELECT tenant_id,user_id,role FROM principals WHERE token_hash=$1", digest(token)).Scan(&p.Tenant, &p.User, &p.Role)
+	e = s.authPool().QueryRow(ctx, "SELECT tenant_id,user_id,role FROM principals WHERE token_hash=$1", digest(token)).Scan(&p.Tenant, &p.User, &p.Role)
 	if e == nil {
 		return p, nil
 	}
@@ -154,7 +154,7 @@ func insertTokens(ctx context.Context, tx pgx.Tx, g TokenGrant, now time.Time, t
 	return v, e
 }
 func (s *Store) IssueTokens(ctx context.Context, g TokenGrant, now time.Time, ttl time.Duration) (IssuedTokens, error) {
-	tx, e := s.pool.Begin(ctx)
+	tx, e := s.authPool().Begin(ctx)
 	if e != nil {
 		return IssuedTokens{}, e
 	}
@@ -177,7 +177,7 @@ func (s *Store) IssueTokens(ctx context.Context, g TokenGrant, now time.Time, tt
 	return v, nil
 }
 func (s *Store) IssueCode(ctx context.Context, in CodeInput, now time.Time) (string, error) {
-	tx, e := s.pool.Begin(ctx)
+	tx, e := s.authPool().Begin(ctx)
 	if e != nil {
 		return "", e
 	}
@@ -203,7 +203,7 @@ func (s *Store) IssueCode(ctx context.Context, in CodeInput, now time.Time) (str
 	return code, nil
 }
 func (s *Store) RedeemCode(ctx context.Context, code, clientID, redirectURI, verifier string, now time.Time, ttl time.Duration) (IssuedTokens, error) {
-	tx, e := s.pool.Begin(ctx)
+	tx, e := s.authPool().Begin(ctx)
 	if e != nil {
 		return IssuedTokens{}, e
 	}
@@ -261,7 +261,7 @@ func (s *Store) RedeemCode(ctx context.Context, code, clientID, redirectURI, ver
 	return v, nil
 }
 func (s *Store) RefreshAccess(ctx context.Context, refresh, clientID string, now time.Time, ttl time.Duration) (IssuedTokens, error) {
-	tx, e := s.pool.Begin(ctx)
+	tx, e := s.authPool().Begin(ctx)
 	if e != nil {
 		return IssuedTokens{}, e
 	}
@@ -295,7 +295,7 @@ func (s *Store) RefreshAccess(ctx context.Context, refresh, clientID string, now
 	return v, nil
 }
 func (s *Store) RevokeToken(ctx context.Context, token string) error {
-	tx, e := s.pool.Begin(ctx)
+	tx, e := s.authPool().Begin(ctx)
 	if e != nil {
 		return e
 	}
@@ -329,7 +329,7 @@ func (s *Store) Introspect(ctx context.Context, token, clientID string, now time
 	var i Introspection
 	var issued time.Time
 	var expires *time.Time
-	e := s.pool.QueryRow(ctx, `SELECT t.scope,t.client_id,u.username,u.id,t.kind,t.issued_at,t.expires_at FROM (SELECT token_hash,scope,client_id,user_id,'access_token' AS kind,issued_at,expires_at FROM oauth_access_tokens UNION ALL SELECT token_hash,scope,client_id,user_id,'refresh_token',issued_at,NULL::timestamptz FROM oauth_refresh_tokens) t JOIN users u ON u.id=t.user_id LEFT JOIN oauth_apps a ON a.client_id=t.client_id WHERE t.token_hash=$1 AND t.client_id=$2 AND u.active AND (t.expires_at IS NULL OR t.expires_at>$3) AND (t.client_id=$4 OR (a.active AND a.tenant_id=u.tenant_id))`, digest(token), clientID, now, PlatformCLIClientID).Scan(&i.Scope, &i.ClientID, &i.Username, &i.Sub, &i.TokenType, &issued, &expires)
+	e := s.authPool().QueryRow(ctx, `SELECT t.scope,t.client_id,u.username,u.id,t.kind,t.issued_at,t.expires_at FROM (SELECT token_hash,scope,client_id,user_id,'access_token' AS kind,issued_at,expires_at FROM oauth_access_tokens UNION ALL SELECT token_hash,scope,client_id,user_id,'refresh_token',issued_at,NULL::timestamptz FROM oauth_refresh_tokens) t JOIN users u ON u.id=t.user_id LEFT JOIN oauth_apps a ON a.client_id=t.client_id WHERE t.token_hash=$1 AND t.client_id=$2 AND u.active AND (t.expires_at IS NULL OR t.expires_at>$3) AND (t.client_id=$4 OR (a.active AND a.tenant_id=u.tenant_id))`, digest(token), clientID, now, PlatformCLIClientID).Scan(&i.Scope, &i.ClientID, &i.Username, &i.Sub, &i.TokenType, &issued, &expires)
 	if errors.Is(e, pgx.ErrNoRows) {
 		return Introspection{}, nil
 	}

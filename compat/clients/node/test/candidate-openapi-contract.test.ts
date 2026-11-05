@@ -10,6 +10,27 @@ import {
 import { ROOT } from "../src/versions.ts";
 
 const expected = [
+  [
+    "/services/data/v65.0/sobjects/{object}/describe",
+    "get",
+    "candidateDescribeDynamic",
+  ],
+  ["/services/data/v65.0/sobjects/{object}", "post", "candidateCreateDynamic"],
+  [
+    "/services/data/v65.0/sobjects/{object}/{recordId}",
+    "get",
+    "candidateReadDynamic",
+  ],
+  [
+    "/services/data/v65.0/sobjects/{object}/{recordId}",
+    "patch",
+    "candidateUpdateDynamic",
+  ],
+  [
+    "/services/data/v65.0/sobjects/{object}/{recordId}",
+    "delete",
+    "candidateDeleteDynamic",
+  ],
   ["/services/oauth2/authorize", "get", "candidateOAuthAuthorizeForm"],
   ["/services/oauth2/authorize", "post", "candidateOAuthAuthorizeSubmit"],
   ["/services/oauth2/token", "post", "candidateOAuthToken"],

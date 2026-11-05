@@ -2,26 +2,11 @@ package platform
 
 import (
 	"errors"
+	"salescompel/internal/recordid"
 	"strings"
 )
 
 var errMalformedID = errors.New("malformed record ID")
-
-func idChecksum(base string) string {
-	const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ012345"
-	var suffix [3]byte
-	for group := 0; group < 3; group++ {
-		bits := 0
-		for j := 0; j < 5; j++ {
-			c := base[group*5+j]
-			if c >= 'A' && c <= 'Z' {
-				bits |= 1 << j
-			}
-		}
-		suffix[group] = alphabet[bits]
-	}
-	return string(suffix[:])
-}
 
 // NormalizeRecordID preserves the case-sensitive base and checks the suffix.
 func NormalizeRecordID(object, input string) (string, error) {
@@ -54,7 +39,7 @@ func normalizeReferences(p Principal, object string, data map[string]any) (map[s
 			return nil, err
 		}
 		if s, ok := v.(string); ok && s != "" && f.Type == "reference" {
-			normalized, err := NormalizeRecordID(f.ReferenceTo[0], s)
+			normalized, err := normalizeID(p, f.ReferenceTo[0], s)
 			if err != nil {
 				return nil, &APIError{Status: 400, Code: "MALFORMED_ID", Message: "Invalid reference ID", Fields: []string{f.Name}}
 			}
@@ -63,4 +48,15 @@ func normalizeReferences(p Principal, object string, data map[string]any) (map[s
 		out[k] = v
 	}
 	return out, nil
+}
+
+func normalizeID(p Principal, object, input string) (string, error) {
+	if p.Catalog == nil {
+		return NormalizeRecordID(object, input)
+	}
+	o, e := p.Catalog.Object(object)
+	if e != nil {
+		return "", e
+	}
+	return recordid.Normalize(o.Prefix, input)
 }

@@ -4,13 +4,14 @@ import (
 	"encoding/json"
 	"io"
 	"regexp"
+	"salescompel/internal/metadata"
 	"strings"
 )
 
 var compositeRefID = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_]{0,79}$`)
 var compositeRecordID = regexp.MustCompile(`^[A-Za-z0-9]{18}$`)
 var compositeReference = regexp.MustCompile(`^@\{([A-Za-z0-9][A-Za-z0-9_]{0,79})\.id\}$`)
-var compositeRoute = regexp.MustCompile(`^/services/data/v65\.0/sobjects/(Account|Contact)(?:/([^/]+))?$`)
+var compositeRoute = regexp.MustCompile(`^/services/data/v65\.0/sobjects/([A-Za-z][A-Za-z0-9_]*)(?:/([^/]+))?$`)
 
 func compositeInvalid() error {
 	return invalid("INVALID_COMPOSITE_REQUEST", "Invalid or unsupported Composite request")
@@ -104,6 +105,9 @@ func validateComposite(req CompositeRequest) error {
 			return compositeInvalid()
 		}
 		object, id := route[1], route[2]
+		if object != "Account" && object != "Contact" && !metadata.ValidAPIName(object) {
+			return compositeInvalid()
+		}
 		checkRef := func(value string, account bool) bool {
 			match := compositeReference.FindStringSubmatch(value)
 			if match == nil {

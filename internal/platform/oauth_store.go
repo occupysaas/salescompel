@@ -76,7 +76,7 @@ func (s *Store) CreateUser(ctx context.Context, tenant, username, password, role
 	}
 	base := "005" + random[:12]
 	id := base + idChecksum(base)
-	tx, e := s.pool.Begin(ctx)
+	tx, e := s.authPool().Begin(ctx)
 	if e != nil {
 		return "", e
 	}
@@ -112,7 +112,7 @@ func (s *Store) changeUser(ctx context.Context, username, password string, deact
 			return e
 		}
 	}
-	tx, e := s.pool.Begin(ctx)
+	tx, e := s.authPool().Begin(ctx)
 	if e != nil {
 		return e
 	}
@@ -148,14 +148,14 @@ func (s *Store) VerifyLogin(ctx context.Context, username, password string, now 
 	}
 	defer release()
 	var h string
-	e = s.pool.QueryRow(ctx, "SELECT password_hash FROM users WHERE username_canonical=$1", strings.ToLower(username)).Scan(&h)
+	e = s.authPool().QueryRow(ctx, "SELECT password_hash FROM users WHERE username_canonical=$1", strings.ToLower(username)).Scan(&h)
 	if e != nil {
 		verifyDummyPassword(password)
 		return u, errBadCredentials
 	}
 	valid := verifyPassword(h, password)
 	// Hash outside the transaction, then serialize attempt accounting and recheck the hash.
-	tx, e := s.pool.Begin(ctx)
+	tx, e := s.authPool().Begin(ctx)
 	if e != nil {
 		return u, errBadCredentials
 	}
@@ -246,7 +246,7 @@ func (s *Store) CreateApp(ctx context.Context, in AppInput, now time.Time) (stri
 		}
 		h = digest(secret)
 	}
-	tx, e := s.pool.Begin(ctx)
+	tx, e := s.authPool().Begin(ctx)
 	if e != nil {
 		return "", "", e
 	}
@@ -306,7 +306,7 @@ func (s *Store) LookupApp(ctx context.Context, id string) (OAuthApp, error) {
 		return OAuthApp{ClientID: id, Name: id, Public: true, Active: true, RedirectURIs: []string{"http://localhost:1717/OauthRedirect"}, Grants: []string{"authorization_code", "refresh_token"}, Scopes: []string{"api", "web", "refresh_token"}}, nil
 	}
 	var a OAuthApp
-	e := s.pool.QueryRow(ctx, "SELECT client_id,tenant_id,name,secret_hash,jwt_cert_pem,COALESCE(run_as_user_id,''),public,active,redirect_uris,grants,scopes FROM oauth_apps WHERE client_id=$1", id).Scan(&a.ClientID, &a.Tenant, &a.Name, &a.SecretHash, &a.JWTCertPEM, &a.RunAsUserID, &a.Public, &a.Active, &a.RedirectURIs, &a.Grants, &a.Scopes)
+	e := s.authPool().QueryRow(ctx, "SELECT client_id,tenant_id,name,secret_hash,jwt_cert_pem,COALESCE(run_as_user_id,''),public,active,redirect_uris,grants,scopes FROM oauth_apps WHERE client_id=$1", id).Scan(&a.ClientID, &a.Tenant, &a.Name, &a.SecretHash, &a.JWTCertPEM, &a.RunAsUserID, &a.Public, &a.Active, &a.RedirectURIs, &a.Grants, &a.Scopes)
 	return a, e
 }
 func (s *Store) RotateAppSecret(ctx context.Context, id string) (string, error) {
@@ -314,7 +314,7 @@ func (s *Store) RotateAppSecret(ctx context.Context, id string) (string, error) 
 	if e != nil {
 		return "", e
 	}
-	tag, e := s.pool.Exec(ctx, "UPDATE oauth_apps SET secret_hash=$2 WHERE client_id=$1 AND NOT public", id, digest(secret))
+	tag, e := s.authPool().Exec(ctx, "UPDATE oauth_apps SET secret_hash=$2 WHERE client_id=$1 AND NOT public", id, digest(secret))
 	if e != nil {
 		return "", e
 	}
@@ -324,7 +324,7 @@ func (s *Store) RotateAppSecret(ctx context.Context, id string) (string, error) 
 	return secret, nil
 }
 func (s *Store) DisableApp(ctx context.Context, id string) error {
-	tx, e := s.pool.Begin(ctx)
+	tx, e := s.authPool().Begin(ctx)
 	if e != nil {
 		return e
 	}
@@ -345,6 +345,6 @@ func (s *Store) DisableApp(ctx context.Context, id string) error {
 }
 func (s *Store) JWTUserAllowed(ctx context.Context, clientID, username string) (User, error) {
 	var u User
-	e := s.pool.QueryRow(ctx, "SELECT u.id,u.tenant_id,u.username,u.role,u.active,u.auth_version FROM users u JOIN oauth_app_jwt_users j ON j.user_id=u.id JOIN oauth_apps a ON a.client_id=j.client_id WHERE j.client_id=$1 AND u.username_canonical=$2 AND u.active AND a.active AND a.tenant_id=u.tenant_id", clientID, strings.ToLower(username)).Scan(&u.ID, &u.Tenant, &u.Username, &u.Role, &u.Active, &u.authVersion)
+	e := s.authPool().QueryRow(ctx, "SELECT u.id,u.tenant_id,u.username,u.role,u.active,u.auth_version FROM users u JOIN oauth_app_jwt_users j ON j.user_id=u.id JOIN oauth_apps a ON a.client_id=j.client_id WHERE j.client_id=$1 AND u.username_canonical=$2 AND u.active AND a.active AND a.tenant_id=u.tenant_id", clientID, strings.ToLower(username)).Scan(&u.ID, &u.Tenant, &u.Username, &u.Role, &u.Active, &u.authVersion)
 	return u, e
 }

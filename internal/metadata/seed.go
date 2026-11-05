@@ -21,8 +21,12 @@ func insertField(ctx context.Context, tx pgx.Tx, tenant, obj string, f Field, or
 	}
 	f.Createable = f.Name != "Id"
 	f.Updateable = f.Createable
+	id := f.ID
+	if id == "" {
+		id = randomID()
+	}
 	raw, _ := json.Marshal(f)
-	_, e := tx.Exec(ctx, "INSERT INTO sc_catalog.fields(id,tenant_id,object_id,api_name,physical_column,definition,ordinal) VALUES($1,$2,$3,$4,$5,$6,$7)", randomID(), tenant, obj, f.Name, f.Column, string(raw), ordinal)
+	_, e := tx.Exec(ctx, "INSERT INTO sc_catalog.fields(id,tenant_id,object_id,api_name,physical_column,definition,ordinal) VALUES($1,$2,$3,$4,$5,$6,$7)", id, tenant, obj, f.Name, f.Column, string(raw), ordinal)
 	return e
 }
 func SeedTenant(ctx context.Context, tx pgx.Tx, tenant string) error {

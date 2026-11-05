@@ -44,5 +44,6 @@
   "oauth.scope.phone": "Ihre Telefonnummern lesen.",
   "oauth.scope.web": "Webzugriff anfordern (kein zusätzlicher Zugriff in dieser Version).",
   "oauth.scope.refresh_token": "Zugriff mit einem Aktualisierungstoken bis zum Widerruf behalten.",
-  "oauth.scope.offline_access": "Zugriff mit einem Aktualisierungstoken bis zum Widerruf behalten."
+  "oauth.scope.offline_access": "Zugriff mit einem Aktualisierungstoken bis zum Widerruf behalten.",
+  "action.refreshObjects": "Objekte aktualisieren"
 }

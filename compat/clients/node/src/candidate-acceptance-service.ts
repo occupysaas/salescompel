@@ -1,3 +1,4 @@
+import { recordRuntimeEnvironment } from "./candidate-schema.ts";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { ROOT } from "./versions.ts";
@@ -91,7 +92,7 @@ export async function startCandidate(c: GateContext): Promise<OwnedService> {
         join(ROOT, "web/dist"),
       ],
       cwd: ROOT,
-      env: c.env,
+      env: recordRuntimeEnvironment(c),
     },
     c.processes,
     "bindings",

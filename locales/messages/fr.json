@@ -44,5 +44,6 @@
   "oauth.scope.phone": "Lire vos informations téléphoniques.",
   "oauth.scope.web": "Demander un accès web (aucun accès supplémentaire dans cette version).",
   "oauth.scope.refresh_token": "Conserver l’accès avec un jeton de renouvellement jusqu’à sa révocation.",
-  "oauth.scope.offline_access": "Conserver l’accès avec un jeton de renouvellement jusqu’à sa révocation."
+  "oauth.scope.offline_access": "Conserver l’accès avec un jeton de renouvellement jusqu’à sa révocation.",
+  "action.refreshObjects": "Actualiser les objets"
 }

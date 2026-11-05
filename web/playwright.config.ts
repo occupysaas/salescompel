@@ -12,7 +12,7 @@ export default defineConfig({
   testDir: "./test",
   testMatch: process.env.CANDIDATE_OAUTH_AUTHORIZE_URL
     ? "oauth-login.spec.ts"
-    : "records.spec.ts",
+    : ["records.spec.ts", "dynamic-schema.spec.ts"],
   workers: 1,
   retries: 0,
   use: {

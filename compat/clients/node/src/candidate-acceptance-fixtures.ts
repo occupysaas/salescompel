@@ -1,13 +1,14 @@
 import { open, readFile, lstat } from "node:fs/promises";
 import { request as httpsRequest } from "node:https";
 import { join } from "node:path";
+import type { CandidateExchange } from "./candidate-openapi-model.ts";
 import type { GateContext } from "./candidate-acceptance-preflight.ts";
 export interface FixtureEvent {
   schemaVersion: 1;
   runId: string;
   operationId: string;
   principal: "admin" | "restricted" | "other";
-  object: "Account" | "Contact";
+  object: string;
   names: string[];
   kind: "intent" | "known" | "deleted" | "absent" | "rejected";
   id?: string;
@@ -15,6 +16,7 @@ export interface FixtureEvent {
 export interface Response {
   status: number;
   body: any;
+  exchange?: CandidateExchange;
 }
 export type Requester = (
   c: GateContext,
@@ -64,6 +66,21 @@ export async function candidateRequest(
             resolve({
               status: res.statusCode ?? 0,
               body: text ? JSON.parse(text) : null,
+              exchange: {
+                method,
+                path,
+                request: {
+                  contentType: body === undefined ? null : "application/json",
+                  ...(body === undefined
+                    ? {}
+                    : { body: Buffer.from(JSON.stringify(body)) }),
+                },
+                response: {
+                  status: res.statusCode ?? 0,
+                  contentType: res.headers["content-type"] ?? null,
+                  body: Buffer.concat(chunks),
+                },
+              },
             });
           } catch {
             reject(new Error("RESULT"));
@@ -82,7 +99,7 @@ export async function recordFixtureEvent(path: string, e: FixtureEvent) {
     e.schemaVersion !== 1 ||
     !/^[a-f0-9]{24}$/.test(e.runId) ||
     !e.operationId ||
-    !["Account", "Contact"].includes(e.object) ||
+    !/^(Account|Contact|[A-Za-z][A-Za-z0-9_]*__c)$/.test(e.object) ||
     !["admin", "restricted", "other"].includes(e.principal) ||
     !["intent", "known", "deleted", "absent", "rejected"].includes(e.kind) ||
     !e.names.length ||
@@ -153,7 +170,7 @@ export async function cleanupFixtures(
           if (
             r.status !== 200 ||
             !e.names.includes(
-              r.body?.[e.object === "Account" ? "Name" : "LastName"],
+              r.body?.[e.object === "Contact" ? "LastName" : "Name"],
             )
           )
             throw new Error("FIXTURES");

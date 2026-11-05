@@ -47,6 +47,31 @@ export const candidateOperations: readonly (readonly [
       ] as const,
   ),
   [base + "/sobjects", "get", "candidateDescribeGlobal", ["200"]],
+  [
+    base + "/sobjects/{object}/describe",
+    "get",
+    "candidateDescribeDynamic",
+    ["200"],
+  ],
+  [base + "/sobjects/{object}", "post", "candidateCreateDynamic", ["201"]],
+  [
+    base + "/sobjects/{object}/{recordId}",
+    "get",
+    "candidateReadDynamic",
+    ["200"],
+  ],
+  [
+    base + "/sobjects/{object}/{recordId}",
+    "patch",
+    "candidateUpdateDynamic",
+    ["204"],
+  ],
+  [
+    base + "/sobjects/{object}/{recordId}",
+    "delete",
+    "candidateDeleteDynamic",
+    ["204"],
+  ],
   ...["Account", "Contact"].flatMap((o) => [
     [
       base + `/sobjects/${o}/describe`,
@@ -171,6 +196,7 @@ export async function validateCandidateOpenAPI(
         types.includes("object") &&
         (!s.properties ||
           (!Object.keys(s.properties).length &&
+            !s.patternProperties &&
             (s !== d.components.schemas.CompositeEmptyHeaders ||
               s.maxProperties !== 0)) ||
           s.additionalProperties !== false)
@@ -178,6 +204,8 @@ export async function validateCandidateOpenAPI(
         throw 0;
       if (s.$ref && !s.$ref.startsWith("#/components/schemas/")) throw 0;
       for (const child of Object.values(s.properties ?? {})) schemas(child);
+      for (const child of Object.values(s.patternProperties ?? {}))
+        schemas(child);
       if (s.items) schemas(s.items);
       for (const key of ["oneOf", "anyOf", "allOf"])
         for (const child of s[key] ?? []) schemas(child);

@@ -1,6 +1,12 @@
-package platform
+package query
 
-import "strings"
+import (
+	"salescompel/internal/contract"
+	"salescompel/internal/metadata"
+	"salescompel/internal/policy"
+	"salescompel/internal/recordid"
+	"strings"
+)
 
 type NullPlacement uint8
 
@@ -11,7 +17,7 @@ const (
 )
 
 func canonicalQuery(p Principal, q Query) (Query, error) {
-	object, ok := CanonicalObject(q.Object)
+	object, ok := canonicalObject(p, q.Object)
 	if !ok {
 		return q, invalid("INVALID_TYPE", "Unsupported object")
 	}
@@ -40,7 +46,7 @@ func canonicalQuery(p Principal, q Query) (Query, error) {
 			if f.Type == "reference" {
 				target = f.ReferenceTo[0]
 			}
-			value, err := NormalizeRecordID(target, *q.WhereValue)
+			value, err := normalizeID(p, target, *q.WhereValue)
 			if err != nil {
 				return q, fieldProblem("INVALID_QUERY_FILTER_OPERATOR", "Invalid ID filter", f.Name)
 			}
@@ -56,3 +62,27 @@ func canonicalQuery(p Principal, q Query) (Query, error) {
 	}
 	return q, nil
 }
+
+type Principal = policy.Principal
+type Field = metadata.Field
+
+var invalid = contract.Invalid
+var fieldProblem = contract.FieldProblem
+var field = policy.Field
+
+func canonicalObject(p Principal, name string) (string, bool) {
+	if p.Catalog == nil {
+		return "", false
+	}
+	o, e := p.Catalog.Object(name)
+	return o.Name, e == nil
+}
+func normalizeID(p Principal, object, input string) (string, error) {
+	o, e := p.Catalog.Object(object)
+	if e != nil {
+		return "", e
+	}
+	return recordid.Normalize(o.Prefix, input)
+}
+
+func Normalize(p Principal, q Query) (Query, error) { return canonicalQuery(p, q) }

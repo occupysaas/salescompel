@@ -435,3 +435,19 @@ test("validates bounded atomic Composite traffic without permissive maps", async
   assert.deepEqual(checked.requestIssues, ["request-schema"]);
   assert.deepEqual(checked.responseIssues, []);
 });
+
+test("validates dynamic custom object creation and text maps", async () => {
+  const v = await validator();
+  const e = exchange("POST", base + "/sobjects/Project__c", 201, {
+    id: "a00000000000001AAA",
+    success: true,
+    errors: [],
+  });
+  e.request = {
+    contentType: "application/json",
+    body: bytes({ Name: "Project", Notes__c: "hello" }),
+  };
+  valid(v.validate(e));
+  e.request.body = bytes({ Name: "Project", Notes__c: 42 });
+  assert.deepEqual(v.validate(e).requestIssues, ["request-schema"]);
+});

@@ -201,7 +201,7 @@ func handleToken(s *Store, o Options, w http.ResponseWriter, r *http.Request) {
 				writeOAuthError(w, grantError("invalid_grant"))
 				return
 			}
-			e = s.pool.QueryRow(r.Context(), `SELECT u.id,u.tenant_id,u.username,u.role,u.active,u.auth_version FROM users u JOIN oauth_app_jwt_users j ON j.user_id=u.id WHERE j.client_id=$1 AND u.username_canonical=$2 AND u.tenant_id=$3 AND u.active`, id, strings.ToLower(claims.Subject), a.Tenant).Scan(&u.ID, &u.Tenant, &u.Username, &u.Role, &u.Active, &u.authVersion)
+			e = s.authPool().QueryRow(r.Context(), `SELECT u.id,u.tenant_id,u.username,u.role,u.active,u.auth_version FROM users u JOIN oauth_app_jwt_users j ON j.user_id=u.id WHERE j.client_id=$1 AND u.username_canonical=$2 AND u.tenant_id=$3 AND u.active`, id, strings.ToLower(claims.Subject), a.Tenant).Scan(&u.ID, &u.Tenant, &u.Username, &u.Role, &u.Active, &u.authVersion)
 			if e == nil && claims.ID != "" {
 				// Keep the identifier for the entire assertion validity window. The
 				// conditional upsert admits only one concurrent use, even after expiry.
@@ -209,14 +209,14 @@ func handleToken(s *Store, o Options, w http.ResponseWriter, r *http.Request) {
 				if parsed.expires >= 100000000000 {
 					expiry = time.Unix(parsed.issuedAt, 0).Add(5 * time.Minute)
 				}
-				tag, claimErr := s.pool.Exec(r.Context(), `INSERT INTO oauth_jwt_ids(client_id,jti,expires_at) VALUES($1,$2,$3) ON CONFLICT(client_id,jti) DO UPDATE SET expires_at=EXCLUDED.expires_at WHERE oauth_jwt_ids.expires_at < $4`, id, claims.ID, expiry, n)
+				tag, claimErr := s.authPool().Exec(r.Context(), `INSERT INTO oauth_jwt_ids(client_id,jti,expires_at) VALUES($1,$2,$3) ON CONFLICT(client_id,jti) DO UPDATE SET expires_at=EXCLUDED.expires_at WHERE oauth_jwt_ids.expires_at < $4`, id, claims.ID, expiry, n)
 				e = claimErr
 				if e == nil && tag.RowsAffected() != 1 {
 					e = grantError("invalid_grant")
 				}
 			}
 		} else {
-			e = s.pool.QueryRow(r.Context(), `SELECT id,tenant_id,username,role,active,auth_version FROM users WHERE id=$1 AND tenant_id=$2 AND active`, a.RunAsUserID, a.Tenant).Scan(&u.ID, &u.Tenant, &u.Username, &u.Role, &u.Active, &u.authVersion)
+			e = s.authPool().QueryRow(r.Context(), `SELECT id,tenant_id,username,role,active,auth_version FROM users WHERE id=$1 AND tenant_id=$2 AND active`, a.RunAsUserID, a.Tenant).Scan(&u.ID, &u.Tenant, &u.Username, &u.Role, &u.Active, &u.authVersion)
 		}
 		if e != nil {
 			writeOAuthError(w, grantError("invalid_grant"))

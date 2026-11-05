@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"salescompel/internal/policy"
+	"salescompel/internal/records"
 )
 
 type CompositeRequest struct {
@@ -30,13 +32,16 @@ type CompositeSubresponse struct {
 	ReferenceID    string            `json:"referenceId"`
 }
 
-func (s *Store) Composite(ctx context.Context, p Principal, req CompositeRequest) (CompositeResponse, error) {
-	return executeComposite(ctx, p, req, func(ctx context.Context) (pgx.Tx, error) { return s.pool.Begin(ctx) })
+func (s *Store) scopedComposite(ctx context.Context, p Principal, req CompositeRequest) (CompositeResponse, error) {
+	return executeComposite(ctx, p, req, func(ctx context.Context) (pgx.Tx, error) { return s.begin(ctx) })
 }
 func executeComposite(ctx context.Context, p Principal, req CompositeRequest, begin func(context.Context) (pgx.Tx, error)) (CompositeResponse, error) {
 	empty := CompositeResponse{}
 	unavailable := func() (CompositeResponse, error) {
 		return empty, problem(500, "SERVER_UNAVAILABLE", "Storage operation failed")
+	}
+	if p.Catalog == nil {
+		return unavailable()
 	}
 	if err := validateComposite(req); err != nil {
 		return empty, err
@@ -61,6 +66,8 @@ func executeComposite(ctx context.Context, p Principal, req CompositeRequest, be
 			_ = rollback()
 		}
 	}()
+	execution, _ := policy.ForAPI(p, "65.0")
+	writer := records.Bind(tx, execution, *p.Catalog)
 	ids := map[string]string{}
 	out := CompositeResponse{CompositeResponse: make([]CompositeSubresponse, len(req.CompositeRequest))}
 	for i, sub := range req.CompositeRequest {
@@ -83,16 +90,16 @@ func executeComposite(ctx context.Context, p Principal, req CompositeRequest, be
 		result := CompositeSubresponse{ReferenceID: sub.ReferenceID, HTTPHeaders: map[string]string{}, HTTPStatusCode: 204}
 		switch sub.Method {
 		case "POST":
-			id, err = create(ctx, tx, p, object, data)
+			id, err = writer.Create(ctx, object, data)
 			if err == nil {
 				ids[sub.ReferenceID] = id
 				result.HTTPStatusCode = 201
 				result.Body = map[string]any{"id": id, "success": true, "errors": []any{}}
 			}
 		case "PATCH":
-			err = update(ctx, tx, p, object, id, data)
+			err = writer.Update(ctx, object, id, data)
 		case "DELETE":
-			err = deleteRecord(ctx, tx, p, object, id)
+			err = writer.Delete(ctx, object, id)
 		}
 		if err != nil || ctx.Err() != nil {
 			rbErr := rollback()

@@ -1,21 +1,8 @@
-package platform
+package records
 
 import (
 	"sort"
-	"strings"
 )
-
-func CanonicalObject(input string) (string, bool) {
-	for name := range catalog {
-		if strings.EqualFold(name, input) {
-			return name, true
-		}
-	}
-	return "", false
-}
-func fieldProblem(code, message, field string) error {
-	return &APIError{Status: 400, Code: code, Message: message, Fields: []string{field}}
-}
 
 // canonicalFields rejects ambiguous decoded maps, whose source order is lost.
 func canonicalFields(p Principal, object string, data map[string]any) (map[string]any, error) {

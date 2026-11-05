@@ -42,6 +42,9 @@ func ownerTx(ctx context.Context, p *pgxpool.Pool, tenant string, fn func(pgx.Tx
 		return e
 	}
 	defer tx.Rollback(context.Background())
+	if _, e = tx.Exec(ctx, "SET LOCAL ROLE salescompel_owner"); e != nil {
+		return e
+	}
 	if _, e = tx.Exec(ctx, "SET LOCAL lock_timeout='5s'; SELECT pg_advisory_xact_lock(739102)"); e != nil {
 		return e
 	}
@@ -72,7 +75,7 @@ func CreateObject(ctx context.Context, p *pgxpool.Pool, tenant string, in Object
 		}
 		const alphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 		id := randomID()
-		o = Object{ID: id, Tenant: tenant, Name: in.Name, Label: in.Label, PluralLabel: in.PluralLabel, Schema: "sc_records", Table: "o_" + id, Prefix: "a" + string(alphabet[n/62]) + string(alphabet[n%62]), Fields: []Field{{Name: "Id", Type: "id", Column: "id"}, {Name: "Name", Label: "Name", Type: "string", Column: "name", Length: 80}}}
+		o = Object{ID: id, Tenant: tenant, Name: in.Name, Label: in.Label, PluralLabel: in.PluralLabel, Schema: "sc_records", Table: "o_" + id, Prefix: "a" + string(alphabet[n/62]) + string(alphabet[n%62]), Createable: true, Updateable: true, Deletable: true, Queryable: true, Fields: []Field{{Name: "Id", Type: "id", Column: "id"}, {Name: "Name", Label: "Name", Type: "string", Column: "name", Length: 80}}}
 		if _, e := tx.Exec(ctx, "CREATE TABLE "+o.TableSQL()+"(tenant_id text NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,id varchar(18) NOT NULL,name varchar(80) NOT NULL CHECK(length(trim(name))>0),PRIMARY KEY(tenant_id,id))"); e != nil {
 			return e
 		}
@@ -111,7 +114,7 @@ func CreateField(ctx context.Context, p *pgxpool.Pool, tenant string, in FieldIn
 				return errors.New("field already exists")
 			}
 		}
-		f = Field{ID: randomID(), Name: in.Name, Label: in.Label, Type: "string", Length: in.Length, Nillable: true, Createable: true, Updateable: true}
+		f = Field{ID: randomID(), Name: in.Name, Label: in.Label, Type: "string", Length: in.Length, Nillable: true, Createable: true, Updateable: true, ReferenceTo: []string{}}
 		f.Column = "f_" + f.ID
 		if _, e = tx.Exec(ctx, "ALTER TABLE "+o.TableSQL()+" ADD COLUMN "+pgx.Identifier{f.Column}.Sanitize()+fmt.Sprintf(" varchar(%d)", in.Length)); e != nil {
 			return e
