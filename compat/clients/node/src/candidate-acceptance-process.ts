@@ -18,6 +18,9 @@ export interface CommandSpec {
   cwd: string;
   env: NodeJS.ProcessEnv;
   timeout?: number;
+  // Sensitive command output never reaches disk. The callback consumes it in
+  // memory; evidence contains only a fixed omission marker.
+  privateOutput?: (stdout: string, stderr: string) => void;
 }
 export interface ProcessContext {
   runId: string;
@@ -109,13 +112,18 @@ export function spawnOwned(spec: CommandSpec, c: ProcessContext, gate: GateID) {
     terminate,
     Math.max(1, Math.min(c.deadline - Date.now(), spec.timeout ?? 1200000)),
   );
+  const privateChunks = new Map<number, Buffer[]>([
+    [out, []],
+    [err, []],
+  ]);
   const sink = (fd: number) => (data: Buffer) => {
     bytes += data.length;
     if (bytes > 32 * 1024 * 1024) {
       terminate();
       return;
     }
-    writeSync(fd, data);
+    if (spec.privateOutput) privateChunks.get(fd)!.push(data);
+    else writeSync(fd, data);
   };
   child.stdout!.on("data", sink(out));
   child.stderr!.on("data", sink(err));
@@ -127,6 +135,19 @@ export function spawnOwned(spec: CommandSpec, c: ProcessContext, gate: GateID) {
       ended = true;
       clearTimeout(timer);
       if (!groupAlive(child)) c.children.delete(child);
+      if (spec.privateOutput) {
+        try {
+          spec.privateOutput(
+            Buffer.concat(privateChunks.get(out)!).toString("utf8"),
+            Buffer.concat(privateChunks.get(err)!).toString("utf8"),
+          );
+        } catch {
+          failed = true;
+        }
+        privateChunks.clear();
+        writeSync(out, "Private OAuth command output omitted.\n");
+        writeSync(err, "Private OAuth command output omitted.\n");
+      }
       fsyncSync(out);
       fsyncSync(err);
       closeSync(out);

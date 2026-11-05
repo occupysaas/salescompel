@@ -69,3 +69,36 @@ test("shutdown owns grandchildren after the leader exits and escalates resistant
     "owned grandchild must be stopped",
   );
 });
+
+test("OAuth subprocess output is captured in memory before any evidence is written", async (t) => {
+  const dir = await mkdtemp(join(tmpdir(), "p26-private-output-"));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  const context = newProcessContext("c".repeat(24), dir, Date.now() + 5000);
+  const secret = "private-output-canary";
+  let captured: { stdout: string; stderr: string } | undefined;
+  const result = await runCommand(
+    {
+      executable: process.execPath,
+      argv: [
+        "-e",
+        "process.stdout.write('private-output-');setTimeout(()=>{process.stdout.write('canary');process.stderr.write('private-output-canary')},30)",
+      ],
+      cwd: dir,
+      env: {},
+      privateOutput: (stdout: string, stderr: string) => {
+        captured = { stdout, stderr };
+      },
+    } as any,
+    context,
+    "oauth",
+  );
+  assert.equal(result.exitCode, 0);
+  assert.deepEqual(captured, { stdout: secret, stderr: secret });
+  for (const path of [
+    result.resultPath,
+    result.resultPath + ".stderr",
+    result.bindingPath,
+  ])
+    assert.ok(!(await readFile(path, "utf8")).includes(secret));
+  await stopOwnedProcesses(context);
+});
