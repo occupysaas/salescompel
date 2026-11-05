@@ -214,3 +214,75 @@ test("acceptance publication permits only the exact offline foundation skip", as
   gate.coverage.allowedSkipped = ["candidate/foundation/unknown"];
   assert.throws(() => validateAcceptanceReport(r), /RESULT/);
 });
+
+test("OAuth acceptance requires every client and policy proof before restart", async () => {
+  const { gateIDs } = await import("../src/candidate-acceptance-contract.ts");
+  assert.equal(gateIDs[gateIDs.indexOf("cli") + 1], "oauth");
+  assert.equal(gateIDs[gateIDs.indexOf("cli") + 2], "restart");
+  const ids = [
+    "oauth/provision",
+    "oauth/sf-web",
+    "oauth/sf-display-connected",
+    "oauth/sf-refresh",
+    "oauth/sf-jwt",
+    "oauth/sf-jwt-unlisted",
+    "oauth/jsforce-web-pkce",
+    "oauth/jsforce-refresh",
+    "oauth/jsforce-jwt",
+    "oauth/jsforce-client-credentials",
+    "oauth/jsforce-revoke",
+    "oauth/python-session",
+    "oauth/restricted-denied",
+    "oauth/tenant-isolation",
+    "oauth/http-contract",
+    "oauth/browser-page",
+  ];
+  const base: ParsedResult = {
+    schemaVersion: 1,
+    runId: "a".repeat(24),
+    suite: "oauth" as any,
+    complete: true,
+    exitCode: 0,
+    tests: ids.map((id) => ({ id, outcome: "passed" })),
+  };
+  assert.equal(assessCoverage("oauth" as any, base).outcome, "passed");
+  for (const id of ids) {
+    assert.equal(
+      assessCoverage("oauth" as any, {
+        ...base,
+        tests: base.tests.filter((t) => t.id !== id),
+      }).outcome,
+      "failed",
+      id,
+    );
+    assert.equal(
+      assessCoverage("oauth" as any, {
+        ...base,
+        tests: base.tests.map((t) =>
+          t.id === id ? { ...t, outcome: "skipped" } : t,
+        ),
+      }).outcome,
+      "failed",
+      id,
+    );
+  }
+  const restart: ParsedResult = {
+    ...base,
+    suite: "restart",
+    tests: [
+      "restart/identity",
+      "restart/values",
+      "restart/policy",
+      "restart/oauth-refresh",
+    ].map((id) => ({ id, outcome: "passed" })),
+  };
+  assert.equal(assessCoverage("restart", restart).outcome, "passed");
+  assert.equal(
+    assessCoverage("restart", { ...restart, tests: restart.tests.slice(0, -1) })
+      .outcome,
+    "failed",
+  );
+  const report = newReport("a".repeat(24), "full");
+  report.evidence.push({ gate: "oauth" as any, sha256: "a".repeat(64) });
+  validateAcceptanceReport(report);
+});
