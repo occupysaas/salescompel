@@ -54,7 +54,9 @@ the earlier estimate was **185–350 narrower plan equivalents**. These are roug
 scope estimates, not delivery-date forecasts, and they are not directly comparable.
 M10 needs separately bounded inventories.
 
-The next priority is Plan 26, OAuth login and identity, followed by dynamic
+OAuth login and identity now support authorization code with PKCE, refresh, JWT
+bearer and client credentials. See the [Plan 26 operator guide and gaps](docs/compat/plan-26-oauth-login.md).
+The next priority is Plan 27: migrations, tenant row-level security and dynamic
 objects and fields. [Plan 25 foundation decisions](docs/compat/plan-25-foundation-decisions.md)
 now define the bounded REST, query and external-ID defaults and remaining gaps. See the
 [progress roadmap and estimate assumptions](docs/plans/2026-10-20-progress-and-remaining-roadmap.md)
