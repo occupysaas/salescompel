@@ -24,3 +24,20 @@ func TestRejectUndeliverableLiteral(t *testing.T) {
 		}
 	}
 }
+
+func TestParseQueryNullPlacement(t *testing.T) {
+	for _, tc := range []struct {
+		sql  string
+		want NullPlacement
+	}{{"SELECT Id FROM Account ORDER BY Name NULLS FIRST", NullFirst}, {"SELECT Id FROM Account ORDER BY Name DESC NULLS LAST", NullLast}, {"select id from account order by name nulls first", NullFirst}} {
+		q, e := ParseQuery(tc.sql)
+		if e != nil || q.Nulls != tc.want {
+			t.Fatal(q, e)
+		}
+	}
+	for _, sql := range []string{"SELECT Id FROM Account ORDER BY Name NULLS", "SELECT Id FROM Account ORDER BY Name NULLS MIDDLE"} {
+		if _, e := ParseQuery(sql); e == nil {
+			t.Fatal(sql)
+		}
+	}
+}

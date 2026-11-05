@@ -25,7 +25,9 @@ func queryColumnsRequested(values url.Values) (bool, error) {
 // This minimal candidate schema serves the pinned CLI's nonaggregate consumer;
 // it is not a claim about undocumented Salesforce metadata properties.
 func queryColumnMetadata(p Principal, q Query) ([]map[string]any, error) {
-	if _, err := Describe(p, q.Object); err != nil {
+	var err error
+	q, err = canonicalQuery(p, q)
+	if err != nil {
 		return nil, err
 	}
 	out := make([]map[string]any, 0, len(q.Fields))

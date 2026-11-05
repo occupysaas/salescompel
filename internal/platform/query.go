@@ -8,6 +8,7 @@ import (
 )
 
 type Query struct {
+	Nulls         NullPlacement
 	ExplicitLimit bool
 	Object        string
 	Fields        []string
@@ -156,6 +157,15 @@ func ParseQuery(s string) (Query, error) {
 		q.Desc = take("DESC")
 		if !q.Desc {
 			take("ASC")
+		}
+		if take("NULLS") {
+			if take("FIRST") {
+				q.Nulls = NullFirst
+			} else if take("LAST") {
+				q.Nulls = NullLast
+			} else {
+				return bad()
+			}
 		}
 	}
 	if take("LIMIT") {

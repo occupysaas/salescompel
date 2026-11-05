@@ -7,7 +7,9 @@ import (
 )
 
 func (s *Store) Select(ctx context.Context, p Principal, q Query) ([]map[string]any, error) {
-	if _, err := Describe(p, q.Object); err != nil {
+	var err error
+	q, err = canonicalQuery(p, q)
+	if err != nil {
 		return nil, err
 	}
 	if len(q.Fields) == 0 || q.Limit < 1 || q.Limit > 2000 {
@@ -41,7 +43,11 @@ func (s *Store) Select(ctx context.Context, p Principal, q Query) ([]map[string]
 		if q.WhereValue == nil {
 			sql += " AND r." + f.Column + " IS NULL"
 		} else {
-			sql += " AND r." + f.Column + "=$2"
+			if f.Type == "string" {
+				sql += " AND lower(r." + f.Column + " COLLATE pg_c_utf8) = lower($2 COLLATE pg_c_utf8)"
+			} else {
+				sql += " AND r." + f.Column + "=$2"
+			}
 			args = append(args, *q.WhereValue)
 		}
 	}
@@ -54,7 +60,11 @@ func (s *Store) Select(ctx context.Context, p Principal, q Query) ([]map[string]
 		if q.Desc {
 			sql += " DESC"
 		}
-		sql += " NULLS LAST,r.id"
+		if q.Nulls == NullLast {
+			sql += " NULLS LAST,r.id"
+		} else {
+			sql += " NULLS FIRST,r.id"
+		}
 	} else {
 		sql += " ORDER BY r.id"
 	}
