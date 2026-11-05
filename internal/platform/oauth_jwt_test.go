@@ -77,9 +77,10 @@ func TestJWTRejects(t *testing.T) {
 	for _, tc := range []struct {
 		name, alg, aud string
 		exp, iat       int64
-	}{{"none", "none", "https://h", now.Unix() + 60, 0}, {"RS384", "RS384", "https://h", now.Unix() + 60, 0}, {"expired", "RS256", "https://h", now.Unix(), 0}, {"301 seconds", "RS256", "https://h", now.Unix() + 301, 0}, {"far future", "RS256", "https://h", now.Unix() + 31536000, 0}, {"missing iat", "RS256", "https://h", now.UnixMilli(), 0}, {"old iat", "RS256", "https://h", now.UnixMilli(), now.Unix() - 301}, {"future iat", "RS256", "https://h", now.UnixMilli(), now.Unix() + 301}, {"audience", "RS256", "https://wrong", now.Unix() + 60, 0}} {
+	}{{"none", "none", "https://h", now.Unix() + 60, 0}, {"RS384", "RS384", "https://h", now.Unix() + 60, 0}, {"expired", "RS256", "https://h", now.Unix(), 0}, {"301 seconds", "RS256", "https://h", now.Unix() + 301, 0}, {"far future", "RS256", "https://h", now.Unix() + 31536000, 0}, {"zero iat", "RS256", "https://h", now.UnixMilli(), 0}, {"old iat", "RS256", "https://h", now.UnixMilli(), now.Unix() - 301}, {"future iat", "RS256", "https://h", now.UnixMilli(), now.Unix() + 301}, {"audience", "RS256", "https://wrong", now.Unix() + 60, 0}} {
 		cases[tc.name] = jwtTestSign(t, key, tc.alg, map[string]any{"exp": tc.exp, "iat": tc.iat, "aud": tc.aud})
 	}
+	cases["missing iat"] = jwtTestSign(t, key, "RS256", map[string]any{"exp": now.UnixMilli(), "aud": "https://h"})
 	claims := map[string]any{"exp": now.Unix() + 60, "aud": "https://h"}
 	valid := jwtTestSign(t, key, "RS256", claims)
 	parts := strings.Split(valid, ".")
