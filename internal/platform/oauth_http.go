@@ -271,3 +271,36 @@ func handleIntrospect(s *Store, o Options, w http.ResponseWriter, r *http.Reques
 	}
 	writeJSON(w, 200, result)
 }
+
+func handleDiscovery(_ *Store, o Options, w http.ResponseWriter, r *http.Request) {
+	if !method(w, r, "GET") {
+		return
+	}
+	writeJSON(w, 200, map[string]any{
+		"issuer": o.PublicURL, "authorization_endpoint": o.PublicURL + "/services/oauth2/authorize", "token_endpoint": o.PublicURL + "/services/oauth2/token", "revocation_endpoint": o.PublicURL + "/services/oauth2/revoke", "introspection_endpoint": o.PublicURL + "/services/oauth2/introspect", "userinfo_endpoint": o.PublicURL + "/services/oauth2/userinfo",
+		"response_types_supported": []string{"code"}, "grant_types_supported": []string{"authorization_code", "refresh_token", "client_credentials", jwtGrant}, "scopes_supported": []string{"api", "full", "id", "profile", "email", "address", "phone", "web", "refresh_token", "offline_access"}, "code_challenge_methods_supported": []string{"S256"}, "token_endpoint_auth_methods_supported": []string{"client_secret_basic", "client_secret_post", "none"},
+	})
+}
+func identityURL(p Principal, o Options) string {
+	return o.PublicURL + "/id/" + orgID(p.Tenant) + "/" + p.User
+}
+func handleIdentity(p Principal, o Options, w http.ResponseWriter, r *http.Request) {
+	if !method(w, r, "GET") {
+		return
+	}
+	if "/"+strings.TrimLeft(r.URL.EscapedPath(), "/") != "/id/"+orgID(p.Tenant)+"/"+p.User {
+		writeError(w, problem(403, "INSUFFICIENT_ACCESS", "Identity does not belong to this token"))
+		return
+	}
+	username := p.Username
+	if username == "" {
+		username = p.User
+	}
+	writeJSON(w, 200, map[string]any{"id": identityURL(p, o), "user_id": p.User, "organization_id": orgID(p.Tenant), "username": username})
+}
+func isOrganizationDiscovery(q string) bool {
+	// Tokenize identifiers and commas separately, so whitespace never changes a
+	// token boundary ("Org anization" must not become "Organization").
+	q = strings.ReplaceAll(q, ",", " , ")
+	return strings.EqualFold(strings.Join(strings.Fields(q), " "), "SELECT Name , InstanceName , IsSandbox , TrialExpirationDate , NamespacePrefix , OrganizationType FROM Organization")
+}

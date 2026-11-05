@@ -101,6 +101,8 @@ func NewHandlerWithOptions(s *Store, assetDir string, o Options) http.Handler {
 		if o.PublicURL != "" {
 			var oauth func(*Store, Options, http.ResponseWriter, *http.Request)
 			switch requestPath {
+			case "/.well-known/openid-configuration":
+				oauth = handleDiscovery
 			case "/services/oauth2/authorize":
 				oauth = handleAuthorize
 			case "/services/oauth2/authorize.css":
@@ -134,7 +136,7 @@ func NewHandlerWithOptions(s *Store, assetDir string, o Options) http.Handler {
 			writeJSON(w, 200, map[string]any{"status": "ok"})
 			return
 		}
-		if !strings.HasPrefix(requestPath, "/services/") {
+		if !strings.HasPrefix(requestPath, "/services/") && !(o.PublicURL != "" && strings.HasPrefix(requestPath, "/id/")) {
 			if assetDir == "" {
 				http.NotFound(w, r)
 				return
@@ -163,7 +165,7 @@ func NewHandlerWithOptions(s *Store, assetDir string, o Options) http.Handler {
 		if strings.HasPrefix(auth, "Bearer ") {
 			token = strings.TrimPrefix(auth, "Bearer ")
 		}
-		p, err := s.Authenticate(ctx, token)
+		p, err := s.AuthenticateAt(ctx, token, o.now())
 		if err != nil {
 			writeError(w, err)
 			return
@@ -175,6 +177,10 @@ func NewHandlerWithOptions(s *Store, assetDir string, o Options) http.Handler {
 		}
 		if !scopeAllows(p, class) {
 			writeError(w, problem(403, "INSUFFICIENT_ACCESS", "Insufficient access"))
+			return
+		}
+		if strings.HasPrefix(path, "/id/") {
+			handleIdentity(p, o, w, r)
 			return
 		}
 		if path == apicontract.CandidateOpenAPIPath {
@@ -193,14 +199,24 @@ func NewHandlerWithOptions(s *Store, assetDir string, o Options) http.Handler {
 		}
 		if path == "/services/oauth2/userinfo" {
 			if method(w, r, "GET") {
-				writeJSON(w, 200, map[string]any{"user_id": p.User, "organization_id": p.Tenant, "preferred_username": p.User, "username": p.User})
+				info := map[string]any{"user_id": p.User, "organization_id": p.Tenant, "preferred_username": p.User, "username": p.User}
+				if p.Username != "" {
+					info["organization_id"] = orgID(p.Tenant)
+					info["username"], info["preferred_username"] = p.Username, p.Username
+					info["sub"] = identityURL(p, o)
+				}
+				writeJSON(w, 200, info)
 			}
 			return
 		}
 		// The pinned CLI uses v51.0 for this discovery call only.
 		if path == "/services/data/v51.0/sobjects/User/"+p.User || path == apiBase+"sobjects/User/"+p.User {
 			if method(w, r, "GET") {
-				writeJSON(w, 200, map[string]any{"Id": p.User, "Username": p.User, "Name": p.User, "LanguageLocaleKey": "en_US", "LocaleSidKey": "en_US", "TimeZoneSidKey": "UTC", "Email": p.User + "@example.invalid"})
+				username := p.User
+				if p.Username != "" {
+					username = p.Username
+				}
+				writeJSON(w, 200, map[string]any{"Id": p.User, "Username": username, "Name": p.User, "LanguageLocaleKey": "en_US", "LocaleSidKey": "en_US", "TimeZoneSidKey": "UTC", "Email": p.User + "@example.invalid"})
 			}
 			return
 		}
@@ -242,6 +258,10 @@ func NewHandlerWithOptions(s *Store, assetDir string, o Options) http.Handler {
 		}
 		if parts[0] == "query" && len(parts) == 1 {
 			if !method(w, r, "GET") {
+				return
+			}
+			if isOrganizationDiscovery(r.URL.Query().Get("q")) {
+				writeJSON(w, 200, map[string]any{"totalSize": 1, "done": true, "records": []any{map[string]any{"Name": p.Tenant, "InstanceName": nil, "IsSandbox": false, "TrialExpirationDate": nil, "NamespacePrefix": nil, "OrganizationType": "SalesCompel"}}})
 				return
 			}
 			q, e := ParseQuery(r.URL.Query().Get("q"))
