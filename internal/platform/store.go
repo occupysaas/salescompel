@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -87,24 +88,13 @@ func (s *Store) Provision(ctx context.Context, token string, p Principal) error 
 	if err != nil {
 		return err
 	}
-	if actual != p {
+	if actual.Tenant != p.Tenant || actual.User != p.User || actual.Role != p.Role {
 		return errors.New("token already assigned")
 	}
 	return tx.Commit(ctx)
 }
 func (s *Store) Authenticate(ctx context.Context, token string) (Principal, error) {
-	var p Principal
-	if token == "" {
-		return p, problem(401, "INVALID_SESSION_ID", "Bearer token required")
-	}
-	err := s.pool.QueryRow(ctx, "SELECT tenant_id,user_id,role FROM principals WHERE token_hash=$1", digest(token)).Scan(&p.Tenant, &p.User, &p.Role)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return p, problem(401, "INVALID_SESSION_ID", "Invalid session")
-	}
-	if err != nil {
-		return p, dbError(err)
-	}
-	return p, nil
+	return s.AuthenticateAt(ctx, token, time.Now())
 }
 func dbError(err error) error {
 	if err == nil {

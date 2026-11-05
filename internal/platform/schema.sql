@@ -60,3 +60,6 @@ CREATE TABLE IF NOT EXISTS oauth_jwt_ids (
 );
 CREATE INDEX IF NOT EXISTS oauth_access_user ON oauth_access_tokens(user_id);
 CREATE INDEX IF NOT EXISTS oauth_refresh_user ON oauth_refresh_tokens(user_id);
+
+-- Invalidate verified User snapshots when credentials change.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_version bigint NOT NULL DEFAULT 0;

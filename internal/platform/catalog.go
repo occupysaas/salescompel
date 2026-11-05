@@ -9,7 +9,7 @@ import (
 	"unicode/utf8"
 )
 
-type Principal struct{ Tenant, User, Role string }
+type Principal struct{ Tenant, User, Role, Username, Scope string }
 type APIError struct {
 	Status  int      `json:"-"`
 	Code    string   `json:"errorCode"`

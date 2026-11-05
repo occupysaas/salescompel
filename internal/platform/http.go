@@ -143,6 +143,14 @@ func NewHandler(s *Store, assetDir string) http.Handler {
 			return
 		}
 		path := strings.TrimSuffix("/"+strings.TrimLeft(r.URL.EscapedPath(), "/"), "/")
+		class := routeData
+		if path == "/services/oauth2/userinfo" || strings.HasPrefix(path, "/id/") {
+			class = routeIdentity
+		}
+		if !scopeAllows(p, class) {
+			writeError(w, problem(403, "INSUFFICIENT_ACCESS", "Insufficient access"))
+			return
+		}
 		if path == apicontract.CandidateOpenAPIPath {
 			if method(w, r, "GET") {
 				w.Header().Set("Content-Type", apicontract.CandidateOpenAPIContentType)

@@ -17,6 +17,7 @@ var errBadCredentials = errors.New("invalid credentials")
 type User struct {
 	ID, Tenant, Username, Role string
 	Active                     bool
+	authVersion                int64
 }
 type AppInput struct {
 	Tenant, Name                           string
@@ -116,7 +117,7 @@ func (s *Store) changeUser(ctx context.Context, username, password string, deact
 	if deactivate {
 		e = tx.QueryRow(ctx, "UPDATE users SET active=false WHERE username_canonical=$1 RETURNING id", strings.ToLower(username)).Scan(&id)
 	} else {
-		e = tx.QueryRow(ctx, "UPDATE users SET password_hash=$2,failed_attempts=0,locked_until=NULL WHERE username_canonical=$1 RETURNING id", strings.ToLower(username), h).Scan(&id)
+		e = tx.QueryRow(ctx, "UPDATE users SET auth_version=auth_version+1,password_hash=$2,failed_attempts=0,locked_until=NULL WHERE username_canonical=$1 RETURNING id", strings.ToLower(username), h).Scan(&id)
 	}
 	if e != nil {
 		return errors.New("user could not be updated")
@@ -158,7 +159,7 @@ func (s *Store) VerifyLogin(ctx context.Context, username, password string, now 
 	var current string
 	var failed int
 	var locked *time.Time
-	e = tx.QueryRow(ctx, "SELECT id,tenant_id,username,role,active,password_hash,failed_attempts,locked_until FROM users WHERE username_canonical=$1 FOR UPDATE", strings.ToLower(username)).Scan(&u.ID, &u.Tenant, &u.Username, &u.Role, &u.Active, &current, &failed, &locked)
+	e = tx.QueryRow(ctx, "SELECT id,tenant_id,username,role,active,password_hash,failed_attempts,locked_until,auth_version FROM users WHERE username_canonical=$1 FOR UPDATE", strings.ToLower(username)).Scan(&u.ID, &u.Tenant, &u.Username, &u.Role, &u.Active, &current, &failed, &locked, &u.authVersion)
 	if e != nil || !u.Active || current != h {
 		return User{}, errBadCredentials
 	}
@@ -340,6 +341,6 @@ func (s *Store) DisableApp(ctx context.Context, id string) error {
 }
 func (s *Store) JWTUserAllowed(ctx context.Context, clientID, username string) (User, error) {
 	var u User
-	e := s.pool.QueryRow(ctx, "SELECT u.id,u.tenant_id,u.username,u.role,u.active FROM users u JOIN oauth_app_jwt_users j ON j.user_id=u.id JOIN oauth_apps a ON a.client_id=j.client_id WHERE j.client_id=$1 AND u.username_canonical=$2 AND u.active AND a.active AND a.tenant_id=u.tenant_id", clientID, strings.ToLower(username)).Scan(&u.ID, &u.Tenant, &u.Username, &u.Role, &u.Active)
+	e := s.pool.QueryRow(ctx, "SELECT u.id,u.tenant_id,u.username,u.role,u.active,u.auth_version FROM users u JOIN oauth_app_jwt_users j ON j.user_id=u.id JOIN oauth_apps a ON a.client_id=j.client_id WHERE j.client_id=$1 AND u.username_canonical=$2 AND u.active AND a.active AND a.tenant_id=u.tenant_id", clientID, strings.ToLower(username)).Scan(&u.ID, &u.Tenant, &u.Username, &u.Role, &u.Active, &u.authVersion)
 	return u, e
 }
