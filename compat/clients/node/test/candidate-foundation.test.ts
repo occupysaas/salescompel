@@ -38,11 +38,13 @@ test(
     let validator: CandidateTrafficValidator | undefined;
     const issues: unknown[] = [];
     let expectedRequestIssues: string[] = [];
-    function validate(e: CandidateExchange, unknownRoute = false) {
+    function validate(e: CandidateExchange, invalidObjectParameter = false) {
       const result = validator!.validate(e);
       if (
         JSON.stringify(result.requestIssues) !==
-          JSON.stringify(unknownRoute ? ["route"] : expectedRequestIssues) ||
+          JSON.stringify(
+            invalidObjectParameter ? ["parameters"] : expectedRequestIssues,
+          ) ||
         result.responseIssues.length
       )
         issues.push(result);
@@ -52,7 +54,7 @@ test(
       path: string,
       body?: unknown,
       role: Role = "admin",
-      unknownRoute = false,
+      invalidObjectParameter = false,
     ) {
       const input =
         body === undefined ? undefined : Buffer.from(JSON.stringify(body));
@@ -99,7 +101,7 @@ test(
           req.end(input);
         },
       );
-      if (validator) validate(exchange, unknownRoute);
+      if (validator) validate(exchange, invalidObjectParameter);
       return {
         status: exchange.response.status,
         body: Buffer.from(exchange.response.body).toString("utf8"),
@@ -249,7 +251,8 @@ test(
       async () => await restricted.query("select compat_text__c from account"),
       { errorCode: "INVALID_FIELD" },
     );
-    expectedRequestIssues = ["request-schema"];
+    // Dynamic Text maps admit the spelling; field policy must still deny it.
+    expectedRequestIssues = [];
     await assert.rejects(
       restricted
         .sobject("Account")

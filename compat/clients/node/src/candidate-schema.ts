@@ -70,19 +70,27 @@ export function runtimeEnvironment(
     delete env[key];
   return env;
 }
-async function ownerCommand(c: GateContext, args: string[]) {
+async function ownerCommand(
+  c: GateContext,
+  args: string[],
+  gate: "schema" | "restart" = "schema",
+) {
+  let output = "";
   const r = await runCommand(
     {
       executable: c.binary,
       argv: args,
       cwd: ROOT,
       env: { ...c.env, MIGRATION_DATABASE_URL: c.database },
-      privateOutput: () => {},
+      privateOutput: (out) => {
+        output = out;
+      },
     },
     c.processes,
-    "schema",
+    gate,
   );
   if (r.exitCode !== 0 || !r.complete) throw new Error("PROCESS");
+  return output;
 }
 type SchemaOperation = {
   Tenant: string;
@@ -247,8 +255,13 @@ export async function runSchemaGate(c: GateContext): Promise<ParsedResult> {
   const conn = new Connection({
       instanceUrl: c.url,
       accessToken: c.tokens.admin,
+      version: "65.0",
     }),
-    other = new Connection({ instanceUrl: c.url, accessToken: c.tokens.other });
+    other = new Connection({
+      instanceUrl: c.url,
+      accessToken: c.tokens.other,
+      version: "65.0",
+    });
   const global = await conn.describeGlobal();
   assert.ok(global.sobjects.some((o: any) => o.name === object));
   ids.push("schema/jsforce-discover");
@@ -396,6 +409,9 @@ export async function runSchemaGate(c: GateContext): Promise<ParsedResult> {
     "admin",
     "/services/data/v65.0/sobjects",
   );
+  const before = JSON.parse(
+    await ownerCommand(c, ["schema", "inspect", "--tenant", c.tenants.first]),
+  );
   await appendFile(
     join(c.scratch, "schema-restart.json"),
     JSON.stringify({
@@ -403,6 +419,7 @@ export async function runSchemaGate(c: GateContext): Promise<ParsedResult> {
       id: retained,
       name: name + " restart",
       discovery: discovery.body,
+      revision: before.Revision,
     }) + "\n",
     { mode: 0o600 },
   );
@@ -427,5 +444,13 @@ export async function verifySchemaRestart(
     (await candidateRequest(c, "admin", "/services/data/v65.0/sobjects")).body,
     saved.discovery,
   );
+  const after = JSON.parse(
+    await ownerCommand(
+      c,
+      ["schema", "inspect", "--tenant", c.tenants.first],
+      "restart",
+    ),
+  );
+  assert.equal(after.Revision, saved.revision);
   return stepResult(c, "restart", ["restart/schema"]);
 }

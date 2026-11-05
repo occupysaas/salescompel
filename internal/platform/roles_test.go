@@ -148,3 +148,37 @@ func TestRuntimeRejectsUnexpectedIdentityGrant(t *testing.T) {
 		t.Fatal("accepted an extra credential-table grant")
 	}
 }
+func TestRuntimeRejectsStartupRoleMask(t *testing.T) {
+	u := limitedURLs(t)
+	owner, e := url.Parse(os.Getenv("TEST_DATABASE_URL"))
+	if e != nil {
+		t.Fatal(e)
+	}
+	q := owner.Query()
+	q.Set("role", "salescompel_records")
+	owner.RawQuery = q.Encode()
+	s, e := OpenRuntime(context.Background(), StoreConfig{owner.String(), u[1]})
+	if e == nil {
+		s.Close()
+		t.Fatal("startup role hid privileged session_user")
+	}
+}
+func TestRuntimeRejectsColumnSecretGrant(t *testing.T) {
+	s := testStore(t)
+	u := limitedURLs(t)
+	cfg, e := pgxpool.ParseConfig(u[0])
+	if e != nil {
+		t.Fatal(e)
+	}
+	role := pgx.Identifier{cfg.ConnConfig.User}.Sanitize()
+	ctx := context.Background()
+	if _, e = s.pool.Exec(ctx, "GRANT SELECT(password_hash) ON public.users TO "+role); e != nil {
+		t.Fatal(e)
+	}
+	defer s.pool.Exec(ctx, "REVOKE SELECT(password_hash) ON public.users FROM "+role)
+	runtime, e := OpenRuntime(ctx, StoreConfig{u[0], u[1]})
+	if e == nil {
+		runtime.Close()
+		t.Fatal("column credential grant escaped role checks")
+	}
+}

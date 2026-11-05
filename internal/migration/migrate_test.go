@@ -197,3 +197,35 @@ func TestMigrationResume(t *testing.T) {
 		t.Fatal(e)
 	}
 }
+func TestMigrationRejectsLegacyPolicies(t *testing.T) {
+	p := testPool(t)
+	ctx := context.Background()
+	tx, _ := p.Begin(ctx)
+	if e := legacy.Install(ctx, tx); e != nil {
+		t.Fatal(e)
+	}
+	if _, e := tx.Exec(ctx, "CREATE POLICY tenant_isolation ON accounts USING(true) WITH CHECK(true)"); e != nil {
+		t.Fatal(e)
+	}
+	tx.Commit(ctx)
+	if e := Up(ctx, p); e == nil {
+		t.Fatal("adopted an open legacy tenant policy")
+	}
+}
+func TestMigrationRejectsPolicyAtRLSInstall(t *testing.T) {
+	p := testPool(t)
+	ctx := context.Background()
+	if e := up(ctx, p, manifest()[:2]); e != nil {
+		t.Fatal(e)
+	}
+	if _, e := p.Exec(ctx, "CREATE POLICY allow_all ON accounts USING(true) WITH CHECK(true)"); e != nil {
+		t.Fatal(e)
+	}
+	if e := Up(ctx, p); e == nil {
+		t.Fatal("retained an unexpected permissive policy")
+	}
+	var head int
+	if e := p.QueryRow(ctx, "SELECT max(version) FROM sc_control.schema_migrations").Scan(&head); e != nil || head != 2 {
+		t.Fatal(head, e)
+	}
+}

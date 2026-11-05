@@ -69,7 +69,7 @@ func columns(p Principal, object string, data map[string]any) ([]string, []any) 
 		if v == "" && f.Nillable {
 			v = nil
 		}
-		if f.Name == "Compat_Key__c" {
+		if strings.EqualFold(object, "Account") && f.Name == "Compat_Key__c" && f.ExternalID {
 			var canonical any
 			if text, ok := v.(string); ok {
 				key, _ := canonicalExternalID(text)

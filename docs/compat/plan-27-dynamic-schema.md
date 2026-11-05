@@ -153,3 +153,20 @@ rename/update/delete and new custom external-ID/unique fields are not supported.
 Unknown REST object routes retain 404 NOT_FOUND for the established boundary and
 identity-enumeration contract; query unknown types return 400 INVALID_TYPE.
 This corrects the implementation plan's initial REST 400 expectation.
+
+## Review and verification in progress
+
+The independent whole-change review found four issues, reproduced before fixes:
+ordinary Compat_Key__c fields on other objects were incorrectly given Account's
+canonical column handling; startup SET ROLE could hide the authenticated login;
+column credential grants bypassed table-only privilege checks; and adoption could
+retain a permissive pre-existing row policy. The fixes scope the seeded external
+ID, reject switched/mismatched session identities, inspect effective column
+privileges, reject unexpected legacy/install policies and verify the closed
+policy set at startup. Migration draft checksums changed during this review;
+only the final unreleased Plan 27 manifest is a supported installation target.
+
+Two cosmetic findings remain deferred: custom-object lists retain Contact's
+secondary column/list headings, and seed-name translation matching can override
+a tenant label for Compat_Text__c/Compat_Key__c on another object. Values and
+API identities remain correct; these do not add permissions or change storage.

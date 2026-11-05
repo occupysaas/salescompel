@@ -13,9 +13,10 @@ BEGIN
  FOR r IN SELECT n.nspname,c.relname FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE c.relkind='r' AND (n.nspname IN ('sc_catalog','sc_records') OR (n.nspname='public' AND c.relname IN ('accounts','contacts'))) LOOP
   EXECUTE format('ALTER TABLE %I.%I ENABLE ROW LEVEL SECURITY',r.nspname,r.relname);
   EXECUTE format('ALTER TABLE %I.%I FORCE ROW LEVEL SECURITY',r.nspname,r.relname);
-  IF NOT EXISTS(SELECT FROM pg_policies WHERE schemaname=r.nspname AND tablename=r.relname AND policyname='tenant_isolation') THEN
-   EXECUTE format('CREATE POLICY tenant_isolation ON %I.%I USING(tenant_id=nullif(current_setting(''salescompel.tenant_id'',true),'''')) WITH CHECK(tenant_id=nullif(current_setting(''salescompel.tenant_id'',true),''''))',r.nspname,r.relname);
+  IF EXISTS(SELECT FROM pg_policies WHERE schemaname=r.nspname AND tablename=r.relname) THEN
+   RAISE EXCEPTION 'unexpected pre-existing row policy; migration refused';
   END IF;
+   EXECUTE format('CREATE POLICY tenant_isolation ON %I.%I USING(tenant_id=nullif(current_setting(''salescompel.tenant_id'',true),'''')) WITH CHECK(tenant_id=nullif(current_setting(''salescompel.tenant_id'',true),''''))',r.nspname,r.relname);
   IF r.nspname='sc_catalog' THEN perm:='SELECT'; ELSE perm:='SELECT,INSERT,UPDATE,DELETE'; END IF;
   EXECUTE format('GRANT %s ON %I.%I TO salescompel_records',perm,r.nspname,r.relname);
  END LOOP;
