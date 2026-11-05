@@ -100,6 +100,23 @@ func TestStoreQueryNullOrdering(t *testing.T) {
 			t.Fatal(e)
 		}
 	}
+	// Tie ordering follows PostgreSQL's configured ID collation.
+	ordered, e := s.pool.Query(ctx, "SELECT id FROM accounts WHERE tenant_id=$1 ORDER BY id", p.Tenant)
+	if e != nil {
+		t.Fatal(e)
+	}
+	rank := map[string]int{}
+	for ordered.Next() {
+		var id string
+		if e = ordered.Scan(&id); e != nil {
+			t.Fatal(e)
+		}
+		rank[id] = len(rank)
+	}
+	if e = ordered.Err(); e != nil {
+		t.Fatal(e)
+	}
+	ordered.Close()
 	for _, direction := range []string{"ASC", "DESC"} {
 		for _, placement := range []string{"", " NULLS FIRST", " NULLS LAST"} {
 			rows, e := selectSQL(t, s, p, "select id, compat_text__c from account order by compat_text__c "+direction+placement)
@@ -114,7 +131,7 @@ func TestStoreQueryNullOrdering(t *testing.T) {
 				t.Fatal(rows)
 			}
 			for i := 1; i < len(rows); i++ {
-				if rows[i]["Compat_Text__c"] == rows[i-1]["Compat_Text__c"] && rows[i]["Id"].(string) < rows[i-1]["Id"].(string) {
+				if rows[i]["Compat_Text__c"] == rows[i-1]["Compat_Text__c"] && rank[rows[i]["Id"].(string)] < rank[rows[i-1]["Id"].(string)] {
 					t.Fatal("unstable ties", rows)
 				}
 			}

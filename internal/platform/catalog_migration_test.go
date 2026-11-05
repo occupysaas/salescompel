@@ -80,15 +80,26 @@ func snapshot(t *testing.T, c *pgx.Conn) string {
 	}
 	return s
 }
-func assertV2(t *testing.T, c *pgx.Conn) {
+func assertV3(t *testing.T, c *pgx.Conn) {
 	t.Helper()
 	var version int
 	var definition string
 	if e := c.QueryRow(context.Background(), "SELECT version,definition::text FROM platform_catalog").Scan(&version, &definition); e != nil {
 		t.Fatal(e)
 	}
-	if version != 2 {
+	if version != 3 {
 		t.Fatalf("version %d", version)
+	}
+	var canonicalType string
+	if e := c.QueryRow(context.Background(), "SELECT data_type FROM information_schema.columns WHERE table_schema=current_schema() AND table_name='accounts' AND column_name='compat_key_canonical'").Scan(&canonicalType); e != nil || canonicalType != "text" {
+		t.Fatal(canonicalType, e)
+	}
+	var unique, pair, old bool
+	if e := c.QueryRow(context.Background(), `SELECT
+ EXISTS(SELECT 1 FROM pg_constraint WHERE conrelid='accounts'::regclass AND contype='u' AND pg_get_constraintdef(oid)='UNIQUE (tenant_id, compat_key_canonical)'),
+ EXISTS(SELECT 1 FROM pg_constraint WHERE conrelid='accounts'::regclass AND contype='c' AND pg_get_constraintdef(oid)='CHECK (((compat_key IS NULL) = (compat_key_canonical IS NULL)))'),
+ EXISTS(SELECT 1 FROM pg_constraint WHERE conrelid='accounts'::regclass AND conname='accounts_tenant_id_compat_key_key')`).Scan(&unique, &pair, &old); e != nil || !unique || !pair || old {
+		t.Fatal(unique, pair, old, e)
 	}
 	want, _ := json.Marshal(catalog)
 	var eq bool
@@ -100,14 +111,14 @@ func assertV2(t *testing.T, c *pgx.Conn) {
 		t.Fatalf("physical bounds %d %v", n, e)
 	}
 }
-func TestCatalogFreshV2(t *testing.T) {
+func TestCatalogFreshV3(t *testing.T) {
 	url, c := migrationDB(t)
 	s, e := Open(context.Background(), url)
 	if e != nil {
 		t.Fatal(e)
 	}
 	s.Close()
-	assertV2(t, c)
+	assertV3(t, c)
 	s, e = Open(context.Background(), url)
 	if e != nil {
 		t.Fatal(e)
@@ -123,10 +134,14 @@ func TestCatalogUpgradeV1(t *testing.T) {
 		t.Fatal(e)
 	}
 	s.Close()
-	assertV2(t, c)
+	assertV3(t, c)
 	var a, b map[string]any
 	json.Unmarshal([]byte(before), &a)
 	json.Unmarshal([]byte(snapshot(t, c)), &b)
+	// The new derived column is expected; compare the original data bytes.
+	for _, row := range b["accounts"].([]any) {
+		delete(row.(map[string]any), "compat_key_canonical")
+	}
 	for _, key := range []string{"accounts", "contacts", "tenants"} {
 		x, _ := json.Marshal(a[key])
 		y, _ := json.Marshal(b[key])
@@ -182,7 +197,7 @@ func TestCatalogRejectsUnknown(t *testing.T) {
 		})
 	}
 }
-func TestCatalogV2PhysicalMismatch(t *testing.T) {
+func TestCatalogV3PhysicalMismatch(t *testing.T) {
 	url, c := migrationDB(t)
 	s, e := Open(context.Background(), url)
 	if e != nil {
@@ -220,5 +235,103 @@ func TestCatalogConcurrentOpen(t *testing.T) {
 			t.Fatal(e)
 		}
 	}
-	assertV2(t, c)
+	assertV3(t, c)
+}
+
+func seedV2(t *testing.T, c *pgx.Conn) {
+	t.Helper()
+	sqlDo(t, c, schema)
+	definition, _ := json.Marshal(catalog)
+	sqlDo(t, c, "INSERT INTO platform_catalog VALUES(true,2,$1)", string(definition))
+	sqlDo(t, c, "ALTER TABLE accounts ALTER COLUMN compat_key TYPE varchar(80), ALTER COLUMN compat_text TYPE varchar(80)")
+	sqlDo(t, c, "INSERT INTO tenants VALUES('first'),('other')")
+}
+func TestCatalogUpgradeV2ToV3(t *testing.T) {
+	url, c := migrationDB(t)
+	seedV2(t, c)
+	sqlDo(t, c, "INSERT INTO accounts VALUES('first','001000000000001AAA','A',NULL,' AbC '),('other','001000000000002AAA','B',NULL,NULL)")
+	s, e := Open(context.Background(), url)
+	if e != nil {
+		t.Fatal(e)
+	}
+	s.Close()
+	assertV3(t, c)
+	var key, canonical string
+	if e = c.QueryRow(context.Background(), "SELECT compat_key,compat_key_canonical FROM accounts WHERE tenant_id='first'").Scan(&key, &canonical); e != nil || key != " AbC " || canonical != "abc" {
+		t.Fatal(key, canonical, e)
+	}
+	var null bool
+	if e = c.QueryRow(context.Background(), "SELECT compat_key_canonical IS NULL FROM accounts WHERE tenant_id='other'").Scan(&null); e != nil || !null {
+		t.Fatal(null, e)
+	}
+	before := snapshot(t, c)
+	s, e = Open(context.Background(), url)
+	if e != nil {
+		t.Fatal(e)
+	}
+	s.Close()
+	if snapshot(t, c) != before {
+		t.Fatal("repeat Open changed data")
+	}
+}
+func TestCatalogV3RefusesCollisions(t *testing.T) {
+	for _, sameTenant := range []bool{true, false} {
+		t.Run(fmt.Sprint(sameTenant), func(t *testing.T) {
+			url, c := migrationDB(t)
+			seedV2(t, c)
+			tenant := "other"
+			if sameTenant {
+				tenant = "first"
+			}
+			sqlDo(t, c, "INSERT INTO accounts VALUES('first','001000000000001AAA','A',NULL,'AbC'),($1,'001000000000002AAA','B',NULL,'abc')", tenant)
+			before := snapshot(t, c)
+			s, e := Open(context.Background(), url)
+			if sameTenant {
+				if e == nil {
+					s.Close()
+					t.Fatal("collision accepted")
+				}
+				if strings.Contains(e.Error(), "AbC") || strings.Contains(e.Error(), "abc") {
+					t.Fatal("values leaked")
+				}
+				if snapshot(t, c) != before {
+					t.Fatal("failed migration changed database")
+				}
+			} else {
+				if e != nil {
+					t.Fatal(e)
+				}
+				s.Close()
+				assertV3(t, c)
+			}
+		})
+	}
+}
+func TestCatalogV3RefusesWhitespaceOnlyKey(t *testing.T) {
+	url, c := migrationDB(t)
+	seedV2(t, c)
+	sqlDo(t, c, "INSERT INTO accounts VALUES('first','001000000000001AAA','A',NULL,'   ')")
+	before := snapshot(t, c)
+	s, e := Open(context.Background(), url)
+	if e == nil {
+		s.Close()
+		t.Fatal("blank accepted")
+	}
+	if snapshot(t, c) != before {
+		t.Fatal("failed migration changed database")
+	}
+}
+func TestCatalogV3FoldedLengthBeyond80(t *testing.T) {
+	url, c := migrationDB(t)
+	seedV2(t, c)
+	sqlDo(t, c, "INSERT INTO accounts VALUES('first','001000000000001AAA','A',NULL,$1)", strings.Repeat("ß", 80))
+	s, e := Open(context.Background(), url)
+	if e != nil {
+		t.Fatal(e)
+	}
+	s.Close()
+	var key, canonical string
+	if e = c.QueryRow(context.Background(), "SELECT compat_key,compat_key_canonical FROM accounts").Scan(&key, &canonical); e != nil || key != strings.Repeat("ß", 80) || canonical != strings.Repeat("s", 160) {
+		t.Fatal("folded length", e)
+	}
 }

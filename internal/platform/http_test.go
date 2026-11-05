@@ -522,3 +522,57 @@ func TestHTTPFieldErrorEnvelope(t *testing.T) {
 		}
 	}
 }
+
+func TestHTTPOrdinaryExternalIDUniqueness(t *testing.T) {
+	s := testStore(t)
+	p, _ := principals(t, s)
+	ctx := context.Background()
+	h := NewHandler(s, "")
+	id, e := s.Create(ctx, p, "Account", map[string]any{"Name": "Original", "Compat_Key__c": "AbC"})
+	if e != nil {
+		t.Fatal(e)
+	}
+	other, e := s.Create(ctx, p, "Account", map[string]any{"Name": "Other"})
+	if e != nil {
+		t.Fatal(e)
+	}
+	before := accountSnapshot(t, s, p)
+	for _, path := range []string{"", "/" + other} {
+		m := "POST"
+		if path != "" {
+			m = "PATCH"
+		}
+		w := bodyValidationRequest(t, h, m, apiBase+"sobjects/Account"+path, `{"Name":"Fail","Compat_Key__c":"abc"}`, "token-"+p.Tenant)
+		if w.Code != 400 || !strings.Contains(w.Body.String(), `"fields":["Compat_Key__c"]`) || !strings.Contains(w.Body.String(), "DUPLICATE_VALUE") {
+			t.Fatal(w.Code, w.Body.String())
+		}
+		if accountSnapshot(t, s, p) != before {
+			t.Fatal("rejected write changed rows")
+		}
+	}
+	if e = s.Update(ctx, p, "Account", id, map[string]any{"Compat_Key__c": "abc"}); e != nil {
+		t.Fatal(e)
+	}
+	row, e := s.Read(ctx, p, "Account", id)
+	if e != nil || row["Compat_Key__c"] != "abc" {
+		t.Fatal(row, e)
+	}
+	for _, key := range []string{"   ", strings.Repeat("ß", 80)} {
+		id, e := s.Create(ctx, p, "Account", map[string]any{"Name": "Key", "Compat_Key__c": key})
+		if e != nil {
+			t.Fatal(e)
+		}
+		row, e := s.Read(ctx, p, "Account", id)
+		var want any = key
+		if key == "   " {
+			want = nil
+		}
+		if e != nil || row["Compat_Key__c"] != want {
+			t.Fatal(row, e)
+		}
+	}
+	w := bodyValidationRequest(t, h, "POST", apiBase+"sobjects/Account", `{"Name":"Long","Compat_Key__c":"`+strings.Repeat("s", 160)+`"}`, "token-"+p.Tenant)
+	if w.Code != 400 || !strings.Contains(w.Body.String(), "STRING_TOO_LONG") {
+		t.Fatal(w.Code, w.Body.String())
+	}
+}

@@ -172,6 +172,19 @@ func columns(p Principal, object string, data map[string]any) ([]string, []any) 
 		if v == "" && f.Nillable {
 			v = nil
 		}
+		if f.Name == "Compat_Key__c" {
+			var canonical any
+			if text, ok := v.(string); ok {
+				key, _ := canonicalExternalID(text)
+				if key != "" {
+					canonical = key
+				} else {
+					v = nil
+				}
+			}
+			cols = append(cols, "compat_key_canonical")
+			values = append(values, canonical)
+		}
 		cols = append(cols, f.Column)
 		values = append(values, v)
 	}
