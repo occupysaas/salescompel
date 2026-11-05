@@ -322,21 +322,26 @@ func (s *Store) Upsert(ctx context.Context, p Principal, key string, data map[st
 	if err := Validate(p, "Account", copyData, false); err != nil {
 		return "", false, err
 	}
+	canonical, err := canonicalExternalID(key)
+	if err != nil || canonical == "" {
+		return "", false, fieldProblem("INVALID_FIELD", "External ID must not be blank", "Compat_Key__c")
+	}
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return "", false, dbError(err)
 	}
 	defer tx.Rollback(ctx)
 	// Serialize the read/create decision for this tenant/key, across all server processes.
-	if _, err = tx.Exec(ctx, "SELECT pg_advisory_xact_lock(hashtextextended($1,0))", p.Tenant+"\x1f"+key); err != nil {
+	if _, err = tx.Exec(ctx, "SELECT pg_advisory_xact_lock(hashtextextended($1,0))", p.Tenant+"\x1f"+canonical); err != nil {
 		return "", false, dbError(err)
 	}
 	var id string
-	err = tx.QueryRow(ctx, "SELECT id FROM accounts WHERE tenant_id=$1 AND compat_key=$2 FOR UPDATE", p.Tenant, key).Scan(&id)
+	err = tx.QueryRow(ctx, "SELECT id FROM accounts WHERE tenant_id=$1 AND compat_key_canonical=$2 FOR UPDATE", p.Tenant, canonical).Scan(&id)
 	created := errors.Is(err, pgx.ErrNoRows)
 	if created {
 		id, err = create(ctx, tx, p, "Account", copyData)
 	} else if err == nil {
+		delete(copyData, "Compat_Key__c")
 		err = update(ctx, tx, p, "Account", id, copyData)
 	}
 	if err != nil {
