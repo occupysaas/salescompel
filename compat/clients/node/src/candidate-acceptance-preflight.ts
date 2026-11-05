@@ -102,6 +102,13 @@ export async function availablePort(port: number) {
     );
   });
 }
+export async function preflightOAuth() {
+  try {
+    await availablePort(1717);
+  } catch {
+    throw Object.assign(new Error("PREREQUISITE"), { gate: "oauth" });
+  }
+}
 export function baseEnvironment(env: NodeJS.ProcessEnv) {
   const out: NodeJS.ProcessEnv = {};
   for (const key of [
@@ -174,6 +181,7 @@ export async function preflightAcceptance(
       createRequire(join(ROOT, "web/package.json"))(
         "playwright",
       ).chromium.executablePath();
+  await preflightOAuth();
   await availablePort(port);
   await availablePort(4173);
   const base = baseEnvironment(env);

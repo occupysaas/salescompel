@@ -79,6 +79,8 @@ export async function startCandidate(c: GateContext): Promise<OwnedService> {
       executable: c.binary,
       argv: [
         "serve",
+        "--public-url",
+        c.url,
         "-addr",
         `127.0.0.1:${c.port}`,
         "-tls-cert",

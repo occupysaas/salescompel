@@ -141,6 +141,7 @@ export async function runNativeCLI(c: GateContext): Promise<ParsedResult> {
   const steps: string[] = [];
   const alias = "p15-" + c.runId;
   const cli = async (args: string[]) => {
+    let stdout = "";
     const r = await runCommand(
       {
         executable: process.execPath,
@@ -148,12 +149,15 @@ export async function runNativeCLI(c: GateContext): Promise<ParsedResult> {
         cwd: c.scratch,
         env: { ...c.env, SF_ACCESS_TOKEN: c.tokens.admin },
         timeout: 60000,
+        privateOutput: (out) => {
+          stdout = out;
+        },
       },
       c.processes,
       "cli",
     );
     if (r.exitCode !== 0 || !r.complete) throw new Error("PROCESS");
-    return parseCLIResult(await readFile(r.resultPath, "utf8"));
+    return parseCLIResult(stdout);
   };
   await cli([
     "org",

@@ -1,3 +1,8 @@
+import {
+  runOAuthGate,
+  verifyOAuthRestart,
+  verifyOAuthEvidence,
+} from "./candidate-oauth.ts";
 import { readFile, writeFile, readdir, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { randomBytes } from "node:crypto";
@@ -53,7 +58,7 @@ export const databaseTestArgs = () => [
 // Step results use a separate namespace from persistence fixtures (restart.json).
 export async function publishStepResult(
   c: GateContext,
-  id: "cli" | "restart",
+  id: "cli" | "oauth" | "restart",
   parsed: ParsedResult,
 ) {
   const path = join(c.scratch, id + "-result.json");
@@ -148,7 +153,7 @@ export async function runAcceptance(
     const startedAt = new Date().toISOString();
     report.gates.find((g) => g.id === id)!.startedAt = startedAt;
     let parsed = await fn();
-    if (id === "cli" || id === "restart") {
+    if (id === "cli" || id === "oauth" || id === "restart") {
       const saved = await publishStepResult(c!, id, parsed);
       parsed = saved.parsed;
       report.evidence.push({ gate: id, sha256: saved.sha256 });
@@ -319,10 +324,14 @@ export async function runAcceptance(
       return load("steps", path, "python");
     });
     await step("cli", () => runNativeCLI(ctx));
+    await step("oauth", () => runOAuthGate(ctx));
     await step("restart", async () => {
       await seedRestartFixture(ctx);
       service = await restartCandidate(ctx, service!);
-      return verifyRestartFixture(ctx);
+      return mergeGateResults("restart", [
+        await verifyRestartFixture(ctx),
+        await verifyOAuthRestart(ctx),
+      ]);
     });
     await step("connected-browser", async () => {
       const path = join(ctx.scratch, "connected.json"),
@@ -367,6 +376,7 @@ export async function runAcceptance(
         await bind(path, r, "preview");
         return load("playwright", path, "preview");
       });
+    await verifyOAuthEvidence(ctx, report);
     const final = await collectSourceBindings();
     if (
       final.source !== ctx.bindings.source ||
@@ -384,7 +394,7 @@ export async function runAcceptance(
         ? e.message
         : "PROCESS";
     setFailure(
-      active,
+      e?.gate === "oauth" ? "oauth" : active,
       code,
       ["PREREQUISITE", "SOURCE", "TIMEOUT", "SIGNAL"].includes(code),
     );
