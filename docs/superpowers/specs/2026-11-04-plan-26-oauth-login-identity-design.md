@@ -49,7 +49,7 @@ These facts drove the design. **The first three would fail on a server that foll
 | PKCE verifier | 171 characters. | RFC 7636 allows at most 128. Accept 43–256. |
 | JWT `aud` | The login URL with a trailing slash, for example `http://127.0.0.1:39471/`. | Accept the public URL with or without the trailing slash. |
 | Default client | `client_id=PlatformCLI`, no secret, `redirect_uri=http://localhost:1717/OauthRedirect`, `scope=refresh_token api web`, `prompt=login`. | A built-in public client must exist. See [Apps](#apps). |
-| Calls after web login | `/services/oauth2/userinfo`, `/services/data/v51.0/sobjects/User/{user_id}`, `/services/data/v51.0/query` (`ScratchOrgInfo`), `/services/data`, a v65.0 `Organization` query. | With the v51 query returning 404 and the `Organization` query returning 400, `sf org login jwt` exited 0 and web login saved its auth file. **The web command itself was never seen to exit cleanly:** the capture's stand-in browser did not follow the CLI's final relative redirect to `/OauthSuccess`, so the run ended at its timeout. Task 1 settles this with a real browser. |
+| Calls after web login | `/services/oauth2/userinfo`, `/services/data/v51.0/sobjects/User/{user_id}`, `/services/data/v51.0/query` (`ScratchOrgInfo`), `/services/data`, a v65.0 `Organization` query. | With the v51 query returning 404 and the `Organization` query returning 400, `sf org login jwt` exited 0 and web login saved its auth file. **Task 1 confirmed web exit 0 with real Chromium:** it followed the CLI callback's relative redirect to `/OauthSuccess`. On KDE the observed launcher is `kde-open`; include KDE launcher names in acceptance stand-ins. |
 | `sf org display` | Reports the `Organization` query's error as `connectedStatus`. | Serve that one query so status is honest. See [Identity endpoints](#identity-endpoints). |
 
 ### Other clients
@@ -59,7 +59,7 @@ These facts drove the design. **The first three would fail on a server that foll
 
 ### Changelog review
 
-Connected App creation is reported as disabled by default from Spring '26, in favor of External Client Apps. Both use the same OAuth endpoints, so this plan's protocol is unaffected. Third-party sources report that the username-password flow is being retired and the device flow restricted. These are unconfirmed, but they support leaving both out.
+Connected App creation is reported as disabled by default from Spring '26, in favor of External Client Apps. Both use the same OAuth endpoints, so this plan's protocol is unaffected. Third-party sources report that the username-password flow is being retired and the device flow restricted. These are unconfirmed, but they support leaving both out. Task 1 also found official indexed guidance that locally managed apps created on or after July 9, 2026 require PKCE, refresh rotation and a 30-day idle refresh TTL; the candidate's refresh policy remains a recorded gap.
 
 ## Decisions
 
