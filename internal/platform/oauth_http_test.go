@@ -21,7 +21,7 @@ func TestResolvePublicURL(t *testing.T) {
 		v, a string
 		tls  bool
 		want string
-	}{{"", "127.0.0.1:8080", false, "http://127.0.0.1:8080"}, {"", "127.0.0.1:8080", true, "https://127.0.0.1:8080"}, {"https://crm.example.com/", "0.0.0.0:443", true, "https://crm.example.com"}, {"http://example.com", "127.0.0.1:8080", false, ""}, {"https://h/path", "", true, ""}, {"https://h?q=x", "", true, ""}, {"https://h#f", "", true, ""}, {"", "0.0.0.0:8080", true, ""}} {
+	}{{"https://CRM.EXAMPLE.COM:443", "", true, "https://crm.example.com"}, {"http://LOCALHOST:80/", "", false, "http://localhost"}, {"https://[::1]:443", "", true, "https://[::1]"}, {"https://CRM.EXAMPLE.COM:8443", "", true, "https://crm.example.com:8443"}, {"", "127.0.0.1:8080", false, "http://127.0.0.1:8080"}, {"", "127.0.0.1:8080", true, "https://127.0.0.1:8080"}, {"https://crm.example.com/", "0.0.0.0:443", true, "https://crm.example.com"}, {"http://example.com", "127.0.0.1:8080", false, ""}, {"https://h/path", "", true, ""}, {"https://h?q=x", "", true, ""}, {"https://h#f", "", true, ""}, {"", "0.0.0.0:8080", true, ""}} {
 		got, e := ResolvePublicURL(tc.v, tc.a, tc.tls)
 		if got != tc.want || (e != nil) != (tc.want == "") {
 			t.Fatalf("%+v: %q %v", tc, got, e)

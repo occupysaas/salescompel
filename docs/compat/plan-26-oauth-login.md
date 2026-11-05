@@ -208,3 +208,18 @@ No Salesforce credentials, implementation source, or live-org session were used.
 A final documentation commit is verified again with the full acceptance entry
 point at `/tmp/salescompel-plan26/final.json`; the runtime report above records
 this implementation's detailed verification independently of that closure.
+
+Final whole-change review found one additional operator issue: explicitly
+configured default ports or uppercase hostnames did not match browser Origin
+serialization. A regression failed for `https://CRM.EXAMPLE.COM:443` before
+`ResolvePublicURL` was changed to normalize host case and omit HTTP/HTTPS default
+ports, preserving IPv6 brackets and nondefault ports. The regression and full Go
+race suite pass; vet and diff checks pass. Null/foreign Origin rejection remains
+covered. No other actionable final-review findings remain. Documented deferred
+identity policies remain the explicit scope decisions above.
+
+The documentation-closure run `/tmp/salescompel-plan26/final.json` passed full
+acceptance at `70f4acbb777f025b38a5b0db86522c1f16b4670d`, SHA-256
+`b975f062d6b79ae8d36e0f134b3dcff2c78c13a7e94aa74929bd6b242fbdcdca`.
+The subsequent origin fix is verified by the same full command with the exclusive
+report path `/tmp/salescompel-plan26/final-origin.json`.

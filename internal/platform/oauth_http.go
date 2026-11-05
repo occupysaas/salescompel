@@ -52,8 +52,21 @@ func ResolvePublicURL(flagValue, addr string, tls bool) (string, error) {
 		flagValue = scheme + "://" + addr
 	}
 	u, e := url.Parse(flagValue)
-	if e != nil || u.Host == "" || u.Hostname() == "" || u.User != nil || (u.Path != "" && u.Path != "/") || u.RawQuery != "" || u.ForceQuery || u.Fragment != "" || (u.Scheme != "https" && (u.Scheme != "http" || !loopback(u.Hostname()))) {
+	if e != nil || u.Host == "" || u.Hostname() == "" || u.User != nil || (u.Path != "" && u.Path != "/") || u.RawQuery != "" || u.ForceQuery || u.Fragment != "" || (u.Scheme != "https" && (u.Scheme != "http" || !loopback(strings.ToLower(u.Hostname())))) {
 		return "", bad
+	}
+	// Match browser Origin serialization: DNS names are case-insensitive and
+	// default ports are omitted. Keep brackets for an IPv6 host without a port.
+	host, port := strings.ToLower(u.Hostname()), u.Port()
+	if (u.Scheme == "https" && port == "443") || (u.Scheme == "http" && port == "80") {
+		port = ""
+	}
+	if port != "" {
+		u.Host = net.JoinHostPort(host, port)
+	} else if strings.Contains(host, ":") {
+		u.Host = "[" + host + "]"
+	} else {
+		u.Host = host
 	}
 	u.Path = ""
 	return u.String(), nil
