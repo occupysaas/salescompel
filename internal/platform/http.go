@@ -101,6 +101,10 @@ func NewHandlerWithOptions(s *Store, assetDir string, o Options) http.Handler {
 		if o.PublicURL != "" {
 			var oauth func(*Store, Options, http.ResponseWriter, *http.Request)
 			switch requestPath {
+			case "/services/oauth2/authorize":
+				oauth = handleAuthorize
+			case "/services/oauth2/authorize.css":
+				oauth = handleAuthorizeCSS
 			case "/services/oauth2/token":
 				oauth = handleToken
 			case "/services/oauth2/revoke":

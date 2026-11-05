@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="{{.Lang}}" dir="{{.Dir}}">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{{index .M "oauth.title"}} · SalesCompel</title><link rel="stylesheet" href="/services/oauth2/authorize.css"></head>
+<body><main><header><span class="brand">SalesCompel</span><h1>{{index .M "oauth.title"}}</h1></header>
+{{if .Error}}<p role="alert">{{.Error}}</p>{{end}}
+{{if .ID}}<p>{{index .M "oauth.app"}} <strong>{{.App}}</strong></p><h2>{{index .M "oauth.permissions"}}</h2><ul>{{range .Scopes}}<li>{{.}}</li>{{end}}</ul>
+<form method="post" action="/services/oauth2/authorize">
+<input type="hidden" name="request_id" value="{{.ID}}">
+<label for="username">{{index .M "oauth.username"}}</label><input id="username" name="username" autocomplete="username" maxlength="80">
+<label for="password">{{index .M "oauth.password"}}</label><input id="password" type="password" name="password" autocomplete="current-password" maxlength="1024">
+<div class="actions"><button name="decision" value="allow" type="submit">{{index .M "oauth.allow"}}</button><button class="secondary" name="decision" value="deny" type="submit">{{index .M "oauth.deny"}}</button></div>
+</form><p class="note">{{index .M "oauth.notice"}}</p>{{end}}
+</main></body></html>
