@@ -221,3 +221,18 @@ The final closure strengthens mandatory coverage for the new migration, RLS,
 privilege, dynamic-record and transaction-cleanup tests. Its revision is tested
 again through full acceptance after integration; that final report is recorded
 separately from the runtime evidence above.
+
+## Final integrated verification
+
+Integrated revision `3b0b5ac433e8fb2a1ea95b46689b3c4eab638054` passed all 13 full
+acceptance gates on main from 2026-11-05T17:25:44.873Z to 2026-11-05T17:27:56.543Z.
+Report `/tmp/salescompel-plan27-results/main-final.json`, SHA-256
+`f18ed332501e833be3aa120df9813a9e48b3fa338afb574d407f28a3aa1164b4`; source binding
+`f2311c1b6aaeeef2508a9ab41cfd0c90ff189a7e22f39b1253402fffd9640006`.
+
+The final run requires all 34 new database/security coverage IDs and the complete
+schema/restart/browser coverage. It passed without required skips; the six
+established offline skips remain covered by live client gates. Cleanup verified
+43 data operations, zero unknown intents, removed owned schema resources and
+temporary roles, and stopped all owned processes. The OAuth secret scan passed.
+This evidence-only documentation commit does not change the tested source binding.
