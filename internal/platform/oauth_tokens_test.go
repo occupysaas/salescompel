@@ -474,3 +474,31 @@ func TestIssueCodeRejectsStaleLogin(t *testing.T) {
 		t.Fatal(e)
 	}
 }
+
+func TestExpiredCodeReplayRevokesRefreshedDescendants(t *testing.T) {
+	s, g, n := tokenFixture(t)
+	ctx := context.Background()
+	code := codeTest(t, s, g, n, "")
+	first, e := s.RedeemCode(ctx, code, g.ClientID, "https://example.com/cb", "", n, time.Hour)
+	if e != nil {
+		t.Fatal(e)
+	}
+	descendant, e := s.RefreshAccess(ctx, first.Refresh, g.ClientID, n.Add(9*time.Minute), time.Hour)
+	if e != nil {
+		t.Fatal(e)
+	}
+	at := n.Add(10 * time.Minute)
+	_, e = s.RedeemCode(ctx, code, g.ClientID, "https://example.com/cb", "", at, time.Hour)
+	var oe *oauthError
+	if !errors.As(e, &oe) || oe.Code != "invalid_grant" {
+		t.Fatal(e)
+	}
+	for _, token := range []string{first.Access, descendant.Access} {
+		if _, e = s.AuthenticateAt(ctx, token, at); e == nil {
+			t.Fatal("access survived expired-code replay")
+		}
+	}
+	if _, e = s.RefreshAccess(ctx, first.Refresh, g.ClientID, at, time.Hour); e == nil {
+		t.Fatal("refresh survived expired-code replay")
+	}
+}

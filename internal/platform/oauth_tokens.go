@@ -214,7 +214,7 @@ func (s *Store) RedeemCode(ctx context.Context, code, clientID, redirectURI, ver
 	if redirect != redirectURI {
 		return IssuedTokens{}, grantError("redirect_uri_mismatch")
 	}
-	if !now.Before(expiry) || (challenge == "" && verifier != "") || (challenge != "" && !verifyPKCE(challenge, verifier)) {
+	if (challenge == "" && verifier != "") || (challenge != "" && !verifyPKCE(challenge, verifier)) {
 		return IssuedTokens{}, grantError("invalid_grant")
 	}
 	u, e := lockTokenUser(ctx, tx, client, user)
@@ -236,6 +236,11 @@ func (s *Store) RedeemCode(ctx context.Context, code, clientID, redirectURI, ver
 	}
 	if e != nil {
 		return IssuedTokens{}, e
+	}
+	// Check expiry after the atomic claim so a previously used code still
+	// invalidates its entire token family when replayed after its deadline.
+	if !now.Before(expiry) {
+		return IssuedTokens{}, grantError("invalid_grant")
 	}
 	refresh := false
 	for _, v := range strings.Fields(scope) {
