@@ -19,7 +19,10 @@ import (
 //go:embed schema.sql
 var schema string
 
-type Store struct{ pool *pgxpool.Pool }
+type Store struct {
+	pool         *pgxpool.Pool
+	passwordWork chan struct{}
+}
 type database interface {
 	Exec(context.Context, string, ...any) (pgconn.CommandTag, error)
 	Query(context.Context, string, ...any) (pgx.Rows, error)
@@ -58,7 +61,7 @@ func Open(ctx context.Context, url string) (*Store, error) {
 		return nil, err
 	}
 	ok = true
-	return &Store{pool: pool}, nil
+	return &Store{pool: pool, passwordWork: make(chan struct{}, 4)}, nil
 }
 func (s *Store) Close()          { s.pool.Close() }
 func digest(token string) string { v := sha256.Sum256([]byte(token)); return hex.EncodeToString(v[:]) }

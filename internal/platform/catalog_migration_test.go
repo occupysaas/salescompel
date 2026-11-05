@@ -335,3 +335,46 @@ func TestCatalogV3FoldedLengthBeyond80(t *testing.T) {
 		t.Fatal("folded length", e)
 	}
 }
+
+func TestOAuthTablesUpgradeFromV3(t *testing.T) {
+	u, c := migrationDB(t)
+	ctx := context.Background()
+	s, e := Open(ctx, u)
+	if e != nil {
+		t.Fatal(e)
+	}
+	p := Principal{Tenant: "upgrade", User: "admin", Role: "admin"}
+	if e = s.Provision(ctx, "upgrade-token-123456", p); e != nil {
+		t.Fatal(e)
+	}
+	id, e := s.Create(ctx, p, "Account", map[string]any{"Name": "Survivor"})
+	if e != nil {
+		t.Fatal(e)
+	}
+	s.Close()
+	sqlDo(t, c, "DROP TABLE oauth_access_tokens,oauth_refresh_tokens,oauth_codes,oauth_requests,oauth_jwt_ids,oauth_app_jwt_users,oauth_apps,users CASCADE")
+	for range 2 {
+		s, e = Open(ctx, u)
+		if e != nil {
+			t.Fatal(e)
+		}
+		for _, name := range []string{"users", "oauth_apps", "oauth_app_jwt_users", "oauth_requests", "oauth_codes", "oauth_refresh_tokens", "oauth_access_tokens", "oauth_jwt_ids"} {
+			var table *string
+			if e = c.QueryRow(ctx, "SELECT to_regclass($1)::text", name).Scan(&table); e != nil || table == nil {
+				t.Fatal(name, e)
+			}
+		}
+		var version int
+		c.QueryRow(ctx, "SELECT version FROM platform_catalog").Scan(&version)
+		if version != 3 {
+			t.Fatal(version)
+		}
+		if _, e = s.Read(ctx, p, "Account", id); e != nil {
+			t.Fatal(e)
+		}
+		if _, e = s.Authenticate(ctx, "upgrade-token-123456"); e != nil {
+			t.Fatal(e)
+		}
+		s.Close()
+	}
+}

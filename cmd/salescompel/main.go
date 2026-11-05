@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -16,8 +17,9 @@ import (
 	"salescompel/internal/platform"
 )
 
-func run() error {
-	if len(os.Args) < 2 {
+func run() error { return dispatch(os.Args[1:], os.Stdout) }
+func dispatch(args []string, out io.Writer) error {
+	if len(args) < 1 {
 		return errors.New("usage: salescompel serve|provision")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
@@ -27,7 +29,9 @@ func run() error {
 		return err
 	}
 	defer s.Close()
-	switch os.Args[1] {
+	switch args[0] {
+	case "user", "oauth-app":
+		return adminCommand(ctx, s, args, out)
 	case "provision":
 		return s.Provision(ctx, os.Getenv("SALESCOMPEL_TOKEN"), platform.Principal{Tenant: os.Getenv("SALESCOMPEL_TENANT"), User: os.Getenv("SALESCOMPEL_USER"), Role: os.Getenv("SALESCOMPEL_ROLE")})
 	case "serve":
@@ -36,7 +40,7 @@ func run() error {
 		assets := fs.String("assets", "web/dist", "built web assets; empty disables UI")
 		cert := fs.String("tls-cert", "", "TLS certificate")
 		key := fs.String("tls-key", "", "TLS private key")
-		if err = fs.Parse(os.Args[2:]); err != nil {
+		if err = fs.Parse(args[1:]); err != nil {
 			return err
 		}
 		if (*cert == "") != (*key == "") {
