@@ -144,6 +144,7 @@ main {
 }
 label {
   display: block;
+  overflow-wrap: anywhere;
   font-size: 14px;
   font-weight: 550;
 }
@@ -167,10 +168,13 @@ input {
 }
 nav {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 36px;
 }
 nav button {
+  max-width: 100%;
+  overflow-wrap: anywhere;
   border-color: transparent;
   background: transparent;
 }
@@ -185,7 +189,11 @@ nav .active {
   margin-bottom: 26px;
   gap: 20px;
 }
+.section-heading > div {
+  min-width: 0;
+}
 h1 {
+  overflow-wrap: anywhere;
   font-size: 34px;
   line-height: 1.2;
   letter-spacing: -1px;

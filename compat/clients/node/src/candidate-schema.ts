@@ -246,6 +246,32 @@ export async function runSchemaGate(c: GateContext): Promise<ParsedResult> {
       "80",
     ],
   );
+  await schemaOperation(
+    c,
+    {
+      Tenant: c.tenants.first,
+      Kind: "field",
+      Object: object,
+      Name: "Compat_Key__c",
+    },
+    [
+      "schema",
+      "field",
+      "create",
+      "--tenant",
+      c.tenants.first,
+      "--object",
+      object,
+      "--name",
+      "Compat_Key__c",
+      "--label",
+      "Project key",
+      "--type",
+      "Text",
+      "--length",
+      "80",
+    ],
+  );
   c.env.CANDIDATE_CUSTOM_OBJECT = object;
   const input = join(c.scratch, "schema-client-context.json");
   await writeFile(

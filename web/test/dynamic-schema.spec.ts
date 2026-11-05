@@ -12,12 +12,20 @@ test("connected/dynamic-schema", async ({ page }) => {
   const name = `Schema browser ${process.env.CANDIDATE_RUN_ID}`;
   await page.getByLabel("Name", { exact: true }).fill(name);
   await page.getByLabel("Notes", { exact: true }).fill("Browser custom value");
+  await page.getByLabel("Project key", { exact: true }).fill("  UI key  ");
   await expect(
     page.getByLabel("<img src=x onerror=alert(1)>", { exact: true }),
   ).toBeVisible();
   await expect(page.locator("img[src=x]")).toHaveCount(0);
   await page.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(
+    page.getByRole("columnheader", { name: "Name", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole("columnheader")).toHaveCount(1);
   await page.getByRole("button", { name, exact: true }).click();
+  await expect(page.getByLabel("Project key", { exact: true })).toHaveValue(
+    "  UI key  ",
+  );
   await expect(page.getByLabel("Notes", { exact: true })).toHaveValue(
     "Browser custom value",
   );

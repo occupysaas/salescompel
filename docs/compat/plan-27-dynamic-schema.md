@@ -166,10 +166,12 @@ privileges, reject unexpected legacy/install policies and verify the closed
 policy set at startup. Migration draft checksums changed during this review;
 only the final unreleased Plan 27 manifest is a supported installation target.
 
-Two cosmetic findings remain deferred: custom-object lists retain Contact's
-secondary column/list headings, and seed-name translation matching can override
-a tenant label for Compat_Text__c/Compat_Key__c on another object. Values and
-API identities remain correct; these do not add permissions or change storage.
+The two UI findings were also resolved during continuation: custom-object lists
+use their Name label and omit the irrelevant relationship column, and seed
+translations apply only to seeded object/field pairs. A custom Compat_Key__c
+keeps its tenant label and ordinary Text spelling. Browser regressions verify
+these behaviors, escaped labels and the restored 390px mobile navigation bound.
+No review findings remain deferred.
 
 The resumed full run passed database, lab, web, JSforce, Python and CLI gates,
 then exposed confidential-app issuance under the restricted identity role.

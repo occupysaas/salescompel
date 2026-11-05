@@ -47,19 +47,30 @@ const languageNames: Record<string, string> = {
   iw: "עברית",
 };
 function label(field: Field) {
-  const known = [
-    "Id",
-    "Name",
-    "FirstName",
-    "LastName",
-    "AccountId",
-    "Compat_Text__c",
-    "Compat_Key__c",
-  ];
-  return known.includes(field.name)
+  const seeded: Record<string, readonly string[]> = {
+    Account: ["Id", "Name", "Compat_Text__c", "Compat_Key__c"],
+    Contact: ["Id", "FirstName", "LastName", "AccountId"],
+  };
+  return seeded[object.value]?.includes(field.name)
     ? t(`field.${field.name}`)
     : field.label || field.name;
 }
+const nameFieldLabel = computed(() => {
+  const name = object.value === "Contact" ? "LastName" : "Name";
+  const f = fields.value.find((f) => f.name === name);
+  return f ? label(f) : name;
+});
+const secondaryField = computed(() =>
+  fields.value.find(
+    (f) =>
+      f.name ===
+      (object.value === "Account"
+        ? "Compat_Key__c"
+        : object.value === "Contact"
+          ? "AccountId"
+          : ""),
+  ),
+);
 function objectLabel(item?: ObjectSummary) {
   if (!item) return object.value;
   if (item.name === "Account") return t("nav.accounts");
@@ -297,19 +308,9 @@ async function changeLanguage(event: Event) {
             <table v-else-if="records.length">
               <thead>
                 <tr>
-                  <th>
-                    {{
-                      t(object === "Account" ? "field.Name" : "field.LastName")
-                    }}
-                  </th>
-                  <th>
-                    {{
-                      t(
-                        object === "Account"
-                          ? "field.Compat_Key__c"
-                          : "field.AccountId",
-                      )
-                    }}
+                  <th scope="col">{{ nameFieldLabel }}</th>
+                  <th v-if="secondaryField" scope="col">
+                    {{ label(secondaryField) }}
                   </th>
                 </tr>
               </thead>
@@ -328,12 +329,8 @@ async function changeLanguage(event: Event) {
                       {{ recordName(row) }}
                     </button>
                   </td>
-                  <td class="secondary">
-                    {{
-                      row[
-                        object === "Account" ? "Compat_Key__c" : "AccountId"
-                      ] ?? "—"
-                    }}
+                  <td v-if="secondaryField" class="secondary">
+                    {{ row[secondaryField.name] ?? "—" }}
                   </td>
                 </tr>
               </tbody>
