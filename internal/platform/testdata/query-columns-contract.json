@@ -626,7 +626,10 @@
       "expectedBody": [
         {
           "errorCode": "INVALID_FIELD",
-          "message": "Field Compat_Text__c is unavailable"
+          "message": "Field is unavailable",
+          "fields": [
+            "Compat_Text__c"
+          ]
         }
       ],
       "basis": [
@@ -643,7 +646,10 @@
       "expectedBody": [
         {
           "errorCode": "INVALID_FIELD",
-          "message": "Field Compat_Text__c is unavailable"
+          "message": "Field is unavailable",
+          "fields": [
+            "Compat_Text__c"
+          ]
         }
       ],
       "basis": [
@@ -660,7 +666,10 @@
       "expectedBody": [
         {
           "errorCode": "INVALID_FIELD",
-          "message": "Field Compat_Text__c is unavailable"
+          "message": "Field is unavailable",
+          "fields": [
+            "Compat_Text__c"
+          ]
         }
       ],
       "basis": [
@@ -694,7 +703,10 @@
       "expectedBody": [
         {
           "errorCode": "INVALID_FIELD",
-          "message": "Field Missing is unavailable"
+          "message": "Field is unavailable",
+          "fields": [
+            "Missing"
+          ]
         }
       ],
       "basis": [
@@ -707,13 +719,24 @@
       "principal": "admin",
       "query": "SELECT name FROM Account",
       "querySuffix": "&columns=true",
-      "expectedStatus": 400,
-      "expectedBody": [
-        {
-          "errorCode": "INVALID_FIELD",
-          "message": "Field name is unavailable"
-        }
-      ],
+      "expectedStatus": 200,
+      "expectedBody": {
+        "totalSize": 1,
+        "done": true,
+        "records": [
+          {
+            "Name": "$name",
+            "attributes": {
+              "type": "Account"
+            }
+          }
+        ],
+        "columnMetadata": [
+          {
+            "columnName": "Name"
+          }
+        ]
+      },
       "basis": [
         "candidate-contract",
         "existing-policy"
@@ -728,7 +751,10 @@
       "expectedBody": [
         {
           "errorCode": "INVALID_FIELD",
-          "message": "Field Account.Id is unavailable"
+          "message": "Field is unavailable",
+          "fields": [
+            "Account.Id"
+          ]
         }
       ],
       "basis": [

@@ -84,7 +84,8 @@ func (s *Store) Select(ctx context.Context, p Principal, q Query) ([]map[string]
 					record["Account"] = map[string]any{"Name": values[i], "attributes": map[string]any{"type": "Account"}}
 				}
 			} else {
-				record[name] = values[i]
+				f, _ := field(p, q.Object, name)
+				record[f.Name] = values[i]
 			}
 		}
 		if id, ok := record["Id"].(string); ok {

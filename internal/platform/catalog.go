@@ -83,11 +83,11 @@ func field(p Principal, object, name string) (Field, error) {
 		return Field{}, invalid("INVALID_TYPE", "Unsupported object")
 	}
 	for _, f := range fields {
-		if f.Name == name && allowed(p, object, name) {
+		if strings.EqualFold(f.Name, name) && allowed(p, object, f.Name) {
 			return f, nil
 		}
 	}
-	return Field{}, invalid("INVALID_FIELD", fmt.Sprintf("Field %s is unavailable", name))
+	return Field{}, fieldProblem("INVALID_FIELD", "Field is unavailable", name)
 }
 func Describe(p Principal, object string) (Object, error) {
 	fields, ok := catalog[object]
@@ -123,31 +123,31 @@ func Validate(p Principal, object string, data map[string]any, create bool) erro
 		if err != nil {
 			return err
 		}
-		if k == "Id" {
-			return invalid("INVALID_FIELD_FOR_INSERT_UPDATE", "Id is read only")
+		if f.Name == "Id" {
+			return fieldProblem("INVALID_FIELD_FOR_INSERT_UPDATE", "Id is read only", "Id")
 		}
 		if v == nil {
 			if !f.Nillable {
-				return invalid("REQUIRED_FIELD_MISSING", k+" is required")
+				return fieldProblem("REQUIRED_FIELD_MISSING", "Required value is missing", f.Name)
 			}
 			continue
 		}
 		s, ok := v.(string)
 		if !ok {
-			return invalid("JSON_PARSER_ERROR", k+" requires a string or null")
+			return fieldProblem("JSON_PARSER_ERROR", "Expected a string or null", f.Name)
 		}
 		if !f.Nillable && strings.TrimSpace(s) == "" {
-			return invalid("REQUIRED_FIELD_MISSING", k+" is required")
+			return fieldProblem("REQUIRED_FIELD_MISSING", "Required value is missing", f.Name)
 		}
 		if !utf8.ValidString(s) || strings.ContainsRune(s, 0) || utf8.RuneCountInString(s) > f.Length {
-			return invalid("STRING_TOO_LONG", "Invalid or oversized field value")
+			return fieldProblem("STRING_TOO_LONG", "Invalid or oversized field value", f.Name)
 		}
 	}
 	if create {
 		for _, f := range catalog[object] {
 			if f.Name != "Id" && !f.Nillable {
 				if v, ok := data[f.Name]; !ok || v == nil {
-					return invalid("REQUIRED_FIELD_MISSING", f.Name+" is required")
+					return fieldProblem("REQUIRED_FIELD_MISSING", "Required value is missing", f.Name)
 				}
 			}
 		}

@@ -31,11 +31,45 @@ func writeError(w http.ResponseWriter, err error) {
 	writeJSON(w, api.Status, []*APIError{api})
 }
 func body(r *http.Request) (map[string]any, error) {
-	var data map[string]any
+	data := map[string]any{}
 	dec := json.NewDecoder(r.Body)
-	if err := dec.Decode(&data); err != nil || data == nil {
+	start, err := dec.Token()
+	if err != nil || start != json.Delim('{') {
 		return nil, invalid("JSON_PARSER_ERROR", "Expected a JSON object")
 	}
+	// Preserve member order until case-insensitive duplicates have collapsed.
+	keys := map[string]string{}
+	for dec.More() {
+		token, err := dec.Token()
+		if err != nil {
+			return nil, invalid("JSON_PARSER_ERROR", "Invalid JSON member")
+		}
+		key, ok := token.(string)
+		if !ok {
+			return nil, invalid("JSON_PARSER_ERROR", "Invalid JSON member")
+		}
+		var value any
+		if err := dec.Decode(&value); err != nil {
+			return nil, invalid("JSON_PARSER_ERROR", "Invalid JSON value")
+		}
+		folded := strings.ToLower(key)
+		// EqualFold also covers Unicode simple-fold variants.
+		for previous := range keys {
+			if strings.EqualFold(previous, key) {
+				folded = previous
+				break
+			}
+		}
+		if previous, ok := keys[folded]; ok {
+			delete(data, previous)
+		}
+		keys[folded] = key
+		data[key] = value
+	}
+	if end, err := dec.Token(); err != nil || end != json.Delim('}') {
+		return nil, invalid("JSON_PARSER_ERROR", "Invalid JSON object")
+	}
+
 	var trailing any
 	if dec.Decode(&trailing) != io.EOF {
 		return nil, invalid("JSON_PARSER_ERROR", "Unexpected trailing JSON")
@@ -224,9 +258,9 @@ func NewHandler(s *Store, assetDir string) http.Handler {
 			writeJSON(w, 200, map[string]any{"sobjects": objects, "encoding": "UTF-8", "maxBatchSize": 1})
 			return
 		}
-		object := parts[1]
-		if _, e := Describe(p, object); e != nil {
-			writeError(w, e)
+		object, known := CanonicalObject(parts[1])
+		if !known {
+			writeError(w, problem(404, "NOT_FOUND", "Object not found"))
 			return
 		}
 		if len(parts) == 3 && parts[2] == "describe" {
@@ -253,7 +287,7 @@ func NewHandler(s *Store, assetDir string) http.Handler {
 			writeJSON(w, 201, map[string]any{"id": id, "success": true, "errors": []any{}})
 			return
 		}
-		if len(parts) == 4 && object == "Account" && parts[2] == "Compat_Key__c" {
+		if len(parts) == 4 && object == "Account" && strings.EqualFold(parts[2], "Compat_Key__c") {
 			if !method(w, r, "PATCH") {
 				return
 			}

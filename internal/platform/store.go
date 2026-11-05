@@ -114,7 +114,7 @@ func dbError(err error) error {
 	if errors.As(err, &pe) {
 		switch pe.Code {
 		case "23505":
-			return invalid("DUPLICATE_VALUE", "External ID already exists")
+			return fieldProblem("DUPLICATE_VALUE", "External ID already exists", "Compat_Key__c")
 		case "23503":
 			return invalid("INVALID_CROSS_REFERENCE_KEY", "Relationship is unavailable or still referenced")
 		case "23502", "23514":
@@ -179,6 +179,10 @@ func columns(p Principal, object string, data map[string]any) ([]string, []any) 
 }
 func create(ctx context.Context, db database, p Principal, object string, data map[string]any) (string, error) {
 	var err error
+	data, err = canonicalFields(p, object, data)
+	if err != nil {
+		return "", err
+	}
 	data, err = normalizeReferences(p, object, data)
 	if err != nil {
 		return "", err
@@ -208,6 +212,10 @@ func update(ctx context.Context, db database, p Principal, object, id string, da
 	id, err = NormalizeRecordID(object, id)
 	if err != nil {
 		return dbError(pgx.ErrNoRows)
+	}
+	data, err = canonicalFields(p, object, data)
+	if err != nil {
+		return err
 	}
 	data, err = normalizeReferences(p, object, data)
 	if err != nil {
@@ -280,6 +288,11 @@ func (s *Store) Read(ctx context.Context, p Principal, object, id string) (map[s
 	return rows[0], nil
 }
 func (s *Store) Upsert(ctx context.Context, p Principal, key string, data map[string]any) (string, bool, error) {
+	var err error
+	data, err = canonicalFields(p, "Account", data)
+	if err != nil {
+		return "", false, err
+	}
 	if supplied := data["Compat_Key__c"]; supplied != nil {
 		switch supplied.(type) {
 		case map[string]any, []any:

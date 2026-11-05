@@ -422,3 +422,103 @@ func TestHTTPRecordIDForms(t *testing.T) {
 		t.Fatal(w.Code, w.Body.String())
 	}
 }
+
+func TestHTTPCaseInsensitiveRoutes(t *testing.T) {
+	s := testStore(t)
+	p, _ := principals(t, s)
+	h := NewHandler(s, "")
+	token := "token-" + p.Tenant
+	req := func(m, path, b string) *httptest.ResponseRecorder {
+		return bodyValidationRequest(t, h, m, apiBase+"sobjects/"+path, b, token)
+	}
+	w := req("GET", "account/describe", "")
+	if w.Code != 200 || !strings.Contains(w.Body.String(), `"name":"Account"`) {
+		t.Fatal(w.Code, w.Body.String())
+	}
+	w = req("POST", "ACCOUNT", `{"name":"Mixed"}`)
+	if w.Code != 201 {
+		t.Fatal(w.Code, w.Body.String())
+	}
+	var r map[string]any
+	json.Unmarshal(w.Body.Bytes(), &r)
+	w = req("GET", "account/"+r["id"].(string), "")
+	if w.Code != 200 || !strings.Contains(w.Body.String(), `"Name":"Mixed"`) {
+		t.Fatal(w.Code, w.Body.String())
+	}
+	w = req("PATCH", "account/compat_key__c/mixed", `{"name":"Mixed"}`)
+	if w.Code != 201 {
+		t.Fatal(w.Code, w.Body.String())
+	}
+}
+func TestHTTPDuplicateBodyFields(t *testing.T) {
+	s := testStore(t)
+	p, _ := principals(t, s)
+	h := NewHandler(s, "")
+	for _, data := range []string{`{"Name":"first","Name":"second"}`, `{"name":"first","Name":"second"}`, `{"Name":"first","name":"second"}`} {
+		w := bodyValidationRequest(t, h, "POST", apiBase+"sobjects/Account", data, "token-"+p.Tenant)
+		if w.Code != 201 {
+			t.Fatal(w.Code, w.Body.String())
+		}
+		var r map[string]any
+		json.Unmarshal(w.Body.Bytes(), &r)
+		row, e := s.Read(context.Background(), p, "Account", r["id"].(string))
+		if e != nil || row["Name"] != "second" {
+			t.Fatal(row, e)
+		}
+	}
+	restricted := p
+	restricted.Role = "restricted"
+	token := "restricted-" + p.Tenant
+	if e := s.Provision(context.Background(), token, restricted); e != nil {
+		t.Fatal(e)
+	}
+	id, e := s.Create(context.Background(), p, "Account", map[string]any{"Name": "Original"})
+	if e != nil {
+		t.Fatal(e)
+	}
+	for _, data := range []string{`{"Name":"x","compat_text__c":"y"}`, `{"Name":"x","Compat_Text__c":"y","compat_text__c":null}`} {
+		w := bodyValidationRequest(t, h, "PATCH", apiBase+"sobjects/Account/"+id, data, token)
+		if w.Code != 400 || !strings.Contains(w.Body.String(), "INVALID_FIELD") {
+			t.Fatal(w.Code, w.Body.String())
+		}
+		row, e := s.Read(context.Background(), p, "Account", id)
+		if e != nil || row["Name"] != "Original" {
+			t.Fatal(row, e)
+		}
+	}
+}
+func TestHTTPUnknownObjects(t *testing.T) {
+	s := testStore(t)
+	p, _ := principals(t, s)
+	h := NewHandler(s, "")
+	for _, path := range []string{"sobjects/Nope/describe", "sobjects/Nope"} {
+		m := "GET"
+		if path == "sobjects/Nope" {
+			m = "POST"
+		}
+		w := bodyValidationRequest(t, h, m, apiBase+path, `{}`, "token-"+p.Tenant)
+		if w.Code != 404 || !strings.Contains(w.Body.String(), "NOT_FOUND") {
+			t.Fatal(w.Code, w.Body.String())
+		}
+	}
+	w := bodyValidationRequest(t, h, "GET", apiBase+"query?q=SELECT+Id+FROM+Nope", "", "token-"+p.Tenant)
+	if w.Code != 400 || !strings.Contains(w.Body.String(), "INVALID_TYPE") {
+		t.Fatal(w.Code, w.Body.String())
+	}
+}
+func TestHTTPFieldErrorEnvelope(t *testing.T) {
+	s := testStore(t)
+	p, _ := principals(t, s)
+	h := NewHandler(s, "")
+	if _, e := s.Create(context.Background(), p, "Account", map[string]any{"Name": "Existing", "Compat_Key__c": "key"}); e != nil {
+		t.Fatal(e)
+	}
+	for _, tc := range []struct{ body, code, field string }{{`{}`, "REQUIRED_FIELD_MISSING", "Name"}, {`{"Name":"` + strings.Repeat("x", 256) + `"}`, "STRING_TOO_LONG", "Name"}, {`{"Name":"x","Id":"x"}`, "INVALID_FIELD_FOR_INSERT_UPDATE", "Id"}, {`{"Name":"x","Compat_Key__c":"key"}`, "DUPLICATE_VALUE", "Compat_Key__c"}} {
+		w := bodyValidationRequest(t, h, "POST", apiBase+"sobjects/Account", tc.body, "token-"+p.Tenant)
+		var errs []APIError
+		json.Unmarshal(w.Body.Bytes(), &errs)
+		if w.Code != 400 || len(errs) != 1 || errs[0].Code != tc.code || len(errs[0].Fields) != 1 || errs[0].Fields[0] != tc.field {
+			t.Fatal(w.Code, w.Body.String())
+		}
+	}
+}

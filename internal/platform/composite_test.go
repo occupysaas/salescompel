@@ -206,3 +206,13 @@ func TestCompositeInfrastructure(t *testing.T) {
 		})
 	}
 }
+
+func TestCompositeRejectsCaseDifferingFields(t *testing.T) {
+	s := testStore(t)
+	p, _ := principals(t, s)
+	before := accountSnapshot(t, s, p)
+	r, e := s.Composite(context.Background(), p, compReq(compSub("POST", "Account", "", "first", map[string]any{"Name": "Rollback"}), compSub("POST", "Account", "", "bad", map[string]any{"Name": "one", "name": "two"})))
+	if e != nil || r.CompositeResponse[1].HTTPStatusCode != 400 || r.CompositeResponse[1].Body.([]*APIError)[0].Code != "INVALID_FIELD" || accountSnapshot(t, s, p) != before {
+		t.Fatal(r, e)
+	}
+}
