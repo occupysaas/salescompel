@@ -11,6 +11,28 @@ export const candidateOperations: readonly (readonly [
   string,
   readonly string[],
 ])[] = [
+  [
+    "/services/oauth2/authorize",
+    "get",
+    "candidateOAuthAuthorizeForm",
+    ["200", "302"],
+  ],
+  [
+    "/services/oauth2/authorize",
+    "post",
+    "candidateOAuthAuthorizeSubmit",
+    ["200", "303"],
+  ],
+  ["/services/oauth2/token", "post", "candidateOAuthToken", ["200"]],
+  ["/services/oauth2/revoke", "post", "candidateOAuthRevoke", ["200"]],
+  ["/services/oauth2/introspect", "post", "candidateOAuthIntrospect", ["200"]],
+  [
+    "/.well-known/openid-configuration",
+    "get",
+    "candidateOAuthDiscovery",
+    ["200"],
+  ],
+  ["/id/{orgId}/{userId}", "get", "candidateOAuthIdentity", ["200"]],
   [base + "/composite", "post", "candidateCompositeAtomic", ["200"]],
   ["/services/data", "get", "candidateVersions", ["200"]],
   [base, "get", "candidateResources", ["200"]],
@@ -78,6 +100,15 @@ export async function validateCandidateOpenAPI(
       d.components.securitySchemes.bearerAuth.scheme !== "bearer"
     )
       throw 0;
+    const oauth = d.components.securitySchemes.oauth2;
+    if (
+      oauth?.type !== "oauth2" ||
+      oauth.flows?.authorizationCode?.authorizationUrl !==
+        "/services/oauth2/authorize" ||
+      oauth.flows.authorizationCode.tokenUrl !== "/services/oauth2/token" ||
+      oauth.flows?.clientCredentials?.tokenUrl !== "/services/oauth2/token"
+    )
+      throw 0;
     const actual: string[] = [];
     for (const [path, item] of Object.entries(d.paths) as [string, any][]) {
       for (const [method, op] of Object.entries(item) as [string, any][]) {
@@ -87,14 +118,26 @@ export async function validateCandidateOpenAPI(
         if (
           !expected ||
           op.operationId !== expected[2] ||
-          op.security !== undefined
+          (expected[2].startsWith("candidateOAuth") &&
+          expected[2] !== "candidateOAuthIdentity"
+            ? JSON.stringify(op.security) !== "[]"
+            : op.security !== undefined)
         )
           throw 0;
+        if (op.security === undefined && !op.responses["403"]) throw 0;
         const statuses = Object.keys(op.responses);
         if (
           statuses.some(
             (s) =>
-              ![...expected[3], "400", "401", "404", "405", "500"].includes(s),
+              ![
+                ...expected[3],
+                "400",
+                "401",
+                "403",
+                "404",
+                "405",
+                "500",
+              ].includes(s),
           ) ||
           expected[3].some((s) => !statuses.includes(s))
         )

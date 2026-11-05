@@ -20,7 +20,7 @@ type Operation = {
   parameters: Parameter[];
   request?: Media;
   requestRequired: boolean;
-  responses: Map<number, Media | undefined>;
+  responses: Map<number, Media[] | undefined>;
 };
 type Route = {
   segments: string[];
@@ -173,19 +173,24 @@ export async function createCandidateTrafficValidator(
       if (!cache.has(key)) cache.set(key, ajv.compile(rewrite(schema)));
       return cache.get(key)!;
     };
-    const content = (c: any, request = false): Media | undefined => {
+    const content = (c: any, request = false): Media[] | undefined => {
       if (c === undefined) return undefined;
       const names = Object.keys(c);
-      if (
-        names.length !== 1 ||
-        ![
-          "application/json",
-          ...(request ? [] : ["application/yaml"]),
-        ].includes(names[0])
-      )
-        return fail();
-      if (Object.keys(c[names[0]]).some((k) => k !== "schema")) return fail();
-      return { name: names[0], check: compile(c[names[0]].schema) };
+      if (!names.length || (request && names.length !== 1)) return fail();
+      return names.map((name) => {
+        if (
+          !(
+            request
+              ? ["application/json", "application/x-www-form-urlencoded"]
+              : ["application/json", "application/yaml", "text/html"]
+          ).includes(name)
+        )
+          return fail();
+        if (Object.keys(c[name]).some((k) => k !== "schema")) return fail();
+        if (name === "text/html" && resolve(c[name].schema).type !== "string")
+          return fail();
+        return { name, check: compile(c[name].schema) };
+      });
     };
     const routes: Route[] = [];
     for (const [path, item] of Object.entries(d.paths ?? {}) as [
@@ -213,6 +218,7 @@ export async function createCandidateTrafficValidator(
           Object.keys(raw).some(
             (k) =>
               ![
+                "security",
                 "operationId",
                 "x-source",
                 "summary",
@@ -223,6 +229,8 @@ export async function createCandidateTrafficValidator(
               ].includes(k),
           )
         )
+          return fail();
+        if (raw.security !== undefined && JSON.stringify(raw.security) !== "[]")
           return fail();
         const parameters: Parameter[] = [];
         for (const p0 of raw.parameters ?? []) {
@@ -281,11 +289,11 @@ export async function createCandidateTrafficValidator(
             )
           )
             return fail();
-          request = content(rb.content, true);
+          request = content(rb.content, true)?.[0];
           if (!request) return fail();
           requestRequired = rb.required === true;
         }
-        const responses = new Map<number, Media | undefined>();
+        const responses = new Map<number, Media[] | undefined>();
         for (const [status, r0] of Object.entries(raw.responses)) {
           if (!/^[1-5][0-9]{2}$/.test(status)) return fail();
           const r = resolve(r0);
@@ -398,9 +406,24 @@ export async function createCandidateTrafficValidator(
           req.add("request-media");
         else {
           try {
-            const value = JSON.parse(
-              new TextDecoder("utf-8", { fatal: true }).decode(requestBody),
+            const text = new TextDecoder("utf-8", { fatal: true }).decode(
+              requestBody,
             );
+            let value: unknown;
+            if (
+              operation.request.name === "application/x-www-form-urlencoded"
+            ) {
+              for (const piece of text.split(/[&=]/))
+                decodeURIComponent(piece.replaceAll("+", " "));
+              if (text.includes(";")) throw 0;
+              const form = new URLSearchParams(text);
+              const fields: Record<string, string> = Object.create(null);
+              for (const [key, entry] of form) {
+                if (Object.hasOwn(fields, key)) throw 0;
+                fields[key] = entry;
+              }
+              value = fields;
+            } else value = JSON.parse(text);
             if (!operation.request.check(value)) req.add("request-schema");
           } catch {
             req.add("request-json");
@@ -414,12 +437,15 @@ export async function createCandidateTrafficValidator(
           res.add("status");
           return finish();
         }
-        const response = operation.responses.get(exchange.response.status);
-        if (!response) {
+        const available = operation.responses.get(exchange.response.status);
+        if (!available) {
           if (exchange.response.body.byteLength) res.add("response-body");
           return finish();
         }
-        if (mediaType(exchange.response.contentType) !== response.name) {
+        const response = available.find(
+          (m) => m.name === mediaType(exchange.response.contentType),
+        );
+        if (!response) {
           res.add("response-media");
           return finish();
         }

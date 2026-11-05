@@ -9,6 +9,7 @@ import (
 	apicontract "salescompel/api"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestHTTPServedOpenAPI(t *testing.T) {
@@ -100,5 +101,29 @@ func TestHTTPServedOpenAPI(t *testing.T) {
 	}
 	if len(resources) != 4 || resources["openapi"] != apicontract.CandidateOpenAPIPath {
 		t.Fatal("missing or widened resource discovery")
+	}
+}
+
+func TestHTTPServedOpenAPIOAuthScope(t *testing.T) {
+	s, u, id, _, now := httpApp(t, []string{"client_credentials"})
+	h := NewHandlerWithOptions(s, "", Options{PublicURL: "https://crm.example.com", Now: func() time.Time { return now }})
+	for _, tc := range []struct {
+		scope  string
+		status int
+	}{{"id", 403}, {"api", 200}, {"full", 200}} {
+		tokens, err := s.IssueTokens(context.Background(), TokenGrant{ClientID: id, User: u, Scope: tc.scope}, now, time.Hour)
+		if err != nil {
+			t.Fatal(err)
+		}
+		r := httptest.NewRequest("GET", apicontract.CandidateOpenAPIPath, nil)
+		r.Header.Set("Authorization", "Bearer "+tokens.Access)
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, r)
+		if w.Code != tc.status {
+			t.Fatalf("scope %s: %d", tc.scope, w.Code)
+		}
+		if w.Code == 200 && w.Body.String() != apicontract.CandidateOpenAPI() {
+			t.Fatal("OAuth served contract differs")
+		}
 	}
 }

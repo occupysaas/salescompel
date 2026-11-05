@@ -310,3 +310,16 @@ sources:
     version: 059bc87 reviewed locally
     claim: Independent bounded candidate transaction contract; public locator not fetched
     extraction: documentation-reviewed
+
+  - id: oauth-implementation-plan26
+    url: https://github.com/occupysaas/salescompel/blob/bf67743aca880baba1b3bc8ed1e91a4c7a83c4fa/internal/platform/oauth_http.go
+    accessedAt: 2026-11-04
+    version: bf67743 reviewed locally
+    claim: Candidate OAuth and identity implementation; public locator not fetched
+    extraction: documentation-reviewed
+  - id: oauth-authorization-page-plan26
+    url: https://github.com/occupysaas/salescompel/blob/bf67743aca880baba1b3bc8ed1e91a4c7a83c4fa/internal/platform/oauth_page.go
+    accessedAt: 2026-11-04
+    version: bf67743 reviewed locally
+    claim: Candidate OAuth authorization form and redirect implementation; public locator not fetched
+    extraction: documentation-reviewed

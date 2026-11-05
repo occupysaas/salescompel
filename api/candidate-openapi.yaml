@@ -4,7 +4,7 @@ info:
   title: SalesCompel implemented candidate API
   version: 0.1.0
   description: Object and field API names are case-insensitive; responses use canonical names. REST body duplicates use the last value; case-differing Composite fields reject. Text equality uses simple Unicode case mapping without normalization. ORDER BY defaults to nulls first in both directions and honors NULLS FIRST or NULLS LAST. Independent candidate contract, not Salesforce parity certification. Only the listed
-    canonical paths are implemented. Provisioned bearer credentials are not OAuth login/refresh.
+    canonical paths are implemented. Provisioned bearer credentials and OAuth login/refresh are supported.
     Field policy, Unicode/nonblank validation, SOQL execution, own-user identity and tenant
     isolation remain server checks. Null/omission and the columns extension reflect existing
     candidate behavior. No Composite, collections, Bulk, pagination or metadata deployment is
@@ -27,6 +27,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Versions"
         "400":
+          $ref: "#/components/responses/Error"
+        "403":
           $ref: "#/components/responses/Error"
         "401":
           $ref: "#/components/responses/Error"
@@ -51,6 +53,8 @@ paths:
                 $ref: "#/components/schemas/Resources"
         "400":
           $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
         "401":
           $ref: "#/components/responses/Error"
         "404":
@@ -73,6 +77,8 @@ paths:
                 $ref: "#/components/schemas/UserInfo"
         "400":
           $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
         "401":
           $ref: "#/components/responses/Error"
         "404":
@@ -94,6 +100,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/OwnUser"
         "400":
+          $ref: "#/components/responses/Error"
+        "403":
           $ref: "#/components/responses/Error"
         "401":
           $ref: "#/components/responses/Error"
@@ -126,6 +134,8 @@ paths:
                 $ref: "#/components/schemas/OwnUser"
         "400":
           $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
         "401":
           $ref: "#/components/responses/Error"
         "404":
@@ -157,6 +167,8 @@ paths:
                 $ref: "#/components/schemas/GlobalDescribe"
         "400":
           $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
         "401":
           $ref: "#/components/responses/Error"
         "404":
@@ -179,6 +191,8 @@ paths:
                 $ref: "#/components/schemas/ObjectDescribe"
         "400":
           $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
         "401":
           $ref: "#/components/responses/Error"
         "404":
@@ -200,6 +214,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/CreateResult"
         "400":
+          $ref: "#/components/responses/Error"
+        "403":
           $ref: "#/components/responses/Error"
         "401":
           $ref: "#/components/responses/Error"
@@ -229,6 +245,8 @@ paths:
                 $ref: "#/components/schemas/AccountRead"
         "400":
           $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
         "401":
           $ref: "#/components/responses/Error"
         "404":
@@ -255,6 +273,8 @@ paths:
         "204":
           description: No content
         "400":
+          $ref: "#/components/responses/Error"
+        "403":
           $ref: "#/components/responses/Error"
         "401":
           $ref: "#/components/responses/Error"
@@ -289,6 +309,8 @@ paths:
           description: No content
         "400":
           $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
         "401":
           $ref: "#/components/responses/Error"
         "404":
@@ -321,6 +343,8 @@ paths:
                 $ref: "#/components/schemas/ObjectDescribe"
         "400":
           $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
         "401":
           $ref: "#/components/responses/Error"
         "404":
@@ -342,6 +366,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/CreateResult"
         "400":
+          $ref: "#/components/responses/Error"
+        "403":
           $ref: "#/components/responses/Error"
         "401":
           $ref: "#/components/responses/Error"
@@ -371,6 +397,8 @@ paths:
                 $ref: "#/components/schemas/ContactRead"
         "400":
           $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
         "401":
           $ref: "#/components/responses/Error"
         "404":
@@ -397,6 +425,8 @@ paths:
         "204":
           description: No content
         "400":
+          $ref: "#/components/responses/Error"
+        "403":
           $ref: "#/components/responses/Error"
         "401":
           $ref: "#/components/responses/Error"
@@ -430,6 +460,8 @@ paths:
         "204":
           description: No content
         "400":
+          $ref: "#/components/responses/Error"
+        "403":
           $ref: "#/components/responses/Error"
         "401":
           $ref: "#/components/responses/Error"
@@ -469,6 +501,8 @@ paths:
                 $ref: "#/components/schemas/UpsertResult"
         "400":
           $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
         "401":
           $ref: "#/components/responses/Error"
         "404":
@@ -506,6 +540,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/QueryResult"
         "400":
+          $ref: "#/components/responses/Error"
+        "403":
           $ref: "#/components/responses/Error"
         "401":
           $ref: "#/components/responses/Error"
@@ -553,6 +589,8 @@ paths:
                 minLength: 1
         "400":
           $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
         "401":
           $ref: "#/components/responses/Error"
         "404":
@@ -590,6 +628,8 @@ paths:
                 $ref: "#/components/schemas/CompositeResponse"
         "400":
           $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
         "401":
           $ref: "#/components/responses/Error"
         "404":
@@ -598,12 +638,275 @@ paths:
           $ref: "#/components/responses/MethodError"
         "500":
           $ref: "#/components/responses/Error"
+  /services/oauth2/token:
+    post:
+      operationId: candidateOAuthToken
+      x-source:
+      - https://github.com/occupysaas/salescompel/blob/bf67743aca880baba1b3bc8ed1e91a4c7a83c4fa/internal/platform/oauth_http.go
+      responses:
+        '200':
+          description: Candidate OAuth response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OAuthToken'
+        '400':
+          description: Candidate OAuth response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OAuthError'
+        '405':
+          description: Candidate OAuth response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OAuthError'
+        '500':
+          description: Candidate OAuth response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OAuthError'
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OAuthTokenRequest'
+  /services/oauth2/revoke:
+    post:
+      operationId: candidateOAuthRevoke
+      x-source:
+      - https://github.com/occupysaas/salescompel/blob/bf67743aca880baba1b3bc8ed1e91a4c7a83c4fa/internal/platform/oauth_http.go
+      responses:
+        '200':
+          description: Token revoked
+        '400':
+          description: Candidate OAuth response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OAuthError'
+        '405':
+          description: Candidate OAuth response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OAuthError'
+        '500':
+          description: Candidate OAuth response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OAuthError'
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OAuthRevokeRequest'
+  /services/oauth2/introspect:
+    post:
+      operationId: candidateOAuthIntrospect
+      x-source:
+      - https://github.com/occupysaas/salescompel/blob/bf67743aca880baba1b3bc8ed1e91a4c7a83c4fa/internal/platform/oauth_http.go
+      responses:
+        '200':
+          description: Candidate OAuth response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OAuthIntrospection'
+        '400':
+          description: Candidate OAuth response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OAuthError'
+        '405':
+          description: Candidate OAuth response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OAuthError'
+        '500':
+          description: Candidate OAuth response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OAuthError'
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OAuthIntrospectRequest'
+  /services/oauth2/authorize:
+    get:
+      operationId: candidateOAuthAuthorizeForm
+      x-source:
+      - https://github.com/occupysaas/salescompel/blob/bf67743aca880baba1b3bc8ed1e91a4c7a83c4fa/internal/platform/oauth_page.go
+      responses:
+        '200':
+          description: Candidate OAuth response
+          content:
+            text/html:
+              schema:
+                $ref: '#/components/schemas/OAuthHTML'
+        '302':
+          description: Candidate OAuth response
+          content:
+            text/html:
+              schema:
+                $ref: '#/components/schemas/OAuthHTML'
+        '400':
+          description: Candidate OAuth response
+          content:
+            text/html:
+              schema:
+                $ref: '#/components/schemas/OAuthHTML'
+      security: []
+      parameters:
+      - name: client_id
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: redirect_uri
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: response_type
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: scope
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: state
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: code_challenge
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: code_challenge_method
+        in: query
+        required: false
+        schema:
+          type: string
+    post:
+      operationId: candidateOAuthAuthorizeSubmit
+      x-source:
+      - https://github.com/occupysaas/salescompel/blob/bf67743aca880baba1b3bc8ed1e91a4c7a83c4fa/internal/platform/oauth_page.go
+      responses:
+        '200':
+          description: Candidate OAuth response
+          content:
+            text/html:
+              schema:
+                $ref: '#/components/schemas/OAuthHTML'
+        '303':
+          description: Redirect to registered callback
+        '400':
+          description: Candidate OAuth response
+          content:
+            text/html:
+              schema:
+                $ref: '#/components/schemas/OAuthHTML'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OAuthError'
+        '500':
+          description: Candidate OAuth response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OAuthError'
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OAuthAuthorizeRequest'
+  /.well-known/openid-configuration:
+    get:
+      operationId: candidateOAuthDiscovery
+      x-source:
+      - https://github.com/occupysaas/salescompel/blob/bf67743aca880baba1b3bc8ed1e91a4c7a83c4fa/internal/platform/oauth_http.go
+      responses:
+        '200':
+          description: Candidate OAuth response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OAuthDiscovery'
+        '405':
+          $ref: '#/components/responses/MethodError'
+      security: []
+  /id/{orgId}/{userId}:
+    get:
+      operationId: candidateOAuthIdentity
+      x-source:
+      - https://github.com/occupysaas/salescompel/blob/bf67743aca880baba1b3bc8ed1e91a4c7a83c4fa/internal/platform/oauth_http.go
+      responses:
+        '200':
+          description: Candidate OAuth response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OAuthIdentity'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '405':
+          $ref: '#/components/responses/Error'
+      parameters:
+      - name: orgId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       description: Provisioned candidate token; no OAuth flow
+    oauth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: /services/oauth2/authorize
+          tokenUrl: /services/oauth2/token
+          refreshUrl: /services/oauth2/token
+          scopes:
+            api: Data API
+            id: Identity
+            refresh_token: Refresh access
+        clientCredentials:
+          tokenUrl: /services/oauth2/token
+          scopes:
+            api: Data API
+            id: Identity
   schemas:
     Error:
       type: object
@@ -950,6 +1253,7 @@ components:
             oneOf:
               - $ref: "#/components/schemas/AccountProjection"
               - $ref: "#/components/schemas/ContactProjection"
+              - $ref: "#/components/schemas/OrganizationProjection"
         columnMetadata:
           type: array
           items:
@@ -1082,10 +1386,10 @@ components:
       type: object
       additionalProperties: false
       required:
-        - user_id
-        - organization_id
-        - preferred_username
-        - username
+      - user_id
+      - organization_id
+      - preferred_username
+      - username
       properties:
         user_id:
           type: string
@@ -1099,6 +1403,8 @@ components:
         username:
           type: string
           minLength: 1
+        sub:
+          type: string
     OwnUser:
       type: object
       additionalProperties: false
@@ -1363,6 +1669,216 @@ components:
           maxItems: 25
           items:
             $ref: "#/components/schemas/CompositeSubresponse"
+    OAuthError:
+      type: object
+      additionalProperties: false
+      properties:
+        error:
+          type: string
+          minLength: 1
+        error_description:
+          type: string
+      required:
+      - error
+    OAuthHTML:
+      type: string
+      minLength: 1
+    OAuthTokenRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        grant_type:
+          type: string
+        client_id:
+          type: string
+        client_secret:
+          type: string
+        scope:
+          type: string
+        code:
+          type: string
+        redirect_uri:
+          type: string
+        code_verifier:
+          type: string
+        refresh_token:
+          type: string
+        assertion:
+          type: string
+      required:
+      - grant_type
+    OAuthRevokeRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        token:
+          type: string
+      required:
+      - token
+    OAuthIntrospectRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        token:
+          type: string
+        client_id:
+          type: string
+        client_secret:
+          type: string
+      required:
+      - token
+    OAuthAuthorizeRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        request_id:
+          type: string
+        decision:
+          type: string
+        username:
+          type: string
+        password:
+          type: string
+      required:
+      - request_id
+      - decision
+    OAuthToken:
+      type: object
+      additionalProperties: false
+      properties:
+        access_token:
+          type: string
+        scope:
+          type: string
+        instance_url:
+          type: string
+        id:
+          type: string
+        issued_at:
+          type: string
+        refresh_token:
+          type: string
+        signature:
+          type: string
+        token_type:
+          const: Bearer
+      required:
+      - access_token
+      - scope
+      - instance_url
+      - id
+      - issued_at
+      - token_type
+    OAuthIntrospection:
+      type: object
+      additionalProperties: false
+      properties:
+        active:
+          type: boolean
+        scope:
+          type: string
+        client_id:
+          type: string
+        username:
+          type: string
+        sub:
+          type: string
+        token_type:
+          type: string
+        exp:
+          type: integer
+        iat:
+          type: integer
+      required:
+      - active
+    OAuthIdentity:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+        user_id:
+          type: string
+        organization_id:
+          type: string
+        username:
+          type: string
+      required:
+      - id
+      - user_id
+      - organization_id
+      - username
+    OAuthDiscovery:
+      type: object
+      additionalProperties: false
+      properties:
+        issuer:
+          type: string
+        authorization_endpoint:
+          type: string
+        token_endpoint:
+          type: string
+        revocation_endpoint:
+          type: string
+        introspection_endpoint:
+          type: string
+        userinfo_endpoint:
+          type: string
+        response_types_supported:
+          type: array
+          items:
+            type: string
+        grant_types_supported:
+          type: array
+          items:
+            type: string
+        scopes_supported:
+          type: array
+          items:
+            type: string
+        code_challenge_methods_supported:
+          type: array
+          items:
+            type: string
+        token_endpoint_auth_methods_supported:
+          type: array
+          items:
+            type: string
+      required:
+      - issuer
+      - authorization_endpoint
+      - token_endpoint
+      - revocation_endpoint
+      - introspection_endpoint
+      - userinfo_endpoint
+      - response_types_supported
+      - grant_types_supported
+      - scopes_supported
+      - code_challenge_methods_supported
+      - token_endpoint_auth_methods_supported
+    OrganizationProjection:
+      type: object
+      additionalProperties: false
+      properties:
+        Name:
+          type: string
+        InstanceName:
+          type: 'null'
+        IsSandbox:
+          const: false
+        TrialExpirationDate:
+          type: 'null'
+        NamespacePrefix:
+          type: 'null'
+        OrganizationType:
+          const: SalesCompel
+      required:
+      - Name
+      - InstanceName
+      - IsSandbox
+      - TrialExpirationDate
+      - NamespacePrefix
+      - OrganizationType
   responses:
     Error:
       description: Current candidate response
