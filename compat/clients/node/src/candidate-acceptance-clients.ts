@@ -8,7 +8,7 @@ import {
 } from "./candidate-acceptance-fixtures.ts";
 import type { ParsedResult, GateID } from "./candidate-acceptance-contract.ts";
 export const stepResult = (
-  c: GateContext,
+  c: Pick<GateContext, "runId">,
   suite: GateID,
   ids: string[],
 ): ParsedResult => ({

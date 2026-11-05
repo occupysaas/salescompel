@@ -26,7 +26,7 @@ export type Requester = (
   body?: unknown,
 ) => Promise<Response>;
 export async function candidateRequest(
-  c: GateContext,
+  c: Pick<GateContext, "url" | "scratch" | "tokens">,
   role: FixtureEvent["principal"],
   path: string,
   method = "GET",
