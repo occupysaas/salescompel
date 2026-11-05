@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { createCandidateTrafficValidator } from "../../compat/clients/node/src/candidate-openapi-traffic.ts";
 const { parse } = createRequire(
@@ -68,7 +69,13 @@ test("OAuth login page completes authorization in Chromium", async ({
       .getByLabel("Password", { exact: true })
       .fill("deliberately-wrong-password");
     await page.getByRole("button", { name: "Allow", exact: true }).click();
-    await expect(page.getByRole("alert")).toBeVisible();
+    const messages = JSON.parse(
+      await readFile(
+        new URL("../../locales/messages/en_US.json", import.meta.url),
+        "utf8",
+      ),
+    );
+    await expect(page.getByRole("alert")).toHaveText(messages["oauth.failure"]);
     // Locale proof creates its own pending request without completing it.
     const rtl = await browser.newContext({
       ignoreHTTPSErrors: true,

@@ -262,7 +262,7 @@ async function main(c: GateContext) {
           "--grants",
           "authorization_code,refresh_token,urn:ietf:params:oauth:grant-type:jwt-bearer,client_credentials",
           "--scopes",
-          "api,web,refresh_token",
+          "api,web,refresh_token,id",
           "--jwt-cert",
           join(c.scratch, "cert.pem"),
           "--jwt-user",
@@ -611,6 +611,7 @@ async function main(c: GateContext) {
       client = app.client_id,
       secret = app.client_secret,
       callbackURI = redirect,
+      scope = "api web refresh_token",
     ) {
       const verifier = randomBytes(48).toString("base64url");
       const auth = new URL(c.url + "/services/oauth2/authorize");
@@ -618,7 +619,7 @@ async function main(c: GateContext) {
         client_id: client,
         redirect_uri: callbackURI,
         response_type: "code",
-        scope: "api web refresh_token",
+        scope,
         code_challenge: createHash("sha256")
           .update(verifier)
           .digest("base64url"),
@@ -655,6 +656,28 @@ async function main(c: GateContext) {
         code_verifier: verifier,
       });
     }
+    const identityOnly = await rawLogin(
+      users.admin,
+      app.client_id,
+      app.client_secret,
+      redirect,
+      "id",
+    );
+    ensure(identityOnly.access_token);
+    for (const path of [
+      "/services/data/v65.0/query?q=" +
+        encodeURIComponent("SELECT Id FROM Account"),
+      "/services/data/v65.0/openapi.yaml",
+    ]) {
+      const denied = await request(c.url + path, "GET", undefined, {
+        Authorization: "Bearer " + identityOnly.access_token,
+      });
+      ensure(
+        denied.status === 403 &&
+          denied.json?.[0]?.errorCode === "INSUFFICIENT_ACCESS",
+      );
+    }
+    console.error("OAuth id-only scope data/OpenAPI denial passed");
     const restricted = await rawLogin(users.restricted);
     ensure(restricted.access_token);
     const denied = await request(
