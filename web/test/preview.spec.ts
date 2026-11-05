@@ -173,6 +173,45 @@ test("long sample text, forms and evidence fit desktop and mobile in both themes
   ).toBeLessThanOrEqual(390);
 });
 
+const connectedAccount = {
+  name: "Account",
+  label: "Account",
+  labelPlural: "Accounts",
+  createable: true,
+  updateable: true,
+  deletable: true,
+  queryable: true,
+  fields: [
+    {
+      name: "Id",
+      label: "Id",
+      type: "id",
+      nillable: false,
+      createable: false,
+      updateable: false,
+      externalId: false,
+      length: 0,
+      referenceTo: [],
+    },
+    {
+      name: "Name",
+      label: "Name",
+      type: "string",
+      nillable: false,
+      createable: true,
+      updateable: true,
+      externalId: false,
+      length: 80,
+      referenceTo: [],
+    },
+  ],
+};
+const connectedDiscovery = {
+  sobjects: [connectedAccount],
+  encoding: "UTF-8",
+  maxBatchSize: 1,
+};
+
 test("leaving the connected route returns to a credential-free preview and requires reconnect", async ({
   page,
 }) => {
@@ -183,20 +222,11 @@ test("leaving the connected route returns to a credential-free preview and requi
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify(
-        route.request().url().includes("/describe")
-          ? {
-              fields: [
-                {
-                  name: "Name",
-                  type: "string",
-                  nillable: false,
-                  createable: true,
-                  updateable: true,
-                  length: 80,
-                },
-              ],
-            }
-          : { records: [] },
+        route.request().url().endsWith("/sobjects")
+          ? connectedDiscovery
+          : route.request().url().includes("/describe")
+            ? connectedAccount
+            : { records: [], totalSize: 0, done: true },
       ),
     });
   });
@@ -206,16 +236,19 @@ test("leaving the connected route returns to a credential-free preview and requi
     .fill("synthetic-token-for-browser-test");
   await page.getByRole("button", { name: "Connect", exact: true }).click();
   await expect(page.getByRole("button", { name: "New record" })).toBeVisible();
-  expect(auth).toHaveLength(2);
+  expect(auth).toHaveLength(3);
+  expect(
+    auth.every((value) => value === "Bearer synthetic-token-for-browser-test"),
+  ).toBe(true);
   await page.getByRole("link", { name: "Explore the prototype" }).click();
   await expect(
     page.getByRole("heading", { name: "Accounts", exact: true }),
   ).toBeVisible();
-  expect(auth).toHaveLength(2);
+  expect(auth).toHaveLength(3);
   await page.getByRole("link", { name: "Return to connected app" }).click();
   await expect(page.getByLabel("Access token")).toHaveValue("");
   await expect(page.getByRole("button", { name: "New record" })).toHaveCount(0);
-  expect(auth).toHaveLength(2);
+  expect(auth).toHaveLength(3);
 });
 
 test("pending connected reads cannot dispatch follow-up requests inside preview", async ({
@@ -239,13 +272,17 @@ test("pending connected reads cannot dispatch follow-up requests inside preview"
       await route
         .fulfill({
           contentType: "application/json",
-          body: JSON.stringify({ fields: [{ name: "Name" }] }),
+          body: JSON.stringify(connectedAccount),
         })
         .catch(() => {});
     } else
       await route.fulfill({
         contentType: "application/json",
-        body: JSON.stringify({ records: [] }),
+        body: JSON.stringify(
+          route.request().url().endsWith("/sobjects")
+            ? connectedDiscovery
+            : { records: [], totalSize: 0, done: true },
+        ),
       });
   });
   await page.goto("/#/");
@@ -259,7 +296,8 @@ test("pending connected reads cannot dispatch follow-up requests inside preview"
   release();
   // Let the deliberately held response propagate before asserting no follow-up.
   await page.waitForTimeout(250);
-  expect(requests).toHaveLength(1);
+  expect(requests).toHaveLength(2);
+  expect(requests.some((url) => url.includes("/query"))).toBe(false);
 });
 
 test("primary save button retains AA contrast on hover in both themes", async ({
