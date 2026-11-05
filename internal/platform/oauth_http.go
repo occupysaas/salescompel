@@ -158,6 +158,18 @@ func handleToken(s *Store, o Options, w http.ResponseWriter, r *http.Request) {
 		writeOAuthError(w, grantError("unsupported_grant_type"))
 		return
 	}
+	// Validate before a code is redeemed or an assertion ID is claimed. Code
+	// and refresh grants retain their stored scopes regardless of this subset.
+	requested := a.Scopes
+	if v.Has("scope") {
+		requested = strings.Fields(v.Get("scope"))
+		for _, scope := range requested {
+			if !slices.Contains(a.Scopes, scope) {
+				writeOAuthError(w, grantError("invalid_scope"))
+				return
+			}
+		}
+	}
 	var tokens IssuedTokens
 	switch grant {
 	case "authorization_code":
@@ -198,16 +210,6 @@ func handleToken(s *Store, o Options, w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		scopes := []string{}
-		requested := a.Scopes
-		if v.Get("scope") != "" {
-			requested = strings.Fields(v.Get("scope"))
-			for _, scope := range requested {
-				if !slices.Contains(a.Scopes, scope) {
-					writeOAuthError(w, grantError("invalid_scope"))
-					return
-				}
-			}
-		}
 		for _, scope := range requested {
 			if scope != "refresh_token" && scope != "offline_access" {
 				scopes = append(scopes, scope)

@@ -502,3 +502,36 @@ func TestExpiredCodeReplayRevokesRefreshedDescendants(t *testing.T) {
 		t.Fatal("refresh survived expired-code replay")
 	}
 }
+
+func TestIssueTokensCleansExpiredJWTIDs(t *testing.T) {
+	s, g, n := tokenFixture(t)
+	ctx := context.Background()
+	for _, row := range []struct {
+		id string
+		at time.Time
+	}{{"expired-unrelated", n.Add(-time.Second)}, {"exact-boundary", n}, {"future", n.Add(time.Second)}} {
+		if _, e := s.pool.Exec(ctx, "INSERT INTO oauth_jwt_ids(client_id,jti,expires_at) VALUES($1,$2,$3)", g.ClientID, row.id, row.at); e != nil {
+			t.Fatal(e)
+		}
+	}
+	issueTest(t, s, g, n)
+	var ids []string
+	rows, e := s.pool.Query(ctx, "SELECT jti FROM oauth_jwt_ids WHERE client_id=$1 ORDER BY jti", g.ClientID)
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id string
+		if e = rows.Scan(&id); e != nil {
+			t.Fatal(e)
+		}
+		ids = append(ids, id)
+	}
+	if e = rows.Err(); e != nil {
+		t.Fatal(e)
+	}
+	if strings.Join(ids, ",") != "exact-boundary,future" {
+		t.Fatal(ids)
+	}
+}

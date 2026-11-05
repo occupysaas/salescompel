@@ -123,6 +123,11 @@ func insertTokens(ctx context.Context, tx pgx.Tx, g TokenGrant, now time.Time, t
 	if _, e = tx.Exec(ctx, "DELETE FROM oauth_access_tokens WHERE expires_at<=$1", now); e != nil {
 		return v, e
 	}
+	// JWT IDs remain reserved at the exact validity boundary. Used codes stay
+	// available for replay detection and descendant-token revocation.
+	if _, e = tx.Exec(ctx, "DELETE FROM oauth_jwt_ids WHERE expires_at<$1", now); e != nil {
+		return v, e
+	}
 	v.Access, e = accessTokenValue(g.User.Tenant)
 	if e != nil {
 		return IssuedTokens{}, e
