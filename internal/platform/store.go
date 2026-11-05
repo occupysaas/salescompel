@@ -15,6 +15,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"salescompel/internal/metadata"
+	"salescompel/internal/migration"
 )
 
 //go:embed schema.sql
@@ -30,38 +32,18 @@ type database interface {
 	QueryRow(context.Context, string, ...any) pgx.Row
 }
 
-func Open(ctx context.Context, url string) (*Store, error) {
+func OpenOperator(ctx context.Context, url string) (*Store, error) {
 	if url == "" {
-		return nil, errors.New("DATABASE_URL required")
+		return nil, errors.New("MIGRATION_DATABASE_URL required")
 	}
-	pool, err := pgxpool.New(ctx, url)
-	if err != nil {
+	pool, e := pgxpool.New(ctx, url)
+	if e != nil {
 		return nil, errors.New("invalid database configuration")
 	}
-	ok := false
-	defer func() {
-		if !ok {
-			pool.Close()
-		}
-	}()
-	tx, err := pool.Begin(ctx)
-	if err != nil {
-		return nil, errors.New("database unavailable")
+	if e = migration.CheckHead(ctx, pool); e != nil {
+		pool.Close()
+		return nil, e
 	}
-	defer tx.Rollback(ctx)
-	if _, err = tx.Exec(ctx, "SELECT pg_advisory_xact_lock(739102)"); err != nil {
-		return nil, err
-	}
-	if _, err = tx.Exec(ctx, schema); err != nil {
-		return nil, err
-	}
-	if err = ensureCatalog(ctx, tx); err != nil {
-		return nil, err
-	}
-	if err = tx.Commit(ctx); err != nil {
-		return nil, err
-	}
-	ok = true
 	return &Store{pool: pool, passwordWork: make(chan struct{}, 4)}, nil
 }
 func (s *Store) Close()          { s.pool.Close() }
@@ -76,6 +58,9 @@ func (s *Store) Provision(ctx context.Context, token string, p Principal) error 
 	}
 	defer tx.Rollback(ctx)
 	if _, err = tx.Exec(ctx, "INSERT INTO tenants(id) VALUES($1) ON CONFLICT DO NOTHING", p.Tenant); err != nil {
+		return err
+	}
+	if err = metadata.SeedTenant(ctx, tx, p.Tenant); err != nil {
 		return err
 	}
 	// A token cannot silently be reassigned to a different principal.

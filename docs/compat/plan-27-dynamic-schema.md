@@ -23,7 +23,7 @@ CANDIDATE_DISPOSABLE=yes TEST_DATABASE_URL=<disposable-url> GOTOOLCHAIN=go1.25.0
 ```
 
 PostgreSQL 17 in a local disposable container; Go 1.25.0; linux amd64,
-Intel Core i5-13600K (as reported by Go). Seed 2701, 100,000 records, 10 tenants,
+12th Gen Intel Core i7-12700H (as reported by Go). Seed 2701, 100,000 records, 10 tenants,
 20/100 text fields, balanced/skewed distribution, 1/8 workers. Three repetitions
 passed, 96 operation/configuration series, zero SQL errors. Workload source
 records schema/index generation; raw output retains plans, size, p50/p95,

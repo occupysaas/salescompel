@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/jackc/pgx/v5"
 	"net/url"
+	"salescompel/internal/metadata"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -81,6 +82,9 @@ func (s *Store) CreateUser(ctx context.Context, tenant, username, password, role
 	}
 	defer tx.Rollback(ctx)
 	if _, e = tx.Exec(ctx, "INSERT INTO tenants(id) VALUES($1) ON CONFLICT DO NOTHING", tenant); e != nil {
+		return "", e
+	}
+	if e = metadata.SeedTenant(ctx, tx, tenant); e != nil {
 		return "", e
 	}
 	if _, e = tx.Exec(ctx, "INSERT INTO users(id,tenant_id,username,username_canonical,password_hash,role) VALUES($1,$2,$3,$4,$5,$6)", id, tenant, username, strings.ToLower(username), h, role); e != nil {

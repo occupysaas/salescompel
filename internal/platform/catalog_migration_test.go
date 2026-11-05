@@ -17,10 +17,7 @@ func migrationDB(t *testing.T) (string, *pgx.Conn) {
 	t.Helper()
 	databaseURL := os.Getenv("TEST_DATABASE_URL")
 	if databaseURL == "" {
-		if os.Getenv("CI") != "" {
-			t.Fatal("TEST_DATABASE_URL required")
-		}
-		t.Skip("TEST_DATABASE_URL required")
+		t.Fatal("TEST_DATABASE_URL required")
 	}
 	ctx := context.Background()
 	c, e := pgx.Connect(ctx, databaseURL)
@@ -29,24 +26,20 @@ func migrationDB(t *testing.T) (string, *pgx.Conn) {
 	}
 	name := fmt.Sprintf("migration_%d", time.Now().UnixNano())
 	ident := pgx.Identifier{name}.Sanitize()
-	if _, e = c.Exec(ctx, "CREATE SCHEMA "+ident); e != nil {
+	if _, e = c.Exec(ctx, "CREATE DATABASE "+ident); e != nil {
 		t.Fatal(e)
 	}
-	t.Cleanup(func() { c.Exec(ctx, "DROP SCHEMA "+ident+" CASCADE"); c.Close(ctx) })
 	parsed, e := url.Parse(databaseURL)
 	if e != nil {
 		t.Fatal(e)
 	}
-	query := parsed.Query()
-	query.Set("search_path", name)
-	parsed.RawQuery = query.Encode()
-	isolated := parsed.String()
-	db, e := pgx.Connect(ctx, isolated)
+	parsed.Path = "/" + name
+	db, e := pgx.Connect(ctx, parsed.String())
 	if e != nil {
 		t.Fatal(e)
 	}
-	t.Cleanup(func() { db.Close(ctx) })
-	return isolated, db
+	t.Cleanup(func() { db.Close(ctx); c.Exec(ctx, "DROP DATABASE "+ident+" WITH(FORCE)"); c.Close(ctx) })
+	return parsed.String(), db
 }
 func sqlDo(t *testing.T, c *pgx.Conn, q string, args ...any) {
 	t.Helper()

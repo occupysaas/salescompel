@@ -2,9 +2,12 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"os"
+	"salescompel/internal/migration"
 	"strings"
 	"testing"
 	"time"
@@ -15,7 +18,15 @@ func TestAdminCommands(t *testing.T) {
 	if dsn == "" {
 		t.Fatal("TEST_DATABASE_URL required")
 	}
-	t.Setenv("DATABASE_URL", dsn)
+	t.Setenv("MIGRATION_DATABASE_URL", dsn)
+	pool, e := pgxpool.New(context.Background(), dsn)
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer pool.Close()
+	if e = migration.Up(context.Background(), pool); e != nil {
+		t.Fatal(e)
+	}
 	t.Setenv("SALESCOMPEL_TENANT", fmt.Sprintf("admin-%d", time.Now().UnixNano()))
 	t.Setenv("SALESCOMPEL_USERNAME", os.Getenv("SALESCOMPEL_TENANT")+"@example.com")
 	t.Setenv("SALESCOMPEL_PASSWORD", "secret-password")

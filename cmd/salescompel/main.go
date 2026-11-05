@@ -24,7 +24,17 @@ func dispatch(args []string, out io.Writer) error {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
-	s, err := platform.Open(ctx, os.Getenv("DATABASE_URL"))
+	if args[0] == "migrate" {
+		migrationCtx, stop := context.WithTimeout(context.Background(), 30*time.Minute)
+		defer stop()
+		return migrateCommand(migrationCtx, args, out)
+	}
+	if args[0] == "schema" {
+		schemaCtx, stop := context.WithTimeout(context.Background(), 30*time.Second)
+		defer stop()
+		return schemaCommand(schemaCtx, args, out)
+	}
+	s, err := platform.OpenOperator(ctx, os.Getenv("MIGRATION_DATABASE_URL"))
 	if err != nil {
 		return err
 	}
