@@ -1,8 +1,8 @@
 # Plan 26 — OAuth Login and Identity Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
-**Status:** Draft for maintainer review, 2026-11-04. Not started.
+**Status:** Implemented and verified, 2026-11-04. See [decisions and verification](../../compat/plan-26-oauth-login.md).
 
 **Goal:** Let unmodified `sf` and JSforce log in to the candidate through OAuth by changing only the login URL, with expiring, revocable tokens that carry the existing tenant and role.
 
@@ -53,25 +53,25 @@ Stop the container once all tasks finish: `docker stop plan26-pg`.
 **Interfaces:**
 - Produces: the decision record later tasks append to, and the list of browser launcher names Task 9 uses.
 
-- [ ] **Step 1: Repeat the client capture with a real browser**
+- [x] **Step 1: Repeat the client capture with a real browser**
 
 In a scratch directory, with `HOME` and `SF_STATE_FOLDER` isolated, run a local mock that answers the spec's "What the CLI sends" table, and run `sf org login web --instance-url <mock> --json` with launcher stand-ins on `PATH` (`xdg-open`, `open`, `google-chrome`, `chromium`, `firefox`, `sensible-browser`, `x-www-browser`) that record the URL. Open the recorded URL in Playwright Chromium, so the CLI's final relative redirect is followed.
 
 Expected: the command exits 0. If it does not, record what it needed and fix the affected row in the spec before going on. Commit no mock, key or auth file.
 
-- [ ] **Step 2: Confirm the rest of the table on `sf org login jwt`**
+- [x] **Step 2: Confirm the rest of the table on `sf org login jwt`**
 
 Decode one assertion's header and payload. Record `alg`, `aud`, and the scale of `exp` and `iat`, and the verifier's length from the web capture. Expected: the spec's values. A difference is a spec correction, not a failure.
 
-- [ ] **Step 3: Review changelogs and, if the maintainer supplies a session, the trial org**
+- [x] **Step 3: Review changelogs and, if the maintainer supplies a session, the trial org**
 
 Review Salesforce release notes since the last plan for OAuth changes. With a session, check the Documented rows, following `CLEAN_ROOM.md`. Without one, leave them unverified and say so. This step never blocks the plan. A contradiction changes the spec's row, unless the change would break a client this plan must support, in which case the client wins and the contradiction is listed as a gap.
 
-- [ ] **Step 4: Write the record**
+- [x] **Step 4: Write the record**
 
 Create `docs/compat/plan-26-oauth-login.md` with the observed values, tool versions, reproduction steps, sources used and session status. It contains no credentials.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add docs/compat/plan-26-oauth-login.md docs/superpowers/specs/2026-11-04-plan-26-oauth-login-identity-design.md
@@ -94,13 +94,13 @@ git commit -m "docs: record Plan 26 client observations"
   - `parseJWT(assertion string) (JWTClaims, parsedJWT, error)`, `verifyJWT(p parsedJWT, cert *x509.Certificate, audiences []string, now time.Time) error`
   - `parseJWTCertificate(pem string, now time.Time) (*x509.Certificate, error)`
 
-- [ ] **Step 1: Write failing tests in `oauth_secrets_test.go`**
+- [x] **Step 1: Write failing tests in `oauth_secrets_test.go`**
 
 `TestPasswordHash`: the output starts `$argon2id$v=19$m=19456,t=2,p=1$`, verifies with the right password, fails with a wrong one, and two hashes of one password differ. `verifyPassword` returns false, without panicking, for a malformed string and for one with `m` above 262144. `TestNewSecret`: 64 lowercase hex characters, and two calls differ. `TestOrgID`: 18 characters with prefix `00D`, the same value for the same tenant, and a different one for another tenant. Its first 15 characters plus the checksum satisfy `idChecksum`. `TestAccessTokenValue`: matches `^00D[A-Za-z0-9]{12}![0-9a-f]{64}$`.
 
 `TestVerifyPKCE`: with the RFC 7636 appendix B pair (verifier `dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk`, challenge `E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM`) it returns true. A 171-character verifier with its matching challenge returns true. Lengths 42 and 257 return false, as does a verifier with a character outside `[A-Za-z0-9._~-]`.
 
-- [ ] **Step 2: Write failing tests in `oauth_jwt_test.go`**
+- [x] **Step 2: Write failing tests in `oauth_jwt_test.go`**
 
 Generate an RSA 2048 key and self-signed certificate in the test. Base time `now`, audiences `{"https://h", "https://h/"}`.
 
@@ -110,15 +110,15 @@ Generate an RSA 2048 key and self-signed certificate in the test. Base time `now
 
 `TestJWTCertificate`: rejects an expired certificate, an RSA 1024 certificate, an ECDSA certificate and malformed PEM.
 
-- [ ] **Step 3: Run tests to verify they fail**
+- [x] **Step 3: Run tests to verify they fail**
 
 Run: `GOTOOLCHAIN=go1.25.0 go test ./internal/platform -run 'PasswordHash|NewSecret|OrgID|AccessTokenValue|VerifyPKCE|JWT' -count=1`. Expected: FAIL, undefined functions.
 
-- [ ] **Step 4: Add the dependency and implement**
+- [x] **Step 4: Add the dependency and implement**
 
 `GOTOOLCHAIN=go1.25.0 go get golang.org/x/crypto@v0.42.0`, then confirm `go.mod` still says `go 1.25.0`. Add the `THIRD_PARTY_NOTICES.md` entry in the existing dependency format. Use Argon2id with m=19456, t=2, p=1, a 16-byte salt and a 32-byte key. Cap parsed parameters so a hostile stored value cannot exhaust memory. `verifyDummyPassword` hashes against a package-level hash of a random value. The 10^11 threshold selects the `exp` branch; see the spec's JWT table.
 
-- [ ] **Step 5: Run tests to verify they pass, and commit**
+- [x] **Step 5: Run tests to verify they pass, and commit**
 
 Run the Step 3 command. Expected: PASS.
 
@@ -148,7 +148,7 @@ git commit -m "feat: add password hashing and JWT assertion verification"
   - `(*Store).LookupApp(ctx, clientID string) (OAuthApp, error)`, which returns the built-in record for `PlatformCLI`
   - `(*Store).JWTUserAllowed(ctx, clientID, username string) (User, error)`
 
-- [ ] **Step 1: Write failing DB tests in `oauth_store_test.go`**
+- [x] **Step 1: Write failing DB tests in `oauth_store_test.go`**
 
 `TestCreateUserRules`: rejects a 11-character password, a 1,025-byte password, a username with no `@`, with two `@`, with non-ASCII characters, or above 80 characters, and an unknown role. A username differing only by case in another tenant returns a duplicate error. The stored hash starts `$argon2id$`, and no column holds the password.
 
@@ -160,23 +160,23 @@ git commit -m "feat: add password hashing and JWT assertion verification"
 
 `TestLookupPlatformCLI`: returns public, active, the single redirect `http://localhost:1717/OauthRedirect`, grants `authorization_code` and `refresh_token`, and scopes `api web refresh_token`. `CreateApp` cannot produce that client ID.
 
-- [ ] **Step 2: Write a failing upgrade test in `catalog_migration_test.go`**
+- [x] **Step 2: Write a failing upgrade test in `catalog_migration_test.go`**
 
 `TestOAuthTablesUpgradeFromV3`: open a fresh store, provision a token, create an Account, drop the eight new tables to reproduce a Plan 25 database, reopen, and confirm the tables exist, the version is still 3, the Account reads back, and the provisioned token authenticates. Reopening again changes nothing.
 
-- [ ] **Step 3: Write failing tests in `cmd/salescompel/admin_test.go`**
+- [x] **Step 3: Write failing tests in `cmd/salescompel/admin_test.go`**
 
 `TestAdminCommands`, through the command dispatcher against the test database: `user create` prints an ID with prefix `005`; `oauth-app create` prints JSON with `client_id` and `client_secret`; `--public` omits `client_secret`; `rotate-secret` prints a new secret; `user create` with no `SALESCOMPEL_PASSWORD` fails, and no error text contains the password; passing a password as a flag is an error.
 
-- [ ] **Step 4: Run tests to verify they fail**
+- [x] **Step 4: Run tests to verify they fail**
 
 Run: DB-TEST with `-run 'CreateUser|VerifyLogin|LoginLockout|CreateApp|LookupPlatformCLI|OAuthTables|AdminCommands'`. Expected: FAIL.
 
-- [ ] **Step 5: Implement the schema, store and commands**
+- [x] **Step 5: Implement the schema, store and commands**
 
 Add the spec's eight tables to `schema.sql`. Store `username_canonical` as the ASCII-lowercased username, with `UNIQUE(username_canonical)`. Hash outside the transaction. A buffered channel of capacity 4 on `Store` bounds Argon2id work, and waiting respects `ctx`. `VerifyLogin` calls `verifyDummyPassword` for an unknown user. `SetPassword`, `DeactivateUser` and `DisableApp` delete the affected tokens in the same transaction. Those token tables exist now, so the deletes need no later task. Extract the existing dispatcher in `main.go` into a function the test can call, and add the spec's commands in `admin.go`.
 
-- [ ] **Step 6: Run tests to verify they pass, and commit**
+- [x] **Step 6: Run tests to verify they pass, and commit**
 
 Run: DB-TEST. Expected: PASS.
 
@@ -209,7 +209,7 @@ git commit -m "feat: add login users, OAuth apps and admin commands"
   - `grantError(code string) *oauthError`, the error type Task 5 serializes
   - `scopeAllows(p Principal, route routeClass) bool`, with classes `routeData` and `routeIdentity`
 
-- [ ] **Step 1: Write failing DB tests in `oauth_tokens_test.go`**
+- [x] **Step 1: Write failing DB tests in `oauth_tokens_test.go`**
 
 `TestAccessTokenLifetime`: a token authenticates at `now`, and at `now+ttl-1s`, and returns 401 `INVALID_SESSION_ID` at `now+ttl`. Only the digest is stored: a query for the plaintext in the table finds nothing.
 
@@ -237,19 +237,19 @@ git commit -m "feat: add login users, OAuth apps and admin commands"
 
 `TestScopeAllows`: table from the spec's Scopes section, including `web` alone allowing neither class.
 
-- [ ] **Step 2: Write a failing DB test in `http_test.go`**
+- [x] **Step 2: Write a failing DB test in `http_test.go`**
 
 `TestHTTPScopeEnforced`: an OAuth token with scope `id` gets 403 `INSUFFICIENT_ACCESS` in the array envelope on `sobjects/Account` and the OpenAPI route, and 200 on `/services/oauth2/userinfo`. Scope `web` gets 403 on both. Scope `api` gets 200 on both. A provisioned token is unchanged.
 
-- [ ] **Step 3: Run tests to verify they fail**
+- [x] **Step 3: Run tests to verify they fail**
 
 Run: DB-TEST with `-run 'AccessTokenLifetime|PrincipalFromOAuth|LosesAccess|SetPasswordRevokes|WithOAuthToken|RestrictedOAuthUser|RedeemCode|CodeReplay|CodeRedeem|Refresh|Revoke|Introspect|ProvisionedTokenUnchanged|ScopeAllows|HTTPScopeEnforced'`. Expected: FAIL.
 
-- [ ] **Step 4: Implement**
+- [x] **Step 4: Implement**
 
 `RedeemCode` claims the code with one `UPDATE ... SET used_at=$1 WHERE code_hash=$2 AND used_at IS NULL RETURNING ...`. Zero rows with an existing code means replay: delete the tokens linked to `code_hash`. `Provision`'s comparison reads only tenant, user and role, so it stays correct with the wider `Principal`. Delete expired rows in `IssueTokens`' transaction. In `NewHandler`, apply `scopeAllows` immediately after `Authenticate`.
 
-- [ ] **Step 5: Run tests to verify they pass, and commit**
+- [x] **Step 5: Run tests to verify they pass, and commit**
 
 Run: DB-TEST. Expected: PASS.
 
@@ -273,7 +273,7 @@ git commit -m "feat: issue, expire and revoke OAuth tokens under existing policy
   - `serve --public-url` and `serve --access-token-ttl` flags, default 2 hours
   - `handleToken`, `handleRevoke`, `handleIntrospect`, each `func(*Store, Options, http.ResponseWriter, *http.Request)`
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 `TestResolvePublicURL`: derives `http://127.0.0.1:8080` and, with TLS, `https://127.0.0.1:8080`. Rejects a path, query or fragment, `http://example.com`, and a non-loopback listener with no flag. Accepts `https://crm.example.com` on any listener. A trailing slash is removed.
 
@@ -289,15 +289,15 @@ git commit -m "feat: issue, expire and revoke OAuth tokens under existing policy
 
 `TestRevokeAndIntrospectHTTP`: revoke returns 200, then the token gets 401 on `/services/data/v65.0/sobjects`. Repeat revoke returns 400 `invalid_token`. Introspect without credentials returns `invalid_client`. Introspect with credentials returns the RFC 7662 fields.
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: DB-TEST with `-run 'ResolvePublicURL|Token|RevokeAndIntrospect'`. Expected: FAIL.
 
-- [ ] **Step 3: Implement and route**
+- [x] **Step 3: Implement and route**
 
 Dispatch on the normalized `requestPath` before the bearer check. Reject bodies that are not `application/x-www-form-urlencoded`. Parse with the existing 1 MiB limit, and reject any repeated parameter. Pass `Options.Now()` to the store. In `main.go`, resolve the public URL before listening, and use the new constructor.
 
-- [ ] **Step 4: Run tests to verify they pass, and commit**
+- [x] **Step 4: Run tests to verify they pass, and commit**
 
 Run: DB-TEST. Expected: PASS.
 
@@ -321,7 +321,7 @@ git commit -m "feat: serve the OAuth token, revoke and introspect endpoints"
   - `(*Store).LoadAuthRequest(ctx, id, binding string, now time.Time) (AuthRequest, error)`, `(*Store).DeleteAuthRequest(ctx, id string) error`
   - `handleAuthorize(*Store, Options, http.ResponseWriter, *http.Request)`
 
-- [ ] **Step 1: Write failing tests in `oauth_page_test.go`**
+- [x] **Step 1: Write failing tests in `oauth_page_test.go`**
 
 `TestAuthorizeValidation`: an unknown client and an unregistered redirect URI return an error page with no `Location`. A `response_type` other than `code`, `code_challenge_method=plain`, an unknown or unpermitted scope, `openid`, a public app with no challenge and `prompt=none` each return 302 to the redirect URI with the spec's `error` and the original `state`. No scope parameter grants all of the app's scopes.
 
@@ -337,15 +337,15 @@ git commit -m "feat: serve the OAuth token, revoke and introspect endpoints"
 
 `TestAuthorizeLocalization`: `Accept-Language: fr` renders French labels, `iw` or `he` renders `dir="rtl"`, and `xx` falls back to `en_US`. All catalogs contain every `oauth.*` key.
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: DB-TEST with `-run Authorize`. Expected: FAIL.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Add `oauth.*` keys to all five catalogs, with full translations. Match languages with `golang.org/x/text/language`, mapping the catalog name `iw` to the tag `he`. Override `Referrer-Policy` on the page only. Use `303` for redirects after `POST`. Build redirects with `url.Parse` and `Query().Set`. Do not add a `form-action` directive to the policy: browsers can apply it to the redirect that follows the POST.
 
-- [ ] **Step 4: Run tests to verify they pass, and commit**
+- [x] **Step 4: Run tests to verify they pass, and commit**
 
 Run: DB-TEST, then `npm --prefix web test`. Expected: PASS, including the web catalog tests.
 
@@ -363,7 +363,7 @@ git commit -m "feat: add the localized OAuth login and consent page"
 - Consumes: Tasks 4–5.
 - Produces: `handleDiscovery`, `handleIdentity`, `isOrganizationDiscovery(q string) bool`.
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 `TestDiscovery`: unauthenticated 200 with the spec's fields, every URL starting with the public URL, `grant_types_supported` exactly the four offered, and no `jwks_uri`, `id_token_signing_alg_values_supported` or `openid`. A spoofed `Host` or `X-Forwarded-Host` does not alter any URL. With an empty public URL, it returns 404.
 
@@ -375,11 +375,11 @@ git commit -m "feat: add the localized OAuth login and consent page"
 
 `TestOrganizationBridge`: the exact CLI query, in any case or spacing, returns one row with the spec's values, for the caller's tenant. `SELECT Name FROM Organization`, and the same projection with a `WHERE`, return `INVALID_TYPE`.
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: DB-TEST with `-run 'Discovery|IdentityURL|UserInfoForOAuth|UserRouteForOAuth|OrganizationBridge'`. Expected: FAIL.
 
-- [ ] **Step 3: Implement, verify and commit**
+- [x] **Step 3: Implement, verify and commit**
 
 Run the Step 2 command, then DB-TEST. Expected: PASS.
 
@@ -396,15 +396,15 @@ git commit -m "feat: add OAuth discovery, the identity URL and CLI bridges"
 **Interfaces:**
 - Produces: operation IDs `candidateOAuthAuthorizeForm`, `candidateOAuthAuthorizeSubmit`, `candidateOAuthToken`, `candidateOAuthRevoke`, `candidateOAuthIntrospect`, `candidateOAuthDiscovery`, `candidateOAuthIdentity`, used by Task 9's traffic checks.
 
-- [ ] **Step 1: Write failing contract tests**
+- [x] **Step 1: Write failing contract tests**
 
 Extend the operation table with the seven operations and their documented statuses. Assert that each has `x-source`. Assert the document describes both a provisioned bearer scheme and an `oauth2` scheme with `authorizationCode` and `clientCredentials` flows. `info.description` no longer says there is no OAuth flow. Offline-mode tests cover every new schema, including `oneOf` on the token response's optional fields as needed. Each OAuth error schema requires `error`, and a separate schema from the REST array is used.
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `GOTOOLCHAIN=go1.25.0 go test ./api -count=1` and `npm --prefix compat/clients/node run check`. Expected: FAIL on the new operations.
 
-- [ ] **Step 3: Update the document, verify and commit**
+- [x] **Step 3: Update the document, verify and commit**
 
 Add the operations, extend `UserInfo` with optional `sub`, and pin `x-source` to the commit containing Task 7, following the existing URL form. Keep the OpenAPI version at 3.2.1. Run Step 2's commands and DB-TEST. Expected: PASS.
 
@@ -425,35 +425,35 @@ git commit -m "feat: document the OAuth surface in the served OpenAPI"
 
 Required `oauth` coverage IDs: `oauth/provision`, `oauth/sf-web`, `oauth/sf-display-connected`, `oauth/sf-refresh`, `oauth/sf-jwt`, `oauth/sf-jwt-unlisted`, `oauth/jsforce-web-pkce`, `oauth/jsforce-refresh`, `oauth/jsforce-jwt`, `oauth/jsforce-client-credentials`, `oauth/jsforce-revoke`, `oauth/python-session`, `oauth/restricted-denied`, `oauth/tenant-isolation`, `oauth/http-contract`, `oauth/browser-page`. The `restart` gate adds `restart/oauth-refresh`.
 
-- [ ] **Step 1: Write failing contract tests**
+- [x] **Step 1: Write failing contract tests**
 
 In `candidate-acceptance-contract.test.ts` and `candidate-acceptance-results.test.ts`: `gateIDs` contains `oauth` directly after `cli`; the schema's two enums accept it; a report missing any listed coverage ID, or with one skipped, is not acceptance eligible; `restart` requires `restart/oauth-refresh`; and `step` in `candidate-acceptance-run.ts` calls `publishStepResult` for `oauth` as it does for `cli` and `restart`, so its evidence is hashed. In `candidate-oauth.test.ts`, the parser for the stand-in's URL file rejects a URL that is not on the candidate's host, and redaction removes access tokens, refresh tokens, secrets and passwords from any stored evidence, verified on a sample.
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `npm --prefix compat/clients/node run check`. Expected: FAIL on the missing gate.
 
-- [ ] **Step 3: Wire the service and preflight**
+- [x] **Step 3: Wire the service and preflight**
 
 Start the candidate with `--public-url c.url`. Preflight reports the gate blocked, not failed, when port 1717 is in use. Provision through the real commands: two `admin`/`restricted` users in the first tenant, one user in the other tenant, a confidential app with a JWT certificate, `--jwt-user` for the admin only, a run-as user, and a JSforce redirect on an ephemeral loopback port that the gate listens on. Hold generated credentials only in the run's private scratch directory, and add the principals to the cleanup record per the harness's retention contract.
 
-- [ ] **Step 4: Implement the browser spec**
+- [x] **Step 4: Implement the browser spec**
 
 `web/test/oauth-login.spec.ts` takes the authorize URL from an environment variable, with `ignoreHTTPSErrors` for the harness certificate. It fills the form, presses **Allow** and waits for the redirect to finish. Separately, it asserts that a wrong password shows the generic message and that Hebrew renders `dir="rtl"`. This is the real-browser proof that `Referrer-Policy: same-origin` makes the form's `Origin` acceptable.
 
-- [ ] **Step 5: Implement the CLI steps**
+- [x] **Step 5: Implement the CLI steps**
 
 Run `sf` with launcher stand-ins prepended to its `PATH` only, which write the URL to a private file and return. Drive the URL with the spec, then require exit 0. `sf org display --json` must report `connectedStatus` of `Connected`. `sf data query` returns a seeded Account. For refresh, get the access token with `sf org auth show-access-token`, revoke it with HTTP, and require the next `sf data query` to succeed. For JWT, require success for the listed user, a non-zero exit for the unlisted user, and that the second writes no usable auth.
 
-- [ ] **Step 6: Implement the JSforce and Python steps**
+- [x] **Step 6: Implement the JSforce and Python steps**
 
 JSforce, with only `loginUrl` configured: `OAuth2` with `useVerifier` through the browser spec and `conn.authorize`; automatic refresh after revoking the access token; `requestToken` with the JWT and client-credentials grants; `revokeToken` followed by a 401. `scripts/candidate-oauth-python.py` uses simple-salesforce with `instance_url` and `session_id` for create, read and delete. Add the policy, tenant and raw HTTP checks, and record each new operation through the existing traffic validator.
 
-- [ ] **Step 7: Add the restart check**
+- [x] **Step 7: Add the restart check**
 
 Before `restartCandidate`, save a refresh token. After it, `verifyOAuthRestart` exchanges it and reads an Account with the new access token.
 
-- [ ] **Step 8: Run the full acceptance and commit**
+- [x] **Step 8: Run the full acceptance and commit**
 
 Run: `CHROMIUM_PATH=/usr/bin/chromium scripts/check-candidate-acceptance.sh --out /tmp/salescompel-plan26/acceptance.json`. Expected: exit 0, full and acceptance eligible, with every `oauth` ID passed and none skipped.
 
@@ -469,15 +469,15 @@ git commit -m "feat: require OAuth login acceptance through real clients"
 **Files:**
 - Modify: `docs/compat/plan-26-oauth-login.md`, `docs/compat/implementation-log.md`, `docs/compat/README.md`, `README.md`, `docs/superpowers/specs/2026-11-04-salescompel-first-release-roadmap-design.md`, `docs/superpowers/specs/2026-11-04-plan-26-oauth-login-identity-design.md`, this plan
 
-- [ ] **Step 1: Complete the decision record**
+- [x] **Step 1: Complete the decision record**
 
 Following `docs/compat/plan-25-foundation-decisions.md`, add: a table mapping `oauth-token-endpoint`, `oauth-authorize-revoke-introspect`, `login-hosts`, `soap-login`, `connected-app-policy` and `saml-sso` to a decision, basis, implementation, test and owner; every gap from the spec; the operator guide for `--public-url`, the admin commands, upgrade (stop old instances, back up, start) and rollback (stop, restore the backup); and the exact verification results. State plainly that simple-salesforce does not use its own login here.
 
-- [ ] **Step 2: Update the pointers**
+- [x] **Step 2: Update the pointers**
 
 README: auth status and the next priority (Plan 27). Roadmap: an implementation record under Plan 26, and the simple-salesforce narrowing. Spec and this plan: status. Log: one entry. `docs/compat/contracts/` stays unchanged.
 
-- [ ] **Step 3: Run the final verification**
+- [x] **Step 3: Run the final verification**
 
 ```sh
 GOTOOLCHAIN=go1.25.0 go test -race ./... -count=1
@@ -492,7 +492,7 @@ git diff 13f7e97 --stat -- docs/compat/contracts docs/compat/profiles docs/compa
 
 Expected: every command passes, no database test skips, and the last prints nothing. Record actual counts, skips and the report's SHA-256 in the decision record. If a result differs from what is expected, record the actual result rather than the expected one.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add README.md docs

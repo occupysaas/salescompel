@@ -1,6 +1,6 @@
 # Plan 26 — OAuth login and identity design
 
-- **Status:** Draft for maintainer review, 2026-11-04.
+- **Status:** Implemented and verified, 2026-11-04. [Decisions and verification](../../compat/plan-26-oauth-login.md).
 - **Roadmap:** Plan 26, stage A, of the [first release roadmap](2026-11-04-salescompel-first-release-roadmap-design.md). Needs Plan 25, which is implemented.
 - **Decides, as the roadmap asks:** the login UI, how secrets are stored, and which flows the first release needs.
 

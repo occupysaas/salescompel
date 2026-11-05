@@ -1,7 +1,7 @@
 # Plan 26 — OAuth login and identity
 
 Implementation and candidate decisions; no claim of reference-platform parity.
-Status: implementation in progress, 2026-11-04.
+Implemented 2026-11-04; verified through the final candidate acceptance gate. No live Salesforce org session was used.
 
 ## Client observations
 
@@ -136,3 +136,75 @@ invalidates the old secret while preserving existing tokens. `oauth-app disable
 --client-id <id>` revokes the app's tokens. Never publish command outputs
 containing a secret. Only hashes of passwords and high-entropy credentials
 are stored; no server encryption key or recoverable client secret exists.
+
+
+## Verified implementation
+
+Runtime revision `b022f1963e3f0972e009541f7d2f8eeee78de3c4` passed full
+candidate acceptance with Go 1.25.0, disposable PostgreSQL 17, the pinned
+CLI/JSforce/Python clients and `/usr/bin/chromium`. All 16 OAuth coverage IDs
+passed without skips, including browser login, CLI Connected status, revoked
+access followed by automatic refresh, listed/unlisted JWT users, JSforce PKCE,
+refresh/JWT/client credentials/revoke, Python OAuth-session CRUD, restricted
+field denial, tenant isolation and measured HTTP contracts. An id-only token
+receives validated 403 `INSUFFICIENT_ACCESS` from data and served OpenAPI.
+All seven new OAuth operations were traffic-validated. After restart, the saved
+refresh token issued a new access token that read the seeded Account.
+
+| Gate | Passed | Failed | Skipped |
+| --- | --- | --- | --- |
+| bindings | 3 | 0 | 0 |
+| database | 538 | 0 | 0 |
+| lab | 458 | 0 | 6 |
+| web | 6 | 0 | 0 |
+| jsforce | 8 | 0 | 0 |
+| python | 4 | 0 | 0 |
+| cli | 9 | 0 | 0 |
+| oauth | 16 | 0 | 0 |
+| restart | 4 | 0 | 0 |
+| connected-browser | 8 | 0 | 0 |
+| preview | 11 | 0 | 0 |
+| cleanup | 2 | 0 | 0 |
+
+The six established offline skips remain the three JSforce core/policy/isolation
+scenarios and candidate OpenAPI/Composite/foundation traffic parents; they pass
+in the live candidate gate. No database or OAuth proof was skipped. The final
+standalone Node check passed 452 tests with those six skips; acceptance includes
+the additional guard assertions (458 passed, six skipped). Web unit tests passed
+5/5 and the build passed. Go race tests and vet passed across all packages.
+
+Full report `/tmp/salescompel-plan26/acceptance-reviewed.json`, run
+2026-11-05T04:19:42.995Z → 2026-11-05T04:22:18.696Z, SHA-256:
+`bf2c06ecba88d278abc1dddd6bbb3d14027f3917632010feb421c523ba4e0ba2`.
+The earlier full report also passed; its hash is
+`1f0f9ac7130ad0e4ff3fba2f1a5ee29125602fc76bfaed91cba67890e9f6ab64`.
+Cleanup verified 39 journaled fixture operations, zero unknown intents and all
+owned processes stopped; provisioned principals remain retained under the
+harness contract. Credentials remain private. Both the OAuth worker and final
+in-memory evidence scan checked generated passwords, client secrets, captured
+access/refresh tokens and encoded variants against stored command/step/report
+evidence, with no matches. Sensitive subprocess output is consumed in memory;
+evidence files contain a fixed omission marker.
+
+A real occupied-port test bound callback port 1717 and proved the full command
+exits 2 with OAuth `blocked`/`PREREQUISITE`, not failed. No candidate fixtures
+were created in that test. `/tmp/salescompel-plan26/port1717.json` records it.
+
+Implementation review caught expired used-code replay leaving its token family
+alive and missing scope validation on code/refresh requests. Regression tests
+reproduced both before fixes; refreshed descendants now revoke on replay, and
+invalid requested scopes fail before consuming codes or JWT IDs. A password
+version snapshot prevents a verified login from issuing tokens or codes after
+a concurrent reset. Plan 27 must retain the added `users.auth_version` column.
+Used code rows persist to support replay revocation for live refresh families.
+
+During harness debugging, an access-only JSforce Connection omitted its OAuth
+configuration and sent a synthetic candidate token to JSforce's default remote
+revocation endpoint, which rejected it. This is a harness error, not a reference
+observation. The connection now retains its configured OAuth object, and origin
+guards reject missing or off-candidate OAuth endpoints before network use.
+No Salesforce credentials, implementation source, or live-org session were used.
+
+A final documentation commit is verified again with the full acceptance entry
+point at `/tmp/salescompel-plan26/final.json`; the runtime report above records
+this implementation's detailed verification independently of that closure.

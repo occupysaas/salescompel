@@ -458,3 +458,11 @@ sanitization review is claimed.
 - Implemented bounded query text equality and null ordering, canonical external-ID storage and transactional catalog v3 upgrades with collision refusal, and serialized tenant-scoped upserts preserving stored spelling.
 - Required `candidate/foundation/decisions` through real JSforce and measured HTTP. Full acceptance passed every gate, with verified cleanup and zero unknown intents; Go race tests/vet and offline/web checks passed. Independent review found no actionable issues.
 - Closed Plans 5/10/12/14 with dated notes, preserving historical evidence and blocked outcomes. [Decision record, remaining gaps, upgrade/rollback and exact verification](plan-25-foundation-decisions.md). Plan 26 is next; Plan 29 owns pagination.
+
+
+## Plan 26 OAuth login and identity — 2026-11-04
+
+- Added hashed users/apps, bounded Argon2id password verification and lockout, RS256 JWT checks, single-use PKCE codes, scoped expiring access, refresh, revocation and introspection, discovery and exact-user identity.
+- Added localized server-rendered login/consent, CSRF and replay protection, CLI user/app administration and explicit public-origin configuration. Catalog remains v3; provisioned token behavior and historical identity contracts are preserved.
+- Full candidate acceptance passes all 16 required real-client OAuth proofs, four restart proofs, cleanup and credential-free evidence scans. Scope-only denial, code replay descendants and concurrent invalidation have regression coverage. [Decisions, gaps, operator/upgrade guide and exact verification](plan-26-oauth-login.md).
+- simple-salesforce uses `instance_url`/`session_id`; its own login is deferred. Next: Plan 27 migrations, row-level security and dynamic schema.
