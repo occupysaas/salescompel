@@ -132,7 +132,7 @@ func validateComposite(req CompositeRequest) error {
 				return compositeInvalid()
 			}
 			if text, ok := value.(string); ok && strings.Contains(text, "@{") {
-				if object != "Contact" || key != "AccountId" || !checkRef(text, true) {
+				if object != "Contact" || !strings.EqualFold(key, "AccountId") || !checkRef(text, true) {
 					return compositeInvalid()
 				}
 			} else if containsCompositeMarker(value) {

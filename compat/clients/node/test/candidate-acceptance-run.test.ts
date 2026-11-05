@@ -16,6 +16,7 @@ test("candidate client process includes client, OpenAPI and Composite tests with
     "test/candidate.test.ts",
     "test/candidate-openapi.test.ts",
     "test/candidate-composite.test.ts",
+    "test/candidate-foundation.test.ts",
   ]);
 });
 test("full command blocks before fixture work and publishes only a sanitized report", async (t) => {

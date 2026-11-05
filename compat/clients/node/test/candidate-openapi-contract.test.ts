@@ -247,3 +247,35 @@ test("atomic Composite contract fixes the restricted request and result envelope
   };
   await assert.rejects(validateCandidateOpenAPI(mutated, await urls()));
 });
+
+test("candidate foundation ID forms and record errors are documented", async () => {
+  const d = await doc();
+  for (const object of ["Account", "Contact"]) {
+    const path = d.paths[`/services/data/v65.0/sobjects/${object}/{recordId}`];
+    for (const method of ["get", "patch", "delete"]) {
+      const parameter = path[method].parameters.find(
+        (p: any) => p.name === "recordId",
+      );
+      assert.match(parameter.description, /15-character/);
+      assert.match(parameter.description, /18-character/);
+      assert.match(parameter.description, /case-sensitive/);
+      assert.equal(
+        path[method].responses["404"].$ref,
+        "#/components/responses/Error",
+      );
+    }
+    assert.equal(
+      d.paths[`/services/data/v65.0/sobjects/${object}/describe`].get.responses[
+        "404"
+      ].$ref,
+      "#/components/responses/Error",
+    );
+  }
+  const upsert =
+    d.paths["/services/data/v65.0/sobjects/Account/Compat_Key__c/{externalId}"]
+      .patch;
+  assert.match(upsert.parameters[0].description, /ASCII spaces/);
+  assert.match(upsert.parameters[0].description, /NFC/);
+  assert.match(upsert.parameters[0].description, /full case folding/);
+  assert.equal(d.components.schemas.Error.additionalProperties, false);
+});

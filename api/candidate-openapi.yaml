@@ -3,7 +3,7 @@ jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
 info:
   title: SalesCompel implemented candidate API
   version: 0.1.0
-  description: Independent candidate contract, not Salesforce parity certification. Only the listed
+  description: Object and field API names are case-insensitive; responses use canonical names. REST body duplicates use the last value; case-differing Composite fields reject. Text equality uses simple Unicode case mapping without normalization. ORDER BY defaults to nulls first in both directions and honors NULLS FIRST or NULLS LAST. Independent candidate contract, not Salesforce parity certification. Only the listed
     canonical paths are implemented. Provisioned bearer credentials are not OAuth login/refresh.
     Field policy, Unicode/nonblank validation, SOQL execution, own-user identity and tenant
     isolation remain server checks. Null/omission and the columns extension reflect existing
@@ -239,6 +239,7 @@ paths:
           $ref: "#/components/responses/Error"
       parameters:
         - name: recordId
+          description: Accepts a case-sensitive 15-character base or an 18-character ID with a case-insensitive checksum suffix. Responses return 18 characters. Malformed or wrong-prefix IDs return 404 NOT_FOUND.
           in: path
           required: true
           style: simple
@@ -271,6 +272,7 @@ paths:
               $ref: "#/components/schemas/AccountPatch"
       parameters:
         - name: recordId
+          description: Accepts a case-sensitive 15-character base or an 18-character ID with a case-insensitive checksum suffix. Responses return 18 characters. Malformed or wrong-prefix IDs return 404 NOT_FOUND.
           in: path
           required: true
           style: simple
@@ -297,6 +299,7 @@ paths:
           $ref: "#/components/responses/Error"
       parameters:
         - name: recordId
+          description: Accepts a case-sensitive 15-character base or an 18-character ID with a case-insensitive checksum suffix. Responses return 18 characters. Malformed or wrong-prefix IDs return 404 NOT_FOUND.
           in: path
           required: true
           style: simple
@@ -378,6 +381,7 @@ paths:
           $ref: "#/components/responses/Error"
       parameters:
         - name: recordId
+          description: Accepts a case-sensitive 15-character base or an 18-character ID with a case-insensitive checksum suffix. Responses return 18 characters. Malformed or wrong-prefix IDs return 404 NOT_FOUND.
           in: path
           required: true
           style: simple
@@ -410,6 +414,7 @@ paths:
               $ref: "#/components/schemas/ContactPatch"
       parameters:
         - name: recordId
+          description: Accepts a case-sensitive 15-character base or an 18-character ID with a case-insensitive checksum suffix. Responses return 18 characters. Malformed or wrong-prefix IDs return 404 NOT_FOUND.
           in: path
           required: true
           style: simple
@@ -436,6 +441,7 @@ paths:
           $ref: "#/components/responses/Error"
       parameters:
         - name: recordId
+          description: Accepts a case-sensitive 15-character base or an 18-character ID with a case-insensitive checksum suffix. Responses return 18 characters. Malformed or wrong-prefix IDs return 404 NOT_FOUND.
           in: path
           required: true
           style: simple
@@ -479,6 +485,7 @@ paths:
               $ref: "#/components/schemas/AccountUpsert"
       parameters:
         - name: externalId
+          description: Decoded once; trim leading and trailing ASCII spaces, apply NFC, full case folding, then NFC. Lookup and tenant uniqueness use this equivalence; upsert updates preserve stored spelling. Whitespace-only keys return 400 INVALID_FIELD.
           in: path
           required: true
           style: simple

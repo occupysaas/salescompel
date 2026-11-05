@@ -47,6 +47,7 @@ test("coverage requires the OpenAPI parent and database route measurement", () =
     ["database", "TestCompositeAtomic"],
     ["database", "TestHTTPCompositeAtomic"],
     ["jsforce", "candidate/composite/atomic"],
+    ["jsforce", "candidate/foundation/decisions"],
   ] as const) {
     const complete: ParsedResult = {
       schemaVersion: 1,
@@ -188,5 +189,28 @@ test("acceptance publication permits the exact new offline Composite skip", asyn
     ["candidate/composite/atomic"],
   );
   gate.coverage.allowedSkipped = ["candidate/composite/unknown"];
+  assert.throws(() => validateAcceptanceReport(r), /RESULT/);
+});
+
+test("acceptance publication permits only the exact offline foundation skip", async (t) => {
+  const dir = await mkdtemp(join(tmpdir(), "p25-report-"));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  let r = newReport("a".repeat(24), "full");
+  const gate = assessCoverage("lab", {
+    schemaVersion: 1,
+    runId: r.runId,
+    suite: "lab",
+    complete: true,
+    exitCode: 0,
+    tests: [
+      ...requiredCoverage.lab.map((id) => ({ id, outcome: "passed" as const })),
+      { id: "candidate/foundation/decisions", outcome: "skipped" },
+    ],
+  });
+  assert.equal(gate.outcome, "passed");
+  r.gates[r.gates.findIndex((g) => g.id === "lab")] = gate;
+  r = aggregateReport(r);
+  await publishAcceptanceReport(join(dir, "summary.json"), r);
+  gate.coverage.allowedSkipped = ["candidate/foundation/unknown"];
   assert.throws(() => validateAcceptanceReport(r), /RESULT/);
 });

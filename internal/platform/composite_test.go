@@ -216,3 +216,18 @@ func TestCompositeRejectsCaseDifferingFields(t *testing.T) {
 		t.Fatal(r, e)
 	}
 }
+
+func TestCompositeCaseInsensitiveReferenceBody(t *testing.T) {
+	s := testStore(t)
+	p, _ := principals(t, s)
+	result, e := s.Composite(context.Background(), p, compReq(compSub("POST", "Account", "", "parent", map[string]any{"name": "Parent"}), compSub("POST", "Contact", "", "child", map[string]any{"lastname": "Child", "accountid": "@{parent.id}"})))
+	if e != nil {
+		t.Fatal(e)
+	}
+	parent := result.CompositeResponse[0].Body.(map[string]any)["id"].(string)
+	child := result.CompositeResponse[1].Body.(map[string]any)["id"].(string)
+	row, e := s.Read(context.Background(), p, "Contact", child)
+	if e != nil || row["AccountId"] != parent {
+		t.Fatal(row, e)
+	}
+}

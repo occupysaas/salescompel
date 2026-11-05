@@ -3,6 +3,7 @@ package platform
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -72,9 +73,11 @@ func executeComposite(ctx context.Context, p Principal, req CompositeRequest, be
 		for k, v := range sub.Body {
 			data[k] = v
 		}
-		if v, ok := data["AccountId"].(string); ok {
-			if ref := compositeReference.FindStringSubmatch(v); ref != nil {
-				data["AccountId"] = ids[ref[1]]
+		for k, value := range data {
+			if v, ok := value.(string); ok && strings.EqualFold(k, "AccountId") {
+				if ref := compositeReference.FindStringSubmatch(v); ref != nil {
+					data[k] = ids[ref[1]]
+				}
 			}
 		}
 		result := CompositeSubresponse{ReferenceID: sub.ReferenceID, HTTPHeaders: map[string]string{}, HTTPStatusCode: 204}
