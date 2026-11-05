@@ -32,6 +32,8 @@ export function redactOAuthEvidence(
     variants.add(new URLSearchParams({ v: secret }).toString().slice(2));
     variants.add(JSON.stringify(secret).slice(1, -1));
   }
+  for (const variant of [...variants])
+    variants.add(variant.replace(/%[0-9A-F]{2}/g, (s) => s.toLowerCase()));
   for (const secret of [...variants].sort((a, b) => b.length - a.length))
     text = text.split(secret).join("[REDACTED]");
   return text;

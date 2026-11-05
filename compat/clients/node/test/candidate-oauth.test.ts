@@ -49,6 +49,11 @@ test("OAuth evidence removes credentials in plain, encoded and structured output
     assert.ok(!safe.includes(encodeURIComponent(secret)));
   }
   assert.ok(safe.includes("[REDACTED]"));
+  const lowerEscapes = encodeURIComponent(secrets[0]).replace(
+    /%[0-9A-F]{2}/g,
+    (s) => s.toLowerCase(),
+  );
+  assert.ok(!redactOAuthEvidence(lowerEscapes, secrets).includes(lowerEscapes));
   assert.equal(
     redactOAuthEvidence("candidate assertion failed", secrets),
     "candidate assertion failed",
