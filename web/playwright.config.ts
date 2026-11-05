@@ -10,7 +10,9 @@ export default defineConfig({
       }
     : {}),
   testDir: "./test",
-  testMatch: "records.spec.ts",
+  testMatch: process.env.CANDIDATE_OAUTH_AUTHORIZE_URL
+    ? "oauth-login.spec.ts"
+    : "records.spec.ts",
   workers: 1,
   retries: 0,
   use: {
