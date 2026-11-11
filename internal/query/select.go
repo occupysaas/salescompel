@@ -119,7 +119,7 @@ func Select(ctx context.Context, tx pgx.Tx, execution policy.ExecutionContext, c
 	for rows.Next() {
 		values, e := rows.Values()
 		if e != nil {
-			return nil, dbError(e)
+			return nil, dbError(err)
 		}
 		record := map[string]any{"attributes": map[string]any{"type": q.Object}}
 		at := 0
@@ -154,7 +154,13 @@ func Select(ctx context.Context, tx pgx.Tx, execution policy.ExecutionContext, c
 	return out, nil
 }
 
-func table(p Principal, object string) string { o, _ := p.Catalog.Object(object); return o.TableSQL() }
+func table(p Principal, object string) string {
+	o, oErr := p.Catalog.Object(object)
+	if oErr != nil {
+		return ""
+	}
+	return o.TableSQL()
+}
 func dbError(e error) error {
 	if e == nil {
 		return nil

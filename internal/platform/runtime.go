@@ -120,6 +120,9 @@ func (s *Store) Catalog(ctx context.Context, p Principal) (metadata.Snapshot, er
 }
 
 func (s *Store) recordTx(p Principal) *records.Tx {
-	e, _ := policy.ForAPI(p, "65.0")
+	e, polErr := policy.ForAPI(p, "65.0")
+	if polErr != nil {
+		panic("policy.ForAPI failed for default API version: " + polErr.Error())
+	}
 	return records.Bind(s.tx, e, *p.Catalog)
 }

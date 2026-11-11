@@ -78,12 +78,21 @@ var oauthLanguages = []string{"en_US", "fr", "de", "pt_BR", "iw"}
 var oauthMatcher = language.NewMatcher([]language.Tag{language.AmericanEnglish, language.French, language.German, language.BrazilianPortuguese, language.Hebrew})
 
 func oauthMessages(header string) (map[string]string, string, string) {
-	tags, _, _ := language.ParseAcceptLanguage(header)
-	_, i, _ := oauthMatcher.Match(tags...)
+	tags, _, langErr := language.ParseAcceptLanguage(header)
+	if langErr != nil {
+		tags = nil
+	}
+	_, i, matchConf := oauthMatcher.Match(tags...)
+	_ = matchConf
 	name := oauthLanguages[i]
-	b, _ := locales.Messages.ReadFile("messages/" + name + ".json")
+	b, readErr := locales.Messages.ReadFile("messages/" + name + ".json")
+	if readErr != nil {
+		b = []byte("{}")
+	}
 	m := map[string]string{}
-	_ = json.Unmarshal(b, &m)
+	if uErr := json.Unmarshal(b, &m); uErr != nil {
+		m = map[string]string{}
+	}
 	dir := "ltr"
 	lang := strings.ReplaceAll(name, "_", "-")
 	if name == "iw" {
@@ -135,7 +144,9 @@ func handleAuthorizeCSS(_ *Store, _ Options, w http.ResponseWriter, r *http.Requ
 	}
 	w.Header().Set("Content-Type", "text/css; charset=utf-8")
 	if r.Method != "HEAD" {
-		_, _ = w.Write([]byte(oauthPageCSS))
+		if _, wErr := w.Write([]byte(oauthPageCSS)); wErr != nil {
+			return
+		}
 	}
 }
 func handleAuthorize(s *Store, o Options, w http.ResponseWriter, r *http.Request) {

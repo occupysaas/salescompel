@@ -69,7 +69,8 @@ func table(p Principal, object string) string {
 }
 
 // columns returns quoted columns, SQL parameters and per-parameter casts.
-func columns(p Principal, object string, data map[string]any) ([]string, []any, []string) {
+// Unknown fields and values that do not coerce fail the write.
+func columns(p Principal, object string, data map[string]any) ([]string, []any, []string, error) {
 	keys := make([]string, 0, len(data))
 	for k := range data {
 		keys = append(keys, k)
@@ -77,12 +78,21 @@ func columns(p Principal, object string, data map[string]any) ([]string, []any, 
 	sort.Strings(keys)
 	cols, values, casts := []string{}, []any{}, []string{}
 	for _, k := range keys {
-		f, _ := field(p, object, k)
-		v, cast, _ := coerce(f, data[k])
+		f, fErr := field(p, object, k)
+		if fErr != nil {
+			return nil, nil, nil, fErr
+		}
+		v, cast, coerceErr := coerce(f, data[k])
+		if coerceErr != nil {
+			return nil, nil, nil, coerceErr
+		}
 		if strings.EqualFold(object, "Account") && f.Name == "Compat_Key__c" && f.ExternalID {
 			var canonical any
 			if text, ok := v.(string); ok {
-				key, _ := canonicalExternalID(text)
+				key, cErr := canonicalExternalID(text)
+				if cErr != nil {
+					key = ""
+				}
 				if key != "" {
 					canonical = key
 				} else {
@@ -97,7 +107,7 @@ func columns(p Principal, object string, data map[string]any) ([]string, []any, 
 		values = append(values, v)
 		casts = append(casts, cast)
 	}
-	return cols, values, casts
+	return cols, values, casts, nil
 }
 func create(ctx context.Context, db database, p Principal, object string, data map[string]any) (string, error) {
 	var err error
@@ -130,7 +140,10 @@ func create(ctx context.Context, db database, p Principal, object string, data m
 	if err != nil {
 		return "", dbError(err)
 	}
-	cols, values, casts := columns(p, object, data)
+	cols, values, casts, err := columns(p, object, data)
+	if err != nil {
+		return "", err
+	}
 	numbers, err := allocateAutoNumbers(ctx, db, p, object, time.Now())
 	if err != nil {
 		return "", err
@@ -165,7 +178,10 @@ func update(ctx context.Context, db database, p Principal, object, id string, da
 	if err := Validate(p, object, data, false); err != nil {
 		return err
 	}
-	cols, values, casts := columns(p, object, data)
+	cols, values, casts, err := columns(p, object, data)
+	if err != nil {
+		return err
+	}
 	sets := []string{}
 	for i, c := range cols {
 		sets = append(sets, fmt.Sprintf("%s=$%d%s", c, i+3, casts[i]))

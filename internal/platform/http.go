@@ -191,7 +191,9 @@ func NewHandlerWithOptions(s *Store, assetDir string, o Options) http.Handler {
 			if method(w, r, "GET") {
 				w.Header().Set("Content-Type", apicontract.CandidateOpenAPIContentType)
 				w.WriteHeader(http.StatusOK)
-				_, _ = io.WriteString(w, apicontract.CandidateOpenAPI())
+				if _, wErr := io.WriteString(w, apicontract.CandidateOpenAPI()); wErr != nil {
+				return
+			}
 			}
 			return
 		}
@@ -339,7 +341,11 @@ func NewHandlerWithOptions(s *Store, assetDir string, o Options) http.Handler {
 			}
 			objects := []Object{}
 			for _, object := range catalog.Objects {
-				d, _ := records.Describe(p, object.Name)
+				d, dErr := records.Describe(p, object.Name)
+				if dErr != nil {
+					writeError(w, problem(500, "INTERNAL_ERROR", "Describe failed"))
+					return
+				}
 				objects = append(objects, d)
 			}
 			writeJSON(w, 200, map[string]any{"sobjects": objects, "encoding": "UTF-8", "maxBatchSize": 1})
@@ -353,7 +359,11 @@ func NewHandlerWithOptions(s *Store, assetDir string, o Options) http.Handler {
 		}
 		if len(parts) == 3 && parts[2] == "describe" {
 			if method(w, r, "GET") {
-				d, _ := records.Describe(p, object)
+				d, dErr := records.Describe(p, object)
+				if dErr != nil {
+					writeError(w, problem(500, "INTERNAL_ERROR", "Describe failed"))
+					return
+				}
 				writeJSON(w, 200, d)
 			}
 			return

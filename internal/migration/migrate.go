@@ -32,19 +32,34 @@ type change struct {
 
 func manifest() []change {
 	hash := sha256.New()
-	files, _ := sources.ReadDir("legacy")
+	files, err := sources.ReadDir("legacy")
+	if err != nil {
+		panic("migration: embedded legacy sources unreadable: " + err.Error())
+	}
 	for _, f := range files {
-		v, _ := sources.ReadFile("legacy/" + f.Name())
+		v, rErr := sources.ReadFile("legacy/" + f.Name())
+		if rErr != nil {
+			panic("migration: embedded legacy source unreadable: " + f.Name())
+		}
 		hash.Write([]byte(f.Name()))
 		hash.Write(v)
 	}
-	v1, _ := sources.ReadFile("v1.go")
+	v1, rErr := sources.ReadFile("v1.go")
+	if rErr != nil {
+		panic("migration: embedded v1.go unreadable")
+	}
 	hash.Write(v1)
-	sql, _ := sources.ReadFile("migrations/0002_tenant_catalog.sql")
+	sql, sErr := sources.ReadFile("migrations/0002_tenant_catalog.sql")
+	if sErr != nil {
+		panic("migration: embedded 0002_tenant_catalog.sql unreadable")
+	}
 	sum := sha256.Sum256(sql)
 	m := []change{{Entry{1, "legacy baseline", hex.EncodeToString(hash.Sum(nil)), false}, adopt}, {Entry{2, "tenant catalog", hex.EncodeToString(sum[:]), false}, func(ctx context.Context, tx pgx.Tx) error { _, e := tx.Exec(ctx, string(sql)); return e }}}
 
-	sql3, _ := sources.ReadFile("migrations/0003_tenant_rls.sql")
+	sql3, s3Err := sources.ReadFile("migrations/0003_tenant_rls.sql")
+	if s3Err != nil {
+		panic("migration: embedded 0003_tenant_rls.sql unreadable")
+	}
 	sum3 := sha256.Sum256(sql3)
 	m = append(m, change{Entry{3, "tenant row security", hex.EncodeToString(sum3[:]), false}, func(ctx context.Context, tx pgx.Tx) error { _, e := tx.Exec(ctx, string(sql3)); return e }})
 	sql4, _ := sources.ReadFile("migrations/0004_field_types.sql")
