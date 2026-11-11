@@ -127,7 +127,7 @@ test("timeoutRemovesAuthHome without using shared aliases", async (t) => {
             accessToken: "synthetic",
             instanceUrl: "https://reference.example.invalid",
           },
-        } as any,
+        } as unknown as Parameters<typeof withCli>[0],
         async () => {
           assert.fail("timeout must prevent action");
         },

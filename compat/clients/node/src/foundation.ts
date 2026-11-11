@@ -1,6 +1,8 @@
 import { setTimeout as delay } from "node:timers/promises";
 import { create, expect, Blocked, type Context } from "./scenarios.ts";
 import { runExpiryObservation } from "./foundation-policy.ts";
+
+type JsonRecord = Record<string, unknown>;
 import {
   base,
   owned,
@@ -30,12 +32,12 @@ export const foundationScenarios: Record<
       versions.status === 200 &&
         Array.isArray(versions.body) &&
         versions.body.some(
-          (v: any) =>
+          (v: JsonRecord) =>
             v.version === c.env.COMPAT_API_VERSION &&
             v.url === base(c).slice(0, -1),
         ),
     );
-    (c.result.observations as any).versions = {
+    (c.result.observations as JsonRecord).versions = {
       status: versions.status,
       requestedVersionAdvertised: true,
     };
@@ -68,7 +70,7 @@ export const foundationScenarios: Record<
       "PATCH",
       { Name: name },
     );
-    const returnedId = (upsert.body as any)?.id;
+    const returnedId = (upsert.body as JsonRecord)?.id;
     if (
       upsert.status === 201 &&
       typeof returnedId === "string" &&
@@ -90,18 +92,18 @@ export const foundationScenarios: Record<
     expect(
       c,
       "userinfo identifies own user",
-      info.status === 200 && typeof (info.body as any)?.user_id === "string",
+      info.status === 200 && typeof (info.body as JsonRecord)?.user_id === "string",
     );
-    const user = (info.body as any).user_id;
+    const user = (info.body as JsonRecord).user_id;
     for (const version of ["65.0", "51.0"]) {
       const own = await request(
         c,
         `/services/data/v${version}/sobjects/User/${user}`,
       );
       expect(c, `own-user ${version} response`, own.status === 200);
-      (c.result.observations as any)[`own-user:${version}`] = {
+      (c.result.observations as JsonRecord)[`own-user:${version}`] = {
         status: own.status,
-        hasOwnId: (own.body as any).Id === user,
+        hasOwnId: (own.body as JsonRecord).Id === user,
       };
     }
     await observe(c, "delete", path(c, "Account", id), "DELETE");
@@ -180,9 +182,9 @@ export const foundationScenarios: Record<
       "fresh session has same user",
       info.status === 200 &&
         freshInfo.status === 200 &&
-        (info.body as any).user_id === (freshInfo.body as any).user_id &&
-        (info.body as any).organization_id ===
-          (freshInfo.body as any).organization_id,
+        (info.body as JsonRecord).user_id === (freshInfo.body as JsonRecord).user_id &&
+        (info.body as JsonRecord).organization_id ===
+          (freshInfo.body as JsonRecord).organization_id,
     );
     const name = owned(c, "cursors");
     const ids: string[] = [];
@@ -314,7 +316,7 @@ export const foundationScenarios: Record<
     expect(
       c,
       "invalid writes leave name unchanged",
-      unchanged.status === 200 && (unchanged.body as any).Name === name,
+      unchanged.status === 200 && (unchanged.body as JsonRecord).Name === name,
     );
     await observe(
       c,

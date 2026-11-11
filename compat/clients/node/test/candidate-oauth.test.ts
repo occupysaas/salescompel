@@ -4,6 +4,7 @@ import {
   parseLauncherURL,
   redactOAuthEvidence,
 } from "../src/candidate-oauth.ts";
+import type { GateContext } from "../src/candidate-acceptance-preflight.ts";
 
 test("OAuth launcher accepts only the candidate authorization origin", () => {
   const root = "https://127.0.0.1:58443";
@@ -75,7 +76,7 @@ test("OAuth step publication is source-bound and digest-verified", async (t) => 
     scratch,
     runId: "a".repeat(24),
     bindings: { source: "b".repeat(64) },
-  } as any;
+  } as unknown as GateContext;
   const parsed = {
     schemaVersion: 1 as const,
     runId: c.runId,
@@ -109,8 +110,14 @@ test("occupied sf callback port blocks OAuth preflight", async () => {
     server.listen(1717, "127.0.0.1", resolve),
   );
   try {
-    assert.equal(typeof (preflight as any).preflightOAuth, "function");
-    await assert.rejects((preflight as any).preflightOAuth(), /PREREQUISITE/);
+    assert.equal(
+      typeof (preflight as Record<string, unknown>).preflightOAuth,
+      "function",
+    );
+    await assert.rejects(
+      (preflight as { preflightOAuth: () => Promise<unknown> }).preflightOAuth(),
+      /PREREQUISITE/,
+    );
   } finally {
     await new Promise<void>((resolve) => server.close(() => resolve()));
   }
@@ -127,7 +134,12 @@ test("served authorization contract permits CLI prompt query", async () => {
   );
   assert.ok(
     d.paths["/services/oauth2/authorize"].get.parameters.some(
-      (p: any) =>
+      (p: {
+        name: string;
+        in: string;
+        schema: { type: string };
+        required: boolean;
+      }) =>
         p.name === "prompt" &&
         p.in === "query" &&
         p.schema.type === "string" &&
@@ -138,7 +150,14 @@ test("served authorization contract permits CLI prompt query", async () => {
 
 test("OAuth clients cannot send credentials outside candidate origin", async () => {
   const oauth = await import("../src/candidate-oauth.ts");
-  const guard = (oauth as any).assertCandidateOAuthEndpoints;
+  const guard = (
+    oauth as unknown as {
+      assertCandidateOAuthEndpoints: (
+        config: Record<string, string | undefined>,
+        root: string,
+      ) => void;
+    }
+  ).assertCandidateOAuthEndpoints;
   assert.equal(typeof guard, "function");
   const root = "https://localhost:58443";
   const config = {

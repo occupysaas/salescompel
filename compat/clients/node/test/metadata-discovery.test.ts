@@ -141,7 +141,7 @@ test("metadataPostIsReadOnly through unmodified JSforce", async (t) => {
   await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
   t.after(() => server.close());
   const result = await readWithClient({
-    origin: `http://127.0.0.1:${(server.address() as any).port}`,
+    origin: `http://127.0.0.1:${(server.address() as { port: number }).port}`,
     token: "synthetic",
     kind: "metadata",
     type: "CustomField",
@@ -157,7 +157,7 @@ test("metadataPostIsReadOnly through unmodified JSforce", async (t) => {
       origin: "https://reference.example.invalid",
       token: "synthetic",
       kind: "deploy",
-    } as any),
+    } as unknown as Parameters<typeof readWithClient>[0]),
     /read operation/,
   );
 });
@@ -171,7 +171,7 @@ test("read process deadline and response bound fail closed", async (t) => {
     server.closeAllConnections();
     server.close();
   });
-  const origin = `http://127.0.0.1:${(server.address() as any).port}`;
+  const origin = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
   await assert.rejects(
     readWithClient(
       { origin, token: "x", kind: "describe", name: "Account" },

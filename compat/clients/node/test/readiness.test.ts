@@ -31,7 +31,7 @@ const env = {
   COMPAT_API_VERSION: "65.0",
   COMPAT_DISPOSABLE: "yes",
 };
-function approved(): any {
+function approved(): Record<string, any> {
   return {
     schemaVersion: 1,
     referenceAlias: "test-org",
@@ -60,18 +60,18 @@ function approved(): any {
 test("readiness accepts complete authorization and rejects stale or incomplete scope", () => {
   assert.deepEqual(readinessIssues(approved(), schema, context, env), []);
   for (const mutate of [
-    (r: any) => (r.decision.status = "pending"),
-    (r: any) => (r.decision.status = "rejected"),
-    (r: any) => (r.decision.observationAuthorized = false),
-    (r: any) => (r.observer = null),
-    (r: any) => (r.profileHash = "b".repeat(64)),
-    (r: any) => (r.apiVersion = "64.0"),
-    (r: any) => (r.scenarios = []),
-    (r: any) => (r.fixtures.restricted = false),
-    (r: any) => (r.decision.recordedAt = "2026-02-30"),
-    (r: any) => (r.decision.recordedAt = "2999-01-01"),
-    (r: any) => (r.referenceAlias = " "),
-    (r: any) => (r.token = "secret"),
+    (r: Record<string, any>) => (r.decision.status = "pending"),
+    (r: Record<string, any>) => (r.decision.status = "rejected"),
+    (r: Record<string, any>) => (r.decision.observationAuthorized = false),
+    (r: Record<string, any>) => (r.observer = null),
+    (r: Record<string, any>) => (r.profileHash = "b".repeat(64)),
+    (r: Record<string, any>) => (r.apiVersion = "64.0"),
+    (r: Record<string, any>) => (r.scenarios = []),
+    (r: Record<string, any>) => (r.fixtures.restricted = false),
+    (r: Record<string, any>) => (r.decision.recordedAt = "2026-02-30"),
+    (r: Record<string, any>) => (r.decision.recordedAt = "2999-01-01"),
+    (r: Record<string, any>) => (r.referenceAlias = " "),
+    (r: Record<string, any>) => (r.token = "secret"),
   ]) {
     const r = approved();
     mutate(r);
@@ -81,7 +81,7 @@ test("readiness accepts complete authorization and rejects stale or incomplete s
     );
   }
   for (const key of Object.keys(env)) {
-    const e: any = { ...env };
+    const e: NodeJS.ProcessEnv = { ...env };
     delete e[key];
     assert.ok(readinessIssues(approved(), schema, context, e).length, key);
   }
@@ -147,7 +147,7 @@ test("foundation reference readiness does not require an unused locale-user cred
   const r = approved();
   r.profile = "rest-query-foundation";
   const e = { ...env };
-  delete (e as any).COMPAT_REFERENCE_LOCALE_USER_ID;
+  delete (e as Record<string, unknown>).COMPAT_REFERENCE_LOCALE_USER_ID;
   assert.deepEqual(
     readinessIssues(r, schema, { ...context, profile: r.profile }, e),
     [],

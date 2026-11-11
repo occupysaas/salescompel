@@ -55,7 +55,7 @@ test("rejects schema-valued additionalProperties instead of bypassing subset val
     { type: "string", nullable: true },
     true,
   ]) {
-    const d: any = await loadCandidateOpenAPI();
+    const d = (await loadCandidateOpenAPI()) as Record<string, any>;
     d.components.schemas.AccountRead.additionalProperties =
       additionalProperties;
     await assert.rejects(
@@ -298,15 +298,15 @@ test("keepsTrafficDiagnosticsPrivate", async () => {
 });
 test("rejectsUnsupportedTrafficConstructs", async () => {
   for (const mutate of [
-    (d: any) =>
+    (d: Record<string, any>) =>
       (d.paths[base + "/query"].get.parameters[0].style = "deepObject"),
-    (d: any) =>
+    (d: Record<string, any>) =>
       (d.components.schemas.AccountRead.format = "unimplemented-format"),
-    (d: any) =>
+    (d: Record<string, any>) =>
       (d.paths[base + "/query"].get.responses["200"].content[
         "application/json"
       ].schema = { $ref: "https://PRIVATE_MARKER.invalid/schema" }),
-    (d: any) =>
+    (d: Record<string, any>) =>
       (d.components.schemas.AccountRead = {
         type: "object",
         properties: { next: { $ref: "#/components/schemas/AccountRead" } },

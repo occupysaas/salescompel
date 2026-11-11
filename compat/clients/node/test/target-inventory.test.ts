@@ -31,25 +31,25 @@ test("inventory schema accepts explicit incomplete and complete synthetic/real t
 test("inventory schema rejects incomplete structure and unknown fields or dispositions", () => {
   const validate = schema();
   const mutations = [
-    (v: any) => {
+    (v: Record<string, any>) => {
       delete v.sections.security;
     },
-    (v: any) => {
+    (v: Record<string, any>) => {
       v.secretExtra = "marker";
     },
-    (v: any) => {
+    (v: Record<string, any>) => {
       v.schemaVersion = 2;
     },
-    (v: any) => {
+    (v: Record<string, any>) => {
       v.inventoryId = "../private";
     },
-    (v: any) => {
+    (v: Record<string, any>) => {
       v.date = "yesterday";
     },
-    (v: any) => {
+    (v: Record<string, any>) => {
       v.sections.dataMetadata.items[0].disposition = "maybe";
     },
-    (v: any) => {
+    (v: Record<string, any>) => {
       v.sections.dataMetadata.items[0].details.extra = true;
     },
   ];
@@ -62,14 +62,14 @@ test("inventory schema rejects incomplete structure and unknown fields or dispos
 test("typed knowledge preserves known false/zero and unknown volume/version", () => {
   const validate = schema();
   const v = makeInventory();
-  const feature: any = {
+  const feature: Record<string, any> = {
     ...makeItem(),
     id: "person-accounts",
     category: "org-feature",
     details: { name: known("personAccounts"), enabled: known(false) },
   };
   v.sections.sourceOrg.items.push(feature);
-  const volume: any = {
+  const volume: Record<string, any> = {
     ...makeItem(),
     id: "account-count",
     category: "data-volume",
@@ -87,7 +87,7 @@ test("typed knowledge preserves known false/zero and unknown volume/version", ()
   assert.equal(validate(v), false);
   volume.details.count = "unknown";
   assert.equal(validate(v), false);
-  const client: any = {
+  const client: Record<string, any> = {
     ...makeItem(),
     id: "client",
     category: "client",
@@ -143,7 +143,7 @@ test("assessment distinguishes validity from readiness and keeps synthetic-only 
     assess(makeCompleteInventory("real")).readiness,
     "ready-for-review",
   );
-  const bad: any = makeCompleteInventory("synthetic");
+  const bad: Record<string, any> = makeCompleteInventory("synthetic");
   bad.extra = true;
   assert.equal(assess(bad).readiness, "synthetic-only");
   assert.equal(assess(bad).validation, "invalid");
@@ -388,7 +388,7 @@ test("reports bind exact bytes, order deterministically and never include free t
   assert.deepEqual(r, assessTargetInventory(bytes));
   assert.ok(!JSON.stringify(r).includes(marker));
   assert.equal(r.gaps[0].section, "sourceOrg");
-  const bad: any = structuredClone(v);
+  const bad: Record<string, any> = structuredClone(v);
   bad[marker] = marker;
   assert.ok(!JSON.stringify(assess(bad)).includes(marker));
   assert.ok(
@@ -501,7 +501,7 @@ function commandInventory(pluginId: string | null): TargetInventory {
         outputFormats: known(["json"]),
         target: known("org"),
         cliVersion: known("2.156.0"),
-        pluginId: known(pluginId) as any,
+        pluginId: known(pluginId as string),
       },
     },
   ];

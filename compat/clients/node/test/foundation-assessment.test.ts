@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import {
   assessFoundationPair,
   type CleanupAbsenceEvidence,
+  type ReleaseFinding,
 } from "../src/foundation-assessment.ts";
 import type { FoundationSidecar } from "../src/foundation-sidecar.ts";
 import { foundationCoverage } from "../src/foundation-policy.ts";
@@ -31,7 +32,7 @@ const sfId = (n: number) => `001${String(n).padStart(12, "0")}AAA`;
 function fixture(start: string, end: string) {
   const coverage = foundationCoverage();
   const results = Object.entries(coverage).map(([id, spec]) => {
-    const observations: Record<string, any> = {};
+    const observations: Record<string, Record<string, unknown>> = {};
     const assertions: { name: string; passed: boolean }[] = [];
     for (const label of spec.observations) {
       observations[label] = {
@@ -212,7 +213,7 @@ const pair = () =>
     fixture("2026-10-19T13:00:00.000Z", "2026-10-19T13:01:00.000Z"),
   ] as const;
 
-function assess(a = pair()[0], b = pair()[1], releases: any[] = []) {
+function assess(a = pair()[0], b = pair()[1], releases: ReleaseFinding[] = []) {
   return assessFoundationPair(
     a.bytes,
     a.sidecar,
@@ -226,7 +227,7 @@ function assess(a = pair()[0], b = pair()[1], releases: any[] = []) {
 
 function revise(
   fixtureValue: ReturnType<typeof fixture>,
-  edit: (report: any) => void,
+  edit: (report: ReturnType<typeof fixture>["report"]) => void,
 ) {
   const report = structuredClone(fixtureValue.report);
   edit(report);
@@ -271,8 +272,8 @@ test("authentication failures and malformed positive reads cannot become evidenc
   const failed = (f: ReturnType<typeof fixture>) =>
     revise(f, (report) => {
       const result = report.results.find(
-        (r: any) => r.id === "foundation-cursors",
-      );
+        (r) => r.id === "foundation-cursors",
+      )!;
       result.observations["fresh-session"] = {
         status: 401,
         body: [{ errorCode: "INVALID_SESSION_ID" }],
@@ -282,22 +283,22 @@ test("authentication failures and malformed positive reads cannot become evidenc
   const nullRead = (f: ReturnType<typeof fixture>) =>
     revise(f, (report) => {
       report.results.find(
-        (r: any) => r.id === "foundation-routes",
-      ).observations.read.body = null;
+        (r) => r.id === "foundation-routes",
+      )!.observations["read"].body = null;
     });
   assert.equal(assess(nullRead(a), nullRead(b)).outcome, "blocked");
   const nullAfterWrite = (f: ReturnType<typeof fixture>) =>
     revise(f, (report) => {
       report.results.find(
-        (r: any) => r.id === "foundation-errors",
-      ).observations["after-failed-writes"].body = null;
+        (r) => r.id === "foundation-errors",
+      )!.observations["after-failed-writes"].body = null;
     });
   assert.equal(assess(nullAfterWrite(a), nullAfterWrite(b)).outcome, "blocked");
   const fakeMutation = (f: ReturnType<typeof fixture>) =>
     revise(f, (report) => {
       report.results.find(
-        (r: any) => r.id === "foundation-routes",
-      ).observations.patch = { status: 200, body: {} };
+        (r) => r.id === "foundation-routes",
+      )!.observations["patch"] = { status: 200, body: {} };
     });
   assert.equal(assess(fakeMutation(a), fakeMutation(b)).outcome, "blocked");
 });
@@ -306,13 +307,13 @@ test("concurrent passing assertion order does not cause drift", () => {
   const [a, b] = pair();
   const swapped = revise(b, (report) => {
     const assertions = report.results.find(
-      (r: any) => r.id === "foundation-cursors",
-    ).assertions;
+      (r) => r.id === "foundation-cursors",
+    )!.assertions;
     const ai = assertions.findIndex(
-      (x: any) => x.name === "parallel-a: bounded JSON HTTP response",
+      (x) => x.name === "parallel-a: bounded JSON HTTP response",
     );
     const bi = assertions.findIndex(
-      (x: any) => x.name === "parallel-b: bounded JSON HTTP response",
+      (x) => x.name === "parallel-b: bounded JSON HTTP response",
     );
     [assertions[ai], assertions[bi]] = [assertions[bi], assertions[ai]];
   });
@@ -323,7 +324,7 @@ test("all owned fixture IDs must appear in cleanup and absence evidence", () => 
   const [a, b] = pair();
   const missing = revise(b, (report) => {
     const removed = report.cleanup.findIndex(
-      (c: any) => c.resource === `Account:${sfId(1000)}`,
+      (c) => c.resource === `Account:${sfId(1000)}`,
     );
     report.cleanup.splice(removed, 1);
   });
@@ -333,8 +334,8 @@ test("all owned fixture IDs must appear in cleanup and absence evidence", () => 
   assert.equal(assess(a, missing).outcome, "blocked");
   const mislabeled = revise(b, (report) => {
     report.cleanup.find(
-      (c: any) => c.resource === `Account:${sfId(1000)}`,
-    ).scenario = "foundation-pagination";
+      (c) => c.resource === `Account:${sfId(1000)}`,
+    )!.scenario = "foundation-pagination";
   });
   assert.equal(assess(a, mislabeled).outcome, "blocked");
 });
@@ -348,7 +349,7 @@ test("complete measured pair is ready only with named assumption", () => {
 
 test("binding, freshness, coverage and cleanup gaps block", () => {
   const [a, b] = pair();
-  const missingSidecar = assess({ ...a, sidecar: undefined as any }, b);
+  const missingSidecar = assess({ ...a, sidecar: undefined as unknown as FoundationSidecar }, b);
   assert.equal(missingSidecar.outcome, "blocked");
   assert.equal(missingSidecar.dimensions["foundation-routes"], "blocked");
   assert.equal(missingSidecar.dimensions["cursor-expiry"], "blocked");
@@ -366,7 +367,7 @@ test("binding, freshness, coverage and cleanup gaps block", () => {
     "blocked",
   );
   const bad = structuredClone(b.report);
-  delete (bad.results[0].observations as any).resources;
+  delete (bad.results[0].observations as unknown as { resources?: unknown }).resources;
   assert.equal(
     assess(a, { ...b, bytes: JSON.stringify(bad) + "\n" }).outcome,
     "blocked",
@@ -376,7 +377,7 @@ test("binding, freshness, coverage and cleanup gaps block", () => {
 test("measured differences drift, while unresolved release findings block separately", () => {
   const [a, b] = pair();
   const changed = structuredClone(b.report);
-  (changed.results[0].observations as any).resources.body = { changed: true };
+  changed.results[0].observations.resources.body = { changed: true };
   const bytes = JSON.stringify(changed) + "\n";
   const revised = {
     ...b,
@@ -397,8 +398,8 @@ test("complete tied payload changes are drift, not missing evidence", () => {
   const changed = structuredClone(b.report);
   (
     changed.results.find((r) => r.id === "foundation-cursors")!
-      .observations as any
-  )["ties:1"].body.records[0].Extra = "changed";
+      .observations["ties:1"] as unknown as { body: { records: Array<Record<string, unknown>> } }
+  ).body.records[0].Extra = "changed";
   const bytes = JSON.stringify(changed) + "\n";
   const revised = {
     ...b,

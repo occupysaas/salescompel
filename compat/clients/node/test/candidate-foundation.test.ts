@@ -119,12 +119,30 @@ test(
         version: "65.0",
       });
       // Observe the real transport without replacing requests or client behavior.
-      const transport = (conn as any)._transport,
+      type TransportRequest = {
+        url: string;
+        method: string;
+        headers?: Record<string, string | undefined>;
+        body?: string;
+      };
+      type TransportResponse = {
+        statusCode: number;
+        headers: Record<string, string | string[] | undefined>;
+        body?: string | Buffer;
+      };
+      type Transport = {
+        httpRequest: (
+          req: TransportRequest,
+          options: unknown,
+        ) => Promise<TransportResponse>;
+      };
+      const transport = (conn as unknown as { _transport: Transport })
+          ._transport,
         original = transport.httpRequest.bind(transport);
-      transport.httpRequest = (req: any, options: any) => {
+      transport.httpRequest = (req: TransportRequest, options: unknown) => {
         const pending = original(req, options);
         void pending.then(
-          (res: any) => {
+          (res: TransportResponse) => {
             const target = new URL(req.url);
             assert.equal(target.origin, url.origin);
             validate({
@@ -172,33 +190,42 @@ test(
     }
     async function create(
       label: string,
-      data: Record<string, any>,
+      data: Record<string, unknown>,
       principal: Role = "admin",
     ) {
-      const e = event(label, [data.Name], principal);
+      const e = event(label, [data.Name as string], principal);
       await recordFixtureEvent(journal, e);
       const conn = principal === "other" ? other : admin;
-      const result: any = await conn.sobject("Account").create(data);
+      const result = (await conn
+        .sobject("Account")
+        .create(data)) as unknown as { id: string; success: boolean };
       await recordFixtureEvent(journal, { ...e, kind: "known", id: result.id });
       assert.equal(result.success, true);
       return result.id as string;
     }
     const name = marker("MixedCase"),
       id = await create("seed", { Name: name });
-    const record: any = await admin
+    const record = (await admin
       .sobject("Account")
-      .retrieve(id.slice(0, 15));
+      .retrieve(id.slice(0, 15))) as unknown as { Id: string };
     assert.equal(record.Id, id);
     await admin
       .sobject("Account")
       .update({ Id: id.slice(0, 15), Compat_Text__c: "value" });
     assert.equal(
-      ((await admin.sobject("Account").retrieve(id)) as any).Compat_Text__c,
+      ((await admin.sobject("Account").retrieve(id)) as Record<string, unknown>)
+        .Compat_Text__c,
       "value",
     );
-    const result: any = await admin.query(
+    const result = (await admin.query(
       `select id, name from account where name = '${name.toLowerCase()}'`,
-    );
+    )) as unknown as {
+      records: {
+        Id: string;
+        Name: string;
+        attributes: { type: string };
+      }[];
+    };
     assert.equal(result.records.length, 1);
     assert.equal(result.records[0].Id, id);
     assert.equal(result.records[0].Name, name);
@@ -208,9 +235,9 @@ test(
     await create("filled", { Name: orderName, Compat_Text__c: "z" });
     for (const direction of ["ASC", "DESC"])
       for (const placement of ["", " NULLS LAST"]) {
-        const q: any = await admin.query(
+        const q = (await admin.query(
           `select id, compat_text__c from account where name = '${orderName}' order by compat_text__c ${direction}${placement}`,
-        );
+        )) as unknown as { records: { Id: string }[] };
         assert.equal(q.records.length, 2);
         assert.equal(q.records[placement ? 1 : 0].Id, blank);
       }
@@ -224,17 +251,22 @@ test(
     ].entries()) {
       const e = event("upsert-" + i, [upsertName]);
       await recordFixtureEvent(journal, e);
-      const r: any = await admin
+      const r = (await admin
         .sobject("Account")
-        .upsert({ Name: upsertName, Compat_Key__c: key }, "Compat_Key__c");
+        .upsert({ Name: upsertName, Compat_Key__c: key }, "Compat_Key__c")) as unknown as {
+        id: string;
+        created: boolean;
+      };
       await recordFixtureEvent(journal, { ...e, kind: "known", id: r.id });
       assert.equal(r.created, i === 0);
       if (i === 0) upsertID = r.id;
       else assert.equal(r.id, upsertID);
     }
     assert.equal(
-      ((await admin.sobject("Account").retrieve(upsertID)) as any)
-        .Compat_Key__c,
+      ((await admin.sobject("Account").retrieve(upsertID)) as Record<
+        string,
+        unknown
+      >).Compat_Key__c,
       spelling,
     );
     const duplicate = event("duplicate", [marker("duplicate")]);
@@ -256,7 +288,7 @@ test(
     await assert.rejects(
       restricted
         .sobject("Account")
-        .update({ Id: id, compat_text__c: "denied" } as any),
+        .update({ Id: id, compat_text__c: "denied" } as unknown),
       { errorCode: "INVALID_FIELD" },
     );
     expectedRequestIssues = [];

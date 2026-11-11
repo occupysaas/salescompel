@@ -88,7 +88,7 @@ test("OAuth subprocess output is captured in memory before any evidence is writt
       privateOutput: (stdout: string, stderr: string) => {
         captured = { stdout, stderr };
       },
-    } as any,
+    },
     context,
     "oauth",
   );

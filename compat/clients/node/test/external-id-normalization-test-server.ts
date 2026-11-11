@@ -22,7 +22,7 @@ export async function normalizationFixture(t: TestContext) {
   };
   let mutation = 0,
     counter = 0;
-  const calls: { path: string; method: string; body: any }[] = [];
+  const calls: { path: string; method: string; body: unknown }[] = [];
   const canonical = (v: string) =>
     flags.exactKeys
       ? v
@@ -41,8 +41,8 @@ export async function normalizationFixture(t: TestContext) {
       Object.assign(x.flags, flags);
       if (["GET", "DELETE"].includes(method)) {
         const r = await x.transport.request(path, init);
-        if (flags.reverseRows && Array.isArray((r.body as any)?.records))
-          (r.body as any).records.reverse();
+        if (flags.reverseRows && Array.isArray((r.body as { records?: unknown[] })?.records))
+          (r.body as { records: unknown[] }).records.reverse();
         return structuredClone(r);
       }
       mutation++;

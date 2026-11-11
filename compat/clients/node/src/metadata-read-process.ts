@@ -43,7 +43,7 @@ export function validateReadRequest(r: ReadRequest) {
 export async function readWithClient(
   r: ReadRequest,
   limits = { maxBytes: 8 * 1024 * 1024, timeoutMs: 60000 },
-): Promise<any> {
+): Promise<unknown> {
   validateReadRequest(r);
   if (
     !Number.isSafeInteger(limits.maxBytes) ||

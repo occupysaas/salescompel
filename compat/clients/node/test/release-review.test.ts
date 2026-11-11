@@ -16,7 +16,7 @@ const gap = () => ({
   reason: "Historical body unavailable",
   nextAction: "Retrieve pinned source",
 });
-function fixture(): any {
+function fixture(): Record<string, any> {
   const source = {
     id: "history",
     url: "https://help.salesforce.com/release",
@@ -124,7 +124,7 @@ test("a reviewed section retains bounded coverage and live blocking", () => {
   });
   assert.deepEqual(releaseReviewIssues(f.index, f.changes, ids), []);
 });
-const malformed: [string, (f: any) => void][] = [
+const malformed: [string, (f: Record<string, any>) => void][] = [
   ["absent batch", (f) => delete f.index.reviewBatches],
   [
     "duplicate batch",
@@ -271,7 +271,7 @@ test("malformed unknown input returns diagnostics without throwing", () => {
   ])
     assert.ok(releaseReviewIssues(value, null, ids).length);
 });
-async function repository(t: any) {
+async function repository(t: { after(fn: () => Promise<void>): void }) {
   const root = await mkdtemp(join(tmpdir(), "release-review-"));
   t.after(() => rm(root, { recursive: true, force: true }));
   for (const p of ["releases", "profiles", "contracts"])
@@ -375,7 +375,7 @@ test("repository release batch validates all registered foundation contracts", a
   assert.deepEqual(await validateReleaseReviewRepository(ROOT), []);
 });
 
-const findingBypasses: [string, (finding: any) => void][] = [
+const findingBypasses: [string, (finding: Record<string, unknown>) => void][] = [
   ["resolved", (f) => (f.status = "resolved")],
   ["reconciled", (f) => (f.status = "reviewed-and-reconciled")],
   ["blocking false", (f) => (f.blocksContractFreeze = false)],

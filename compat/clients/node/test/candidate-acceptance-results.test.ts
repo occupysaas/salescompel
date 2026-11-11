@@ -31,8 +31,8 @@ test("nested repeats keep ancestry while replayed terminal results still fail co
     const events = cases.map((e) => {
       const c = structuredClone(e);
       if (legacy) {
-        delete (c.data as any).testId;
-        delete (c.data as any).parentId;
+        delete (c.data as Record<string, unknown>).testId;
+        delete (c.data as Record<string, unknown>).parentId;
       }
       return c;
     });

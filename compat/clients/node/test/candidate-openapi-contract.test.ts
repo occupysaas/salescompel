@@ -101,41 +101,42 @@ const expected = [
   ["/services/data/v65.0/query", "get", "candidateQuery"],
   ["/services/data/v65.0/openapi.yaml", "get", "candidateOpenAPI"],
 ];
-const doc = async (): Promise<any> => loadCandidateOpenAPI();
+const doc = async (): Promise<Record<string, any>> => loadCandidateOpenAPI();
 const urls = async () =>
   new Set<string>(
     parse(
       await readFile(ROOT + "/docs/compat/sources.yaml", "utf8"),
-    ).sources.map((s: any) => s.url),
+    ).sources.map((s: { url: string }) => s.url),
   );
 
 test("candidateContractInventory", async () => {
   const d = await doc();
   assert.equal(d.openapi, "3.2.1");
   assert.deepEqual(d.servers, [{ url: "/" }]);
-  const actual = Object.entries(d.paths).flatMap(([path, p]: [string, any]) =>
-    Object.entries(p)
+  const actual = Object.entries(d.paths).flatMap(([path, p]) =>
+    Object.entries(p as Record<string, Record<string, unknown>>)
       .filter(([method]) => ["get", "post", "patch", "delete"].includes(method))
-      .map(([method, op]: [string, any]) => [path, method, op.operationId]),
+      .map(([method, op]) => [path, method, op.operationId]),
   );
   assert.deepEqual(actual.sort(), structuredClone(expected).sort());
   assert.deepEqual(d.security, [{ bearerAuth: [] }]);
   for (const mutate of [
-    (x: any) =>
+    (x: Record<string, any>) =>
       (x.paths["/services/data/v65.0/composite/batch"] = {
         post: x.paths["/services/data/v65.0/sobjects/Account"].post,
       }),
-    (x: any) => {
+    (x: Record<string, any>) => {
       x.paths["/services/data/v{version}"] = x.paths["/services/data"];
       delete x.paths["/services/data"];
     },
-    (x: any) => (x.servers = [{ url: "https://PRIVATE_MARKER.invalid" }]),
-    (x: any) => (x.security = []),
-    (x: any) =>
+    (x: Record<string, any>) =>
+      (x.servers = [{ url: "https://PRIVATE_MARKER.invalid" }]),
+    (x: Record<string, any>) => (x.security = []),
+    (x: Record<string, any>) =>
       (x.paths["/services/data"].get.responses.default = {
         description: "anything",
       }),
-    (x: any) => {
+    (x: Record<string, any>) => {
       x.paths["/services/data"].get.responses["201"] =
         x.paths["/services/data"].get.responses["200"];
       delete x.paths["/services/data"].get.responses["200"];
@@ -158,13 +159,13 @@ test("candidateContractProvenance", async () => {
       assert.ok(registered.has(u));
   }
   for (const mutate of [
-    (x: any) => delete x.paths["/services/data"].get["x-source"],
-    (x: any) =>
+    (x: Record<string, any>) => delete x.paths["/services/data"].get["x-source"],
+    (x: Record<string, any>) =>
       (x.paths["/services/data"].get["x-source"] = [
         "https://PRIVATE_MARKER.invalid",
       ]),
-    (x: any) => (x.components.schemas.AccountRead = {}),
-    (x: any) =>
+    (x: Record<string, any>) => (x.components.schemas.AccountRead = {}),
+    (x: Record<string, any>) =>
       (x.components.schemas.AccountRead = {
         $ref: "https://PRIVATE_MARKER.invalid",
       }),
@@ -288,7 +289,7 @@ test("candidate foundation ID forms and record errors are documented", async () 
     const path = d.paths[`/services/data/v65.0/sobjects/${object}/{recordId}`];
     for (const method of ["get", "patch", "delete"]) {
       const parameter = path[method].parameters.find(
-        (p: any) => p.name === "recordId",
+        (p: { name: string; description: string }) => p.name === "recordId",
       );
       assert.match(parameter.description, /15-character/);
       assert.match(parameter.description, /18-character/);
@@ -330,7 +331,10 @@ test("OAuth contract exposes the seven login operations and scoped bearer access
     assert.equal(op?.operationId, id);
     assert.ok(op["x-source"].length > 0);
   }
-  const schemes = Object.values(d.components.securitySchemes) as any[];
+  const schemes = Object.values(d.components.securitySchemes) as Record<
+    string,
+    any
+  >[];
   assert.ok(schemes.some((s) => s.type === "http" && s.scheme === "bearer"));
   const oauth = schemes.find((s) => s.type === "oauth2");
   assert.ok(oauth?.flows.authorizationCode);
@@ -386,12 +390,15 @@ test("OAuth schemas are closed offline contracts including errors and Organizati
       username: "n",
     },
     OAuthDiscovery: Object.fromEntries(
-      Object.entries(d.components.schemas.OAuthDiscovery.properties).map(
-        ([key, schema]: [string, any]) => [
-          key,
-          schema.type === "array" ? ["x"] : "x",
-        ],
-      ),
+      Object.entries(
+        d.components.schemas.OAuthDiscovery.properties as Record<
+          string,
+          Record<string, unknown>
+        >,
+      ).map(([key, schema]) => [
+        key,
+        schema.type === "array" ? ["x"] : "x",
+      ]),
     ),
     OrganizationProjection: {
       Name: "tenant",
@@ -435,8 +442,8 @@ test("OAuth schemas are closed offline contracts including errors and Organizati
     $ref: "#/$defs/OAuthError",
   });
   assert.equal(error({ error_description: "missing error" }), false);
-  for (const item of Object.values(d.paths) as any[])
-    for (const operation of Object.values(item) as any[])
+  for (const item of Object.values(d.paths) as Record<string, any>[])
+    for (const operation of Object.values(item) as Record<string, any>[])
       if (operation.security === undefined)
         assert.ok(operation.responses["403"]);
 });
@@ -444,10 +451,10 @@ test("OAuth schemas are closed offline contracts including errors and Organizati
 test("OAuth flows and secured scope failures cannot be removed from the contract", async () => {
   const d = await doc();
   for (const mutate of [
-    (x: any) => {
+    (x: Record<string, any>) => {
       delete x.components.securitySchemes.oauth2;
     },
-    (x: any) => {
+    (x: Record<string, any>) => {
       delete x.paths["/services/data/v65.0/openapi.yaml"].get.responses["403"];
     },
   ]) {

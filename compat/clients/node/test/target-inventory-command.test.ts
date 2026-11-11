@@ -42,11 +42,12 @@ async function cli(args: string[]) {
       { env, timeout: 10000 },
     );
     return { ...r, code: 0 };
-  } catch (e: any) {
+  } catch (e: unknown) {
+    const err = e as { stdout: string; stderr: string; code: number };
     return {
-      stdout: e.stdout as string,
-      stderr: e.stderr as string,
-      code: e.code,
+      stdout: err.stdout as string,
+      stderr: err.stderr as string,
+      code: err.code,
     };
   }
 }
@@ -252,9 +253,9 @@ test("repository resolver rejects traversal, schemes and symlink components with
     // Real resolver must reject the symlink before calling open on it.
     const mock = (() => {
       const saved = fs.open;
-      (fs as any).open = async (...args: any[]) => {
+      (fs as Record<string, unknown>).open = async (...args: unknown[]) => {
         calls.push(String(args[0]));
-        return (saved as any)(...args);
+        return (saved as (...a: unknown[]) => Promise<unknown>)(...args);
       };
       return () => {
         fs.open = saved;
@@ -409,7 +410,7 @@ test("referenced YAML collection keys cannot emit process warnings", async (t) =
       "? [INJECTED_SECRET_1234]\n: x\n",
     );
     const warnings: string[] = [];
-    t.mock.method(process, "emitWarning", (message: any) => {
+    t.mock.method(process, "emitWarning", (message: unknown) => {
       warnings.push(String(message));
     });
     const issues = await checkInventoryRepositoryRefs(

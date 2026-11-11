@@ -13,7 +13,7 @@ import { jsScenarios, type Context } from "../src/scenarios.ts";
 test("real JSforce CRUD wiring runs against an explicitly synthetic HTTP fixture", async () => {
   const dir = await mkdtemp(join(tmpdir(), "sc-wire-"));
   const id = "001000000000001AAA";
-  let record: any;
+  let record: Record<string, unknown> | undefined;
   const calls: string[] = [];
   const server = createServer(async (req, res) => {
     calls.push(req.method + " " + req.url);
@@ -48,7 +48,7 @@ test("real JSforce CRUD wiring runs against an explicitly synthetic HTTP fixture
   server.listen(0, "127.0.0.1");
   await once(server, "listening");
   try {
-    const port = (server.address() as any).port;
+    const port = (server.address() as { port: number }).port;
     const c: Context = {
       conn: new Connection({
         instanceUrl: `http://127.0.0.1:${port}`,
@@ -71,7 +71,7 @@ test("real JSforce CRUD wiring runs against an explicitly synthetic HTTP fixture
     };
     await jsScenarios.crud(c);
     assert.ok(c.result.assertions.every((a) => a.passed));
-    assert.equal((c.result.observations as any).missing.errorCode, "NOT_FOUND");
+    assert.equal((c.result.observations as Record<string, { errorCode?: string }>).missing.errorCode, "NOT_FOUND");
     const cleanup = await c.tracker.cleanup();
     assert.equal(cleanup[0].outcome, "passed");
     assert.ok(
@@ -121,7 +121,7 @@ test("composite probe sends JSON and confirms rollback with a real connector rea
   try {
     const c: Context = {
       conn: new Connection({
-        instanceUrl: `http://127.0.0.1:${(server.address() as any).port}`,
+        instanceUrl: `http://127.0.0.1:${(server.address() as { port: number }).port}`,
         accessToken: "synthetic-only",
         version: "65.0",
       }),

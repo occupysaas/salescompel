@@ -38,7 +38,7 @@ const expectedIds = [
 const base = "/services/data/v65.0";
 type Measured = CandidateExchange & { allow: string | null };
 type Role = FixtureEvent["principal"] | "none" | "bad";
-function json(e: Measured): any {
+function json(e: Measured): Record<string, any> {
   try {
     return JSON.parse(
       new TextDecoder("utf-8", { fatal: true }).decode(e.response.body),
@@ -598,16 +598,48 @@ test("OAuth media validates forms and HTML without bypassing schema checks", asy
 test("OAuth media compiler remains closed to unsupported security and content", async () => {
   const d = parse(await readFile(ROOT + "/api/candidate-openapi.yaml", "utf8"));
   for (const mutate of [
-    (x: any) => {
-      x.paths["/services/oauth2/token"].post.security = [{ unknown: [] }];
+    (x: Record<string, unknown>) => {
+      (
+        (
+          x.paths as Record<
+            string,
+            Record<string, Record<string, Record<string, unknown>>>
+          >
+        )["/services/oauth2/token"].post as Record<string, unknown>
+      ).security = [{ unknown: [] }];
     },
-    (x: any) => {
-      x.paths["/services/oauth2/token"].post.requestBody.content = {
+    (x: Record<string, unknown>) => {
+      (
+        (
+          x.paths as Record<
+            string,
+            Record<string, Record<string, Record<string, unknown>>>
+          >
+        )["/services/oauth2/token"].post as Record<
+          string,
+          Record<string, Record<string, unknown>>
+        >
+      ).requestBody.content = {
         "text/plain": { schema: { type: "string" } },
       };
     },
-    (x: any) => {
-      x.components.schemas.OAuthError.properties.error.format = "unknown";
+    (x: Record<string, unknown>) => {
+      (
+        (
+          (
+            x.components as Record<
+              string,
+              Record<string, Record<string, Record<string, unknown>>>
+            >
+          ).schemas as Record<
+            string,
+            Record<string, Record<string, Record<string, unknown>>>
+          >
+        )["OAuthError"].properties as Record<
+          string,
+          Record<string, Record<string, unknown>>
+        >
+      ).error.format = "unknown";
     },
   ]) {
     const x = structuredClone(d);

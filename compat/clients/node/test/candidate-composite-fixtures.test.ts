@@ -50,7 +50,7 @@ const rollback = (referenceId: string, code = "PROCESSING_HALTED") => ({
   httpHeaders: {},
   body: [{ errorCode: code, message: "Rollback" }],
 });
-async function setup(t: any) {
+async function setup(t: { after: (fn: () => unknown) => void }) {
   const dir = await mkdtemp(join(tmpdir(), "p24-fixture-"));
   t.after(() => rm(dir, { recursive: true, force: true }));
   const path = join(dir, "journal");

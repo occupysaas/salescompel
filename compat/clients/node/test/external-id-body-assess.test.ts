@@ -71,7 +71,7 @@ export async function pair(t: TestContext, mode = "valid") {
       if (init.method === "PATCH" && mode === "nonJson")
         return { ...r, body: { nonJson: "unparsed" } };
       if (init.method === "PATCH" && r.status === 400) {
-        const errors = r.body as any[];
+        const errors = r.body as Array<Record<string, unknown>>;
         if (mode === "fields-empty") errors[0].fields = [];
         if (mode === "fields-null") errors[0].fields = null;
         if (mode === "fields-string") errors[0].fields = "Compat_Key__c";
@@ -258,7 +258,7 @@ test("invalid matrix, bindings, state reads, cleanup and proof block independent
       if (mutation === "duplicate") r.observations[15] = r.observations[14];
       if (mutation === "null-omitted") delete o.request.Compat_Key__c;
       if (mutation === "profile") r.config.profileHash = "a".repeat(64);
-      if (mutation === "clients") (r.connectors as any).jsforce = "wrong";
+      if (mutation === "clients") (r.connectors as Record<string, string>).jsforce = "wrong";
       if (mutation === "manifest") r.manifestHash = "a".repeat(64);
       if (mutation === "state") {
         const path = join(dir, o.stateArtifact),
@@ -318,7 +318,7 @@ test("malformed positive control is blocked even when repeatable", async (t) => 
       path = join(dir, o.artifact);
     const wire = JSON.parse(await readFile(path, "utf8"));
     delete wire.body.success;
-    delete (o.body as any).success;
+    delete (o.body as unknown as { success?: unknown }).success;
     const bytes = JSON.stringify(wire) + "\n";
     await writeFile(path, bytes);
     o.sha256 = bodyDigest(bytes);

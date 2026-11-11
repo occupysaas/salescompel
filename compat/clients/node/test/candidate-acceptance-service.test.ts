@@ -7,6 +7,7 @@ import {
   recordFixtureEvent,
   cleanupFixtures,
 } from "../src/candidate-acceptance-fixtures.ts";
+import type { GateContext } from "../src/candidate-acceptance-preflight.ts";
 test("fixture cleanup refuses unknown creates and foreign names while retaining IDs", async (t) => {
   const dir = await mkdtemp(join(tmpdir(), "p15-service-"));
   t.after(() => rm(dir, { recursive: true, force: true }));
@@ -22,7 +23,7 @@ test("fixture cleanup refuses unknown creates and foreign names while retaining 
     kind: "intent" as const,
   };
   await recordFixtureEvent(path, event);
-  const c = { runId: event.runId, fixtureJournal: path } as any;
+  const c = { runId: event.runId, fixtureJournal: path } as unknown as GateContext;
   const pending = await cleanupFixtures(c, async () => ({
     status: 404,
     body: null,
@@ -65,7 +66,7 @@ test("fixture cleanup deletes children before parents and independently checks a
   const deleted: string[] = [],
     gone = new Set<string>();
   const r = await cleanupFixtures(
-    { runId: "a".repeat(24), fixtureJournal: path } as any,
+    { runId: "a".repeat(24), fixtureJournal: path } as unknown as GateContext,
     async (_c, _role, p, m) => {
       if (m === "DELETE") {
         deleted.push(p);
@@ -102,7 +103,7 @@ test("create-capable attempts capture unexpected IDs and leave lost responses un
     async () => ({ id: "003000000000000001", success: true }),
     ["INVALID_CROSS_REFERENCE_KEY"],
   );
-  const c = { runId: e.runId, fixtureJournal: path } as any;
+  const c = { runId: e.runId, fixtureJournal: path } as unknown as GateContext;
   assert.equal(
     (await cleanupFixtures(c, async () => ({ status: 404, body: null })))
       .verified,
@@ -153,7 +154,7 @@ test("proven rejected creation resolves only its own durable intent", async (t) 
     ),
   );
   const r = await cleanupFixtures(
-    { runId: e.runId, fixtureJournal: path } as any,
+    { runId: e.runId, fixtureJournal: path } as unknown as GateContext,
     async () => {
       throw Error("no known record");
     },

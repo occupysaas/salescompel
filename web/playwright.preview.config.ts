@@ -6,7 +6,7 @@ export default defineConfig({
         outputDir: process.env.CANDIDATE_BROWSER_OUTPUT,
         reporter: [
           ["json", { outputFile: process.env.CANDIDATE_BROWSER_REPORT }],
-        ] as any,
+        ] as unknown as [string, Record<string, unknown>][],
       }
     : {}),
   testDir: "./test",

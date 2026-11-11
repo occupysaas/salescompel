@@ -34,7 +34,8 @@ test("acceptance publication permits the exact new offline OpenAPI skip", async 
   await publishAcceptanceReport(path, r);
   const published = JSON.parse(await readFile(path, "utf8"));
   assert.deepEqual(
-    published.gates.find((g: any) => g.id === "lab").coverage.allowedSkipped,
+    published.gates.find((g: { id: string }) => g.id === "lab").coverage
+      .allowedSkipped,
     ["candidate/openapi/traffic"],
   );
   gate.coverage.allowedSkipped = ["candidate/openapi/unknown"];
@@ -122,7 +123,7 @@ test("publication is exclusive and rejects secret-bearing extra properties", asy
   const path = join(dir, "report.json"),
     r = newReport("a".repeat(24), "full");
   await assert.rejects(
-    publishAcceptanceReport(path, { ...r, token: "secret" } as any),
+    publishAcceptanceReport(path, { ...r, token: "secret" } as unknown),
   );
   await publishAcceptanceReport(path, r);
   const saved = await readFile(path, "utf8");
@@ -185,7 +186,8 @@ test("acceptance publication permits the exact new offline Composite skip", asyn
   await publishAcceptanceReport(path, r);
   const published = JSON.parse(await readFile(path, "utf8"));
   assert.deepEqual(
-    published.gates.find((g: any) => g.id === "lab").coverage.allowedSkipped,
+    published.gates.find((g: { id: string }) => g.id === "lab").coverage
+      .allowedSkipped,
     ["candidate/composite/atomic"],
   );
   gate.coverage.allowedSkipped = ["candidate/composite/unknown"];
@@ -241,15 +243,15 @@ test("OAuth acceptance requires every client and policy proof before restart", a
   const base: ParsedResult = {
     schemaVersion: 1,
     runId: "a".repeat(24),
-    suite: "oauth" as any,
+    suite: "oauth",
     complete: true,
     exitCode: 0,
     tests: ids.map((id) => ({ id, outcome: "passed" })),
   };
-  assert.equal(assessCoverage("oauth" as any, base).outcome, "passed");
+  assert.equal(assessCoverage("oauth", base).outcome, "passed");
   for (const id of ids) {
     assert.equal(
-      assessCoverage("oauth" as any, {
+      assessCoverage("oauth", {
         ...base,
         tests: base.tests.filter((t) => t.id !== id),
       }).outcome,
@@ -257,7 +259,7 @@ test("OAuth acceptance requires every client and policy proof before restart", a
       id,
     );
     assert.equal(
-      assessCoverage("oauth" as any, {
+      assessCoverage("oauth", {
         ...base,
         tests: base.tests.map((t) =>
           t.id === id ? { ...t, outcome: "skipped" } : t,
@@ -286,6 +288,6 @@ test("OAuth acceptance requires every client and policy proof before restart", a
     "failed",
   );
   const report = newReport("a".repeat(24), "full");
-  report.evidence.push({ gate: "oauth" as any, sha256: "a".repeat(64) });
+  report.evidence.push({ gate: "oauth", sha256: "a".repeat(64) });
   validateAcceptanceReport(report);
 });

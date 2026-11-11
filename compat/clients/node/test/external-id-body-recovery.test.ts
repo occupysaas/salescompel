@@ -120,7 +120,7 @@ test("unexpected coercions retain IDs and never authorize deletion", async (t) =
     x.rows.set(id, {
       Id: id,
       Name: s.requestName,
-      Compat_Key__c: key as any,
+      Compat_Key__c: key as unknown as string | null,
       Compat_Text__c: null,
     });
     const r = await recoverBodyRun(x.config, {}, x.dir, x.transport);
