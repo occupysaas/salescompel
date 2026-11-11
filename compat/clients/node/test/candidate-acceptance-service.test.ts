@@ -23,7 +23,10 @@ test("fixture cleanup refuses unknown creates and foreign names while retaining 
     kind: "intent" as const,
   };
   await recordFixtureEvent(path, event);
-  const c = { runId: event.runId, fixtureJournal: path } as unknown as GateContext;
+  const c = {
+    runId: event.runId,
+    fixtureJournal: path,
+  } as unknown as GateContext;
   const pending = await cleanupFixtures(c, async () => ({
     status: 404,
     body: null,

@@ -28,7 +28,7 @@ function fixture(label: string) {
   let n = 0;
   async function create(
     object: "Account" | "Contact",
-    data: Record<string, unknown>,
+    data: Record<string, any>,
     principal: FixtureEvent["principal"] = "admin",
   ) {
     const c =
@@ -51,9 +51,10 @@ function fixture(label: string) {
     };
     const path = process.env.CANDIDATE_FIXTURE_JOURNAL;
     if (path) await recordFixtureEvent(path, e);
-    const r = (await c
-      .sobject(object)
-      .create(data)) as unknown as { id: string; success: boolean };
+    const r = (await c.sobject(object).create(data)) as unknown as {
+      id: string;
+      success: boolean;
+    };
     assert.equal(r.success, true);
     rows.push({ conn: c, object, id: r.id });
     if (path) await recordFixtureEvent(path, { ...e, id: r.id, kind: "known" });
@@ -104,7 +105,7 @@ test("candidate/jsforce/core", opts, async () => {
       .update({ Id: id, Name: f.name + " updated", Compat_Text__c: null });
     const row = (await f.admin
       .sobject("Account")
-      .retrieve(id)) as unknown as Record<string, unknown>;
+      .retrieve(id)) as unknown as Record<string, any>;
     assert.equal(row.Compat_Text__c, null);
     const path = process.env.CANDIDATE_FIXTURE_JOURNAL,
       runId = process.env.CANDIDATE_RUN_ID!,
@@ -120,14 +121,17 @@ test("candidate/jsforce/core", opts, async () => {
     if (path) await recordFixtureEvent(path, e);
     const u = (await f.admin
       .sobject("Account")
-      .upsert({ Name: f.name, Compat_Key__c: f.name }, "Compat_Key__c")) as unknown as {
+      .upsert(
+        { Name: f.name, Compat_Key__c: f.name },
+        "Compat_Key__c",
+      )) as unknown as {
       id: string;
       created: boolean;
     };
     if (path) await recordFixtureEvent(path, { ...e, kind: "known", id: u.id });
     assert.equal(u.created, true);
     try {
-      const u2 = (await trackFixtureAttempt(
+      const u2 = await trackFixtureAttempt(
         path,
         { ...e, operationId: "jsforce-upsert-repeat" },
         () =>
@@ -141,18 +145,22 @@ test("candidate/jsforce/core", opts, async () => {
       assert.equal(u2.created, false);
       assert.equal(u2.id, u.id);
       assert.equal(
-        ((await f.admin.sobject("Account").retrieve(u.id)) as Record<
-          string,
-          unknown
-        >).Name,
+        (
+          (await f.admin.sobject("Account").retrieve(u.id)) as Record<
+            string,
+            unknown
+          >
+        ).Name,
         f.name,
       );
     } finally {
       assert.equal(
-        ((await f.admin.sobject("Account").destroy(u.id)) as Record<
-          string,
-          unknown
-        >).success,
+        (
+          (await f.admin.sobject("Account").destroy(u.id)) as Record<
+            string,
+            unknown
+          >
+        ).success,
         true,
       );
     }
@@ -174,7 +182,7 @@ test("candidate/jsforce/policy", opts, async () => {
     );
     const read = (await f.restricted
       .sobject("Account")
-      .retrieve(id)) as unknown as Record<string, unknown>;
+      .retrieve(id)) as unknown as Record<string, any>;
     assert.ok(!Object.hasOwn(read, "Compat_Text__c"));
     for (const q of [
       "SELECT Compat_Text__c FROM Account",
@@ -191,20 +199,24 @@ test("candidate/jsforce/policy", opts, async () => {
       { errorCode: "INVALID_FIELD" },
     );
     assert.equal(
-      ((await f.admin.sobject("Account").retrieve(id)) as Record<
-        string,
-        unknown
-      >).Compat_Text__c,
+      (
+        (await f.admin.sobject("Account").retrieve(id)) as Record<
+          string,
+          unknown
+        >
+      ).Compat_Text__c,
       "secret",
     );
     await f.restricted
       .sobject("Account")
       .update({ Id: id, Name: f.name + " updated" });
     assert.equal(
-      ((await f.admin.sobject("Account").retrieve(id)) as Record<
-        string,
-        unknown
-      >).Name,
+      (
+        (await f.admin.sobject("Account").retrieve(id)) as Record<
+          string,
+          unknown
+        >
+      ).Name,
       f.name + " updated",
     );
     await f.create(
@@ -245,17 +257,19 @@ test("candidate/jsforce/isolation", opts, async () => {
           f.other
             .sobject("Contact")
             .create({ LastName: f.name, AccountId: id }) as Promise<
-            Record<string, unknown>
+            Record<string, any>
           >,
         ["INVALID_CROSS_REFERENCE_KEY"],
       ),
       { errorCode: "INVALID_CROSS_REFERENCE_KEY" },
     );
     assert.equal(
-      ((await f.admin.sobject("Account").retrieve(id)) as Record<
-        string,
-        unknown
-      >).Name,
+      (
+        (await f.admin.sobject("Account").retrieve(id)) as Record<
+          string,
+          unknown
+        >
+      ).Name,
       f.name,
     );
     await f.create("Account", { Name: f.name, Compat_Key__c: f.name }, "other");

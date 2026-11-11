@@ -37,9 +37,9 @@ let candidateOrigin = "";
 let validator: CandidateTrafficValidator | undefined;
 const operations = new Set<string>();
 const secrets = new Set<string>();
-function remember(value: any): any {
+function remember(value: unknown): Record<string, any> {
   if (value && typeof value === "object")
-    for (const [key, item] of Object.entries(value)) {
+    for (const [key, item] of Object.entries(value as Record<string, any>)) {
       if (
         [
           "access_token",
@@ -53,9 +53,9 @@ function remember(value: any): any {
         typeof item === "string"
       )
         secrets.add(item);
-      else if (typeof item === "object") remember(item);
+      else if (typeof item === "object" && item !== null) remember(item);
     }
-  return value;
+  return value as Record<string, any>;
 }
 async function request(
   url: string,
@@ -102,16 +102,19 @@ async function request(
     if (result.operationId) operations.add(result.operationId);
   }
   const text = Buffer.from(bytes).toString();
-  let json: any;
+  let json: Record<string, any> | undefined;
   try {
     json = remember(JSON.parse(text));
   } catch {}
   return { status: response.status, text, json, headers: response.headers };
 }
-async function exchange(c: GateContext, form: Record<string, string>) {
+async function exchange(
+  c: GateContext,
+  form: Record<string, string>,
+): Promise<Record<string, any>> {
   const r = await request(c.url + tokenPath, "POST", new URLSearchParams(form));
   ensure(r.status === 200 && typeof r.json?.access_token === "string");
-  return r.json;
+  return r.json!;
 }
 async function query(c: GateContext, access: string, account: string) {
   const r = await request(
@@ -124,8 +127,8 @@ async function query(c: GateContext, access: string, account: string) {
   );
   ensure(
     r.status === 200 &&
-      r.json.records.length === 1 &&
-      r.json.records[0].Id === account,
+      r.json!.records.length === 1 &&
+      r.json!.records[0].Id === account,
   );
 }
 async function revoke(c: GateContext, token: string) {
@@ -353,7 +356,7 @@ async function main(c: GateContext) {
         "oauth",
       );
       ensure(r.complete);
-      let parsed: any;
+      let parsed: Record<string, any> | undefined;
       try {
         parsed = remember(JSON.parse(stdout));
       } catch {
@@ -719,9 +722,9 @@ async function main(c: GateContext) {
     ensure(
       (
         await request(
-          identity.json.urls?.identity ??
+          identity.json!.urls?.identity ??
             c.url +
-              `/id/${identity.json.organization_id}/${identity.json.user_id}`,
+              `/id/${identity.json!.organization_id}/${identity.json!.user_id}`,
           "GET",
           undefined,
           { Authorization: "Bearer " + connection.accessToken },
@@ -817,8 +820,9 @@ async function entry() {
       if (child.pid) {
         try {
           process.kill(-child.pid, "SIGKILL");
-        } catch (error: any) {
-          if (error.code !== "ESRCH") process.exitCode = 1;
+        } catch (error: unknown) {
+          if ((error as { code?: string }).code !== "ESRCH")
+            process.exitCode = 1;
         }
       }
     void stopOwnedProcesses(c.processes);

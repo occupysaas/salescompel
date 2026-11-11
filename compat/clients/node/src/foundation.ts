@@ -92,7 +92,8 @@ export const foundationScenarios: Record<
     expect(
       c,
       "userinfo identifies own user",
-      info.status === 200 && typeof (info.body as JsonRecord)?.user_id === "string",
+      info.status === 200 &&
+        typeof (info.body as JsonRecord)?.user_id === "string",
     );
     const user = (info.body as JsonRecord).user_id;
     for (const version of ["65.0", "51.0"]) {
@@ -182,7 +183,8 @@ export const foundationScenarios: Record<
       "fresh session has same user",
       info.status === 200 &&
         freshInfo.status === 200 &&
-        (info.body as JsonRecord).user_id === (freshInfo.body as JsonRecord).user_id &&
+        (info.body as JsonRecord).user_id ===
+          (freshInfo.body as JsonRecord).user_id &&
         (info.body as JsonRecord).organization_id ===
           (freshInfo.body as JsonRecord).organization_id,
     );

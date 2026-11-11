@@ -32,7 +32,9 @@ test("capture without credentials writes blocked report and exits nonzero", asyn
     const r = JSON.parse(await readFile(join(dir, "capture.json"), "utf8"));
     assert.equal(r.provenance, "none");
     assert.ok(r.results.length >= 11);
-    assert.ok(r.results.every((v: { outcome?: string }) => v.outcome === "blocked"));
+    assert.ok(
+      r.results.every((v: { outcome?: string }) => v.outcome === "blocked"),
+    );
     assert.match(
       await readFile(join(dir, "capture.md"), "utf8"),
       /No parity certification/,

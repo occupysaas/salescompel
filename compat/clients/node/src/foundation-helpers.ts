@@ -9,7 +9,12 @@ export function owned(c: Context, label: string) {
   c.result.identities[`value:${label}`] = value;
   return value;
 }
-export function remember(c: Context, label: string, id: string, object = "Account") {
+export function remember(
+  c: Context,
+  label: string,
+  id: string,
+  object = "Account",
+) {
   c.result.identities[label] = id;
   c.result.identities[`url:${label}`] = `${base(c)}sobjects/${object}/${id}`;
   c.result.identities[`short:${label}`] = id.slice(0, 15);
@@ -162,7 +167,10 @@ export async function observe(
       ? {
           ...response,
           body: (() => {
-            const d = response.body as { name?: string; fields?: DescribeField[] };
+            const d = response.body as {
+              name?: string;
+              fields?: DescribeField[];
+            };
             return {
               name: d.name,
               fields: (d.fields ?? [])

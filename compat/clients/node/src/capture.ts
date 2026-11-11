@@ -99,7 +99,7 @@ export async function capture(
       r.reason = issues.join("; ");
     }
     report.finishedAt = new Date().toISOString();
-    return sanitize(report, secrets);
+    return sanitize(report, secrets) as Report;
   }
   const conn = new Connection({
     instanceUrl: env[`${prefix}_URL`]!,
@@ -138,9 +138,10 @@ export async function capture(
         result.assertions.length && result.assertions.every((a) => a.passed)
           ? "passed"
           : "failed";
-    } catch (e: any) {
+    } catch (e: unknown) {
+      const err = e as { errorCode?: string; message?: string };
       result.outcome = e instanceof Blocked ? "blocked" : "failed";
-      result.reason = e.errorCode ?? e.message ?? "Scenario failed";
+      result.reason = err.errorCode ?? err.message ?? "Scenario failed";
     } finally {
       report.cleanup.push(
         ...(await tracker.cleanup()).map((c) => ({
@@ -151,5 +152,5 @@ export async function capture(
     }
   }
   report.finishedAt = new Date().toISOString();
-  return sanitize(report, secrets);
+  return sanitize(report, secrets) as Report;
 }

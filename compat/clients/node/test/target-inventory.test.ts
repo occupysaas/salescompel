@@ -68,7 +68,9 @@ test("typed knowledge preserves known false/zero and unknown volume/version", ()
     category: "org-feature",
     details: { name: known("personAccounts"), enabled: known(false) },
   };
-  v.sections.sourceOrg.items.push(feature);
+  v.sections.sourceOrg.items.push(
+    feature as unknown as (typeof v.sections.sourceOrg.items)[number],
+  );
   const volume: Record<string, any> = {
     ...makeItem(),
     id: "account-count",
@@ -79,7 +81,9 @@ test("typed knowledge preserves known false/zero and unknown volume/version", ()
       unit: known("records"),
     },
   };
-  v.sections.dataMetadata.items.push(volume);
+  v.sections.dataMetadata.items.push(
+    volume as unknown as (typeof v.sections.dataMetadata.items)[number],
+  );
   assert.ok(validate(v), JSON.stringify(validate.errors));
   volume.details.count = unknown();
   assert.ok(validate(v));
@@ -101,7 +105,9 @@ test("typed knowledge preserves known false/zero and unknown volume/version", ()
     },
   };
   v.sections.dataMetadata.items.pop();
-  v.sections.clientsIntegrations.items.push(client);
+  v.sections.clientsIntegrations.items.push(
+    client as unknown as (typeof v.sections.clientsIntegrations.items)[number],
+  );
   assert.ok(validate(v), JSON.stringify(validate.errors));
 });
 

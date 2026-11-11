@@ -150,7 +150,9 @@ export const jsScenarios: Record<string, (c: Context) => Promise<void>> = {
     if (first.id) {
       c.result.identities.account = first.id;
       await c.tracker.add(`Account:${first.id}`, async () => {
-        const r = (await c.conn.sobject("Account").destroy(first.id!)) as SaveResult;
+        const r = (await c.conn
+          .sobject("Account")
+          .destroy(first.id!)) as SaveResult;
         if (!r.success) throw new Error("Delete failed");
       });
     }
@@ -198,13 +200,17 @@ export const jsScenarios: Record<string, (c: Context) => Promise<void>> = {
         }),
       );
       for (const row of rows) await c.tracker.intent("Contact", row);
-      const results = (await c.conn.sobject("Contact").create(rows)) as SaveResult[];
+      const results = (await c.conn
+        .sobject("Contact")
+        .create(rows)) as SaveResult[];
       for (let i = 0; i < results.length; i++)
         if (results[i].success) {
           const id = results[i].id!;
           c.result.identities[`contact${offset + i}`] = id;
           await c.tracker.add(`Contact:${id}`, async () => {
-            const r = (await c.conn.sobject("Contact").destroy(id)) as SaveResult;
+            const r = (await c.conn
+              .sobject("Contact")
+              .destroy(id)) as SaveResult;
             if (!r.success) throw new Error("Delete failed");
           });
         }
@@ -296,7 +302,9 @@ export const jsScenarios: Record<string, (c: Context) => Promise<void>> = {
     // An incorrectly committed row is still ours and must be cleaned up.
     for (const r of q.records)
       await c.tracker.add(`Account:${r.Id}`, async () => {
-        const d = (await c.conn.sobject("Account").destroy(r.Id as string)) as SaveResult;
+        const d = (await c.conn
+          .sobject("Account")
+          .destroy(r.Id as string)) as SaveResult;
         if (!d.success) throw new Error("Delete failed");
       });
     c.result.observations = {
@@ -348,11 +356,7 @@ export const jsScenarios: Record<string, (c: Context) => Promise<void>> = {
       queryError: err,
     };
     expect(c, "Admin sees field", adminVisible);
-    expect(
-      c,
-      "Restricted field omitted",
-      !restrictedVisible,
-    );
+    expect(c, "Restricted field omitted", !restrictedVisible);
     expect(
       c,
       "Restricted query denied",

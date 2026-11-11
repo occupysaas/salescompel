@@ -59,12 +59,13 @@ export async function withCli<T>(
       const data = JSON.parse(stdout);
       if (data.status !== 0) throw new Error(`CLI status ${data.status}`);
       return data.result;
-    } catch (e: any) {
+    } catch (e: unknown) {
       // Never include child command/environment/stdout in error messages.
+      const err = e as { killed?: boolean; signal?: string; stdout?: string };
       let code =
-        e.killed && e.signal ? "CLI_PROCESS_TIMEOUT" : "CLI_PROCESS_FAILED";
+        err.killed && err.signal ? "CLI_PROCESS_TIMEOUT" : "CLI_PROCESS_FAILED";
       try {
-        const parsed = JSON.parse(e.stdout) as { name?: string } | null;
+        const parsed = JSON.parse(err.stdout ?? "") as { name?: string } | null;
         if (parsed?.name) code = parsed.name;
       } catch {}
       throw new Error(`${code}: ${args.slice(0, 3).join(" ")}`);
@@ -110,7 +111,7 @@ export async function cliQuery(c: Context) {
       c.conn.version,
     ]);
     c.result.observations = {
-      records: q.records.map((r: any) => ({
+      records: q.records.map((r: Record<string, any>) => ({
         Id: r.Id,
         Name: r.Name === `SC ${c.runId} cli` ? "SC <run> cli" : r.Name,
       })),
@@ -148,7 +149,8 @@ export async function metadata(c: Context) {
     // Metadata API reads are not filtered by field-level security; a newly
     // deployed field has no FLS grants, so describe would not show it.
     const readField = async () => {
-      const r: any = await c.conn.metadata.read("CustomField", fullName);
+      const r = (await c.conn.metadata.read("CustomField", fullName)) as
+        Record<string, any> | undefined;
       return r?.fullName === fullName ? r : undefined;
     };
     if (await readField())
@@ -157,9 +159,14 @@ export async function metadata(c: Context) {
       );
     // Track before deploy to cover timeouts after a successful server-side commit.
     await c.tracker.add(`CustomField:${fullName}`, async () => {
-      const r: any = await c.conn.metadata.delete("CustomField", fullName);
+      const r = (await c.conn.metadata.delete("CustomField", fullName)) as {
+        success: boolean;
+        errors?: unknown;
+      };
       // A single SOAP error may arrive as an object rather than an array.
-      const errors: any[] = [].concat(r.errors ?? []);
+      const errors: Array<{ statusCode?: string }> = (
+        [] as Array<{ statusCode?: string }>
+      ).concat((r.errors ?? []) as Array<{ statusCode?: string }>);
       if (
         !r.success &&
         !(errors.length && errors.every((e) => e.statusCode === "NOT_FOUND"))
@@ -251,10 +258,13 @@ export async function adoptPythonFixtures(
       if (type !== "Account" || !/^[a-zA-Z0-9]{15,18}$/.test(id ?? ""))
         throw new Error("Invalid cleanup resource");
       try {
-        const deleted: any = await c.conn.sobject("Account").destroy(id);
+        const deleted = (await c.conn.sobject("Account").destroy(id)) as {
+          success: boolean;
+        };
         if (!deleted.success) throw new Error("Python cleanup retry failed");
-      } catch (e: any) {
-        if (!MISSING_RECORD_CODES.includes(e.errorCode)) throw e;
+      } catch (e: unknown) {
+        const err = e as { errorCode?: string };
+        if (!MISSING_RECORD_CODES.includes(err.errorCode ?? "")) throw e;
       }
     });
   }
@@ -274,7 +284,7 @@ export async function pythonProbe(c: Context, journal: string) {
       "Install isolated Python requirements or set COMPAT_PYTHON",
     );
   }
-  let data: any;
+  let data: Record<string, any> | undefined;
   try {
     const { stdout } = await exec(
       executable,

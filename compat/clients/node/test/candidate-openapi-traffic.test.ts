@@ -312,7 +312,7 @@ test("rejectsUnsupportedTrafficConstructs", async () => {
         properties: { next: { $ref: "#/components/schemas/AccountRead" } },
       }),
   ]) {
-    const d = await loadCandidateOpenAPI();
+    const d = (await loadCandidateOpenAPI()) as Record<string, any>;
     mutate(d);
     await assert.rejects(
       createCandidateTrafficValidator(d),

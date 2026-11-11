@@ -271,9 +271,7 @@ test("authentication failures and malformed positive reads cannot become evidenc
   const [a, b] = pair();
   const failed = (f: ReturnType<typeof fixture>) =>
     revise(f, (report) => {
-      const result = report.results.find(
-        (r) => r.id === "foundation-cursors",
-      )!;
+      const result = report.results.find((r) => r.id === "foundation-cursors")!;
       result.observations["fresh-session"] = {
         status: 401,
         body: [{ errorCode: "INVALID_SESSION_ID" }],
@@ -282,23 +280,23 @@ test("authentication failures and malformed positive reads cannot become evidenc
   assert.equal(assess(failed(a), failed(b)).outcome, "blocked");
   const nullRead = (f: ReturnType<typeof fixture>) =>
     revise(f, (report) => {
-      report.results.find(
-        (r) => r.id === "foundation-routes",
-      )!.observations["read"].body = null;
+      report.results.find((r) => r.id === "foundation-routes")!.observations[
+        "read"
+      ].body = null;
     });
   assert.equal(assess(nullRead(a), nullRead(b)).outcome, "blocked");
   const nullAfterWrite = (f: ReturnType<typeof fixture>) =>
     revise(f, (report) => {
-      report.results.find(
-        (r) => r.id === "foundation-errors",
-      )!.observations["after-failed-writes"].body = null;
+      report.results.find((r) => r.id === "foundation-errors")!.observations[
+        "after-failed-writes"
+      ].body = null;
     });
   assert.equal(assess(nullAfterWrite(a), nullAfterWrite(b)).outcome, "blocked");
   const fakeMutation = (f: ReturnType<typeof fixture>) =>
     revise(f, (report) => {
-      report.results.find(
-        (r) => r.id === "foundation-routes",
-      )!.observations["patch"] = { status: 200, body: {} };
+      report.results.find((r) => r.id === "foundation-routes")!.observations[
+        "patch"
+      ] = { status: 200, body: {} };
     });
   assert.equal(assess(fakeMutation(a), fakeMutation(b)).outcome, "blocked");
 });
@@ -349,7 +347,10 @@ test("complete measured pair is ready only with named assumption", () => {
 
 test("binding, freshness, coverage and cleanup gaps block", () => {
   const [a, b] = pair();
-  const missingSidecar = assess({ ...a, sidecar: undefined as unknown as FoundationSidecar }, b);
+  const missingSidecar = assess(
+    { ...a, sidecar: undefined as unknown as FoundationSidecar },
+    b,
+  );
   assert.equal(missingSidecar.outcome, "blocked");
   assert.equal(missingSidecar.dimensions["foundation-routes"], "blocked");
   assert.equal(missingSidecar.dimensions["cursor-expiry"], "blocked");
@@ -367,7 +368,8 @@ test("binding, freshness, coverage and cleanup gaps block", () => {
     "blocked",
   );
   const bad = structuredClone(b.report);
-  delete (bad.results[0].observations as unknown as { resources?: unknown }).resources;
+  delete (bad.results[0].observations as unknown as { resources?: unknown })
+    .resources;
   assert.equal(
     assess(a, { ...b, bytes: JSON.stringify(bad) + "\n" }).outcome,
     "blocked",
@@ -397,8 +399,9 @@ test("complete tied payload changes are drift, not missing evidence", () => {
   const [a, b] = pair();
   const changed = structuredClone(b.report);
   (
-    changed.results.find((r) => r.id === "foundation-cursors")!
-      .observations["ties:1"] as unknown as { body: { records: Array<Record<string, unknown>> } }
+    changed.results.find((r) => r.id === "foundation-cursors")!.observations[
+      "ties:1"
+    ] as unknown as { body: { records: Array<Record<string, unknown>> } }
   ).body.records[0].Extra = "changed";
   const bytes = JSON.stringify(changed) + "\n";
   const revised = {

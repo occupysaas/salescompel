@@ -80,8 +80,9 @@ export async function externalIdCommand(
       try {
         const held = await privateJSON(lock, 65536);
         if (held.dir === dir) await unlink(lock);
-      } catch (e: any) {
-        if (e.code !== "ENOENT") throw e;
+      } catch (e: unknown) {
+        const err = e as { code?: string };
+        if (err.code !== "ENOENT") throw e;
       }
     }
     return result;

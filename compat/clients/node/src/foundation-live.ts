@@ -35,7 +35,7 @@ export async function foundationLivePreflight(
       typeof response.body !== "object"
     )
       throw new Error("Foundation live identity or metadata read failed");
-    return response.body as any;
+    return response.body as Record<string, any>;
   };
   const [admin, freshAdmin, other, account, contact, restrictedAccount] =
     await Promise.all([
@@ -62,10 +62,14 @@ export async function foundationLivePreflight(
     throw new Error(
       "Foundation administrator/fresh/restricted identities differ",
     );
-  const fieldNames = (value: any): Set<string> => {
+  const fieldNames = (value: Record<string, any>): Set<string> => {
     if (!Array.isArray(value?.fields))
       throw new Error("Foundation metadata describe malformed");
-    return new Set(value.fields.map((field: any) => field?.name));
+    return new Set(
+      (value.fields as Array<Record<string, any>>).map(
+        (field) => field?.name as string,
+      ),
+    );
   };
   const adminFields = fieldNames(account),
     contactFields = fieldNames(contact),
@@ -86,9 +90,9 @@ export async function foundationLivePreflight(
       "Foundation metadata or restricted field permissions differ",
     );
   return createHash("sha256")
-    .update(admin.user_id)
+    .update(admin.user_id as string)
     .update("\0")
-    .update(admin.organization_id)
+    .update(admin.organization_id as string)
     .digest("hex");
 }
 
@@ -136,7 +140,7 @@ export async function collectFoundationAbsence(
         `/services/data/v65.0/query?q=${encodeURIComponent(statement)}`,
         { method: "GET" },
       );
-      const body = result.body as any;
+      const body = result.body as Record<string, any>;
       if (
         result.status !== 200 ||
         body?.done !== true ||
@@ -213,7 +217,9 @@ export async function auditFoundationRecovery(
           found.push(entry.resource);
         else return false;
       }
-      const upsert = (result.observations as any)?.["escaped-upsert"];
+      const upsert = (
+        result.observations as Record<string, Record<string, any>>
+      )?.["escaped-upsert"];
       const permittedExtra =
         result.id === "foundation-routes" &&
         manualUpsertIntent === 2 &&

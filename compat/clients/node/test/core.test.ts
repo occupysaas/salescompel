@@ -42,16 +42,22 @@ test("comparison maintains consistent record identities and detects broken relat
   const a = report("reference"),
     b = report("candidate");
   b.results[0].identities = { account: "001000000000002AAA" };
-  (b.results[0].observations as Record<string, Record<string, unknown>>).record.Id = "001000000000002AAA";
+  (
+    b.results[0].observations as Record<string, Record<string, unknown>>
+  ).record.Id = "001000000000002AAA";
   assert.equal(compare(a, b).outcome, "passed");
-  (b.results[0].observations as Record<string, Record<string, unknown>>).record.Id = "001000000000003AAA";
+  (
+    b.results[0].observations as Record<string, Record<string, unknown>>
+  ).record.Id = "001000000000003AAA";
   assert.equal(compare(a, b).outcome, "failed");
 });
 for (const [label, change] of Object.entries({
   status: (v: Record<string, unknown>): unknown => (v.status = 400),
   permission: (v: Record<string, unknown>): unknown => (v.allowed = false),
-  null: (v: Record<string, unknown>): unknown => ((v.record as Record<string, unknown>).Name = null),
-  precision: (v: Record<string, unknown>): unknown => ((v.record as Record<string, unknown>).Amount = 0.10000000001),
+  null: (v: Record<string, unknown>): unknown =>
+    ((v.record as Record<string, unknown>).Name = null),
+  precision: (v: Record<string, unknown>): unknown =>
+    ((v.record as Record<string, unknown>).Amount = 0.10000000001),
   rollback: (v: Record<string, unknown>): unknown => (v.rollbackCount = 1),
 })) {
   test(`comparison detects ${label}`, () => {
@@ -65,7 +71,8 @@ test("normalization preserves omissions, arrays and unrelated timestamps", () =>
   assert.notDeepEqual(normalize({ x: null }, {}), normalize({}, {}));
   assert.notDeepEqual(normalize([1, 2], {}), normalize([2, 1], {}));
   assert.equal(
-    (normalize({ CreatedDate: "2026-01-01" }, {}) as Record<string, unknown>).CreatedDate,
+    (normalize({ CreatedDate: "2026-01-01" }, {}) as Record<string, unknown>)
+      .CreatedDate,
     "2026-01-01",
   );
 });
@@ -224,7 +231,9 @@ test("repeatability compares two distinct reference runs", () => {
     b = report("reference");
   b.startedAt = "2026-10-15T01:00:00Z";
   b.results[0].identities = { account: "001000000000002AAA" };
-  (b.results[0].observations as Record<string, Record<string, unknown>>).record.Id = "001000000000002AAA";
+  (
+    b.results[0].observations as Record<string, Record<string, unknown>>
+  ).record.Id = "001000000000002AAA";
   assert.equal(compare(a, b, undefined, "repeatability").outcome, "passed");
   (b.results[0].observations as Record<string, unknown>).status = 200;
   const drift = compare(a, b, undefined, "repeatability");

@@ -88,7 +88,9 @@ test(
                   },
                   response: {
                     status: res.statusCode ?? 0,
-                    contentType: res.headers["content-type"] ?? null,
+                    contentType:
+                      (res.headers["content-type"] as string | undefined) ??
+                      null,
                     body: Buffer.concat(chunks),
                   },
                 }),
@@ -158,7 +160,8 @@ test(
               },
               response: {
                 status: res.statusCode,
-                contentType: res.headers["content-type"] ?? null,
+                contentType:
+                  (res.headers["content-type"] as string | undefined) ?? null,
                 body: Buffer.from(res.body ?? ""),
               },
             });
@@ -253,7 +256,10 @@ test(
       await recordFixtureEvent(journal, e);
       const r = (await admin
         .sobject("Account")
-        .upsert({ Name: upsertName, Compat_Key__c: key }, "Compat_Key__c")) as unknown as {
+        .upsert(
+          { Name: upsertName, Compat_Key__c: key },
+          "Compat_Key__c",
+        )) as unknown as {
         id: string;
         created: boolean;
       };
@@ -263,10 +269,12 @@ test(
       else assert.equal(r.id, upsertID);
     }
     assert.equal(
-      ((await admin.sobject("Account").retrieve(upsertID)) as Record<
-        string,
-        unknown
-      >).Compat_Key__c,
+      (
+        (await admin.sobject("Account").retrieve(upsertID)) as Record<
+          string,
+          unknown
+        >
+      ).Compat_Key__c,
       spelling,
     );
     const duplicate = event("duplicate", [marker("duplicate")]);
@@ -286,9 +294,12 @@ test(
     // Dynamic Text maps admit the spelling; field policy must still deny it.
     expectedRequestIssues = [];
     await assert.rejects(
-      restricted
-        .sobject("Account")
-        .update({ Id: id, compat_text__c: "denied" } as unknown),
+      restricted.sobject("Account").update({
+        Id: id,
+        compat_text__c: "denied",
+      } as unknown as Parameters<
+        ReturnType<typeof restricted.sobject>["update"]
+      >[0]),
       { errorCode: "INVALID_FIELD" },
     );
     expectedRequestIssues = [];

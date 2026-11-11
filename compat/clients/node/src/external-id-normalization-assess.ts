@@ -11,6 +11,7 @@ import {
   type NormalizationReport,
   type NormalizationCleanup,
   type NormalizationAssessment,
+  type NormalizationRequest,
 } from "./external-id-normalization-contract.ts";
 import {
   normalizationDigest,
@@ -38,32 +39,49 @@ async function artifact(dir: string, name: string, sha?: string) {
     );
   return value;
 }
-function wire(r: any): asserts r is WireResponse {
+interface DiscoveryBody {
+  done?: unknown;
+  records?: Array<Record<string, any>>;
+  totalSize?: unknown;
+  nextRecordsUrl?: unknown;
+}
+interface RetainedOriginal {
+  caseId: string;
+  id?: string;
+  response: {
+    status?: number;
+    bodyPresent?: boolean;
+    headers?: Record<string, string>;
+    body?: { records?: unknown } | null;
+  };
+}
+function wire(r: unknown): asserts r is WireResponse {
+  const v = r as WireResponse;
   requireEvidence(
-    r &&
-      Number.isInteger(r.status) &&
-      r.status >= 100 &&
-      r.status <= 599 &&
-      r.headers &&
-      typeof r.headers === "object" &&
-      !Array.isArray(r.headers) &&
-      Object.values(r.headers).every((v) => typeof v === "string") &&
-      Object.hasOwn(r, "body") &&
-      (r.bodyPresent === undefined || typeof r.bodyPresent === "boolean"),
+    v &&
+      Number.isInteger(v.status) &&
+      v.status >= 100 &&
+      v.status <= 599 &&
+      v.headers &&
+      typeof v.headers === "object" &&
+      !Array.isArray(v.headers) &&
+      Object.values(v.headers).every((h) => typeof h === "string") &&
+      Object.hasOwn(v, "body") &&
+      (v.bodyPresent === undefined || typeof v.bodyPresent === "boolean"),
   );
   requireEvidence(
-    ![401, 403].includes(r.status) &&
+    ![401, 403].includes(v.status) &&
       !(
-        r.body &&
-        typeof r.body === "object" &&
-        Object.hasOwn(r.body, "nonJson")
+        v.body &&
+        typeof v.body === "object" &&
+        Object.hasOwn(v.body, "nonJson")
       ),
   );
-  if (r.bodyPresent === false) requireEvidence(r.body === null);
+  if (v.bodyPresent === false) requireEvidence(v.body === null);
 }
-function discovery(r: any) {
+function discovery(r: unknown) {
   wire(r);
-  const b = r.body as any;
+  const b = r.body as DiscoveryBody;
   requireEvidence(
     r.status === 200 &&
       b?.done === true &&
@@ -71,10 +89,14 @@ function discovery(r: any) {
       b.totalSize === b.records.length &&
       !b.nextRecordsUrl,
   );
-  const rows = b.records.map((row: any) =>
-    normalizationRow(row.Id, { status: 200, body: row, headers: {} }),
+  const rows = (b.records as Array<Record<string, any>>).map((row) =>
+    normalizationRow(row.Id as string, {
+      status: 200,
+      body: row,
+      headers: {},
+    }),
   );
-  requireEvidence(new Set(rows.map((r: any) => r.Id)).size === rows.length);
+  requireEvidence(new Set(rows.map((row) => row.Id)).size === rows.length);
   return rows;
 }
 function snapshot(s: NormalizationStateSnapshot) {
@@ -207,11 +229,17 @@ function mutationResponse(
   kind: "create" | "update" | "upsert",
 ) {
   wire(response);
-  const b = response.body as any;
+  const raw = response.body;
   if (response.status >= 200 && response.status < 300) {
     if (kind === "update")
-      requireEvidence(response.status === 204 && b === null);
+      requireEvidence(response.status === 204 && raw === null);
     else {
+      const b = raw as {
+        id: string;
+        success?: unknown;
+        created?: unknown;
+        errors?: unknown;
+      };
       requireEvidence(
         (kind === "create"
           ? response.status === 201
@@ -234,9 +262,9 @@ function mutationResponse(
   } else
     requireEvidence(
       response.status >= 400 &&
-        Array.isArray(b) &&
-        b.length > 0 &&
-        b.every(
+        Array.isArray(raw) &&
+        raw.length > 0 &&
+        raw.every(
           (e) =>
             e &&
             typeof e.errorCode === "string" &&
@@ -268,8 +296,8 @@ async function load(path: string) {
       Date.parse(r.cleanup.finishedAt) <= Date.parse(r.finishedAt),
   );
   const files = await readdir(dir),
-    rawDiscoveries: any[] = [],
-    rawReads: any[] = [],
+    rawDiscoveries: RetainedOriginal[] = [],
+    rawReads: RetainedOriginal[] = [],
     cleanupStates: { caseId: string; state: NormalizationStateSnapshot }[] = [];
   for (const name of files) {
     if (name.startsWith("discovery-")) {
@@ -357,7 +385,7 @@ async function load(path: string) {
         for (const row of s.records)
           requireEvidence(known.get(row.Id) === c.id);
       }
-      const b = response.body as any;
+      const b = response.body as { id?: string };
       if (step.id.startsWith("seed")) {
         requireEvidence(
           response.status === 201 &&
@@ -366,7 +394,7 @@ async function load(path: string) {
             ),
         );
         if (step.id === "seed-second") requireEvidence(ids.first !== b.id);
-        ids[step.id === "seed" ? "first" : "second"] = b.id;
+        ids[step.id === "seed" ? "first" : "second"] = b.id as string;
       }
       if (typeof b?.id === "string") requireEvidence(known.get(b.id) === c.id);
     }
@@ -439,7 +467,7 @@ function projected(r: NormalizationReport) {
       if (!aliases.has(id)) aliases.set(id, `${c.id}:id${index++}`);
     };
     for (const o of ops) {
-      const b = o.body as any;
+      const b = o.body as { id?: unknown };
       if (typeof b?.id === "string") add(b.id);
     }
     for (const o of ops)
@@ -452,7 +480,7 @@ function projected(r: NormalizationReport) {
   }
   // Alias generated prefixes in their original and uppercase forms separately:
   // retain P14 versus p14 and all suffix spelling as measured behavior.
-  const visit = (v: any): any =>
+  const visit = (v: unknown): unknown =>
     typeof v === "string"
       ? (aliases.get(v) ??
         v
@@ -474,8 +502,10 @@ function projected(r: NormalizationReport) {
         (o) => o.caseId === c.id && o.stepId === step.id,
       )!;
       const rows = (values: typeof o.before) =>
-        values.map(visit).sort((a, b) => a.Id.localeCompare(b.Id));
-      const request = visit(o.request);
+        (values.map((row) => visit(row)) as typeof o.before).sort((a, b) =>
+          a.Id.localeCompare(b.Id),
+        );
+      const request = visit(o.request) as NormalizationRequest;
       for (const [id, alias] of aliases)
         request.path = request.path.replaceAll(id, alias);
       return {

@@ -26,15 +26,17 @@ export interface FoundationAssessmentPaths {
 }
 
 export function foundationReleaseFindings(document: unknown): ReleaseFinding[] {
-  const data = document as any;
+  const data = document as Record<string, any>;
   if (
     data?.schemaVersion !== 1 ||
     !Array.isArray(data.findings) ||
     !Array.isArray(data.blockers)
   )
     throw new Error("Malformed release findings");
-  const items = [...data.findings, ...data.blockers];
-  const ids = items.map((item: any) => item?.id);
+  const items = [...data.findings, ...data.blockers] as Array<
+    Record<string, any>
+  >;
+  const ids = items.map((item) => item?.id);
   if (new Set(ids).size !== ids.length)
     throw new Error("Duplicate release finding identifiers");
   const relevant = new Set([
@@ -51,18 +53,18 @@ export function foundationReleaseFindings(document: unknown): ReleaseFinding[] {
     "rest-route-parity",
     "duplicate-canonical-fields",
   ]);
-  return items.map((finding: any) => {
+  return items.map((finding) => {
     if (
       typeof finding?.id !== "string" ||
       !Array.isArray(finding.affectedContracts ?? [])
     )
       throw new Error("Malformed release finding");
+    const affected = finding.affectedContracts as string[];
     return {
-      id: finding.id,
+      id: finding.id as string,
       relevant:
-        (finding.affectedContracts ?? []).some((id: string) =>
-          relevant.has(id),
-        ) && finding.blocksContractFreeze === true,
+        affected.some((id) => relevant.has(id)) &&
+        finding.blocksContractFreeze === true,
       resolved:
         finding.status === "resolved" ||
         finding.status === "reviewed-and-reconciled",

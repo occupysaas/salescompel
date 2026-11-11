@@ -66,15 +66,21 @@ function ownedResources(
       })),
   );
 }
-function observationShape(id: string, label: string, item: any): boolean {
+function observationShape(
+  id: string,
+  label: string,
+  item: Record<string, any>,
+): boolean {
+  const status = item.status;
   if (
-    !Number.isInteger(item?.status) ||
-    item.status < 200 ||
-    item.status >= 500
+    typeof status !== "number" ||
+    !Number.isInteger(status) ||
+    status < 200 ||
+    status >= 500
   )
     return false;
-  const status = item.status;
-  const body = item.body;
+  const rawBody = item.body;
+  const body = rawBody as Record<string, any> | null | undefined;
   const mutation =
     (id === "foundation-routes" &&
       ["patch", "escaped-upsert", "delete"].includes(label)) ||
@@ -115,14 +121,16 @@ function observationShape(id: string, label: string, item: any): boolean {
       !(id === "foundation-pagination" && label.startsWith("batch:"))
     )
       return false;
-    const errors = Array.isArray(body) ? body : [body];
+    const errors: unknown[] = Array.isArray(rawBody) ? rawBody : [rawBody];
     return (
       errors.length > 0 &&
-      errors.every(
-        (error) =>
-          typeof error?.errorCode === "string" &&
-          error.errorCode !== "INVALID_SESSION_ID",
-      )
+      errors.every((error) => {
+        const e = error as Record<string, any> | null | undefined;
+        return (
+          typeof e?.errorCode === "string" &&
+          e.errorCode !== "INVALID_SESSION_ID"
+        );
+      })
     );
   }
   if (expectedError) return false;
@@ -197,10 +205,16 @@ function observationShape(id: string, label: string, item: any): boolean {
   return true;
 }
 
+interface QueryPageBody {
+  records: Array<Record<string, any>>;
+  done: boolean;
+  totalSize: number;
+  nextRecordsUrl?: { route: string; value: string };
+}
 function pageIssues(
   result: Result,
   prefix: string,
-  observations: Record<string, any>,
+  observations: Record<string, Record<string, any>>,
 ): { issues: string[]; names: string[]; labels: string[] } {
   const issues: string[] = [],
     names: string[] = [];
@@ -228,7 +242,7 @@ function pageIssues(
   for (let i = 0; i < labels.length; i++) {
     const label = `${prefix}:${i}`;
     const page = observations[label];
-    const body = page?.body;
+    const rawBody = page?.body as Record<string, any> | undefined;
     for (const suffix of [
       "bounded JSON HTTP response",
       "query page",
@@ -238,15 +252,16 @@ function pageIssues(
       names.push(`${label}: ${suffix}`);
     if (
       page?.status !== 200 ||
-      !Array.isArray(body?.records) ||
-      typeof body?.done !== "boolean" ||
-      !Number.isInteger(body?.totalSize) ||
-      body.totalSize < 0 ||
-      body.records.length > 2000
+      !Array.isArray(rawBody?.records) ||
+      typeof rawBody?.done !== "boolean" ||
+      !Number.isInteger(rawBody?.totalSize) ||
+      (rawBody.totalSize as number) < 0 ||
+      (rawBody.records as unknown[]).length > 2000
     ) {
       issues.push(`${result.id}: malformed ${label}`);
       continue;
     }
+    const body = rawBody as unknown as QueryPageBody;
     if (total === undefined) total = body.totalSize;
     if (body.totalSize !== total)
       issues.push(`${result.id}: unstable ${prefix} total`);
@@ -302,7 +317,10 @@ function coverageIssues(report: Report): string[] {
         issues.push(`${id}: expiry dimension must be explicitly unmeasured`);
     } else if (result.outcome !== "passed" || result.reason)
       issues.push(`${id}: measured scenario did not pass`);
-    const observations = result.observations as Record<string, any>;
+    const observations = result.observations as Record<
+      string,
+      Record<string, any>
+    >;
     if (
       !observations ||
       typeof observations !== "object" ||
@@ -478,7 +496,7 @@ function cleanupIssues(
 
 function withoutTies(result: Result): unknown {
   const observations = Object.fromEntries(
-    Object.entries(result.observations as Record<string, unknown>).filter(
+    Object.entries(result.observations as Record<string, any>).filter(
       ([k]) => !k.startsWith("ties:"),
     ),
   );

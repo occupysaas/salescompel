@@ -20,7 +20,7 @@ const METHODS = [
   "trace",
   "query",
 ];
-function pointer(doc: any, ref: string): unknown {
+function pointer(doc: Record<string, any>, ref: string): unknown {
   let v = doc;
   for (const raw of ref.slice(2).split("/")) {
     const key = decodeURIComponent(raw).replace(/~1/g, "/").replace(/~0/g, "~");
@@ -30,7 +30,7 @@ function pointer(doc: any, ref: string): unknown {
   return v;
 }
 export async function validateOpenApi(
-  doc: any,
+  doc: Record<string, any>,
   role: OpenApiRole = "salescompel",
 ): Promise<void> {
   const version = doc?.openapi ?? doc?.swagger ?? "";
@@ -41,7 +41,7 @@ export async function validateOpenApi(
         : `Salesforce source documents must be OpenAPI 2.0 or 3.0.x; got ${version || "none"}`,
     );
   const seen = new Set<object>();
-  function scan(v: any): void {
+  function scan(v: unknown): void {
     if (!v || typeof v !== "object" || seen.has(v)) return;
     seen.add(v);
     if ("$ref" in v) {
@@ -56,11 +56,15 @@ export async function validateOpenApi(
   }
   scan(doc);
   const ids = new Set<string>();
-  for (const path of Object.values(doc.paths ?? {}) as any[])
+  for (const path of Object.values(
+    (doc.paths ?? {}) as Record<string, Record<string, any>>,
+  ))
     for (const op of [
       ...METHODS.map((m) => path?.[m]),
-      ...Object.values(path?.additionalOperations ?? {}),
-    ] as any[]) {
+      ...Object.values(
+        (path?.additionalOperations ?? {}) as Record<string, any>,
+      ),
+    ] as Array<Record<string, any>>) {
       if (!op?.operationId) continue;
       if (ids.has(op.operationId))
         throw new Error(`Duplicate operationId: ${op.operationId}`);

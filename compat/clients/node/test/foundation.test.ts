@@ -32,7 +32,10 @@ test("wire observations retain status, field presence, ordering and locator rout
   assert.ok(!out.includes("private reference prose"));
   assert.match(out, /INVALID_FIELD/);
   assert.match(out, /messageType/);
-  const normalized = normalize(c.result.observations, c.result.identities) as Record<string, Record<string, unknown>>;
+  const normalized = normalize(
+    c.result.observations,
+    c.result.identities,
+  ) as Record<string, Record<string, any>>;
   assert.deepEqual(normalized.page.body.records, [{ Id: "a" }, { Id: "b" }]);
   assert.equal(normalized.page.status, 200);
   assert.equal(
@@ -309,10 +312,13 @@ test("name probe records state after each potentially overwriting PATCH", async 
     cleanup: [],
   } as Context;
   await foundationScenarios["foundation-names"](c);
-  const o = c.result.observations as Record<string, { body?: Record<string, unknown> }>;
-  assert.equal(o["after-lower-json"]?.body.Compat_Text__c, "lower");
-  assert.equal(o["after-duplicate-alias"]?.body.Compat_Text__c, "second");
-  assert.equal(o["after-duplicate-raw"]?.body.Compat_Text__c, "second");
+  const o = c.result.observations as Record<
+    string,
+    { body?: Record<string, any> }
+  >;
+  assert.equal(o["after-lower-json"]?.body?.Compat_Text__c, "lower");
+  assert.equal(o["after-duplicate-alias"]?.body?.Compat_Text__c, "second");
+  assert.equal(o["after-duplicate-raw"]?.body?.Compat_Text__c, "second");
 });
 
 test("projection and name-equality probes request deterministic fixture ordering", async (t) => {

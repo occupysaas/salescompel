@@ -41,7 +41,10 @@ export async function normalizationFixture(t: TestContext) {
       Object.assign(x.flags, flags);
       if (["GET", "DELETE"].includes(method)) {
         const r = await x.transport.request(path, init);
-        if (flags.reverseRows && Array.isArray((r.body as { records?: unknown[] })?.records))
+        if (
+          flags.reverseRows &&
+          Array.isArray((r.body as { records?: unknown[] })?.records)
+        )
           (r.body as { records: unknown[] }).records.reverse();
         return structuredClone(r);
       }

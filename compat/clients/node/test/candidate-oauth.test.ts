@@ -115,7 +115,9 @@ test("occupied sf callback port blocks OAuth preflight", async () => {
       "function",
     );
     await assert.rejects(
-      (preflight as { preflightOAuth: () => Promise<unknown> }).preflightOAuth(),
+      (
+        preflight as { preflightOAuth: () => Promise<unknown> }
+      ).preflightOAuth(),
       /PREREQUISITE/,
     );
   } finally {

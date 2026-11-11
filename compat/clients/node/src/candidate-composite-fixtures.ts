@@ -6,16 +6,24 @@ import {
   type Response,
 } from "./candidate-acceptance-fixtures.ts";
 type Expected = { referenceId: string; method: "POST" | "PATCH" | "DELETE" };
+type CompositeEntry = {
+  referenceId?: string;
+  httpStatusCode: number;
+  httpHeaders?: unknown;
+  body?: unknown;
+};
 const idPattern = /^[A-Za-z0-9]{18}$/;
-const isObject = (v: any) =>
+const isObject = (v: unknown): v is Record<string, any> =>
   v !== null && typeof v === "object" && !Array.isArray(v);
-const errorBody = (body: any) =>
+const errorBody = (
+  body: unknown,
+): body is Array<{ errorCode: string; message: string }> =>
   Array.isArray(body) &&
   body.length === 1 &&
   isObject(body[0]) &&
   typeof body[0].errorCode === "string" &&
   typeof body[0].message === "string";
-const emptyHeaders = (v: any) => isObject(v) && Object.keys(v).length === 0;
+const emptyHeaders = (v: unknown) => isObject(v) && Object.keys(v).length === 0;
 export async function runCompositeFixtureAttempt(
   journalPath: string,
   intents: FixtureEvent[],
@@ -42,11 +50,13 @@ export async function runCompositeFixtureAttempt(
       throw Error("FIXTURES");
     await reserveCompositeIntents(journalPath, intents);
     const response = await perform();
-    const entries = response.body?.compositeResponse;
+    const entries = (response.body as { compositeResponse?: unknown })
+      .compositeResponse;
     // Resolve only independently attributable create IDs, before validating neighbors.
     if (response.status === 200 && Array.isArray(entries)) {
+      const list = entries as CompositeEntry[];
       for (const intent of intents) {
-        const matches = entries.filter(
+        const matches = list.filter(
           (e) => e?.referenceId === intent.operationId,
         );
         if (matches.length === 1) {
@@ -87,8 +97,9 @@ export async function runCompositeFixtureAttempt(
       )
         throw Error("RESULT");
       let originalErrors = 0;
+      const list = entries as CompositeEntry[];
       for (let i = 0; i < expected.length; i++) {
-        const e = entries[i];
+        const e = list[i];
         if (
           !isObject(e) ||
           Object.keys(e).sort().join(",") !==
@@ -147,8 +158,9 @@ async function reserveCompositeIntents(
   while (!lock) {
     try {
       lock = await open(lockPath, "wx", 0o600);
-    } catch (error: any) {
-      if (error?.code !== "EEXIST" || Date.now() >= deadline)
+    } catch (error: unknown) {
+      const err = error as { code?: string } | null | undefined;
+      if (err?.code !== "EEXIST" || Date.now() >= deadline)
         throw Error("FIXTURES");
       await delay(10);
     }

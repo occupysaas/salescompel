@@ -156,8 +156,9 @@ export async function validateOutputDestination(output: string) {
   try {
     await lstat(out);
     throw new Error("PUBLICATION");
-  } catch (e: any) {
-    if (e.code !== "ENOENT") throw e;
+  } catch (e: unknown) {
+    const err = e as { code?: string };
+    if (err.code !== "ENOENT") throw e;
   }
 }
 export async function preflightAcceptance(

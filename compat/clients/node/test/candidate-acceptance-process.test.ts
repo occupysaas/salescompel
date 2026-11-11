@@ -15,7 +15,10 @@ test("bounded subprocess captures private logs, exit status and terminates a han
   const r = await runCommand(
     {
       executable: process.execPath,
-      argv: ["-e", 'process.stdout.write("secret-canary\\n");process.exitCode=3'],
+      argv: [
+        "-e",
+        'process.stdout.write("secret-canary\\n");process.exitCode=3',
+      ],
       cwd: dir,
       env: {},
     },

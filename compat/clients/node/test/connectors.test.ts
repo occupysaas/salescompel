@@ -71,7 +71,11 @@ test("real JSforce CRUD wiring runs against an explicitly synthetic HTTP fixture
     };
     await jsScenarios.crud(c);
     assert.ok(c.result.assertions.every((a) => a.passed));
-    assert.equal((c.result.observations as Record<string, { errorCode?: string }>).missing.errorCode, "NOT_FOUND");
+    assert.equal(
+      (c.result.observations as Record<string, { errorCode?: string }>).missing
+        .errorCode,
+      "NOT_FOUND",
+    );
     const cleanup = await c.tracker.cleanup();
     assert.equal(cleanup[0].outcome, "passed");
     assert.ok(

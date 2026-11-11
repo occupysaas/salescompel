@@ -375,15 +375,16 @@ test("repository release batch validates all registered foundation contracts", a
   assert.deepEqual(await validateReleaseReviewRepository(ROOT), []);
 });
 
-const findingBypasses: [string, (finding: Record<string, unknown>) => void][] = [
-  ["resolved", (f) => (f.status = "resolved")],
-  ["reconciled", (f) => (f.status = "reviewed-and-reconciled")],
-  ["blocking false", (f) => (f.blocksContractFreeze = false)],
-  ["blocking absent", (f) => delete f.blocksContractFreeze],
-  ["blocking string", (f) => (f.blocksContractFreeze = "true")],
-  ["contracts empty", (f) => (f.affectedContracts = [])],
-  ["contracts absent", (f) => delete f.affectedContracts],
-];
+const findingBypasses: [string, (finding: Record<string, unknown>) => void][] =
+  [
+    ["resolved", (f) => (f.status = "resolved")],
+    ["reconciled", (f) => (f.status = "reviewed-and-reconciled")],
+    ["blocking false", (f) => (f.blocksContractFreeze = false)],
+    ["blocking absent", (f) => delete f.blocksContractFreeze],
+    ["blocking string", (f) => (f.blocksContractFreeze = "true")],
+    ["contracts empty", (f) => (f.affectedContracts = [])],
+    ["contracts absent", (f) => delete f.affectedContracts],
+  ];
 for (const [name, mutate] of findingBypasses)
   test(`unresolved in-profile finding rejects ${name} assessor bypass`, () => {
     const f = fixture();

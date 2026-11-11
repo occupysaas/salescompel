@@ -101,7 +101,8 @@ const expected = [
   ["/services/data/v65.0/query", "get", "candidateQuery"],
   ["/services/data/v65.0/openapi.yaml", "get", "candidateOpenAPI"],
 ];
-const doc = async (): Promise<Record<string, any>> => loadCandidateOpenAPI();
+const doc = async (): Promise<Record<string, any>> =>
+  loadCandidateOpenAPI() as Promise<Record<string, any>>;
 const urls = async () =>
   new Set<string>(
     parse(
@@ -159,7 +160,8 @@ test("candidateContractProvenance", async () => {
       assert.ok(registered.has(u));
   }
   for (const mutate of [
-    (x: Record<string, any>) => delete x.paths["/services/data"].get["x-source"],
+    (x: Record<string, any>) =>
+      delete x.paths["/services/data"].get["x-source"],
     (x: Record<string, any>) =>
       (x.paths["/services/data"].get["x-source"] = [
         "https://PRIVATE_MARKER.invalid",
@@ -395,10 +397,7 @@ test("OAuth schemas are closed offline contracts including errors and Organizati
           string,
           Record<string, unknown>
         >,
-      ).map(([key, schema]) => [
-        key,
-        schema.type === "array" ? ["x"] : "x",
-      ]),
+      ).map(([key, schema]) => [key, schema.type === "array" ? ["x"] : "x"]),
     ),
     OrganizationProjection: {
       Name: "tenant",

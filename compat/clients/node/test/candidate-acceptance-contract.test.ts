@@ -123,7 +123,10 @@ test("publication is exclusive and rejects secret-bearing extra properties", asy
   const path = join(dir, "report.json"),
     r = newReport("a".repeat(24), "full");
   await assert.rejects(
-    publishAcceptanceReport(path, { ...r, token: "secret" } as unknown),
+    publishAcceptanceReport(path, {
+      ...r,
+      token: "secret",
+    } as unknown as Parameters<typeof publishAcceptanceReport>[1]),
   );
   await publishAcceptanceReport(path, r);
   const saved = await readFile(path, "utf8");

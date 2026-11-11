@@ -239,7 +239,7 @@ test(
           throw Error("FIXTURES");
         },
       );
-      const compositeId = compositeResponse.body.compositeResponse[0].body.id;
+      const compositeId = compositeResponse.body!.compositeResponse[0].body.id;
       rows.set("Account" + compositeId, { id: compositeId, event });
       checked(compositeExchange!, 200);
       for (const role of ["restricted", "other"] as const) {
@@ -624,22 +624,8 @@ test("OAuth media compiler remains closed to unsupported security and content", 
       };
     },
     (x: Record<string, unknown>) => {
-      (
-        (
-          (
-            x.components as Record<
-              string,
-              Record<string, Record<string, Record<string, unknown>>>
-            >
-          ).schemas as Record<
-            string,
-            Record<string, Record<string, Record<string, unknown>>>
-          >
-        )["OAuthError"].properties as Record<
-          string,
-          Record<string, Record<string, unknown>>
-        >
-      ).error.format = "unknown";
+      const components = x.components as Record<string, any>;
+      components.schemas.OAuthError.properties.error.format = "unknown";
     },
   ]) {
     const x = structuredClone(d);

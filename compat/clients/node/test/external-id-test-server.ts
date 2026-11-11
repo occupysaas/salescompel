@@ -127,7 +127,9 @@ export async function localProbe(t: TestContext) {
     server.closeAllConnections();
     server.close();
   });
-  const origin = new URL(`http://127.0.0.1:${(server.address() as { port: number }).port}`);
+  const origin = new URL(
+    `http://127.0.0.1:${(server.address() as { port: number }).port}`,
+  );
   const transport: Transport = {
     request: (path, init) =>
       wire(origin, "synthetic", path, init, {

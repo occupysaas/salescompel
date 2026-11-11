@@ -140,13 +140,13 @@ test("metadataPostIsReadOnly through unmodified JSforce", async (t) => {
   });
   await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
   t.after(() => server.close());
-  const result = await readWithClient({
+  const result = (await readWithClient({
     origin: `http://127.0.0.1:${(server.address() as { port: number }).port}`,
     token: "synthetic",
     kind: "metadata",
     type: "CustomField",
     name: "Account.Compat_Text__c",
-  });
+  })) as Record<string, any>;
   assert.equal(method, "POST");
   assert.equal(path, "/services/Soap/m/65.0");
   assert.match(body, /<readMetadata[ >]/);

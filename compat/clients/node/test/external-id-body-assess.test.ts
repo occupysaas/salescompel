@@ -258,7 +258,8 @@ test("invalid matrix, bindings, state reads, cleanup and proof block independent
       if (mutation === "duplicate") r.observations[15] = r.observations[14];
       if (mutation === "null-omitted") delete o.request.Compat_Key__c;
       if (mutation === "profile") r.config.profileHash = "a".repeat(64);
-      if (mutation === "clients") (r.connectors as Record<string, string>).jsforce = "wrong";
+      if (mutation === "clients")
+        (r.connectors as Record<string, string>).jsforce = "wrong";
       if (mutation === "manifest") r.manifestHash = "a".repeat(64);
       if (mutation === "state") {
         const path = join(dir, o.stateArtifact),

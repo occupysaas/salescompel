@@ -14,6 +14,7 @@ import {
 } from "./candidate-acceptance-fixtures.ts";
 import { loadCandidateOpenAPI } from "./candidate-openapi-contract.ts";
 import { createCandidateTrafficValidator } from "./candidate-openapi-traffic.ts";
+import type { HttpRequest, HttpResponse, HttpRequestOptions } from "jsforce";
 const runtime = new WeakMap<
   GateContext,
   { records: string; identity: string }
@@ -333,8 +334,9 @@ export async function cleanupSchema(c: GateContext, roles = false) {
       .split("\n")
       .filter(Boolean)
       .map((s) => JSON.parse(s));
-  } catch (e: any) {
-    if (e.code !== "ENOENT") throw e;
+  } catch (e: unknown) {
+    const err = e as { code?: string };
+    if (err.code !== "ENOENT") throw e;
   }
   const r = await runCommand(
     {
@@ -587,13 +589,16 @@ export async function runSchemaClientGate(
   for (const connection of [conn, other]) {
     const transport = connection._transport,
       original = transport.httpRequest.bind(transport);
-    transport.httpRequest = (req: any, options: any) => {
+    transport.httpRequest = (
+      req: HttpRequest,
+      options?: HttpRequestOptions,
+    ) => {
       const target = new URL(req.url);
       assert.equal(target.origin, new URL(c.url).origin);
       const pending = original(req, options);
       observers.push(
         pending.then(
-          (res: any) => {
+          (res: HttpResponse) => {
             const result = v.validate({
               method: req.method,
               path: target.pathname + target.search,
@@ -603,7 +608,9 @@ export async function runSchemaClientGate(
                   req.headers?.["content-type"] ??
                   null,
                 body:
-                  req.body === undefined ? undefined : Buffer.from(req.body),
+                  req.body === undefined
+                    ? undefined
+                    : Buffer.from(req.body as string),
               },
               response: {
                 status: res.statusCode,
@@ -624,24 +631,25 @@ export async function runSchemaClientGate(
     };
   }
   const global = await conn.describeGlobal();
-  assert.ok(global.sobjects.some((o: any) => o.name === object));
+  assert.ok(global.sobjects.some((o: { name: string }) => o.name === object));
   passed("schema/jsforce-discover");
   const describe = await conn.sobject(object).describe();
   assert.equal(
-    describe.fields.find((f: any) => f.name === "Notes__c").length,
+    describe.fields.find((f: { name: string }) => f.name === "Notes__c")!
+      .length,
     80,
   );
   assert.equal(
     (await other.sobject(object).describe()).fields.find(
-      (f: any) => f.name === "Notes__c",
-    ).length,
+      (f: { name: string }) => f.name === "Notes__c",
+    )!.length,
     40,
   );
   passed("schema/jsforce-describe");
   let sequence = 0;
   const create = async (
     name: string,
-    data: Record<string, unknown>,
+    data: Record<string, any>,
     objectName = object,
   ) => {
     const e: FixtureEvent = {
@@ -731,9 +739,9 @@ export async function runSchemaClientGate(
   );
   assert.equal(composite.status, 200);
   assert.ok(
-    composite.body.compositeResponse.every(
-      (r: any) => r.httpStatusCode === 400,
-    ),
+    (
+      composite.body as { compositeResponse: Array<{ httpStatusCode: number }> }
+    ).compositeResponse.every((r) => r.httpStatusCode === 400),
   );
   assert.equal(
     (
@@ -1087,9 +1095,9 @@ export async function verifySchemaRestart(
     `/services/data/v65.0/sobjects/${saved.object}/${saved.id}`,
   );
   assert.equal(r.status, 200);
-  assert.equal(r.body.Id, saved.id);
-  assert.equal(r.body.Name, saved.name);
-  assert.equal(r.body.Notes__c, "persistent");
+  assert.equal(r.body?.Id, saved.id);
+  assert.equal(r.body?.Name, saved.name);
+  assert.equal(r.body?.Notes__c, "persistent");
   assert.deepEqual(
     (await candidateRequest(c, "admin", "/services/data/v65.0/sobjects")).body,
     saved.discovery,

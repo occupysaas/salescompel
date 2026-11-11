@@ -37,32 +37,49 @@ async function artifact(dir: string, name: string, sha?: string) {
     );
   return value;
 }
-function wire(r: any): asserts r is WireResponse {
+interface DiscoveryBody {
+  done?: unknown;
+  records?: Array<Record<string, any>>;
+  totalSize?: unknown;
+  nextRecordsUrl?: unknown;
+}
+interface RetainedOriginal {
+  caseId: string;
+  id?: string;
+  response: {
+    status?: number;
+    bodyPresent?: boolean;
+    headers?: Record<string, string>;
+    body?: { records?: unknown } | null;
+  };
+}
+function wire(r: unknown): asserts r is WireResponse {
+  const v = r as WireResponse;
   requireEvidence(
-    r &&
-      Number.isInteger(r.status) &&
-      r.status >= 100 &&
-      r.status <= 599 &&
-      r.headers &&
-      typeof r.headers === "object" &&
-      !Array.isArray(r.headers) &&
-      Object.values(r.headers).every((v) => typeof v === "string") &&
-      Object.hasOwn(r, "body") &&
-      (r.bodyPresent === undefined || typeof r.bodyPresent === "boolean"),
+    v &&
+      Number.isInteger(v.status) &&
+      v.status >= 100 &&
+      v.status <= 599 &&
+      v.headers &&
+      typeof v.headers === "object" &&
+      !Array.isArray(v.headers) &&
+      Object.values(v.headers).every((h) => typeof h === "string") &&
+      Object.hasOwn(v, "body") &&
+      (v.bodyPresent === undefined || typeof v.bodyPresent === "boolean"),
   );
   requireEvidence(
-    ![401, 403].includes(r.status) &&
+    ![401, 403].includes(v.status) &&
       !(
-        r.body &&
-        typeof r.body === "object" &&
-        Object.hasOwn(r.body, "nonJson")
+        v.body &&
+        typeof v.body === "object" &&
+        Object.hasOwn(v.body, "nonJson")
       ),
   );
-  if (r.bodyPresent === false) requireEvidence(r.body === null);
+  if (v.bodyPresent === false) requireEvidence(v.body === null);
 }
-function discovery(r: any) {
+function discovery(r: unknown) {
   wire(r);
-  const b = r.body as any;
+  const b = r.body as DiscoveryBody;
   requireEvidence(
     r.status === 200 &&
       b?.done === true &&
@@ -70,10 +87,10 @@ function discovery(r: any) {
       b.totalSize === b.records.length &&
       !b.nextRecordsUrl,
   );
-  const rows = b.records.map((row: any) =>
-    bodyRow(row.Id, { status: 200, body: row, headers: {} }),
+  const rows = (b.records as Array<Record<string, any>>).map((row) =>
+    bodyRow(row.Id as string, { status: 200, body: row, headers: {} }),
   );
-  requireEvidence(new Set(rows.map((r: any) => r.Id)).size === rows.length);
+  requireEvidence(new Set(rows.map((row) => row.Id)).size === rows.length);
   return rows;
 }
 function snapshot(s: BodyStateSnapshot) {
@@ -221,7 +238,7 @@ async function load(path: string) {
   requireEvidence(equal(await artifact(dir, "report.json"), r));
   const files = await readdir(dir);
   // Inspect independently retained responses too, including partial-failure evidence.
-  const originals: any[] = [];
+  const originals: RetainedOriginal[] = [];
   const snapshots: {
     caseId: string;
     state: BodyStateSnapshot;
@@ -318,15 +335,16 @@ async function load(path: string) {
     if (c.recordState === "existing") {
       const seed = await artifact(dir, v.seedArtifact!, v.seedSha256);
       wire(seed);
+      const seedBody = seed.body as { success?: unknown; id?: unknown };
       requireEvidence(
         v.seedArtifact === `response-${c.id}-seed.json` &&
           seed.status === 201 &&
-          (seed.body as any)?.success === true &&
-          typeof (seed.body as any)?.id === "string",
+          seedBody?.success === true &&
+          typeof seedBody?.id === "string",
       );
       requireEvidence(
         v.before.length === 1 &&
-          v.before[0].Id === (seed.body as any).id &&
+          v.before[0].Id === seedBody.id &&
           v.before[0].Name === scope.seedName &&
           v.before[0].Compat_Key__c === scope.pathKey,
       );
@@ -400,46 +418,54 @@ function expected(
   const o = r.observations.find((o) => o.caseId === caseId)!,
     c = bodyManifest.find((c) => c.id === caseId)!,
     s = bodyScope(r.runId, c),
-    b = o.body as any;
+    b = o.body;
   if (c.valueKind !== "omitted" && c.valueKind !== "null") {
     if (o.status !== 400) return "different";
+    const errors = b as
+      Array<{ errorCode?: unknown; message?: unknown }> | null | undefined;
     if (
       !o.bodyPresent ||
-      !Array.isArray(b) ||
-      b.length !== 1 ||
-      !b[0] ||
-      typeof b[0] !== "object" ||
-      Array.isArray(b[0]) ||
-      Object.keys(b[0]).sort().join() !== "errorCode,message" ||
-      typeof b[0].errorCode !== "string" ||
-      typeof b[0].message !== "string"
+      !Array.isArray(errors) ||
+      errors.length !== 1 ||
+      !errors[0] ||
+      typeof errors[0] !== "object" ||
+      Array.isArray(errors[0]) ||
+      Object.keys(errors[0]).sort().join() !== "errorCode,message" ||
+      typeof errors[0].errorCode !== "string" ||
+      typeof errors[0].message !== "string"
     )
       return "blocked";
-    return b[0].errorCode ===
+    return errors[0].errorCode ===
       (c.valueKind === "object" ? "JSON_PARSER_ERROR" : "INVALID_FIELD") &&
       equal(o.before, o.after) &&
       !changedCleanup
       ? "ready"
       : "different";
   }
+  const m = b as {
+    id?: unknown;
+    success?: unknown;
+    created?: unknown;
+    errors?: unknown;
+  } | null;
   if (o.status !== (c.recordState === "existing" ? 200 : 201))
     return "different";
   if (
     !o.bodyPresent ||
-    !b ||
-    typeof b.id !== "string" ||
-    typeof b.success !== "boolean" ||
-    typeof b.created !== "boolean" ||
-    !Array.isArray(b.errors)
+    !m ||
+    typeof m.id !== "string" ||
+    typeof m.success !== "boolean" ||
+    typeof m.created !== "boolean" ||
+    !Array.isArray(m.errors)
   )
     return "blocked";
   return !changedCleanup &&
-    b.success === true &&
-    b.created === (c.recordState === "missing") &&
-    b.errors.length === 0 &&
+    m.success === true &&
+    m.created === (c.recordState === "missing") &&
+    m.errors.length === 0 &&
     o.after.length === 1 &&
-    o.after[0].Id === b.id &&
-    (c.recordState === "missing" || b.id === o.before[0].Id) &&
+    o.after[0].Id === m.id &&
+    (c.recordState === "missing" || m.id === o.before[0].Id) &&
     o.after[0].Name === s.requestName &&
     o.after[0].Compat_Key__c === s.pathKey &&
     o.after[0].Compat_Text__c === (o.before[0]?.Compat_Text__c ?? null)
@@ -454,7 +480,7 @@ function normalized(r: BodyReport) {
     for (const row of [...o.before, ...o.after])
       if (!aliases.has(row.Id)) aliases.set(row.Id, `${c.id}:id${n++}`);
   }
-  const visit = (v: any): any =>
+  const visit = (v: unknown): unknown =>
     typeof v === "string"
       ? (aliases.get(v) ?? v.replaceAll(`p11${r.runId}-`, "p11{run}-"))
       : Array.isArray(v)

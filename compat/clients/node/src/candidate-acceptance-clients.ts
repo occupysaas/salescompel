@@ -19,18 +19,24 @@ export const stepResult = (
   exitCode: 0,
   tests: ids.map((id) => ({ id, outcome: "passed" })),
 });
-export function assertRestartBaseline(runId: string, before: any) {
+interface RestartBaseline {
+  account: string;
+  contact: string;
+  a: Record<string, any> | null;
+  b: Record<string, any> | null;
+}
+export function assertRestartBaseline(runId: string, before: RestartBaseline) {
   const name = "p15-" + runId + "-restart";
   assert.match(before.account, /^[A-Za-z0-9]{18}$/);
   assert.match(before.contact, /^[A-Za-z0-9]{18}$/);
-  assert.equal(before.a.Id, before.account);
-  assert.equal(before.a.Name, name);
-  assert.equal(before.a.Compat_Text__c, "retained text");
-  assert.equal(before.a.Compat_Key__c, name);
-  assert.equal(before.b.Id, before.contact);
-  assert.equal(before.b.FirstName, "Restart");
-  assert.equal(before.b.LastName, name);
-  assert.equal(before.b.AccountId, before.account);
+  assert.equal(before.a?.Id, before.account);
+  assert.equal(before.a?.Name, name);
+  assert.equal(before.a?.Compat_Text__c, "retained text");
+  assert.equal(before.a?.Compat_Key__c, name);
+  assert.equal(before.b?.Id, before.contact);
+  assert.equal(before.b?.FirstName, "Restart");
+  assert.equal(before.b?.LastName, name);
+  assert.equal(before.b?.AccountId, before.account);
 }
 export async function seedRestartFixture(c: GateContext) {
   const name = "p15-" + c.runId + "-restart",
@@ -101,9 +107,10 @@ export async function verifyRestartFixture(
       ),
   );
   assert.equal(q.status, 200);
-  assert.equal(q.body.records.length, 1);
-  assert.equal(q.body.records[0].Id, before.contact);
-  assert.equal(q.body.records[0].Account.Name, before.a.Name);
+  const records = (q.body as { records: Array<Record<string, any>> }).records;
+  assert.equal(records.length, 1);
+  assert.equal(records[0].Id, before.contact);
+  assert.equal((records[0].Account as Record<string, any>).Name, before.a.Name);
   assert.equal(
     (
       await candidateRequest(

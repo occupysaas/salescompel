@@ -76,9 +76,18 @@ export async function runOAuthGate(c: GateContext): Promise<ParsedResult> {
       "oauth",
     );
     if (r.exitCode !== 0 || !r.complete) throw new Error("ASSERTION");
-    let data: any;
+    let data: {
+      restart: {
+        refresh: string;
+        client: string;
+        secret: string;
+        account: string;
+      };
+      secrets: string[];
+      result: ParsedResult;
+    };
     try {
-      data = JSON.parse(output);
+      data = JSON.parse(output) as typeof data;
     } catch {
       throw new Error("RESULT");
     }
@@ -112,9 +121,9 @@ export async function verifyOAuthRestart(
   );
   restartState.delete(c);
   if (r.exitCode !== 0 || !r.complete) throw new Error("ASSERTION");
-  let result: any;
+  let result: { verified?: unknown; secrets?: unknown };
   try {
-    result = JSON.parse(output);
+    result = JSON.parse(output) as { verified?: unknown; secrets?: unknown };
   } catch {
     throw new Error("RESULT");
   }
@@ -122,7 +131,7 @@ export async function verifyOAuthRestart(
     throw new Error("RESULT");
   evidenceSecrets.set(c, [
     ...(evidenceSecrets.get(c) ?? []),
-    ...result.secrets,
+    ...(result.secrets as string[]),
   ]);
   return stepResult(c, "restart", ["restart/oauth-refresh"]);
 }

@@ -191,8 +191,9 @@ export async function assertBodyIdentityNotLatched(dir: string) {
   try {
     await privateJSON(join(dir, "identity-blocked.json"));
     throw new Error("IDENTITY_LATCHED");
-  } catch (e: any) {
-    if (e.code !== "ENOENT") throw e;
+  } catch (e: unknown) {
+    const err = e as { code?: string };
+    if (err.code !== "ENOENT") throw e;
   }
 }
 export async function rememberBodyRecord(
@@ -208,8 +209,9 @@ export async function rememberBodyRecord(
   const path = join(dir, `known-${id}.json`);
   try {
     await bodyArtifact(dir, `known-${id}.json`, { caseId, id });
-  } catch (e: any) {
-    if (e.code !== "EEXIST") throw e;
+  } catch (e: unknown) {
+    const err = e as { code?: string };
+    if (err.code !== "EEXIST") throw e;
     const p = await privateJSON(path);
     if (p.id !== id || p.caseId !== caseId)
       throw new Error("OWNERSHIP_UNPROVEN");
@@ -254,8 +256,9 @@ export async function knownBodyRecords(
         if (typeof r.body?.id === "string") add(id.split(":")[0], r.body.id);
         else if (r.status === 201 || r.body?.created === true)
           throw new Error("CREATED_ID_UNAVAILABLE");
-      } catch (e: any) {
-        if (e.code !== "ENOENT" || stage === "response") throw e;
+      } catch (e: unknown) {
+        const err = e as { code?: string };
+        if (err.code !== "ENOENT" || stage === "response") throw e;
       }
     }
   if (known.size > 80) throw new Error("FIXTURE_BOUND");
@@ -267,7 +270,7 @@ export function bodyCondition(runId: string, c: BodyCase) {
   const s = bodyScope(runId, c);
   return `Name IN ('${literal(s.seedName)}','${literal(s.requestName)}') OR Compat_Key__c IN ('${literal(s.pathKey)}','${literal(s.variantKey)}','${literal(s.differentKey)}')`;
 }
-export function bodyOwned(runId: string, c: BodyCase, row: any) {
+export function bodyOwned(runId: string, c: BodyCase, row: RecordState) {
   const s = bodyScope(runId, c);
   return (
     [s.seedName, s.requestName].includes(row?.Name) &&
@@ -277,7 +280,7 @@ export function bodyOwned(runId: string, c: BodyCase, row: any) {
   );
 }
 export function bodyRow(id: string, r: WireResponse): RecordState {
-  const b = r.body as any;
+  const b = r.body as RecordState;
   if (
     r.status !== 200 ||
     b?.Id !== id ||
@@ -310,7 +313,7 @@ export async function bodyDiscovery(
         { caseId: c.id, response: r },
       );
       evidenceSink?.({ caseId: c.id, ...evidence });
-      const b = r.body as any;
+      const b = r.body as { records?: Array<{ Id?: unknown }> } | null;
       if (Array.isArray(b?.records))
         for (const row of b.records)
           if (typeof row?.Id === "string")

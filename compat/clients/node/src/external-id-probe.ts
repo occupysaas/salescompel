@@ -131,7 +131,7 @@ export async function runExternalIdProbe(
           await appendJournal(dir, { kind: "response", id });
           resolved = true;
           o.state = "observed";
-          const responseId = (o.body as any)?.id;
+          const responseId = (o.body as { id?: unknown } | null)?.id;
           if (typeof responseId === "string") {
             recordPath(responseId);
             await rememberRecord(dir, scenario.id, responseId);
