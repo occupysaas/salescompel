@@ -89,7 +89,9 @@ export async function readWithClient(
         return;
       }
       try {
-        accept(JSON.parse(Buffer.concat(chunks).toString()));
+        const parsed = JSON.parse(Buffer.concat(chunks).toString()) as unknown;
+        if (parsed == null) throw new Error("READ_INVALID_RESPONSE");
+        accept(parsed);
       } catch {
         reject(new Error("READ_INVALID_RESPONSE"));
       }

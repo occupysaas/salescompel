@@ -160,7 +160,7 @@ export async function readGateResult(
     !b.complete
   )
     throw new Error("RESULT");
-  if (kind === "steps" && JSON.parse(text).runId !== runId)
+  if (kind === "steps" && (JSON.parse(text) as { runId?: string } | null)?.runId !== runId)
     throw new Error("RESULT");
   return {
     schemaVersion: 1,

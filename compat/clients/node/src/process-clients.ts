@@ -64,7 +64,8 @@ export async function withCli<T>(
       let code =
         e.killed && e.signal ? "CLI_PROCESS_TIMEOUT" : "CLI_PROCESS_FAILED";
       try {
-        code = JSON.parse(e.stdout).name ?? code;
+        const parsed = JSON.parse(e.stdout) as { name?: string } | null;
+        if (parsed?.name) code = parsed.name;
       } catch {}
       throw new Error(`${code}: ${args.slice(0, 3).join(" ")}`);
     }

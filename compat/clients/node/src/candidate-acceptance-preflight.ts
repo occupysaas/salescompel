@@ -260,7 +260,8 @@ export async function preflightAcceptance(
       if (r.exitCode !== 0 || !r.complete) throw new Error("PREREQUISITE");
       const text = (await readFile(r.resultPath, "utf8")).trim();
       if (name === "postgres") {
-        if (JSON.parse(text).major !== 17) throw new Error("PREREQUISITE");
+        const pg = JSON.parse(text) as { major?: number } | null;
+        if (!pg || pg.major !== 17) throw new Error("PREREQUISITE");
         bindings.tools.postgres = "17";
       } else {
         const v = text.match(/\d+\.\d+(?:\.\d+)?/)?.[0];
