@@ -1,0 +1,6 @@
+[submodule ".devgate"]
+	path = .devgate
+	url = https://github.com/TheArchitectit/DevGate-Agentic-Framework.git
+[submodule ".agent-guardrails"]
+	path = .agent-guardrails
+	url = https://github.com/TheArchitectit/agent-guardrails-template.git

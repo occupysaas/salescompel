@@ -1,0 +1,92 @@
+{
+  "api_version": "devgate.scope/v1",
+  "note": [
+    "salescompel overlay of DevGate's scope contract (overlay-not-fork).",
+    "The project copy replaces .devgate/.guardrails/scope.json outright, so",
+    "skip_dirs is restated here and kept in step with the submodule baseline.",
+    "Added over the baseline: .agent-guardrails (the advisory submodule, which",
+    "is not skipped by the walker and would otherwise be scanned as first-party",
+    "source) plus the project's generated/private output trees (dist, test-results,",
+    "playwright-report, .sf, .sfdx, .superpowers, reports, private).",
+    "extra_source_dirs adds compat/ (Node/Python compatibility clients) and locales/ (i18n catalogs) to the size-gate walk; the DevGate candidate list does not name them (the scope-gap warning caught them).",
+    "size_overrides records the pre-existing oversize files the size-gate walk found once compat/ joined scope; each keeps its seed count and can only shrink (split the file to lower it)."
+  ],
+  "skip_dirs": [
+    ".agent-guardrails",
+    ".claude",
+    ".crew",
+    ".devgate",
+    ".git",
+    ".next",
+    ".nuxt",
+    ".sandbox-home",
+    ".sf",
+    ".sfdx",
+    ".superpowers",
+    ".venv",
+    "__pycache__",
+    "build",
+    "dist",
+    "egg-info",
+    "node_modules",
+    "out",
+    "playwright-report",
+    "private",
+    "reports",
+    "target",
+    "test-results",
+    "vendor",
+    "venv",
+    "worktrees"
+  ],
+  "extra_source_dirs": [
+    "compat",
+    "locales"
+  ],
+  "size_overrides": {
+    "compat/clients/node/src/candidate-oauth-worker.ts": {
+      "hard": 842,
+      "reason": "pre-existing oversize file (upstream main at wiring seed 842 lines, limit 500); reasoned-debt form - the ratchet only moves down, by splitting the file when next touched."
+    },
+    "compat/clients/node/test/candidate-openapi.test.ts": {
+      "hard": 620,
+      "reason": "pre-existing oversize file (upstream main at wiring seed 620 lines, limit 600); reasoned-debt form - the ratchet only moves down, by splitting the file when next touched."
+    },
+    "compat/clients/node/src/candidate-schema.ts": {
+      "hard": 612,
+      "reason": "pre-existing oversize file (upstream main at wiring seed 612 lines, limit 500); reasoned-debt form - the ratchet only moves down, by splitting the file when next touched."
+    },
+    "compat/clients/node/src/foundation.ts": {
+      "hard": 749,
+      "reason": "pre-existing oversize file (upstream main at wiring seed 749 lines, limit 500); reasoned-debt form - the ratchet only moves down, by splitting the file when next touched."
+    },
+    "compat/clients/node/src/foundation-assessment.ts": {
+      "hard": 625,
+      "reason": "pre-existing oversize file (upstream main at wiring seed 625 lines, limit 500); reasoned-debt form - the ratchet only moves down, by splitting the file when next touched."
+    },
+    "internal/platform/http_test.go": {
+      "hard": 619,
+      "reason": "pre-existing oversize file (upstream main at wiring seed 619 lines, limit 600); reasoned-debt form - the ratchet only moves down, by splitting the file when next touched."
+    },
+    "compat/clients/node/src/external-id-normalization-recovery.ts": {
+      "hard": 557,
+      "reason": "pre-existing oversize file (upstream main at wiring seed 557 lines, limit 500); reasoned-debt form - the ratchet only moves down, by splitting the file when next touched."
+    },
+    "compat/clients/node/src/cli.ts": {
+      "hard": 556,
+      "reason": "pre-existing oversize file (upstream main at wiring seed 556 lines, limit 500); reasoned-debt form - the ratchet only moves down, by splitting the file when next touched."
+    },
+    "compat/clients/node/src/external-id-normalization-assess.ts": {
+      "hard": 548,
+      "reason": "pre-existing oversize file (upstream main at wiring seed 548 lines, limit 500); reasoned-debt form - the ratchet only moves down, by splitting the file when next touched."
+    },
+    "compat/clients/node/src/external-id-body-assess.ts": {
+      "hard": 538,
+      "reason": "pre-existing oversize file (upstream main at wiring seed 538 lines, limit 500); reasoned-debt form - the ratchet only moves down, by splitting the file when next touched."
+    },
+    "compat/clients/node/src/external-id-body-recovery.ts": {
+      "hard": 505,
+      "reason": "pre-existing oversize file (upstream main at wiring seed 505 lines, limit 500); reasoned-debt form - the ratchet only moves down, by splitting the file when next touched."
+    }
+  }
+}

@@ -1,0 +1,180 @@
+# DevGate quality gates (AIGGP .devgate + Agent Guardrails .agent-guardrails).
+#
+# Runs the embedded framework gates against THIS tree before the build/test
+# jobs, so a spec, pattern, encoding or secret violation fails fast. Ordering
+# follows .devgate/docs/NEW_REPO_ONBOARDING.md Step 5:
+#   text integrity -> pattern/semantic -> silent-success -> secret -> size/regression.
+#
+# Every gate fails closed and refuses to report a zero-input pass. Findings on
+# pre-existing upstream code are dispositioned in .guardrails/ (scope, charset
+# ratchet baseline, secret allowlist, silent-success allowlist), never by
+# weakening a rule. Only NEW findings fail the job.
+name: DevGate gates
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: devgate-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  SCRIPTS_DIR: .devgate/scripts
+
+jobs:
+  text-integrity:
+    name: Text integrity (charset / encoding / corruption)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Gate tooling present
+        run: |
+          set -euo pipefail
+          for g in check_charset.py check_encoding.py check_corruption.py gate_common.py; do
+            [ -f "$SCRIPTS_DIR/$g" ] || { echo "::error::$SCRIPTS_DIR/$g missing — is .devgate checked out?"; exit 1; }
+          done
+      - name: Charset (ASCII; ratchet baseline)
+        run: python3 "$SCRIPTS_DIR/check_charset.py" --repo .
+      - name: Encoding drift (BOM / non-UTF-8 / line endings)
+        run: python3 "$SCRIPTS_DIR/check_encoding.py" --repo .
+      - name: Corruption (content + pushed-range flip scan)
+        run: |
+          set -uo pipefail
+          python3 "$SCRIPTS_DIR/check_corruption.py" --repo .
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="origin/${{ github.base_ref }}"
+          elif [ -n "${{ github.event.before }}" ] && [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
+            BASE="${{ github.event.before }}"
+          else
+            echo "no pushed range — content scan above is authoritative"
+            exit 0
+          fi
+          git rev-parse --verify --quiet "$BASE^{commit}" >/dev/null \
+            || { echo "::error::base $BASE does not resolve — refusing to report a range scan that did not run"; exit 1; }
+          python3 "$SCRIPTS_DIR/check_corruption.py" --repo . --range "$BASE..HEAD"
+      - name: Gate self-tests (red-on-drift control)
+        run: |
+          set -euo pipefail
+          for t in test_check_charset.py test_check_encoding.py test_check_corruption.py; do
+            python3 ".devgate/tests/$t"
+          done
+
+  pattern-and-semantic:
+    name: Pattern / semantic / silent-success / manifest
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install TypeScript 5 (semantic scanner compiler API)
+        run: npm install --no-save --no-package-lock typescript@5
+      - name: Manifest joins (declared vs wired names)
+        run: python3 "$SCRIPTS_DIR/check_manifest_join.py" --repo . --list
+      - name: Pattern scan (ratcheted against the base ref)
+        env:
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          EV_BEFORE: ${{ github.event.before }}
+        run: |
+          set -eu
+          if [ -n "${PR_BASE:-}" ]; then BASE="$PR_BASE"
+          elif [ -n "${EV_BEFORE:-}" ] && [ "$EV_BEFORE" != "0000000000000000000000000000000000000000" ]; then BASE="$EV_BEFORE"
+          else BASE="origin/main"; fi
+          git rev-parse --verify --quiet "$BASE^{commit}" >/dev/null \
+            || { echo "::error::base $BASE does not resolve — refusing a ratchet with no baseline"; exit 1; }
+          python3 .guardrails/scripts/pattern-ratchet.py --base-ref "$BASE" \
+            --scanner "$SCRIPTS_DIR/guardrails-scan.mjs"
+      - name: Semantic scan (ratcheted against the base ref)
+        env:
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          EV_BEFORE: ${{ github.event.before }}
+        run: |
+          set -eu
+          if [ -n "${PR_BASE:-}" ]; then BASE="$PR_BASE"
+          elif [ -n "${EV_BEFORE:-}" ] && [ "$EV_BEFORE" != "0000000000000000000000000000000000000000" ]; then BASE="$EV_BEFORE"
+          else BASE="origin/main"; fi
+          python3 .guardrails/scripts/pattern-ratchet.py --base-ref "$BASE" \
+            --scanner "$SCRIPTS_DIR/semantic-scan.mjs" \
+            --env "NODE_PATH=$GITHUB_WORKSPACE/node_modules"
+      - name: Silent-success scan
+        run: bash "$SCRIPTS_DIR/silent-success-scan.sh"
+      - name: Allowlist health (advisory)
+        run: |
+          python3 "$SCRIPTS_DIR/allowlist_health.py" \
+            --allowlist .guardrails/silent-success-allowlist.json --target .
+
+  secret-scan:
+    name: Secret scan (pinned gitleaks over all refs)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - name: Provide the pinned scanner (checksum-verified)
+        run: |
+          set -eu
+          VERSION=8.30.1
+          SHA256=551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+          if command -v gitleaks >/dev/null 2>&1; then
+            echo "using the scanner already on PATH: $(command -v gitleaks)"; exit 0
+          fi
+          URL="https://github.com/gitleaks/gitleaks/releases/download/v${VERSION}"
+          curl -sSL -o gitleaks.tar.gz "${URL}/gitleaks_${VERSION}_linux_x64.tar.gz"
+          echo "${SHA256}  gitleaks.tar.gz" | sha256sum -c -
+          tar xzf gitleaks.tar.gz gitleaks
+          install -m 0755 gitleaks /usr/local/bin/gitleaks
+      - name: Scan (pushed range; full history when there is no base)
+        env:
+          EV_BEFORE: ${{ github.event.before }}
+          EV_AFTER: ${{ github.event.after }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -eu
+          if [ -n "${PR_BASE:-}" ] && [ -n "${PR_HEAD:-}" ]; then
+            ARGS=(--range "${PR_BASE}..${PR_HEAD}")
+          elif [ -n "${EV_BEFORE:-}" ] && [ -n "${EV_AFTER:-}" ]; then
+            ARGS=(--range "${EV_BEFORE}..${EV_AFTER}")
+          else
+            ARGS=(--all)
+          fi
+          bash "$SCRIPTS_DIR/secret-scan.sh" "${ARGS[@]}"
+
+  size-regression:
+    name: File size / regression / vulnerability
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Executable bits
+        run: python3 "$SCRIPTS_DIR/check_exec_bits.py" --repo .
+      - name: Regression + file size (fail if empty scope)
+        run: python3 "$SCRIPTS_DIR/regression_check.py" --all --pre-commit --fail-if-empty

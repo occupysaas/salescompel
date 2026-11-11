@@ -1,0 +1,193 @@
+{
+  "entries": [
+    {
+      "file": "internal/records/write.go",
+      "marker": "f, _ := field(p, object, k)",
+      "family": "go_return_nil_after_ignored_error",
+      "reason": "Pre-existing (upstream main at wiring seed, internal/records/write.go:66): a discarded error on a Go call on a documented-tolerated path; recorded so the silent-success gate lands green on the current tree without deleting the detection.",
+      "removal": "salescompel dataset: addr-eval \u2014 review each site and check the error or annotate; split out in a follow-up plan"
+    },
+    {
+      "file": "internal/records/write.go",
+      "marker": "key, _ := canonicalExternalID(text)",
+      "family": "go_return_nil_after_ignored_error",
+      "reason": "Pre-existing (upstream main at wiring seed, internal/records/write.go:75): a discarded error on a Go call on a documented-tolerated path; recorded so the silent-success gate lands green on the current tree without deleting the detection.",
+      "removal": "salescompel dataset: addr-eval \u2014 review each site and check the error or annotate; split out in a follow-up plan"
+    },
+    {
+      "file": "internal/records/validation.go",
+      "marker": "d, _ := p.Catalog.Object(object)",
+      "family": "go_return_nil_after_ignored_error",
+      "reason": "Pre-existing (upstream main at wiring seed, internal/records/validation.go:30): a discarded error on a Go call on a documented-tolerated path; recorded so the silent-success gate lands green on the current tree without deleting the detection.",
+      "removal": "salescompel dataset: addr-eval \u2014 review each site and check the error or annotate; split out in a follow-up plan"
+    },
+    {
+      "file": "internal/records/validation.go",
+      "marker": "func fieldsFor(p Principal, object string) []Field { f, _ := catalogFields(p, object); return f }",
+      "family": "go_return_nil_after_ignored_error",
+      "reason": "Pre-existing (upstream main at wiring seed, internal/records/validation.go:101): a discarded error on a Go call on a documented-tolerated path; recorded so the silent-success gate lands green on the current tree without deleting the detection.",
+      "removal": "salescompel dataset: addr-eval \u2014 review each site and check the error or annotate; split out in a follow-up plan"
+    },
+    {
+      "file": "internal/platform/oauth_page.go",
+      "marker": "tags, _, _ := language.ParseAcceptLanguage(header)",
+      "family": "go_return_nil_after_ignored_error",
+      "reason": "Pre-existing (upstream main at wiring seed, internal/platform/oauth_page.go:81): a discarded error on a Go call on a documented-tolerated path; recorded so the silent-success gate lands green on the current tree without deleting the detection.",
+      "removal": "salescompel dataset: addr-eval \u2014 review each site and check the error or annotate; split out in a follow-up plan"
+    },
+    {
+      "file": "internal/platform/oauth_page.go",
+      "marker": "_, i, _ := oauthMatcher.Match(tags...)",
+      "family": "go_return_nil_after_ignored_error",
+      "reason": "Pre-existing (upstream main at wiring seed, internal/platform/oauth_page.go:82): a discarded error on a Go call on a documented-tolerated path; recorded so the silent-success gate lands green on the current tree without deleting the detection.",
+      "removal": "salescompel dataset: addr-eval \u2014 review each site and check the error or annotate; split out in a follow-up plan"
+    },
+    {
+      "file": "internal/platform/oauth_page.go",
+      "marker": "b, _ := locales.Messages.ReadFile(\"messages/\" + name + \".json\")",
+      "family": "go_return_nil_after_ignored_error",
+      "reason": "Pre-existing (upstream main at wiring seed, internal/platform/oauth_page.go:84): a discarded error on a Go call on a documented-tolerated path; recorded so the silent-success gate lands green on the current tree without deleting the detection.",
+      "removal": "salescompel dataset: addr-eval \u2014 review each site and check the error or annotate; split out in a follow-up plan"
+    },
+    {
+      "file": "internal/platform/oauth_page.go",
+      "marker": "_ = json.Unmarshal(b, &m)",
+      "family": "go_return_nil_after_ignored_error",
+      "reason": "Pre-existing (upstream main at wiring seed, internal/platform/oauth_page.go:86): a discarded error on a Go call on a documented-tolerated path; recorded so the silent-success gate lands green on the current tree without deleting the detection.",
+      "removal": "salescompel dataset: addr-eval \u2014 review each site and check the error or annotate; split out in a follow-up plan"
+    },
+    {
+      "file": "internal/platform/oauth_page.go",
+      "marker": "_ = oauthPageTemplate.Execute(w, d)",
+      "family": "go_return_nil_after_ignored_error",
+      "reason": "Pre-existing (upstream main at wiring seed, internal/platform/oauth_page.go:114): a discarded error on a Go call on a documented-tolerated path; recorded so the silent-success gate lands green on the current tree without deleting the detection.",
+      "removal": "salescompel dataset: addr-eval \u2014 review each site and check the error or annotate; split out in a follow-up plan"
+    },
+    {
+      "file": "internal/platform/oauth_page.go",
+      "marker": "_, _ = w.Write([]byte(oauthPageCSS))",
+      "family": "go_return_nil_after_ignored_error",
+      "reason": "Pre-existing (upstream main at wiring seed, internal/platform/oauth_page.go:138): a discarded error on a Go call on a documented-tolerated path; recorded so the silent-success gate lands green on the current tree without deleting the detection.",
+      "removal": "salescompel dataset: addr-eval \u2014 review each site and check the error or annotate; split out in a follow-up plan"
+    },
+    {
+      "file": "internal/platform/runtime.go",
+      "marker": "e, _ := policy.ForAPI(p, \"65.0\")",
+      "family": "go_return_nil_after_ignored_error",
+      "reason": "Pre-existing (upstream main at wiring seed, internal/platform/runtime.go:123): a discarded error on a Go call on a documented-tolerated path; recorded so the silent-success gate lands green on the current tree without deleting the detection.",
+      "removal": "salescompel dataset: addr-eval \u2014 review each site and check the error or annotate; split out in a follow-up plan"
+    },
+    {
+      "file": "internal/platform/composite.go",
+      "marker": "_ = rollback()",
+      "family": "go_return_nil_after_ignored_error",
+      "reason": "Pre-existing (upstream main at wiring seed, internal/platform/composite.go:66): a discarded error on a Go call on a documented-tolerated path; recorded so the silent-success gate lands green on the current tree without deleting the detection.",
+      "removal": "salescompel dataset: addr-eval \u2014 review each site and check the error or annotate; split out in a follow-up plan"
+    },
+    {
+      "file": "internal/platform/composite.go",
+      "marker": "execution, _ := policy.ForAPI(p, \"65.0\")",
+      "family": "go_return_nil_after_ignored_error",
+      "reason": "Pre-existing (upstream main at wiring seed, internal/platform/composite.go:69): a discarded error on a Go call on a documented-tolerated path; recorded so the silent-success gate lands green on the current tree without deleting the detection.",
+      "removal": "salescompel dataset: addr-eval \u2014 review each site and check the error or annotate; split out in a follow-up plan"
+    },
+    {
+      "file": "internal/platform/composite.go",
+      "marker": "_ = rollback()",
+      "family": "go_return_nil_after_ignored_error",
+      "reason": "Pre-existing (upstream main at wiring seed, internal/platform/composite.go:122): a discarded error on a Go call on a documented-tolerated path; recorded so the silent-success gate lands green on the current tree without deleting the detection.",
+      "removal": "salescompel dataset: addr-eval \u2014 review each site and check the error or annotate; split out in a follow-up plan"
+    },
+    {
+      "file": "internal/platform/http.go",
+      "marker": "_ = json.NewEncoder(w).Encode(v)",
+      "family": "go_return_nil_after_ignored_error",
+      "reason": "Pre-existing (upstream main at wiring seed, internal/platform/http.go:25): a discarded error on a Go call on a documented-tolerated path; recorded so the silent-success gate lands green on the current tree without deleting the detection.",
+      "removal": "salescompel dataset: addr-eval \u2014 review each site and check the error or annotate; split out in a follow-up plan"
+    },
+    {
+      "file": "internal/platform/http.go",
+      "marker": "_, _ = io.WriteString(w, apicontract.CandidateOpenAPI())",
+      "family": "go_return_nil_after_ignored_error",
+      "reason": "Pre-existing (upstream main at wiring seed, internal/platform/http.go:192): a discarded error on a Go call on a documented-tolerated path; recorded so the silent-success gate lands green on the current tree without deleting the detection.",
+      "removal": "salescompel dataset: addr-eval \u2014 review each site and check the error or annotate; split out in a follow-up plan"
+    },
+    {
+      "file": "internal/platform/http.go",
+      "marker": "d, _ := records.Describe(p, object.Name)",
+      "family": "go_return_nil_after_ignored_error",
+      "reason": "Pre-existing (upstream main at wiring seed, internal/platform/http.go:317): a discarded error on a Go call on a documented-tolerated path; recorded so the silent-success gate lands green on the current tree without deleting the detection.",
+      "removal": "salescompel dataset: addr-eval \u2014 review each site and check the error or annotate; split out in a follow-up plan"
+    },
+    {
+      "file": "internal/platform/http.go",
+      "marker": "d, _ := records.Describe(p, object)",
+      "family": "go_return_nil_after_ignored_error",
+      "reason": "Pre-existing (upstream main at wiring seed, internal/platform/http.go:331): a discarded error on a Go call on a documented-tolerated path; recorded so the silent-success gate lands green on the current tree without deleting the detection.",
+      "removal": "salescompel dataset: addr-eval \u2014 review each site and check the error or annotate; split out in a follow-up plan"
+    },
+    {
+      "file": "internal/migration/migrate.go",
+      "marker": "files, _ := sources.ReadDir(\"legacy\")",
+      "family": "go_return_nil_after_ignored_error",
+      "reason": "Pre-existing (upstream main at wiring seed, internal/migration/migrate.go:35): a discarded error on a Go call on a documented-tolerated path; recorded so the silent-success gate lands green on the current tree without deleting the detection.",
+      "removal": "salescompel dataset: addr-eval \u2014 review each site and check the error or annotate; split out in a follow-up plan"
+    },
+    {
+      "file": "internal/migration/migrate.go",
+      "marker": "v, _ := sources.ReadFile(\"legacy/\" + f.Name())",
+      "family": "go_return_nil_after_ignored_error",
+      "reason": "Pre-existing (upstream main at wiring seed, internal/migration/migrate.go:37): a discarded error on a Go call on a documented-tolerated path; recorded so the silent-success gate lands green on the current tree without deleting the detection.",
+      "removal": "salescompel dataset: addr-eval \u2014 review each site and check the error or annotate; split out in a follow-up plan"
+    },
+    {
+      "file": "internal/migration/migrate.go",
+      "marker": "v1, _ := sources.ReadFile(\"v1.go\")",
+      "family": "go_return_nil_after_ignored_error",
+      "reason": "Pre-existing (upstream main at wiring seed, internal/migration/migrate.go:41): a discarded error on a Go call on a documented-tolerated path; recorded so the silent-success gate lands green on the current tree without deleting the detection.",
+      "removal": "salescompel dataset: addr-eval \u2014 review each site and check the error or annotate; split out in a follow-up plan"
+    },
+    {
+      "file": "internal/migration/migrate.go",
+      "marker": "sql, _ := sources.ReadFile(\"migrations/0002_tenant_catalog.sql\")",
+      "family": "go_return_nil_after_ignored_error",
+      "reason": "Pre-existing (upstream main at wiring seed, internal/migration/migrate.go:43): a discarded error on a Go call on a documented-tolerated path; recorded so the silent-success gate lands green on the current tree without deleting the detection.",
+      "removal": "salescompel dataset: addr-eval \u2014 review each site and check the error or annotate; split out in a follow-up plan"
+    },
+    {
+      "file": "internal/migration/migrate.go",
+      "marker": "sql3, _ := sources.ReadFile(\"migrations/0003_tenant_rls.sql\")",
+      "family": "go_return_nil_after_ignored_error",
+      "reason": "Pre-existing (upstream main at wiring seed, internal/migration/migrate.go:47): a discarded error on a Go call on a documented-tolerated path; recorded so the silent-success gate lands green on the current tree without deleting the detection.",
+      "removal": "salescompel dataset: addr-eval \u2014 review each site and check the error or annotate; split out in a follow-up plan"
+    },
+    {
+      "file": "internal/query/select.go",
+      "marker": "f, _ := field(p, q.Object, name)",
+      "family": "go_return_nil_after_ignored_error",
+      "reason": "Pre-existing (upstream main at wiring seed, internal/query/select.go:103): a discarded error on a Go call on a documented-tolerated path; recorded so the silent-success gate lands green on the current tree without deleting the detection.",
+      "removal": "salescompel dataset: addr-eval \u2014 review each site and check the error or annotate; split out in a follow-up plan"
+    },
+    {
+      "file": "internal/query/select.go",
+      "marker": "func table(p Principal, object string) string { o, _ := p.Catalog.Object(object); return o.TableSQL() }",
+      "family": "go_return_nil_after_ignored_error",
+      "reason": "Pre-existing (upstream main at wiring seed, internal/query/select.go:121): a discarded error on a Go call on a documented-tolerated path; recorded so the silent-success gate lands green on the current tree without deleting the detection.",
+      "removal": "salescompel dataset: addr-eval \u2014 review each site and check the error or annotate; split out in a follow-up plan"
+    },
+    {
+      "file": "internal/metadata/seed.go",
+      "marker": "raw, _ := json.Marshal(f)",
+      "family": "go_return_nil_after_ignored_error",
+      "reason": "Pre-existing (upstream main at wiring seed, internal/metadata/seed.go:28): a discarded error on a Go call on a documented-tolerated path; recorded so the silent-success gate lands green on the current tree without deleting the detection.",
+      "removal": "salescompel dataset: addr-eval \u2014 review each site and check the error or annotate; split out in a follow-up plan"
+    },
+    {
+      "file": "internal/metadata/admin.go",
+      "marker": "raw, _ := json.Marshal(f)",
+      "family": "go_return_nil_after_ignored_error",
+      "reason": "Pre-existing (upstream main at wiring seed, internal/metadata/admin.go:125): a discarded error on a Go call on a documented-tolerated path; recorded so the silent-success gate lands green on the current tree without deleting the detection.",
+      "removal": "salescompel dataset: addr-eval \u2014 review each site and check the error or annotate; split out in a follow-up plan"
+    }
+  ]
+}

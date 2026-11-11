@@ -1,0 +1,35 @@
+{
+  "api_version": "devgate.manifest-joins/v1",
+  "note": [
+    "fw-manifest-join-01: reviewed joins between a DECLARED set and a WIRED set,",
+    "both keyed by name. scripts/check_manifest_join.py checks each in both",
+    "directions and fails closed. An empty joins list is refused, so this file",
+    "carries the one join DevGate ships as the project baseline.",
+    "",
+    "test-suite-floor: DevGate's own test suites stay paired with their",
+    "tests/expected-counts.json floor rows. This repo has no python test suites",
+    "of its own under those names, so the join is scoped to .devgate/tests and",
+    "stays meaningful for the embedded framework checkout."
+  ],
+  "joins": [
+    {
+      "id": "test-suite-floor",
+      "reason": "Every collected test suite must carry a floor row, or it can shrink to zero silently: gen_floors only iterates rows that already exist, so a suite with no row is never compared to anything. This is the floor half of fw-floor-01 for the embedded DevGate suites.",
+      "declared": {
+        "paths": [
+          ".devgate/tests"
+        ],
+        "source": "filename",
+        "pattern": "^(test_[a-z0-9_]+)\\.py$"
+      },
+      "wired": {
+        "paths": [
+          ".devgate/tests/expected-counts.json"
+        ],
+        "pattern": "\"(test_[a-z0-9_]+)\":\\s*[0-9]+"
+      },
+      "bidirectional": true,
+      "allow_undeclared": []
+    }
+  ]
+}
