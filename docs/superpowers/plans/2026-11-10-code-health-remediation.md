@@ -72,24 +72,18 @@
 - [x] Run gates. Expected: PASS, no PREVENT-012.
 - [x] Commit `fix: replace console.log with process.stdout.write in CLI and test fixtures`.
 
-### Task 6: TypeScript `any` elimination (PREVENT-011, ~389 findings) — IN PROGRESS
+### Task 6: TypeScript `any` elimination (PREVENT-011, ~389 findings) — DONE
 
 **Files:** All `compat/clients/node/src/*.ts` and `test/*.ts` with `any` usage.
 
 - [x] `scenarios.ts` — 31 findings fixed (SaveResult, RecordRow, QueryResponse, CompositeBody, SfError interfaces).
 - [x] `foundation.ts` — 11 findings fixed (JsonRecord type alias).
-- [ ] 7 parallel agents dispatched for remaining ~347 findings across ~74 files:
-  - Agent 1: candidate src files (13 files)
-  - Agent 2: external-id src files (12 files)
-  - Agent 3: core/misc src files (10 files)
-  - Agent 4: web/playwright configs (2 files)
-  - Agent 5: test batch 1 — candidate tests (13 files)
-  - Agent 6: test batch 2 — external-id/foundation tests (13 files)
-  - Agent 7: test batch 3 — remaining tests + metadata-read-process.ts (12 files)
-- [ ] After agents complete: verify with `node .devgate/scripts/guardrails-scan.mjs` showing 0 PREVENT-011.
-- [ ] Fix any residual findings.
-- [ ] Run `python3 .guardrails/scripts/pattern-ratchet.py --base-ref HEAD`. Expected: 0 new.
-- [ ] Commit in stacked chunk: `fix: replace any types with proper type annotations across compat client`.
+- [x] 7 parallel agents dispatched for remaining ~347 findings across ~74 files.
+- [x] Residual `any` usages fixed manually across 63 src/test files (960 insertions, 548 deletions).
+- [x] `guardrails-scan.mjs` reports 0 PREVENT-011.
+- [x] `pattern-ratchet.py --base-ref HEAD` reports "OK - scanner clean".
+- [x] `tsc --noEmit` 0 errors; prettier clean.
+- [x] Committed as stacked commits: `f5e891b` (tests/configs), `81ad50f` (compat client source).
 
 ### Task 7: False positive allowlisting (PREVENT-003, PREVENT-026) — DONE
 
@@ -99,15 +93,19 @@
 - [x] PREVENT-026 (`oauth_page.go:48`): added SQL alias `AS r` to break regex match on `requests(request`.
 - [x] Commit `fix: restructure code to avoid false-positive security pattern matches`.
 
-### Task 8: File splits — hard-limit files (15 remaining)
+### Task 8: File splits — hard-limit files — DONE
 
-**Files:** See spec's file split table. `foundation.ts` already split into `foundation-helpers.ts` + `foundation-field-scenarios.ts`.
+**Files:** See spec's file split table.
 
-- [x] Split `foundation.ts` (752→334+231+214).
-- [ ] For each remaining file: extract cohesive sub-concerns into sibling modules. Preserve public interface via re-exports where needed. Update imports in consumers.
-- [ ] After splitting each file, remove its `size_overrides` entry from `.guardrails/scope.json`.
-- [ ] Run tests after each split. Expected: PASS.
-- [ ] Commit per file: `refactor: split <file> to stay within size limits`.
+- [x] Split `foundation.ts` (752→334+231+214); later extracted the scenario bodies to `foundation-scenarios.ts` (749→39+40+326).
+- [x] `candidate-oauth-worker.ts` 846→488 + runtime/http/provision/clients modules.
+- [x] `candidate-schema.ts` 620→94 + checks/client-checks/restart modules.
+- [x] `external-id-normalization-{assess,recovery}.ts` and `external-id-body-{assess,recovery}.ts` split into analysis/validation/model/state/helper modules, plus shared `external-id-evidence.ts`.
+- [x] `cli.ts` 557→352 + `cli-private-commands.ts` + `cli-types.ts` (private modules stay lazily imported).
+- [x] `internal/platform` HTTP/OAuth tests split by behaviour into six files.
+- [x] `test/candidate-openapi.test.ts` 638→ split by test block.
+- [x] Each split removed its `size_overrides` entry from `.guardrails/scope.json`.
+- [x] Tests run after each split; stacked commits per batch.
 
 ### Task 9: File splits — soft-limit files (over 300 lines)
 
