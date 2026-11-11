@@ -1,17 +1,21 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { request as httpsRequest } from "node:https";
 import { readFile } from "node:fs/promises";
 import { parse } from "yaml";
 import { ROOT } from "../src/versions.ts";
 import { createCandidateTrafficValidator } from "../src/candidate-openapi-traffic.ts";
-import type { CandidateExchange } from "../src/candidate-openapi-model.ts";
 import { runCompositeFixtureAttempt } from "../src/candidate-composite-fixtures.ts";
 import {
   recordFixtureEvent,
   trackFixtureAttempt,
   type FixtureEvent,
 } from "../src/candidate-acceptance-fixtures.ts";
+import {
+  createMeasure,
+  json,
+  type Measured,
+  type Role,
+} from "./helpers/candidate-openapi-traffic-measure.ts";
 
 const expectedIds = [
   "candidateVersions",
@@ -36,99 +40,12 @@ const expectedIds = [
   "candidateCompositeAtomic",
 ];
 const base = "/services/data/v65.0";
-type Measured = CandidateExchange & { allow: string | null };
-type Role = FixtureEvent["principal"] | "none" | "bad";
-function json(e: Measured): Record<string, any> {
-  try {
-    return JSON.parse(
-      new TextDecoder("utf-8", { fatal: true }).decode(e.response.body),
-    );
-  } catch {
-    throw new Error("candidate-openapi-json");
-  }
-}
 
 test(
   "candidate/openapi/traffic",
   { skip: process.env.RUN_CANDIDATE !== "1" },
   async () => {
-    const url = new URL(process.env.CANDIDATE_URL!);
-    assert.ok(
-      url.protocol === "https:" &&
-        ["localhost", "127.0.0.1"].includes(url.hostname),
-      "owned HTTPS candidate required",
-    );
-    const tokens = {
-      admin: process.env.CANDIDATE_TOKEN!,
-      restricted: process.env.CANDIDATE_RESTRICTED_TOKEN!,
-      other: process.env.CANDIDATE_OTHER_TOKEN!,
-      bad: "invalid-candidate-token",
-      none: "",
-    };
-    async function measure(
-      method: string,
-      path: string,
-      options: { role?: Role; body?: unknown; rawBody?: string } = {},
-    ): Promise<Measured> {
-      const target = new URL(path, url);
-      assert.ok(
-        target.origin === url.origin && path.startsWith("/services/"),
-        "same-origin service request required",
-      );
-      const input =
-        options.rawBody !== undefined
-          ? Buffer.from(options.rawBody)
-          : options.body !== undefined
-            ? Buffer.from(JSON.stringify(options.body))
-            : undefined;
-      const contentType = input ? "application/json" : null;
-      return new Promise((resolve, reject) => {
-        const headers: Record<string, string> = {};
-        const token = tokens[options.role ?? "admin"];
-        if (token) headers.Authorization = "Bearer " + token;
-        if (contentType) headers["Content-Type"] = contentType;
-        const req = httpsRequest(
-          target,
-          { method, headers, timeout: 15000 },
-          (res) => {
-            const chunks: Buffer[] = [];
-            let length = 0;
-            res.on("data", (chunk: Buffer) => {
-              length += chunk.length;
-              if (length > 8388608) {
-                req.destroy(new Error("candidate-openapi-budget"));
-                return;
-              }
-              chunks.push(chunk);
-            });
-            res.on("end", () =>
-              resolve({
-                method,
-                path,
-                request: { contentType, body: input },
-                response: {
-                  status: res.statusCode ?? 0,
-                  contentType: res.headers["content-type"] ?? null,
-                  body: Buffer.concat(chunks),
-                },
-                allow:
-                  typeof res.headers.allow === "string"
-                    ? res.headers.allow
-                    : null,
-              }),
-            );
-            res.on("error", () =>
-              reject(new Error("candidate-openapi-transport")),
-            );
-          },
-        );
-        req.on("timeout", () =>
-          req.destroy(new Error("candidate-openapi-timeout")),
-        );
-        req.on("error", () => reject(new Error("candidate-openapi-transport")));
-        req.end(input);
-      });
-    }
+    const measure = createMeasure(new URL(process.env.CANDIDATE_URL!));
     const served = await measure("GET", base + "/openapi.yaml");
     assert.equal(served.response.status, 200);
     assert.ok(
@@ -558,81 +475,3 @@ test(
     assert.deepEqual([...observed].sort(), [...expectedIds].sort());
   },
 );
-
-test("OAuth media validates forms and HTML without bypassing schema checks", async () => {
-  const d = parse(await readFile(ROOT + "/api/candidate-openapi.yaml", "utf8"));
-  const validator = await createCandidateTrafficValidator(d);
-  const exchange = (
-    body: string,
-    html = "<html>login</html>",
-  ): CandidateExchange => ({
-    method: "POST",
-    path: "/services/oauth2/authorize",
-    request: {
-      contentType: "application/x-www-form-urlencoded",
-      body: Buffer.from(body),
-    },
-    response: {
-      status: 200,
-      contentType: "text/html; charset=utf-8",
-      body: Buffer.from(html),
-    },
-  });
-  assert.deepEqual(
-    validator.validate(exchange("request_id=x&decision=allow")).requestIssues,
-    [],
-  );
-  for (const body of [
-    "request_id=%ZZ&decision=allow",
-    "request_id=x&request_id=y&decision=allow",
-    "request_id=x&decision=allow&unknown=x",
-  ])
-    assert.ok(validator.validate(exchange(body)).requestIssues.length > 0);
-  assert.deepEqual(
-    validator.validate(exchange("request_id=x&decision=allow", ""))
-      .responseIssues,
-    ["response-schema"],
-  );
-});
-
-test("OAuth media compiler remains closed to unsupported security and content", async () => {
-  const d = parse(await readFile(ROOT + "/api/candidate-openapi.yaml", "utf8"));
-  for (const mutate of [
-    (x: Record<string, unknown>) => {
-      (
-        (
-          x.paths as Record<
-            string,
-            Record<string, Record<string, Record<string, unknown>>>
-          >
-        )["/services/oauth2/token"].post as Record<string, unknown>
-      ).security = [{ unknown: [] }];
-    },
-    (x: Record<string, unknown>) => {
-      (
-        (
-          x.paths as Record<
-            string,
-            Record<string, Record<string, Record<string, unknown>>>
-          >
-        )["/services/oauth2/token"].post as Record<
-          string,
-          Record<string, Record<string, unknown>>
-        >
-      ).requestBody.content = {
-        "text/plain": { schema: { type: "string" } },
-      };
-    },
-    (x: Record<string, unknown>) => {
-      const components = x.components as Record<string, any>;
-      components.schemas.OAuthError.properties.error.format = "unknown";
-    },
-  ]) {
-    const x = structuredClone(d);
-    mutate(x);
-    await assert.rejects(
-      createCandidateTrafficValidator(x),
-      /candidate-openapi-spec/,
-    );
-  }
-});

@@ -1,8 +1,6 @@
 import test from "node:test";
 import type { TargetInventory } from "../src/target-inventory-model.ts";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { Ajv } from "ajv";
 import {
   makeInventory,
   makeCompleteInventory,
@@ -10,125 +8,7 @@ import {
   known,
   unknown,
 } from "./target-inventory-fixtures.ts";
-const schemaPath = new URL(
-  "../../../../compat/schemas/target-inventory.schema.json",
-  import.meta.url,
-);
-const schema = () =>
-  new Ajv({ allErrors: true }).compile<TargetInventory>(
-    JSON.parse(readFileSync(schemaPath, "utf8")),
-  );
-
-test("inventory schema accepts explicit incomplete and complete synthetic/real test data", () => {
-  const validate = schema();
-  for (const value of [
-    makeInventory(),
-    makeCompleteInventory("synthetic"),
-    makeCompleteInventory("real"),
-  ])
-    assert.ok(validate(value), JSON.stringify(validate.errors));
-});
-test("inventory schema rejects incomplete structure and unknown fields or dispositions", () => {
-  const validate = schema();
-  const mutations = [
-    (v: Record<string, any>) => {
-      delete v.sections.security;
-    },
-    (v: Record<string, any>) => {
-      v.secretExtra = "marker";
-    },
-    (v: Record<string, any>) => {
-      v.schemaVersion = 2;
-    },
-    (v: Record<string, any>) => {
-      v.inventoryId = "../private";
-    },
-    (v: Record<string, any>) => {
-      v.date = "yesterday";
-    },
-    (v: Record<string, any>) => {
-      v.sections.dataMetadata.items[0].disposition = "maybe";
-    },
-    (v: Record<string, any>) => {
-      v.sections.dataMetadata.items[0].details.extra = true;
-    },
-  ];
-  for (const mutate of mutations) {
-    const value = makeInventory();
-    mutate(value);
-    assert.equal(validate(value), false);
-  }
-});
-test("typed knowledge preserves known false/zero and unknown volume/version", () => {
-  const validate = schema();
-  const v = makeInventory();
-  const feature: Record<string, any> = {
-    ...makeItem(),
-    id: "person-accounts",
-    category: "org-feature",
-    details: { name: known("personAccounts"), enabled: known(false) },
-  };
-  v.sections.sourceOrg.items.push(
-    feature as unknown as (typeof v.sections.sourceOrg.items)[number],
-  );
-  const volume: Record<string, any> = {
-    ...makeItem(),
-    id: "account-count",
-    category: "data-volume",
-    details: {
-      name: known("Account"),
-      count: known(0),
-      unit: known("records"),
-    },
-  };
-  v.sections.dataMetadata.items.push(
-    volume as unknown as (typeof v.sections.dataMetadata.items)[number],
-  );
-  assert.ok(validate(v), JSON.stringify(validate.errors));
-  volume.details.count = unknown();
-  assert.ok(validate(v));
-  volume.details.count = known(-1);
-  assert.equal(validate(v), false);
-  volume.details.count = "unknown";
-  assert.equal(validate(v), false);
-  const client: Record<string, any> = {
-    ...makeItem(),
-    id: "client",
-    category: "client",
-    details: {
-      name: known("client"),
-      version: unknown(),
-      protocol: known("REST"),
-      endpoint: unknown(),
-      authentication: unknown(),
-      dependencies: known([]),
-    },
-  };
-  v.sections.dataMetadata.items.pop();
-  v.sections.clientsIntegrations.items.push(
-    client as unknown as (typeof v.sections.clientsIntegrations.items)[number],
-  );
-  assert.ok(validate(v), JSON.stringify(validate.errors));
-});
-
-test("checked-in synthetic example validates without inventing source requirements", async () => {
-  const { parseDocument } = await import("../src/core.ts");
-  const value = parseDocument(
-    readFileSync(
-      new URL(
-        "../../../../docs/compat/inventories/synthetic-account-contact.yaml",
-        import.meta.url,
-      ),
-      "utf8",
-    ),
-  );
-  assert.equal(value.classification, "synthetic");
-  assert.ok(schema()(value));
-  const objective = value.sections.migrationOperations.items[0];
-  assert.equal(objective.category, "operating-objective");
-  if (objective.category === "operating-objective")
-    assert.equal(objective.details.value.status, "unknown");
-});
+import { assess } from "./helpers/target-inventory-assess.ts";
 
 import {
   assessTargetInventory,
@@ -136,24 +16,7 @@ import {
 } from "../src/target-inventory.ts";
 import { createHash } from "node:crypto";
 import { stringify } from "yaml";
-const assess = (value: unknown) =>
-  assessTargetInventory(Buffer.from(JSON.stringify(value)));
 
-test("assessment distinguishes validity from readiness and keeps synthetic-only even on invalid data", () => {
-  const v = makeInventory();
-  assert.equal(assess(v).validation, "valid");
-  assert.equal(assess(v).readiness, "synthetic-only");
-  v.classification = "real";
-  assert.equal(assess(v).readiness, "incomplete");
-  assert.equal(
-    assess(makeCompleteInventory("real")).readiness,
-    "ready-for-review",
-  );
-  const bad: Record<string, any> = makeCompleteInventory("synthetic");
-  bad.extra = true;
-  assert.equal(assess(bad).readiness, "synthetic-only");
-  assert.equal(assess(bad).validation, "invalid");
-});
 const semanticCases: [string, (v: TargetInventory) => void, string][] = [
   [
     "complete questions",
@@ -465,83 +328,4 @@ test("assessor uses no network and repository references exclude provenance loca
   } finally {
     globalThis.fetch = old;
   }
-});
-
-for (const disposition of ["required", "optional", "out-of-scope"] as const)
-  test(`pending ${disposition} item decisions remain owned gaps and block complete readiness`, () => {
-    const v = makeCompleteInventory("real"),
-      item = v.sections.dataMetadata.items[0];
-    item.disposition = disposition;
-    item.decision = {
-      question: "Is this still in scope?",
-      nextAction: "review-scope",
-    };
-    const r = assess(v);
-    assert.equal(r.validation, "invalid");
-    assert.equal(r.readiness, "incomplete");
-    assert.ok(r.issues.some((i) => i.code === "completion-contradiction"));
-    assert.ok(
-      r.gaps.some(
-        (g) =>
-          g.code === "pending-question" &&
-          g.itemId === "account" &&
-          g.ownerId === "data-owner" &&
-          g.nextAction === "review-scope",
-      ),
-    );
-    v.sections.dataMetadata.status = "partial";
-    assert.equal(assess(v).validation, "valid");
-    assert.equal(assess(v).readiness, "incomplete");
-  });
-function commandInventory(pluginId: string | null): TargetInventory {
-  const v = makeCompleteInventory("real");
-  v.sections.cliPlugins.absence = null;
-  v.sections.cliPlugins.items = [
-    {
-      ...makeItem(),
-      id: "query-command",
-      category: "cli-command",
-      details: {
-        command: known("data query"),
-        flags: known([]),
-        outputFormats: known(["json"]),
-        target: known("org"),
-        cliVersion: known("2.156.0"),
-        pluginId: known(pluginId as string),
-      },
-    },
-  ];
-  return v;
-}
-test("command plugin IDs resolve to actual plugin items, not other categories", () => {
-  for (const id of ["missing-plugin", "account"]) {
-    const r = assess(commandInventory(id));
-    assert.equal(r.validation, "invalid");
-    assert.ok(
-      r.issues.some(
-        (i) => i.code === "dangling-reference" && i.itemId === "query-command",
-      ),
-    );
-  }
-  const v = commandInventory("data-plugin");
-  v.sections.cliPlugins.items.push({
-    ...makeItem(),
-    id: "data-plugin",
-    category: "plugin",
-    details: {
-      name: known("@salesforce/plugin-data"),
-      version: known("5.1.16"),
-      source: known("core"),
-      signature: known("bundled"),
-      license: known("Apache-2.0"),
-      dependencies: known([]),
-    },
-  });
-  assert.equal(assess(v).readiness, "ready-for-review");
-  const cmd = v.sections.cliPlugins.items[0];
-  if (cmd.category === "cli-command") cmd.details.pluginId = known("../unsafe");
-  assert.equal(assess(v).validation, "invalid");
-});
-test("explicitly plugin-free commands can be complete without a fabricated plugin", () => {
-  assert.equal(assess(commandInventory(null)).readiness, "ready-for-review");
 });
