@@ -117,8 +117,12 @@
 - [x] Committed as `test: split oversized compat test files by behaviour`.
 - [x] Remaining src files over 300 lines are cohesive modules with no further clear seam; the hard gate (500) is clean, so soft warnings are recorded as remaining debt.
 
-### Task 10: Final gate run and verification
+### Task 10: Final gate run and verification — DONE
 
-- [ ] Run full gate suite. Expected: all green, 0 findings for fixed rules, no size overrides remaining.
-- [ ] Run `go test ./...` and `npm --prefix compat/clients/node run check`. Expected: PASS.
-- [ ] Commit any final fixes.
+- [x] `guardrails-scan.mjs`: pattern scan clean.
+- [x] `pattern-ratchet.py --base-ref HEAD`: OK - scanner clean, 0 new findings.
+- [x] Size gate (`regression_check.py --base main`): 0 over hard limit, 0 reasoned overrides, 0 scope gaps.
+- [x] `go build ./...` and `go vet ./...`: PASS.
+- [x] `tsc --noEmit`, `prettier --check`, `npm test`, `cli validate`: PASS.
+- [x] `go test ./...`: only DB-gated tests fail locally (`TEST_DATABASE_URL` unset); rest pass.
+- [x] `node --test <file>` per compat test file: all pass except `candidate-acceptance-run.test.ts`, whose Go toolchain test needs a 1.25 `GOROOT` that this sandbox misconfigures (pre-existing on HEAD).
