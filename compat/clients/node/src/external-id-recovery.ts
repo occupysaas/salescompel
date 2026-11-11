@@ -115,11 +115,18 @@ export async function appendJournal(dir: string, event: JournalEvent) {
       await f.close();
     }
   });
-  queues.set(dir, next);
+  // Resolve unconditionally so a rejection cannot poison the queue: a
+  // concurrent caller that chains onto a stored rejection would fail without
+  // ever reaching disk. The error is re-thrown to the awaiting caller below.
+  const settled = next.then(
+    () => undefined,
+    () => undefined,
+  );
+  queues.set(dir, settled);
   try {
     await next;
   } finally {
-    if (queues.get(dir) === next) queues.delete(dir);
+    if (queues.get(dir) === settled) queues.delete(dir);
   }
 }
 export async function readRun(config: ExternalIdConfig, dir: string) {
