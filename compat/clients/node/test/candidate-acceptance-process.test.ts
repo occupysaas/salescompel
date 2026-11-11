@@ -15,7 +15,7 @@ test("bounded subprocess captures private logs, exit status and terminates a han
   const r = await runCommand(
     {
       executable: process.execPath,
-      argv: ["-e", 'console.log("secret-canary");process.exitCode=3'],
+      argv: ["-e", 'process.stdout.write("secret-canary\\n");process.exitCode=3'],
       cwd: dir,
       env: {},
     },
@@ -48,7 +48,7 @@ test("shutdown owns grandchildren after the leader exits and escalates resistant
       executable: process.execPath,
       argv: [
         "-e",
-        `const {spawn}=require('node:child_process');const c=spawn(process.execPath,['-e', 'process.on("SIGTERM",()=>{});console.log("ready");setInterval(()=>{},1000)'],{stdio:['ignore','pipe','ignore']});c.stdout.once('data',()=>{console.log(c.pid);c.stdout.destroy();c.unref()})`,
+        `const {spawn}=require('node:child_process');const c=spawn(process.execPath,['-e', 'process.on("SIGTERM",()=>{});process.stdout.write("ready\\n");setInterval(()=>{},1000)'],{stdio:['ignore','pipe','ignore']});c.stdout.once('data',()=>{process.stdout.write(String(c.pid)+"\\n");c.stdout.destroy();c.unref()})`,
       ],
       cwd: dir,
       env: {},

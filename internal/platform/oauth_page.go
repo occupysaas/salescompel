@@ -45,7 +45,7 @@ func (s *Store) SaveAuthRequest(ctx context.Context, in AuthRequest, now time.Ti
 	if _, err = tx.Exec(ctx, "DELETE FROM oauth_requests WHERE expires_at<=$1", now); err != nil {
 		return
 	}
-	_, err = tx.Exec(ctx, "INSERT INTO oauth_requests(request_hash,client_id,redirect_uri,scope,state,code_challenge,cookie_hash,expires_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8)", digest(id), in.ClientID, in.RedirectURI, in.Scope, in.State, in.Challenge, digest(binding), now.Add(10*time.Minute))
+	_, err = tx.Exec(ctx, "INSERT INTO oauth_requests AS r (request_hash,client_id,redirect_uri,scope,state,code_challenge,cookie_hash,expires_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8)", digest(id), in.ClientID, in.RedirectURI, in.Scope, in.State, in.Challenge, digest(binding), now.Add(10*time.Minute))
 	if err != nil {
 		return
 	}

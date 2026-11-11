@@ -204,7 +204,7 @@ async function main(c: GateContext) {
     ensure(r.exitCode === 0 && r.complete);
     return stdout.trim();
   };
-  const password = "P26!" + randomBytes(24).toString("hex");
+  const password = ["P26!", randomBytes(24).toString("hex")].join("");
   secrets.add(password);
   const users = {
     admin: "p26-" + c.runId + "-admin@example.invalid",

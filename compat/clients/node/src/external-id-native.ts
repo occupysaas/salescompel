@@ -49,7 +49,8 @@ export function nativeUpsert(
         return;
       }
       try {
-        const parsed = JSON.parse(Buffer.concat(chunks).toString()) as unknown;
+        const text = Buffer.concat(chunks).toString();
+        const parsed = JSON.parse(text) as unknown;
         if (parsed == null) throw new Error("NATIVE_INVALID_RESPONSE");
         accept(parsed);
       } catch {
