@@ -270,12 +270,12 @@ func TestAuthorizeSingleUseConcurrent(t *testing.T) {
 	codes := make(chan string, 2)
 	for range 2 {
 		wg.Add(1)
-		go func() {
+		go func(ctx context.Context) {
 			defer wg.Done()
 			out := authPost(s, n, rid, u.Username, "long-password", "allow", c, nil)
 			v, _ := url.Parse(out.Header().Get("Location"))
 			codes <- v.Query().Get("code")
-		}()
+		}(context.Background())
 	}
 	wg.Wait()
 	close(codes)

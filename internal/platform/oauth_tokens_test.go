@@ -168,14 +168,14 @@ func TestCodeRedeemConcurrent(t *testing.T) {
 	tokens := make(chan IssuedTokens, 8)
 	for range 8 {
 		wg.Add(1)
-		go func() {
+		go func(ctx context.Context) {
 			defer wg.Done()
 			v, e := s.RedeemCode(ctx, c, g.ClientID, "https://example.com/cb", "", n, time.Hour)
 			if e == nil {
 				successes.Add(1)
 				tokens <- v
 			}
-		}()
+		}(ctx)
 	}
 	wg.Wait()
 	close(tokens)
@@ -358,7 +358,7 @@ func TestConcurrentInvalidation(t *testing.T) {
 			var wg sync.WaitGroup
 			for range 12 {
 				wg.Add(1)
-				go func() {
+				go func(ctx context.Context) {
 					defer wg.Done()
 					<-start
 					var v IssuedTokens
@@ -371,10 +371,10 @@ func TestConcurrentInvalidation(t *testing.T) {
 					if e == nil {
 						issued <- v
 					}
-				}()
+				}(ctx)
 			}
 			wg.Add(1)
-			go func() {
+			go func(ctx context.Context) {
 				defer wg.Done()
 				<-start
 				var e error
@@ -391,7 +391,7 @@ func TestConcurrentInvalidation(t *testing.T) {
 				if e != nil {
 					t.Errorf("invalidation: %v", e)
 				}
-			}()
+			}(ctx)
 			close(start)
 			wg.Wait()
 			close(issued)

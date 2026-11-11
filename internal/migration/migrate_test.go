@@ -160,7 +160,7 @@ func TestConcurrentMigrate(t *testing.T) {
 	ctx := context.Background()
 	errs := make(chan error, 2)
 	for n := 0; n < 2; n++ {
-		go func() { errs <- Up(ctx, p) }()
+		go func(ctx context.Context) { errs <- Up(ctx, p) }(ctx)
 	}
 	for n := 0; n < 2; n++ {
 		if e := <-errs; e != nil {

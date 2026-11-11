@@ -1,6 +1,7 @@
 package externalid
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 	"sync"
@@ -95,7 +96,7 @@ func TestCanonicalKeyConcurrent(t *testing.T) {
 	errors := make(chan error, 32)
 	for worker := 0; worker < 32; worker++ {
 		wg.Add(1)
-		go func() {
+		go func(ctx context.Context) {
 			defer wg.Done()
 			for repeat := 0; repeat < 100; repeat++ {
 				for _, v := range referenceVectors {
@@ -107,7 +108,7 @@ func TestCanonicalKeyConcurrent(t *testing.T) {
 					}
 				}
 			}
-		}()
+		}(context.Background())
 	}
 	wg.Wait()
 	close(errors)

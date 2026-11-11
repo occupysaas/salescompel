@@ -75,12 +75,12 @@ func TestUpsertConcurrentVariants(t *testing.T) {
 	results := make(chan outcome, 16)
 	start := make(chan struct{})
 	for i := range 16 {
-		go func(i int) {
+		go func(ctx context.Context, i int) {
 			key := []string{"AbC", "abc", " abc "}[i%3]
 			<-start
 			id, created, e := s.Upsert(ctx, p, key, map[string]any{"Name": "Race"})
 			results <- outcome{id, key, created, e}
-		}(i)
+		}(ctx, i)
 	}
 	close(start)
 	firstID, spelling := "", ""
@@ -138,7 +138,7 @@ func TestUpsertRacingPost(t *testing.T) {
 		start := make(chan struct{})
 		for _, upsert := range []bool{true, false} {
 			wg.Add(1)
-			go func(upsert bool) {
+			go func(ctx context.Context, upsert bool) {
 				defer wg.Done()
 				<-start
 				var e error
@@ -150,7 +150,7 @@ func TestUpsertRacingPost(t *testing.T) {
 				if e != nil && !strings.Contains(e.Error(), "DUPLICATE_VALUE") {
 					t.Error(e)
 				}
-			}(upsert)
+			}(ctx, upsert)
 		}
 		close(start)
 		wg.Wait()

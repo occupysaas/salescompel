@@ -154,12 +154,12 @@ func TestStoreConcurrentUpdatesAndUpsert(t *testing.T) {
 	var wg sync.WaitGroup
 	for k, v := range map[string]any{"Name": "After", "Compat_Text__c": "Together"} {
 		wg.Add(1)
-		go func(k string, v any) {
+		go func(ctx context.Context, k string, v any) {
 			defer wg.Done()
 			if e := s.Update(ctx, a, "Account", id, map[string]any{k: v}); e != nil {
 				t.Error(e)
 			}
-		}(k, v)
+		}(ctx, k, v)
 	}
 	wg.Wait()
 	row, err := s.Read(ctx, a, "Account", id)
@@ -168,12 +168,12 @@ func TestStoreConcurrentUpdatesAndUpsert(t *testing.T) {
 	}
 	for i := 0; i < 8; i++ {
 		wg.Add(1)
-		go func() {
+		go func(ctx context.Context) {
 			defer wg.Done()
 			if _, _, e := s.Upsert(ctx, a, "concurrent", map[string]any{"Name": "One"}); e != nil {
 				t.Error(e)
 			}
-		}()
+		}(ctx)
 	}
 	wg.Wait()
 	q, _ := ParseQuery("SELECT Id FROM Account WHERE Compat_Key__c = 'concurrent'")

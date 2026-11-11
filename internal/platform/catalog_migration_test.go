@@ -222,13 +222,13 @@ func TestCatalogConcurrentOpen(t *testing.T) {
 	defer cancel()
 	results := make(chan error, 2)
 	for range 2 {
-		go func() {
+		go func(ctx context.Context) {
 			s, e := Open(ctx, url)
 			if s != nil {
 				s.Close()
 			}
 			results <- e
-		}()
+		}(ctx)
 	}
 	for range 2 {
 		if e := <-results; e != nil {
