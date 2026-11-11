@@ -9,6 +9,7 @@ import {
 } from "./candidate-acceptance-run.ts";
 import { validateOutputDestination } from "./candidate-acceptance-preflight.ts";
 import { publishAcceptanceReport } from "./candidate-acceptance-contract.ts";
+const say = (s: string) => process.stdout.write(s + "\n");
 export async function candidateAcceptanceMain(
   argv: string[],
   env: NodeJS.ProcessEnv,
@@ -38,7 +39,7 @@ export async function candidateAcceptanceMain(
     );
   try {
     await validateOutputDestination(out);
-    if (!args.values.out) console.log(`Candidate-only summary: ${out}`);
+    if (!args.values.out) say(`Candidate-only summary: ${out}`);
     return await withAcceptanceSignals(async (signals) => {
       const report = await runAcceptance(
         {
@@ -68,7 +69,7 @@ if (
     process.argv.slice(2),
     process.env,
   );
-  console.log(
+  say(
     `Candidate acceptance ${process.exitCode === 0 ? "passed" : process.exitCode === 1 ? "failed" : "blocked"}; no Salesforce compatibility certification.`,
   );
 }

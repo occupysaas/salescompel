@@ -25,6 +25,7 @@ import {
   LATEST_OPENAPI,
   type OpenApiRole,
 } from "./openapi.ts";
+const say = (s: string) => process.stdout.write(s + "\n");
 let selectedCommand: string | undefined;
 async function main() {
   const options = {
@@ -78,10 +79,10 @@ async function main() {
         values.out,
       );
       if (values.out)
-        console.log(
+        say(
           `${report.validation}: ${report.readiness}; ${exitCode === 2 ? "report unavailable" : "private report written"}`,
         );
-      else console.log(JSON.stringify(report));
+      else say(JSON.stringify(report));
       process.exitCode = exitCode;
     } catch {
       console.error(
@@ -127,7 +128,7 @@ async function main() {
       const result = await assessNormalizationPair(values.first, values.second);
       await output.writeFile(JSON.stringify(result) + "\n");
       await output.sync();
-      console.log(`${result.outcome}: private output ${target}`);
+      say(`${result.outcome}: private output ${target}`);
       process.exitCode =
         result.outcome === "repeatable"
           ? 0
@@ -169,7 +170,7 @@ async function main() {
       "collection" in result
         ? result.collection === "complete" && result.cleanup.outcome === "clean"
         : result.outcome === "clean";
-    console.log(
+    say(
       `${clean ? "complete" : "incomplete/blocked"}: private output ${resolve(values.out)}`,
     );
     process.exitCode = clean ? 0 : 2;
@@ -197,7 +198,7 @@ async function main() {
       const result = await assessBodyPair(values.first, values.second);
       await output.writeFile(JSON.stringify(result) + "\n");
       await output.sync();
-      console.log(`${result.outcome}: private output ${target}`);
+      say(`${result.outcome}: private output ${target}`);
       process.exitCode = result.outcome === "ready" ? 0 : 2;
     } finally {
       await output.close();
@@ -232,7 +233,7 @@ async function main() {
       "collection" in result
         ? result.collection === "complete" && result.cleanup.outcome === "clean"
         : result.outcome === "clean";
-    console.log(
+    say(
       `${clean ? "complete" : "incomplete/blocked"}: private output ${resolve(values.out)}`,
     );
     process.exitCode = clean ? 0 : 2;
@@ -250,7 +251,7 @@ async function main() {
     const { runAssumedFoundationCapture } =
       await import("./foundation-command.ts");
     const result = await runAssumedFoundationCapture(values.out, process.env);
-    console.log(
+    say(
       `${result.sidecar ? "policy capture recorded" : "blocked"}: private output ${resolve(values.out)}`,
     );
     process.exitCode = result.sidecar ? 0 : 2;
@@ -284,7 +285,7 @@ async function main() {
       secondCleanup: values["second-cleanup"]!,
       out: values.out!,
     });
-    console.log(
+    say(
       `${result.outcome}: private foundation assessment ${resolve(values.out!)}`,
     );
     process.exitCode =
@@ -315,7 +316,7 @@ async function main() {
       values.out,
       process.env,
     );
-    console.log(`verified absence: private output ${resolve(values.out)}`);
+    say(`verified absence: private output ${resolve(values.out)}`);
     return;
   }
   if (command === "probe-external-id" || command === "recover-external-id") {
@@ -343,7 +344,7 @@ async function main() {
       "collection" in result
         ? result.collection === "complete" && result.cleanup === "clean"
         : result.outcome === "clean";
-    console.log(
+    say(
       `External-ID ${mode}: ${complete ? "complete" : "incomplete/blocked"}; private output ${resolve(values.out)}`,
     );
     process.exitCode = complete ? 0 : 2;
@@ -360,7 +361,7 @@ async function main() {
       values.out,
       process.env,
     );
-    console.log(
+    say(
       `${inventory.outcome}: ${inventory.facts.length} facts, ${inventory.gaps.length} gaps; private inventory ${resolve(values.out)}`,
     );
     process.exitCode = inventory.outcome === "complete" ? 0 : 2;
@@ -393,7 +394,7 @@ async function main() {
       mode: 0o600,
       flag: "wx",
     });
-    console.log(
+    say(
       `${result.outcome}: private pair verification; not a reviewed observation`,
     );
     process.exitCode =
@@ -429,7 +430,7 @@ async function main() {
       );
       if (issue) issues.push(issue);
     }
-    console.log("Offline readiness; no observation performed.");
+    say("Offline readiness; no observation performed.");
     if (issues.length) throw new Error(issues.join("; "));
     return;
   }
@@ -440,7 +441,7 @@ async function main() {
       process.exitCode = 1;
     } else {
       const coverage = await observationSummary();
-      console.log(
+      say(
         `Offline contracts, catalogs, dependencies and OpenAPI documents (SalesCompel ${LATEST_OPENAPI}, Salesforce sources 2.0/3.0) validated. Reviewed pilot observations: ${coverage.observed}; not_run: ${coverage.notRun}. Not parity certification.`,
       );
     }
@@ -455,7 +456,7 @@ async function main() {
       parseDocument(await readFile(resolve(values.spec), "utf8")),
       role,
     );
-    console.log(
+    say(
       role === "salescompel"
         ? `OpenAPI ${LATEST_OPENAPI} structurally valid; no Salesforce runtime compatibility claim.`
         : `Salesforce source document structurally valid; convert to OpenAPI ${LATEST_OPENAPI} before use.`,
@@ -475,7 +476,7 @@ async function main() {
     const r = await capture(values.target, process.env, selected.id);
     validateReport(r);
     await writeReport(out, r);
-    console.log(`${reportOutcome(r)}: ${out}`);
+    say(`${reportOutcome(r)}: ${out}`);
     process.exitCode =
       reportOutcome(r) === "passed"
         ? 0
@@ -527,7 +528,7 @@ async function main() {
       `# ${parity ? "Compatibility comparison" : "Reference repeatability"}\n\nOutcome: **${comparison.outcome}**\n\n${comparison.differences.map((d) => "- " + d.replaceAll("<", "&lt;").replaceAll("\n", " ")).join("\n")}\n\nOnly the captured profile and scenarios are covered.\n`,
       { mode: 0o600 },
     );
-    console.log(`${comparison.outcome}: ${out}`);
+    say(`${comparison.outcome}: ${out}`);
     process.exitCode =
       comparison.outcome === "passed"
         ? 0
