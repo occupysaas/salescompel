@@ -1,9 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {
-  foundationScenarios,
-  recordWireObservation,
-} from "../src/foundation.ts";
+import { foundationScenarios } from "../src/foundation.ts";
+import { recordWireObservation } from "../src/foundation-helpers.ts";
 import { normalize } from "../src/core.ts";
 import type { Context } from "../src/scenarios.ts";
 
