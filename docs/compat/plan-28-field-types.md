@@ -150,9 +150,10 @@ cannot be added after creation (Plan 35).
 
 Full acceptance passed against disposable PostgreSQL 17 with Go 1.25.0,
 pinned JSforce 3.11.0, Salesforce CLI 2.156.0 and simple-salesforce 1.12.9.
-Revision `265291954a58f2589bcb477a0c148b4d511a31f5` passed the complete entry point from
-2026-11-12T03:11:49.655Z to 2026-11-12T03:15:45.235Z. Report SHA-256
-`7fcd0c8a3d0601e2c4e6432e06c9041bdb9d0e9b1e58b7d4c2e21f0c7e30e631`.
+Revision `9d00f08d523328fcc88fd4b67478d984dbde7106` (including the review
+fixes) passed the complete entry point from 2026-11-12T03:27:13.912Z to
+2026-11-12T03:30:37.842Z. Report SHA-256
+`772371b68df9a091311bab86ab600f98451a92911dc13f5ea978e9271adbd5f1`.
 
 Deviation: the pinned Playwright 1.56.1 browser build (Chromium 1194) was not
 installed on the verification host, so `CHROMIUM_PATH` pointed at the installed
@@ -162,9 +163,9 @@ configurations honour that variable.
 | Gate | Passed | Failed | Skipped |
 | --- | ---: | ---: | ---: |
 | bindings | 3 | 0 | 0 |
-| database | 610 | 0 | 0 |
+| database | 612 | 0 | 0 |
 | lab | 468 | 0 | 6 |
-| web | 10 | 0 | 0 |
+| web | 11 | 0 | 0 |
 | jsforce | 8 | 0 | 0 |
 | python | 4 | 0 | 0 |
 | cli | 9 | 0 | 0 |
@@ -179,5 +180,18 @@ The six lab skips are the established offline parents covered by the live
 client gates. Cleanup verified 46 journaled records, zero unknown intents, the
 owned schema resources removed and all owned processes stopped. Standalone
 `go vet ./...`, `go test -race ./...`, `npm --prefix compat/clients/node run
-check`, web unit tests and the web build also passed. This documentation
-commit does not change the tested source.
+check`, web unit tests and the web build also passed.
+
+## Review
+
+An independent whole-change review found one critical and three important
+issues, all fixed with failing tests first: required and auto-number fields on
+the shared Account/Contact table, required lookups defaulting to clear-on-delete,
+the editor rewriting untouched values, and exponent-form JSON numbers. Deferred
+minor items: exact editor numbers rely on `JSON.parse` source text (older
+Safari/Firefox fall back to doubles); migration 4 ordinals may tie with custom
+fields already on Account/Contact; Composite creates on two auto-numbered
+objects in opposite order can deadlock (500); SOQL equality on picklist and
+auto-number is case-sensitive; a required number or date given `""` reports
+`JSON_PARSER_ERROR`; `auto_numbers.field_id` is not a composite tenant key.
+This evidence-only commit does not change the tested source.
