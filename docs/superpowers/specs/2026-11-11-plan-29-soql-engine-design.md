@@ -79,7 +79,7 @@ Anti-goals:
 - Building SQL from user text. Only validated catalog identifiers are interpolated, quoted; every value is a parameter.
 - Results whose types differ from the record read path: numbers must be exact, and dates and date-times use the REST forms from Plan 28.
 - Paging that duplicates or drops rows, or lets one user resume another's locator.
-- Any change to the observed Plan 25 behavior for queries that work today: canonical names, null placement, error codes and the 35 column cases. The only exceptions are cases that move from "refused" to "supported", each listed in §9.
+- Any change to the observed Plan 25 behavior for queries that work today: canonical names, null placement, error codes and the 35 column cases. The only exceptions are cases that move from "refused" to "supported", each listed in Sec. 9.
 
 ## Global constraints
 
@@ -100,7 +100,7 @@ A new package, `internal/soql`, replaces the bounded `internal/query` grammar. `
 
 1. **Lexer.** Builds tokens with source offsets: keywords (case-insensitive), identifiers, string literals with the documented escapes (`\'`, `\"`, `\\`, `\n`, `\r`, `\t`, `\b`, `\f`, `\u` and, in LIKE patterns, `\%` and `\_`), number, date, date-time and date literal tokens, operators and punctuation. It keeps today's UTF-8 and NUL rejection.
 2. **Parser.** Produces an AST: `Query{Select []SelectItem; From; Alias; Where Expr; GroupBy; Having; OrderBy; Limit; Offset; With}`. `SelectItem` is a field path, subquery, aggregate, `toLabel` or `FIELDS()`. `Expr` is a boolean tree of comparisons, `IN`/`NOT IN` (with value lists or semi-join subqueries) and `INCLUDES`/`EXCLUDES`. `TYPEOF` parses into a node the binder refuses, so later plans only add binding.
-3. **Binder.** Resolves every name against the tenant snapshot, case-insensitively with canonical spelling: the object, alias, fields, relationship paths, child relationship names and aggregate aliases. It types every literal against its field, applies field policy and enforces the structural rules and limits in §5. After this stage nothing refers to user text, only to catalog entries and typed values.
+3. **Binder.** Resolves every name against the tenant snapshot, case-insensitively with canonical spelling: the object, alias, fields, relationship paths, child relationship names and aggregate aliases. It types every literal against its field, applies field policy and enforces the structural rules and limits in Sec. 5. After this stage nothing refers to user text, only to catalog entries and typed values.
 4. **Compiler.** Turns the bound AST into one parameterized PostgreSQL statement, plus one statement per child subquery.
    - Parent paths become `LEFT JOIN`s on `(tenant_id, id)` with an explicit tenant predicate on every joined table (RLS stays the backstop).
    - Child subqueries run as a second query per page over the page's parent IDs (`parent_col = ANY($ids)`), ordered and limited per parent with a window function.
@@ -275,7 +275,7 @@ Subqueries need child relationship names, which describe does not expose today.
 ## 8. Security
 
 The binder applies `policy.Field` to every field reference in any clause, at every relationship level and in every subquery. A denied field anywhere gives `INVALID_FIELD`, exactly like today's projection, filter and order denial.
-- `FIELDS()` silently leaves denied fields out (see §2).
+- `FIELDS()` silently leaves denied fields out (see Sec. 2).
 - Object access stays the current two-role candidate policy until Plan 33, applied per joined object.
 - Joins and subqueries carry explicit tenant predicates under RLS.
 - Locators are bound to tenant and user.

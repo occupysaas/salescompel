@@ -3,7 +3,7 @@
 **Status:** Implemented and verified 2026-11-11. See [decisions, gaps and evidence](../../compat/plan-28-field-types.md).
 **Date:** 2026-11-11
 **Depends on:** Plan 27 (typed tenant metadata, generated physical columns, RLS, schema CLI).
-**Roadmap:** [first release roadmap](2026-11-04-salescompel-first-release-roadmap-design.md), Plan 28; "Stored, not enforced" in §1.
+**Roadmap:** [first release roadmap](2026-11-04-salescompel-first-release-roadmap-design.md), Plan 28; "Stored, not enforced" in Sec. 1.
 **Implementation:** [Plan 28](../plans/2026-11-11-plan-28-field-types.md).
 
 ## Intent and outcome
@@ -20,10 +20,10 @@ Ships:
 
 - Active field types: Text, Text Area, Long Text Area, Number, Currency (single currency), Percent, Date, Date/Time, Checkbox, Picklist, Multi-Select Picklist, Email, Phone, URL, Lookup, Master-Detail and Auto Number. Auto Number is also offered as the Name type of a new custom object.
 - Compound Name on Contact and compound Billing/Shipping/Mailing Address on Account and Contact, read through REST as Salesforce documents them and written through their component fields.
-- A bounded set of new standard fields on Account and Contact (§5), seeded for every existing and new tenant.
+- A bounded set of new standard fields on Account and Contact (Sec. 5), seeded for every existing and new tenant.
 - Exact decimal handling from the HTTP body to PostgreSQL and back. Binary floating point is never used for field values.
 - A tenant corporate currency setting, used for display only.
-- Stored-not-enforced definitions for Formula, Roll-Up Summary, Encrypted Text, Geolocation and Rich Text Area (§6).
+- Stored-not-enforced definitions for Formula, Roll-Up Summary, Encrypted Text, Geolocation and Rich Text Area (Sec. 6).
 - Describe, REST CRUD, Composite and the existing bounded SOQL all working with every active type. OpenAPI and traffic validation are updated to match.
 - Connected editor controls for every active type.
 - Acceptance coverage through JSforce and simple-salesforce, plus database, upgrade and browser tests.
@@ -56,11 +56,11 @@ Each active type has a logical type in metadata, a describe `type` and `soapType
 | `Currency` | currency | numeric(p,s) | number | as Number; default 18,2 |
 | `Percent` | percent | numeric(p,s) | number | as Number; the value 12.5 means 12.5% |
 | `Date` | date | date | `"YYYY-MM-DD"` | 1700-01-01 to 4000-12-31 |
-| `DateTime` | datetime | timestamptz | `"YYYY-MM-DDThh:mm:ss.000+0000"` | same range, stored UTC to whole seconds (*candidate*; see §2) |
+| `DateTime` | datetime | timestamptz | `"YYYY-MM-DDThh:mm:ss.000+0000"` | same range, stored UTC to whole seconds (*candidate*; see Sec. 2) |
 | `Checkbox` | boolean | boolean NOT NULL DEFAULT d | true/false | default false or true; never null |
 | `Picklist` | picklist | varchar(255) | string | 1–1,000 values (*candidate*), each value ≤255; restricted or not; optional default value |
 | `MultiselectPicklist` | multipicklist | varchar(4099) | `"A;B"` | as Picklist; visible lines display-only; ≤100 selected (*candidate*) |
-| `Email` | email | varchar(80) | string | format check (§2) |
+| `Email` | email | varchar(80) | string | format check (Sec. 2) |
 | `Phone` | phone | varchar(40) | string | no format check |
 | `Url` | url | varchar(255) | string | no scheme added or required |
 | `Lookup` | reference | varchar(18) + composite FK | 18-char ID | target: any object in the tenant (self-lookup allowed); on parent delete: `SetNull` (default) or `Restrict` |
@@ -95,11 +95,11 @@ All validation runs in `internal/records` before SQL. Database constraints are t
 
 ## 3. Metadata, storage and migration
 
-The field definition JSON in `sc_catalog.fields.definition` gains the type parameters (precision, scale, picklist values with active/default flags, restricted flag, delete behavior, relationship order, reparentable, auto-number format and start, default value, compound parent, visible lines). `metadata.Load` keeps strict decoding and its closed type list. It now admits every active type in §1 and rejects any other value. Physical column names stay generated, never derived from API names.
+The field definition JSON in `sc_catalog.fields.definition` gains the type parameters (precision, scale, picklist values with active/default flags, restricted flag, delete behavior, relationship order, reparentable, auto-number format and start, default value, compound parent, visible lines). `metadata.Load` keeps strict decoding and its closed type list. It now admits every active type in Sec. 1 and rejects any other value. Physical column names stay generated, never derived from API names.
 
 Auto-number values come from a per-field counter row in a new `sc_catalog.auto_numbers(tenant_id, field_id, next_value)` table, under RLS, incremented in the record transaction. Values are unique and increase per field. Gaps after rollback are allowed, as in Salesforce. The builder may use another mechanism with the same guarantees. When an auto-number field is added to an object with existing records, they are numbered in ascending Id order inside the schema transaction (*candidate*; Salesforce offers this as an option, and Id order stands in for creation order until Plan 30 adds CreatedDate).
 
-Migration 0004 adds the auto-number table, rewrites existing field definitions to the extended JSON shape with explicit defaults, adds the §5 standard columns to the shared `accounts` and `contacts` tables, seeds their metadata for every existing tenant, adds the tenant settings table with a `USD` row per tenant, and adds `object_id`, `api_name` and `kind` columns to `sc_catalog.artifacts`, with a tenant-scoped case-insensitive uniqueness check shared with active field names (§6). `SeedTenant` seeds the same set for new tenants. A test asserts that migrated and freshly seeded catalogs are identical. Upgrade tests cover a populated Plan 27 database and preserve every existing value, ID, definition ID and revision ordering.
+Migration 0004 adds the auto-number table, rewrites existing field definitions to the extended JSON shape with explicit defaults, adds the Sec. 5 standard columns to the shared `accounts` and `contacts` tables, seeds their metadata for every existing tenant, adds the tenant settings table with a `USD` row per tenant, and adds `object_id`, `api_name` and `kind` columns to `sc_catalog.artifacts`, with a tenant-scoped case-insensitive uniqueness check shared with active field names (Sec. 6). `SeedTenant` seeds the same set for new tenants. A test asserts that migrated and freshly seeded catalogs are identical. Upgrade tests cover a populated Plan 27 database and preserve every existing value, ID, definition ID and revision ordering.
 
 **Schema CLI.** `schema field create` keeps its Plan 27 flags and adds type parameters: `--precision`, `--scale`, `--visible-lines`, `--values` (comma-separated API values; labels default to values), `--restricted`, `--default`, `--reference-to`, `--delete-behavior SetNull|Restrict`, `--reparentable`, `--display-format`, `--starting-number` and `--relationship-name`. Unknown or irrelevant flags for a type are rejected. `--definition FILE` accepts the same parameters as a JSON object, including picklist labels, and is the only way to create stored-not-enforced definitions. `schema object create --name-type AutoNumber --display-format F [--starting-number N]` creates a custom object whose Name is auto-numbered. Creating a master-detail field on an object that already has records fails with an explicit message (Salesforce requires a lookup to be filled and converted, and conversion is out of scope). `--required` is accepted for Text, numeric, Date/DateTime, Picklist, Email, Phone, URL and Lookup only on objects with no records (*candidate*). Because Account and Contact share one physical table across tenants, `--required` and AutoNumber fields are refused on standard objects. A required Lookup always uses `Restrict`. `schema inspect` reports every definition with `"status": "active"` or `"status": "stored-not-enforced"`.
 
@@ -109,8 +109,8 @@ Migration 0004 adds the auto-number table, rewrites existing field definitions t
 
 The record service, describe, Composite and query all read the same catalog snapshot, so every type works in every adapter at once. Specifically:
 
-- **Describe** returns the §1 properties. Restricted-role field hiding (Account.Compat_Text__c) is unchanged.
-- **Create/update/upsert/delete** apply §2. Defaults (checkbox, picklist, auto-number) apply only on create.
+- **Describe** returns the Sec. 1 properties. Restricted-role field hiding (Account.Compat_Text__c) is unchanged.
+- **Create/update/upsert/delete** apply Sec. 2. Defaults (checkbox, picklist, auto-number) apply only on create.
 - **Read and query projection** serialize each type in its wire form. Compound fields are computed from components on read: an Address returns `{"street","city","state","postalCode","country"}` with nulls for empty components, or null when every component is empty. Contact.Name is a stored generated column (`FirstName` and `LastName` joined by one space, trimmed), so it can be filtered and ordered.
 - **Bounded SOQL** (today's grammar) can project every active type, `ORDER BY` any sortable type with typed ordering and current null placement, and filter by equality on string-like types (Text, TextArea, Picklist, Email, Phone, URL, reference, Id, auto-number). Long text area, multi-select and compound fields are not filterable or sortable, matching describe. Equality on numeric, date, datetime and checkbox fields needs typed SOQL literals, which the current lexer does not support. It returns `MALFORMED_QUERY` with a message that the filter is not yet supported, recorded as a gap closed by Plan 29. Column metadata reports each field's type.
 - **Composite** inherits everything through the shared record service. Cascade deletes and auto-number allocation take part in its single transaction and roll back with it.
@@ -188,14 +188,14 @@ Not fetched during drafting; Task 1 verifies them and records any page that cann
 
 These are the author's calls, not maintainer decisions:
 
-1. Adding the §5 standard fields to Account/Contact in this plan, since compound Name and Address only exist on standard objects.
+1. Adding the Sec. 5 standard fields to Account/Contact in this plan, since compound Name and Address only exist on standard objects.
 2. Text Area and Long Text Area included as active, Rich Text Area as stored-not-enforced.
 3. Stored-not-enforced fields kept out of describe entirely rather than described with null values.
 4. Contact.AccountId keeps today's restrict-on-delete instead of Salesforce's cascade until Plan 30.
 5. No typed WHERE literals until Plan 29; projection and ordering work now.
 6. No picklist value edits after creation; master-detail only on empty child objects; required new fields only on empty objects.
 7. Auto-number backfill in Id order.
-8. The value rules marked *candidate* in §2 (string-to-number coercion, round-half-up, seconds precision, checkbox null, email grammar), each to be observed or recorded as a gap.
+8. The value rules marked *candidate* in Sec. 2 (string-to-number coercion, round-half-up, seconds precision, checkbox null, email grammar), each to be observed or recorded as a gap.
 9. A tenant corporate currency for display only.
 
-The builder may choose helper and package names, the auto-number mechanism (within §3's guarantees), visual arrangement of controls, and test structure. Changing scope, storage strategy, error codes or the stored-not-enforced boundary requires updating this spec and the plan together.
+The builder may choose helper and package names, the auto-number mechanism (within Sec. 3's guarantees), visual arrangement of controls, and test structure. Changing scope, storage strategy, error codes or the stored-not-enforced boundary requires updating this spec and the plan together.
