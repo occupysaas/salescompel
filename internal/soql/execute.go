@@ -45,6 +45,11 @@ func RunAST(ctx context.Context, tx pgx.Tx, exec policy.ExecutionContext, snap m
 	if err != nil {
 		return Result{}, err
 	}
+	return RunBound(ctx, tx, bound, opt)
+}
+
+// RunBound compiles and executes an already-bound query.
+func RunBound(ctx context.Context, tx pgx.Tx, bound *Bound, opt Options) (Result, error) {
 	plan, err := Compile(bound)
 	if err != nil {
 		return Result{}, err
@@ -133,15 +138,12 @@ func shapeRow(bound *Bound, plan *Plan, vals []any) map[string]any {
 		raw any
 	}
 	var pathCols []nestOp
-	for i, col := range bound.Columns {
+	for _, col := range bound.Columns {
 		if len(col.Path) == 0 {
 			continue
 		}
 		raw := rec[col.Key]
 		delete(rec, col.Key)
-		if comps, ok := plan.Compound[i]; ok {
-			raw = AddressValue(col.Field, comps, raw.([]any))
-		}
 		pathCols = append(pathCols, nestOp{col: col, raw: raw})
 	}
 	for _, op := range pathCols {

@@ -34,19 +34,49 @@ func (c *compiler) compileExpr(e BoundExpr, root string, obj metadata.Object) (s
 		}
 		return strings.Join(parts, " OR "), nil
 	case *BoundNot:
-		// SOQL NOT on a nullable comparison includes null rows.
+		// SOQL NOT on a nullable comparison includes null rows (2-valued logic).
 		if cmp, ok := t.Expr.(*BoundCmp); ok && cmp.Right.Value != nil && cmp.Left.Field.Nillable && cmp.Left.Agg == "" && cmp.Left.Func == "" {
 			neg := *cmp
-			if neg.Op == "=" {
+			switch neg.Op {
+			case "=":
 				neg.Op = "!="
-			} else if neg.Op == "!=" || neg.Op == "<>" {
+				return c.compileCmp(&neg, root)
+			case "!=", "<>":
 				neg.Op = "="
+				return c.compileCmp(&neg, root)
+			case "<":
+				neg.Op = ">="
+			case ">":
+				neg.Op = "<="
+			case "<=":
+				neg.Op = ">"
+			case ">=":
+				neg.Op = "<"
+			default:
+				// LIKE and other ops: wrap with OR IS NULL for null-inclusive NOT.
+				p, err := c.compileCmp(cmp, root)
+				if err != nil {
+					return "", err
+				}
+				left, err := c.valueSQL(cmp.Left, root)
+				if err != nil {
+					return "", err
+				}
+				return "(" + left + " IS NULL OR NOT (" + p + "))", nil
 			}
-			return c.compileCmp(&neg, root)
+			result, err := c.compileCmp(&neg, root)
+			if err != nil {
+				return "", err
+			}
+			left, err := c.valueSQL(cmp.Left, root)
+			if err != nil {
+				return "", err
+			}
+			return "(" + left + " IS NULL OR " + result + ")", nil
 		}
-		if inn, ok := t.Expr.(*BoundIn); ok && inn.Not && inn.Left.Field.Nillable && inn.Left.Agg == "" && inn.Left.Func == "" {
+		if inn, ok := t.Expr.(*BoundIn); ok && inn.Left.Field.Nillable && inn.Left.Agg == "" && inn.Left.Func == "" {
 			inn2 := *inn
-			inn2.Not = false
+			inn2.Not = !inn.Not
 			return c.compileIn(&inn2, root)
 		}
 		p, err := c.compileExpr(t.Expr, root, obj)
@@ -112,7 +142,16 @@ func (c *compiler) compileCmp(cmp *BoundCmp, root string) (string, error) {
 	isNeq := cmp.Op == "!=" || cmp.Op == "<>"
 	nullWrap := isNeq && cmp.Left.Field.Nillable && cmp.Left.Agg == "" && cmp.Left.Func == ""
 	var pred string
-	if cmp.Left.Label || (cmp.Op == "=" || isNeq) && caseInsensitiveKind(k) {
+	if cmp.Left.Label {
+		if cmp.Op != "=" && !isNeq {
+			return "", malformed("toLabel is only valid with equality operators")
+		}
+		if cmp.Op == "=" {
+			pred = "lower(" + left + " COLLATE pg_c_utf8) = lower(" + p + " COLLATE pg_c_utf8)"
+		} else {
+			pred = "lower(" + left + " COLLATE pg_c_utf8) != lower(" + p + " COLLATE pg_c_utf8)"
+		}
+	} else if (cmp.Op == "=" || isNeq) && caseInsensitiveKind(k) {
 		if cmp.Op == "=" {
 			pred = "lower(" + left + " COLLATE pg_c_utf8) = lower(" + p + " COLLATE pg_c_utf8)"
 		} else {
@@ -145,6 +184,9 @@ func (c *compiler) compileIn(in *BoundIn, root string) (string, error) {
 	}
 	params := make([]string, 0, len(in.Values))
 	for _, v := range in.Values {
+		if v.Value == nil {
+			return "", malformed("null is not allowed in IN lists")
+		}
 		params = append(params, "$"+itoa(c.addArg(v.Value)))
 	}
 	list := "(" + strings.Join(params, ",") + ")"
@@ -179,13 +221,14 @@ func (c *compiler) compileSemi(in *BoundIn, left, root string) (string, error) {
 	for _, js := range sc.joins {
 		from += " LEFT JOIN " + js.table + " " + js.alias + " ON " + js.on
 	}
-	subSQL := "SELECT " + col + " FROM " + from + " WHERE " + where
 	c.args = sc.args
-	op := " IN "
 	if in.Not {
-		op = " NOT IN "
+		// NOT EXISTS is NULL-safe: NOT IN is poisoned by NULLs in the sub-select.
+		subSQL := "SELECT 1 FROM " + from + " WHERE " + where + " AND " + col + " = " + left
+		return "NOT EXISTS (" + subSQL + ")", nil
 	}
-	return left + op + "(" + subSQL + ")", nil
+	subSQL := "SELECT " + col + " FROM " + from + " WHERE " + where
+	return left + " IN (" + subSQL + ")", nil
 }
 
 func (c *compiler) compileIncludes(inc *BoundIncludes, root string) (string, error) {

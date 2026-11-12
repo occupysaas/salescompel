@@ -533,3 +533,51 @@ func TestSOQLCrossTenant(t *testing.T) {
 		}
 	})
 }
+
+func TestParentPathCompoundAndAntiJoinNull(t *testing.T) {
+	f := newTypedFixture(t)
+	s, p := f.s, f.p
+	ctx := context.Background()
+
+	acc1, err := s.Create(ctx, p, "Account", map[string]any{"Name": "Acme", "BillingCity": "Lyon"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = s.Create(ctx, p, "Account", map[string]any{"Name": "Beta"}); err != nil {
+		t.Fatal(err)
+	}
+	_, err = s.Create(ctx, p, "Contact", map[string]any{"LastName": "Smith", "AccountId": acc1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = s.Create(ctx, p, "Contact", map[string]any{"LastName": "NullAcc"}); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("parent path compound field no panic", func(t *testing.T) {
+		res := soqlQuery(t, s, p, "SELECT LastName, Account.BillingAddress FROM Contact WHERE LastName = 'Smith'")
+		if res.TotalSize != 1 {
+			t.Fatal(res.TotalSize)
+		}
+		acc, ok := res.Records[0]["Account"].(map[string]any)
+		if !ok {
+			t.Fatal("expected Account nested object:", res.Records[0])
+		}
+		addr, ok := acc["BillingAddress"].(map[string]any)
+		if !ok || addr["city"] != "Lyon" {
+			t.Fatal("expected BillingAddress shaped:", acc["BillingAddress"])
+		}
+	})
+
+	t.Run("anti join null ref row", func(t *testing.T) {
+		// Anti-join: accounts NOT referenced by any contact. Beta has no contacts.
+		// Contact NullAcc has NULL AccountId — must not poison the anti-join.
+		res := soqlQuery(t, s, p, "SELECT Name FROM Account WHERE Id NOT IN (SELECT AccountId FROM Contact)")
+		if res.TotalSize != 1 {
+			t.Fatal("anti-join should return 1 unreferenced account:", res.TotalSize)
+		}
+		if res.Records[0]["Name"] != "Beta" {
+			t.Fatal("expected Beta:", res.Records[0])
+		}
+	})
+}

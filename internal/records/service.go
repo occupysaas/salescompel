@@ -73,7 +73,7 @@ func (t *Tx) QueryColumns(ctx context.Context, text string, opt soql.Options) (s
 		return soql.Result{}, nil, err
 	}
 	md := soql.ColumnMetadata(bound.Columns)
-	res, err := soql.RunAST(ctx, t.db, t.execution, t.catalog, q, opt)
+	res, err := soql.RunBound(ctx, t.db, bound, opt)
 	return res, md, err
 }
 func DBError(err error) error { return dbError(err) }

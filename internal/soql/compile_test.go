@@ -381,6 +381,106 @@ func TestParentPathArgsInOrder(t *testing.T) {
 	}
 }
 
+// TestFilterAndSortParentPath verifies parent-path WHERE/ORDER BY produce LEFT JOINs
+// even when no parent columns are selected.
+func TestFilterAndSortParentPath(t *testing.T) {
+	item := cObj("Item__c", "a11", cField("Id", fieldtype.Id), cField("Txt__c", fieldtype.Text))
+	parent := cObj("Parent__c", "a12", cField("Id", fieldtype.Id), cField("Name", fieldtype.Text))
+	relName := "Parent__r"
+	parentRef := metadata.Complete(metadata.Field{Name: "Parent__c", Column: "col_parent", Nillable: true,
+		ReferenceTo: []string{"Parent__c"}, RelationshipName: &relName, Options: metadata.Options{Kind: fieldtype.Lookup}})
+	item.Fields = append(item.Fields, parentRef)
+	nameVal := cField("Name", fieldtype.Text)
+	path := []PathStep{{Object: parent, Via: parentRef}}
+	idCol := []BoundColumn{{Key: "Id", Field: cField("Id", fieldtype.Id)}}
+
+	t.Run("filter only", func(t *testing.T) {
+		plan, err := Compile(&Bound{Object: item, Columns: idCol,
+			Where: &BoundCmp{Left: BoundValue{Path: path, Field: nameVal}, Op: "=", Right: Param{Value: marker, Cast: "text"}}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !strings.Contains(plan.Stmt.SQL, "LEFT JOIN") {
+			t.Fatalf("filter-only parent path missing LEFT JOIN: %s", plan.Stmt.SQL)
+		}
+	})
+	t.Run("sort only", func(t *testing.T) {
+		plan, err := Compile(&Bound{Object: item, Columns: idCol,
+			Order: []BoundOrder{{Value: BoundValue{Path: path, Field: nameVal}}}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !strings.Contains(plan.Stmt.SQL, "LEFT JOIN") {
+			t.Fatalf("sort-only parent path missing LEFT JOIN: %s", plan.Stmt.SQL)
+		}
+	})
+}
+
+// TestAntiJoinNotExists verifies anti-joins compile to NOT EXISTS (NULL-safe).
+func TestAntiJoinNotExists(t *testing.T) {
+	item := cObj("Item__c", "a11", cField("Id", fieldtype.Id))
+	parent := cObj("Parent__c", "a12", cField("Id", fieldtype.Id), cField("Name", fieldtype.Text))
+	b := &Bound{Object: item, Columns: []BoundColumn{{Key: "Id", Field: cField("Id", fieldtype.Id)}},
+		Where: &BoundIn{Left: BoundValue{Field: cField("Id", fieldtype.Id)}, Not: true,
+			Semi: &Bound{Object: parent, Columns: []BoundColumn{{Key: "Id", Field: cField("Id", fieldtype.Id)}},
+				Where: &BoundCmp{Left: BoundValue{Field: cField("Name", fieldtype.Text)}, Op: "=", Right: Param{Value: marker, Cast: "text"}}}}}
+	plan, err := Compile(b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sql := plan.Stmt.SQL
+	if !strings.Contains(sql, "NOT EXISTS") {
+		t.Fatalf("anti-join must use NOT EXISTS: %s", sql)
+	}
+	if strings.Contains(sql, "NOT IN") {
+		t.Fatalf("anti-join must not use NOT IN: %s", sql)
+	}
+}
+
+// TestInNilRejection verifies nil values in IN/NOT IN lists are rejected.
+func TestInNilRejection(t *testing.T) {
+	item := cObj("Item__c", "a11", cField("Id", fieldtype.Id))
+	txtVal := cField("Txt__c", fieldtype.Text)
+	for name, in := range map[string]*BoundIn{
+		"IN nil":     {Left: BoundValue{Field: txtVal}, Values: []Param{{Value: "a", Cast: "text"}, {Value: nil}}},
+		"NOT IN nil": {Left: BoundValue{Field: txtVal}, Not: true, Values: []Param{{Value: nil}, {Value: "a", Cast: "text"}}},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if _, err := Compile(&Bound{Object: item, Columns: []BoundColumn{{Key: "Id", Field: cField("Id", fieldtype.Id)}}, Where: in}); err == nil {
+				t.Fatal("nil in IN list should be rejected")
+			}
+		})
+	}
+}
+
+// TestSemiJoinSubRootON verifies the semi-join ON clause uses s.tenant_id (sub-root),
+// not r.tenant_id (outer root).
+func TestSemiJoinSubRootON(t *testing.T) {
+	item := cObj("Item__c", "a11", cField("Id", fieldtype.Id))
+	parent := cObj("Parent__c", "a12", cField("Id", fieldtype.Id), cField("Name", fieldtype.Text))
+	relName := "Parent__r"
+	parentRef := metadata.Complete(metadata.Field{Name: "Parent__c", Column: "col_parent", Nillable: true,
+		ReferenceTo: []string{"Parent__c"}, RelationshipName: &relName, Options: metadata.Options{Kind: fieldtype.Lookup}})
+	item.Fields = append(item.Fields, parentRef)
+	nameVal := cField("Name", fieldtype.Text)
+	b := &Bound{Object: item, Columns: []BoundColumn{{Key: "Id", Field: cField("Id", fieldtype.Id)}},
+		Where: &BoundIn{Left: BoundValue{Field: cField("Id", fieldtype.Id)},
+			Semi: &Bound{Object: item, Columns: []BoundColumn{{Key: "Id", Field: cField("Id", fieldtype.Id)}},
+				Where: &BoundCmp{Left: BoundValue{Path: []PathStep{{Object: parent, Via: parentRef}}, Field: nameVal},
+					Op: "=", Right: Param{Value: marker, Cast: "text"}}}}}
+	plan, err := Compile(b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sql := plan.Stmt.SQL
+	if !strings.Contains(sql, "s.tenant_id") {
+		t.Fatalf("semi-join ON must use sub-root s.tenant_id: %s", sql)
+	}
+	if strings.Contains(sql, "r.tenant_id = s.tenant_id") {
+		t.Fatalf("semi-join ON must not correlate to outer root: %s", sql)
+	}
+}
+
 // TestSemiJoinParentPathFilter verifies that a semi-join subquery with a
 // parent-path WHERE filter carries the sub-compiler's joins into the subquery FROM.
 func TestSemiJoinParentPathFilter(t *testing.T) {

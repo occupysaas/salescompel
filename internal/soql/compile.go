@@ -60,9 +60,23 @@ func Compile(b *Bound) (*Plan, error) {
 func (c *compiler) compile(b *Bound) (*Plan, error) {
 	root := "r"
 	tenantArg := c.addArg(b.Object.Tenant)
+
+	// Compile WHERE and ORDER BY first so ensureJoin runs before FROM is built.
+	where := fmt.Sprintf("%s.tenant_id=$%d", root, tenantArg)
+	if b.Where != nil {
+		w, err := c.compileExpr(b.Where, root, b.Object)
+		if err != nil {
+			return nil, err
+		}
+		where += " AND (" + w + ")"
+	}
+	order, err := c.compileOrder(b.Order, root, b.Object)
+	if err != nil {
+		return nil, err
+	}
+
 	var selParts []string
 	compound := map[int][]metadata.Field{}
-
 	for i, col := range b.Columns {
 		ownerObj := b.Object
 		owner := root
@@ -99,18 +113,7 @@ func (c *compiler) compile(b *Bound) (*Plan, error) {
 		from += " LEFT JOIN " + js.table + " " + js.alias + " ON " + js.on
 	}
 
-	where := fmt.Sprintf("%s.tenant_id=$%d", root, tenantArg)
-	if b.Where != nil {
-		w, err := c.compileExpr(b.Where, root, b.Object)
-		if err != nil {
-			return nil, err
-		}
-		where += " AND (" + w + ")"
-	}
-
 	sql := "SELECT " + strings.Join(selParts, ",") + " FROM " + from + " WHERE " + where
-
-	order := c.compileOrder(b.Order, root, b.Object)
 	if order != "" {
 		sql += " ORDER BY " + order
 	} else {
@@ -234,7 +237,7 @@ func (c *compiler) ensureJoin(root string, path []PathStep) (string, error) {
 		c.nJoin++
 		alias := fmt.Sprintf("p%d", c.nJoin)
 		refCol := pgx.Identifier{step.Via.Column}.Sanitize()
-		on := fmt.Sprintf("%s.tenant_id = r.tenant_id AND %s.id = %s.%s", alias, alias, prev, refCol)
+		on := fmt.Sprintf("%s.tenant_id = %s.tenant_id AND %s.id = %s.%s", alias, root, alias, prev, refCol)
 		c.joins = append(c.joins, joinSpec{alias: alias, table: step.Object.TableSQL(), on: on})
 		c.joinMap[prefix] = alias
 		prev = alias
@@ -247,9 +250,9 @@ func (c *compiler) addArg(v any) int {
 	return len(c.args)
 }
 
-func (c *compiler) compileOrder(order []BoundOrder, root string, obj metadata.Object) string {
+func (c *compiler) compileOrder(order []BoundOrder, root string, obj metadata.Object) (string, error) {
 	if len(order) == 0 {
-		return ""
+		return "", nil
 	}
 	parts := make([]string, 0, len(order)+1)
 	for _, o := range order {
@@ -257,7 +260,7 @@ func (c *compiler) compileOrder(order []BoundOrder, root string, obj metadata.Ob
 		if len(o.Value.Path) > 0 {
 			alias, err := c.ensureJoin(root, o.Value.Path)
 			if err != nil {
-				return ""
+				return "", err
 			}
 			owner = alias
 		}
@@ -280,5 +283,5 @@ func (c *compiler) compileOrder(order []BoundOrder, root string, obj metadata.Ob
 		parts = append(parts, part)
 	}
 	parts = append(parts, root+".id")
-	return strings.Join(parts, ",")
+	return strings.Join(parts, ","), nil
 }
