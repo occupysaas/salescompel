@@ -23,6 +23,7 @@ func Parse(text string) (*Query, error) {
 	if !p.at(EOF) {
 		return nil, malformed("unexpected trailing input")
 	}
+	q.srcLen = len(text)
 	return q, nil
 }
 
@@ -58,11 +59,15 @@ func (p *parser) query() (*Query, error) {
 	q.Alias = alias
 	if p.atKeyword("where") {
 		p.next()
+		start := p.peek().Pos.Offset
 		e, err := p.expr()
 		if err != nil {
 			return nil, err
 		}
 		q.Where = e
+		// Measure the clause text from its first token to the next one
+		// (EOF offset includes any trailing spaces).
+		q.whereLen = p.peek().Pos.Offset - start
 	}
 	// spec: soql-05
 	if p.atKeyword("group") {

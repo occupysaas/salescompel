@@ -35,6 +35,9 @@ type Query struct {
 	Offset  *int         `json:"offset"`
 	With    string       `json:"with,omitempty"`
 	Pos     Pos          `json:"-"`
+	// Source lengths for binder text limits (soql-06); set by Parse.
+	srcLen  int
+	whereLen int
 }
 
 type OrderItem struct {
