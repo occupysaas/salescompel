@@ -47,6 +47,9 @@ func manifest() []change {
 	sql3, _ := sources.ReadFile("migrations/0003_tenant_rls.sql")
 	sum3 := sha256.Sum256(sql3)
 	m = append(m, change{Entry{3, "tenant row security", hex.EncodeToString(sum3[:]), false}, func(ctx context.Context, tx pgx.Tx) error { _, e := tx.Exec(ctx, string(sql3)); return e }})
+	sql4, _ := sources.ReadFile("migrations/0004_field_types.sql")
+	sum4 := sha256.Sum256(sql4)
+	m = append(m, change{Entry{4, "field types", hex.EncodeToString(sum4[:]), false}, func(ctx context.Context, tx pgx.Tx) error { _, e := tx.Exec(ctx, string(sql4)); return e }})
 	return m
 
 }

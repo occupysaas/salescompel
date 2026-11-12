@@ -4,12 +4,12 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"regexp"
+	"salescompel/internal/fieldtype"
 	"strings"
 	"unicode/utf8"
 )
@@ -75,7 +75,7 @@ func CreateObject(ctx context.Context, p *pgxpool.Pool, tenant string, in Object
 		}
 		const alphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 		id := randomID()
-		o = Object{ID: id, Tenant: tenant, Name: in.Name, Label: in.Label, PluralLabel: in.PluralLabel, Schema: "sc_records", Table: "o_" + id, Prefix: "a" + string(alphabet[n/62]) + string(alphabet[n%62]), Createable: true, Updateable: true, Deletable: true, Queryable: true, Fields: []Field{{Name: "Id", Type: "id", Column: "id"}, {Name: "Name", Label: "Name", Type: "string", Column: "name", Length: 80}}}
+		o = Object{ID: id, Tenant: tenant, Name: in.Name, Label: in.Label, PluralLabel: in.PluralLabel, Schema: "sc_records", Table: "o_" + id, Prefix: "a" + string(alphabet[n/62]) + string(alphabet[n%62]), Createable: true, Updateable: true, Deletable: true, Queryable: true, Fields: []Field{{Name: "Id", Column: "id", Options: Options{Kind: fieldtype.Id}}, {Name: "Name", Label: "Name", Column: "name", Length: 80, Createable: true, Updateable: true, NameField: true, Options: Options{Kind: fieldtype.Text}}}}
 		if _, e := tx.Exec(ctx, "CREATE TABLE "+o.TableSQL()+"(tenant_id text NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,id varchar(18) NOT NULL,name varchar(80) NOT NULL CHECK(length(trim(name))>0),PRIMARY KEY(tenant_id,id))"); e != nil {
 			return e
 		}
@@ -114,16 +114,12 @@ func CreateField(ctx context.Context, p *pgxpool.Pool, tenant string, in FieldIn
 				return errors.New("field already exists")
 			}
 		}
-		f = Field{ID: randomID(), Name: in.Name, Label: in.Label, Type: "string", Length: in.Length, Nillable: true, Createable: true, Updateable: true, ReferenceTo: []string{}}
+		f = Complete(Field{ID: randomID(), Name: in.Name, Label: in.Label, Length: in.Length, Nillable: true, Createable: true, Updateable: true, Options: Options{Kind: fieldtype.Text}})
 		f.Column = "f_" + f.ID
 		if _, e = tx.Exec(ctx, "ALTER TABLE "+o.TableSQL()+" ADD COLUMN "+pgx.Identifier{f.Column}.Sanitize()+fmt.Sprintf(" varchar(%d)", in.Length)); e != nil {
 			return e
 		}
 		if e = insertField(ctx, tx, tenant, o.ID, f, len(o.Fields)); e != nil {
-			return e
-		}
-		raw, _ := json.Marshal(f)
-		if _, e = tx.Exec(ctx, "UPDATE sc_catalog.fields SET definition=$3 WHERE tenant_id=$1 AND object_id=$2 AND api_name=$4", tenant, o.ID, string(raw), f.Name); e != nil {
 			return e
 		}
 		_, e = tx.Exec(ctx, "UPDATE sc_catalog.revisions SET revision=revision+1 WHERE tenant_id=$1", tenant)

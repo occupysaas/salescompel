@@ -3,13 +3,16 @@ package platform
 
 import (
 	"fmt"
+	"salescompel/internal/migration/legacy"
 
 	"sort"
 	"strings"
 	"unicode/utf8"
 )
 
-var catalog = func() map[string][]Field {
+// The frozen legacy catalog keeps its original JSON shape (legacy.Field);
+// live definitions use metadata.Field with the Plan 28 describe properties.
+var catalog = func() map[string][]legacy.Field {
 	c, err := buildCatalog()
 	if err != nil {
 		panic(err)
@@ -17,10 +20,10 @@ var catalog = func() map[string][]Field {
 	return c
 }()
 
-func buildCatalog() (map[string][]Field, error) { return buildCatalogWith(DeclaredCustomField) }
+func buildCatalog() (map[string][]legacy.Field, error) { return buildCatalogWith(DeclaredCustomField) }
 
-func buildCatalogWith(lookup func(string) (CustomFieldDeclaration, bool)) (map[string][]Field, error) {
-	c := map[string][]Field{
+func buildCatalogWith(lookup func(string) (CustomFieldDeclaration, bool)) (map[string][]legacy.Field, error) {
+	c := map[string][]legacy.Field{
 		"Account": {{Name: "Id", Type: "id", Column: "id"}, {Name: "Name", Type: "string", Column: "name", Length: 255}, {Name: "Compat_Text__c", Type: "string", Column: "compat_text", Nillable: true, Length: 255}, {Name: "Compat_Key__c", Type: "string", Column: "compat_key", Nillable: true, ExternalID: true, Length: 255}},
 		"Contact": {{Name: "Id", Type: "id", Column: "id"}, {Name: "FirstName", Type: "string", Column: "first_name", Nillable: true, Length: 255}, {Name: "LastName", Type: "string", Column: "last_name", Length: 255}, {Name: "AccountId", Type: "reference", Column: "account_id", Nillable: true, Length: 18, ReferenceTo: []string{"Account"}}},
 	}
@@ -126,8 +129,12 @@ func catalogFields(p Principal, object string) ([]Field, bool) {
 		o, e := p.Catalog.Object(object)
 		return o.Fields, e == nil
 	}
-	f, ok := catalog[object]
-	return f, ok
+	old, ok := catalog[object]
+	out := make([]Field, len(old))
+	for i, f := range old {
+		out[i] = Field{Name: f.Name, Label: f.Label, Type: f.Type, Nillable: f.Nillable, Createable: f.Createable, Updateable: f.Updateable, ExternalID: f.ExternalID, Length: f.Length, ReferenceTo: f.ReferenceTo, Column: f.Column}
+	}
+	return out, ok
 }
 func fieldsFor(p Principal, object string) []Field { f, _ := catalogFields(p, object); return f }
 func canonicalObject(p Principal, input string) (string, bool) {

@@ -19,7 +19,7 @@ func runtimeTablesSafe(ctx context.Context, p *pgxpool.Pool, group string) (bool
 		return false, e
 	}
 	defer rows.Close()
-	catalog := map[string]bool{"objects": true, "fields": true, "revisions": true, "artifacts": true}
+	catalog := map[string]bool{"objects": true, "fields": true, "revisions": true, "artifacts": true, "settings": true, "auto_numbers": true}
 	identityRead := map[string]bool{"principals": true, "oauth_apps": true, "oauth_app_jwt_users": true}
 	identityWrite := map[string]bool{"oauth_requests": true, "oauth_codes": true, "oauth_refresh_tokens": true, "oauth_access_tokens": true, "oauth_jwt_ids": true}
 	for rows.Next() {
@@ -46,6 +46,8 @@ func runtimeTablesSafe(ctx context.Context, p *pgxpool.Pool, group string) (bool
 				}
 			} else if meta {
 				want[0] = true
+				// Auto-number counters advance inside record transactions.
+				want[2] = table == "auto_numbers"
 			}
 		} else if schema == "public" {
 			if identityRead[table] {

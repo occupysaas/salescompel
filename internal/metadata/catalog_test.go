@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"os"
+	"salescompel/internal/fieldtype"
 	. "salescompel/internal/metadata"
 	"salescompel/internal/migration"
 	"strings"
@@ -147,7 +148,9 @@ func TestCatalogRejectsUnsupportedEffectiveMetadata(t *testing.T) {
 	p := catalogPool(t)
 	ctx := context.Background()
 	seed(t, p, "unknown")
-	for _, change := range []string{`definition||'{"type":"Formula"}'::jsonb`, `definition||'{"unknownSecurityMode":"grant"}'::jsonb`} {
+	for _, change := range []string{`jsonb_set(jsonb_set(definition,'{field,type}','"picklist"'),'{options,kind}','"Formula"')`, `jsonb_set(definition,'{field,unknownSecurityMode}','"grant"')`, `jsonb_set(definition,'{options,unknownSecurityMode}','"grant"')`} {
+		var original string
+		p.QueryRow(ctx, "SELECT definition::text FROM sc_catalog.fields WHERE tenant_id='unknown' AND api_name='Name'").Scan(&original)
 		if _, e := p.Exec(ctx, "UPDATE sc_catalog.fields SET definition="+change+" WHERE tenant_id='unknown' AND api_name='Name'"); e != nil {
 			t.Fatal(e)
 		}
@@ -155,9 +158,15 @@ func TestCatalogRejectsUnsupportedEffectiveMetadata(t *testing.T) {
 		_, e := Load(ctx, tx, "unknown")
 		tx.Rollback(ctx)
 		if e == nil {
-			t.Fatal("unsupported active metadata accepted")
+			t.Fatal("unsupported active metadata accepted: " + change)
 		}
-		p.Exec(ctx, `UPDATE sc_catalog.fields SET definition=(definition-'unknownSecurityMode')||'{"type":"string"}'::jsonb WHERE tenant_id='unknown' AND api_name='Name'`)
+		p.Exec(ctx, "UPDATE sc_catalog.fields SET definition=$1::jsonb WHERE tenant_id='unknown' AND api_name='Name'", original)
+		tx, _ = p.Begin(ctx)
+		_, e = Load(ctx, tx, "unknown")
+		tx.Rollback(ctx)
+		if e != nil {
+			t.Fatal("restored definition rejected: ", e)
+		}
 	}
 }
 func TestSchemaPrefixAllocation(t *testing.T) {
@@ -206,7 +215,8 @@ func TestCatalogConcurrentVisibility(t *testing.T) {
 	if _, e = owner.Exec(ctx, "ALTER TABLE "+o.TableSQL()+" ADD COLUMN f_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa varchar(80)"); e != nil {
 		t.Fatal(e)
 	}
-	if _, e = owner.Exec(ctx, `INSERT INTO sc_catalog.fields(id,tenant_id,object_id,api_name,physical_column,definition,ordinal)VALUES('waiting','visibility',$1,'Waiting__c','f_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa','{"name":"Waiting__c","label":"Waiting","type":"string","nillable":true,"createable":true,"updateable":true,"externalId":false,"length":80,"referenceTo":[]}',2)`, o.ID); e != nil {
+	waiting, _ := EncodeDefinition(Complete(Field{Name: "Waiting__c", Label: "Waiting", Nillable: true, Createable: true, Updateable: true, Length: 80, Options: Options{Kind: fieldtype.Text}}))
+	if _, e = owner.Exec(ctx, `INSERT INTO sc_catalog.fields(id,tenant_id,object_id,api_name,physical_column,definition,ordinal)VALUES('waiting','visibility',$1,'Waiting__c','f_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',$2,2)`, o.ID, string(waiting)); e != nil {
 		t.Fatal(e)
 	}
 	reader, _ := p.Begin(ctx)

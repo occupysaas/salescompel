@@ -81,7 +81,7 @@ func Validate(p Principal, object string, data map[string]any, create bool) erro
 	}
 	if create {
 		for _, f := range fieldsFor(p, object) {
-			if f.Name != "Id" && !f.Nillable {
+			if f.Name != "Id" && !f.Nillable && f.Createable {
 				if v, ok := data[f.Name]; !ok || v == nil {
 					return fieldProblem("REQUIRED_FIELD_MISSING", "Required value is missing", f.Name)
 				}

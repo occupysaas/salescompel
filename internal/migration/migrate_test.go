@@ -2,12 +2,15 @@ package migration
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"os"
+	"reflect"
 	"salescompel/internal/migration/legacy"
+	"strings"
 	"testing"
 	"time"
 )
@@ -139,7 +142,7 @@ func TestLegacyAdoption(t *testing.T) {
 			if e := p.QueryRow(ctx, "SELECT COALESCE(jsonb_agg(to_jsonb(t)),'[]'::jsonb)::text FROM "+table+" t").Scan(&raw); e != nil {
 				t.Fatal(e)
 			}
-			out += raw
+			out += raw + "\n"
 		}
 		return out
 	}
@@ -147,7 +150,8 @@ func TestLegacyAdoption(t *testing.T) {
 	if e = Up(ctx, p); e != nil {
 		t.Fatal(e)
 	}
-	if after := snapshot(); after != before {
+	// Later migrations may add columns; every adopted value must be unchanged.
+	if after := snapshot(); !jsonSubset(t, before, after) {
 		t.Fatal("adoption changed business/identity data")
 	}
 }
@@ -164,7 +168,7 @@ func TestConcurrentMigrate(t *testing.T) {
 		}
 	}
 	entries, e := Status(ctx, p)
-	if e != nil || len(entries) != 3 {
+	if e != nil || len(entries) != len(manifest()) {
 		t.Fatal(entries, e)
 	}
 }
@@ -267,4 +271,31 @@ func TestLegacyOptionalAuthVersion(t *testing.T) {
 	if e := p.QueryRow(ctx, "SELECT auth_version,password_hash FROM users WHERE username_canonical='legacy@example.invalid'").Scan(&version, &hash); e != nil || version != 0 || hash != "retain-hash" {
 		t.Fatal("optional auth_version upgrade rewrote credentials", version, e)
 	}
+}
+
+// jsonSubset reports whether every row and key in before (newline-separated
+// JSON arrays of objects) is present with an equal value in after.
+func jsonSubset(t *testing.T, before, after string) bool {
+	t.Helper()
+	b, a := strings.Split(before, "\n"), strings.Split(after, "\n")
+	if len(b) != len(a) {
+		return false
+	}
+	for i := range b {
+		if b[i] == "" {
+			continue
+		}
+		var br, ar []map[string]any
+		if json.Unmarshal([]byte(b[i]), &br) != nil || json.Unmarshal([]byte(a[i]), &ar) != nil || len(br) != len(ar) {
+			return false
+		}
+		for j := range br {
+			for k, v := range br[j] {
+				if !reflect.DeepEqual(ar[j][k], v) {
+					return false
+				}
+			}
+		}
+	}
+	return true
 }

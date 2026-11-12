@@ -131,9 +131,16 @@ func TestCatalogUpgradeV1(t *testing.T) {
 	var a, b map[string]any
 	json.Unmarshal([]byte(before), &a)
 	json.Unmarshal([]byte(snapshot(t, c)), &b)
-	// The new derived column is expected; compare the original data bytes.
-	for _, row := range b["accounts"].([]any) {
-		delete(row.(map[string]any), "compat_key_canonical")
+	// Columns added by later migrations are expected; compare the original data.
+	for _, table := range []string{"accounts", "contacts"} {
+		original := a[table].([]any)[0].(map[string]any)
+		for _, row := range b[table].([]any) {
+			for k := range row.(map[string]any) {
+				if _, ok := original[k]; !ok {
+					delete(row.(map[string]any), k)
+				}
+			}
+		}
 	}
 	for _, key := range []string{"accounts", "contacts", "tenants"} {
 		x, _ := json.Marshal(a[key])
