@@ -52,7 +52,9 @@ export const test = base.extend<{ fixtureJournal: void }>({
           if (
             req.method() === "POST" &&
             !!object &&
-            /^(Account|Contact|[A-Za-z][A-Za-z0-9_]*__c)$/.test(object)
+            /^(Account|Contact|[A-Za-z][A-Za-z0-9_]*__c)$/.test(object) &&
+            // Plan 28 auto-numbered fixture records go with their journaled table.
+            object !== process.env.CANDIDATE_FIELD_TYPES_OBJECT
           ) {
             const data = req.postDataJSON();
             const name = data[object === "Contact" ? "LastName" : "Name"];
