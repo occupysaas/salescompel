@@ -1,0 +1,47 @@
+{
+ "select": [
+  {
+   "kind": "field",
+   "path": [
+    "name"
+   ]
+  },
+  {
+   "kind": "field",
+   "path": [
+    "instancename"
+   ]
+  },
+  {
+   "kind": "field",
+   "path": [
+    "issandbox"
+   ]
+  },
+  {
+   "kind": "field",
+   "path": [
+    "trialexpirationdate"
+   ]
+  },
+  {
+   "kind": "field",
+   "path": [
+    "namespaceprefix"
+   ]
+  },
+  {
+   "kind": "field",
+   "path": [
+    "organizationtype"
+   ]
+  }
+ ],
+ "from": "organization",
+ "where": null,
+ "groupBy": null,
+ "having": null,
+ "orderBy": null,
+ "limit": null,
+ "offset": null
+}

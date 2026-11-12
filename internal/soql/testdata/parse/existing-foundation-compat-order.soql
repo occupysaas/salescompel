@@ -1,0 +1,1 @@
+select id from account order by compat_text__c

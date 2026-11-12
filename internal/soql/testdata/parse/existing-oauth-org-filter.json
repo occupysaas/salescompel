@@ -1,0 +1,60 @@
+{
+ "select": [
+  {
+   "kind": "field",
+   "path": [
+    "Name"
+   ]
+  },
+  {
+   "kind": "field",
+   "path": [
+    "InstanceName"
+   ]
+  },
+  {
+   "kind": "field",
+   "path": [
+    "IsSandbox"
+   ]
+  },
+  {
+   "kind": "field",
+   "path": [
+    "TrialExpirationDate"
+   ]
+  },
+  {
+   "kind": "field",
+   "path": [
+    "NamespacePrefix"
+   ]
+  },
+  {
+   "kind": "field",
+   "path": [
+    "OrganizationType"
+   ]
+  }
+ ],
+ "from": "Organization",
+ "where": {
+  "kind": "compare",
+  "left": {
+   "kind": "field",
+   "path": [
+    "Name"
+   ]
+  },
+  "op": "=",
+  "right": {
+   "kind": "string",
+   "text": "x"
+  }
+ },
+ "groupBy": null,
+ "having": null,
+ "orderBy": null,
+ "limit": null,
+ "offset": null
+}

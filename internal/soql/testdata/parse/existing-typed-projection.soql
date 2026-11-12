@@ -1,0 +1,1 @@
+SELECT Id,Name,Num__c,Amount__c,Pct__c,Day__c,At__c,Flag__c,Multi__c,Stage__c,Parent__c,Serial__c FROM Item__c ORDER BY Num__c DESC LIMIT 10

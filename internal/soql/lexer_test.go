@@ -43,9 +43,6 @@ func TestLexEscapes(t *testing.T) {
 			t.Errorf("Lex(%q) = %#v want text %q", c.text, got, c.want)
 		}
 	}
-}
-
-func TestLexStringRejects(t *testing.T) {
 	for _, text := range []string{`'bad\q'`, `'open`, `'a\u00'`, `'a\u0000b'`, `'trailing\`} {
 		_, err := Lex(text)
 		if !malformedCode(err) {

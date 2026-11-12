@@ -1,0 +1,1 @@
+SELECT Id,BillingAddress FROM Account WHERE Id = '001000000000001'

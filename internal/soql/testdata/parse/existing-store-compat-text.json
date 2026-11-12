@@ -1,0 +1,17 @@
+{
+ "select": [
+  {
+   "kind": "field",
+   "path": [
+    "Compat_Text__c"
+   ]
+  }
+ ],
+ "from": "Account",
+ "where": null,
+ "groupBy": null,
+ "having": null,
+ "orderBy": null,
+ "limit": null,
+ "offset": null
+}

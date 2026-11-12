@@ -1,0 +1,43 @@
+{
+ "select": [
+  {
+   "kind": "field",
+   "path": [
+    "Id"
+   ]
+  },
+  {
+   "kind": "field",
+   "path": [
+    "LastName"
+   ]
+  },
+  {
+   "kind": "field",
+   "path": [
+    "Account",
+    "Name"
+   ]
+  }
+ ],
+ "from": "Contact",
+ "where": {
+  "kind": "compare",
+  "left": {
+   "kind": "field",
+   "path": [
+    "LastName"
+   ]
+  },
+  "op": "=",
+  "right": {
+   "kind": "string",
+   "text": "O'Brien"
+  }
+ },
+ "groupBy": null,
+ "having": null,
+ "orderBy": null,
+ "limit": null,
+ "offset": null
+}
