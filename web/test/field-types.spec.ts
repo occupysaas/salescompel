@@ -36,7 +36,8 @@ test("connected/field-types-edit", async ({ page }) => {
   await page.getByLabel("Site", { exact: true }).fill("javascript:alert(1)");
   await page.getByLabel("Notes", { exact: true }).fill("line one\nline two");
   await page.getByRole("button", { name: "Save", exact: true }).click();
-  const row = page.getByRole("button", { name: /^TI-\d{4}$/ }).first();
+  // Earlier gates created lower numbers; this record sorts last by Name.
+  const row = page.getByRole("button", { name: /^TI-\d{4}$/ }).last();
   await expect(row).toBeVisible();
   await row.click();
   await expect(page.getByLabel("Quantity", { exact: true })).toHaveValue(
