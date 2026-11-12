@@ -32,19 +32,23 @@ const validator = async () =>
 const ok = (r: { requestIssues: string[]; responseIssues: string[] }) =>
   assert.deepEqual([r.requestIssues, r.responseIssues], [[], []]);
 
-// Real describe output produced by the Go golden test.
+// Real describe output produced by the Go golden test. Each object is a map of
+// field name to field JSON, plus a childRelationships pseudo-key that is not
+// yet part of ObjectDescribe (Task 9 wires it).
 const golden = async () =>
   JSON.parse(
     await readFile(
       join(ROOT, "internal/platform/testdata/describe-field-types.json"),
       "utf8",
     ),
-  ) as Record<string, Record<string, Record<string, unknown>>>;
-const describe = (name: string, fields: Record<string, unknown>) => ({
+  ) as Record<string, Record<string, any>>;
+const describe = (name: string, raw: Record<string, any>) => ({
   name,
   label: name,
   labelPlural: name + "s",
-  fields: Object.values(fields),
+  fields: Object.entries(raw)
+    .filter(([key]) => key !== "childRelationships")
+    .map(([, value]) => value),
   createable: true,
   updateable: true,
   deletable: true,
@@ -54,14 +58,14 @@ const describe = (name: string, fields: Record<string, unknown>) => ({
 test("describe accepts every Plan 28 field type and property", async () => {
   const v = await validator();
   const g = await golden();
-  for (const [object, fields] of Object.entries(g)) {
+  for (const [object, raw] of Object.entries(g)) {
     ok(
       v.validate(
         exchange(
           "GET",
           `${base}/sobjects/${object}/describe`,
           200,
-          describe(object, fields),
+          describe(object, raw),
         ),
       ),
     );

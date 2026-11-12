@@ -28,13 +28,34 @@ func describeMap(t *testing.T, f typedFixture, object string) map[string]map[str
 	return m
 }
 
+// describeEntry is the golden shape: every field keyed by name, plus a
+// childRelationships array. The node golden consumer skips that pseudo-key.
+func describeEntry(t *testing.T, f typedFixture, object string) map[string]any {
+	t.Helper()
+	d, e := f.s.Describe(context.Background(), f.p, object)
+	if e != nil {
+		t.Fatal(e)
+	}
+	raw, _ := json.Marshal(d)
+	var full map[string]any
+	json.Unmarshal(raw, &full)
+	entry := map[string]any{}
+	for name, field := range describeMap(t, f, object) {
+		entry[name] = field
+	}
+	entry["childRelationships"] = full["childRelationships"]
+	return entry
+}
+
 func TestDescribeEveryKind(t *testing.T) {
 	f := newTypedFixture(t)
 	golden := map[string]any{}
+	fields := map[string]map[string]map[string]any{}
 	for _, object := range []string{"Item__c", "Child__c", "Account", "Contact"} {
-		golden[object] = describeMap(t, f, object)
+		fields[object] = describeMap(t, f, object)
+		golden[object] = describeEntry(t, f, object)
 	}
-	item, child, account, contact := golden["Item__c"].(map[string]map[string]any), golden["Child__c"].(map[string]map[string]any), golden["Account"].(map[string]map[string]any), golden["Contact"].(map[string]map[string]any)
+	item, child, account, contact := fields["Item__c"], fields["Child__c"], fields["Account"], fields["Contact"]
 	checks := []struct {
 		field map[string]any
 		key   string

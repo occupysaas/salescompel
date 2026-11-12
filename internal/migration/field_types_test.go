@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/url"
 	"os"
+	"salescompel/internal/fieldtype"
 	"salescompel/internal/metadata"
 	"testing"
 
@@ -134,6 +135,103 @@ func TestMigrationFieldTypesUpgrade(t *testing.T) {
 	defer tx.Rollback(ctx)
 	if _, e := metadata.Load(ctx, tx, "t1"); e != nil {
 		t.Fatalf("load after upgrade: %v", e)
+	}
+}
+
+func TestMigrationChildRelationshipBackfill(t *testing.T) {
+	p := testPool(t)
+	ctx := context.Background()
+	if e := up(ctx, p, manifest()[:1]); e != nil {
+		t.Fatal(e)
+	}
+	p.Exec(ctx, "INSERT INTO tenants(id) VALUES('t1')")
+	if e := up(ctx, p, manifest()[:4]); e != nil {
+		t.Fatal(e)
+	}
+	// Two custom objects share the plural label; each holds one lookup to Account.
+	rel := "Acct__r"
+	lookupDef := func(column string) string {
+		f := metadata.Complete(metadata.Field{
+			Name: "Acct__c", Label: "Acct", Column: column, Nillable: true, Createable: true, Updateable: true, Length: 18,
+			ReferenceTo: []string{"Account"}, RelationshipName: &rel,
+			Options: metadata.Options{Kind: fieldtype.Lookup, DeleteBehavior: "SetNull"},
+		})
+		raw, e := metadata.EncodeDefinition(f)
+		if e != nil {
+			t.Fatal(e)
+		}
+		return string(raw)
+	}
+	const idDef = `{"v":2,"field":{"name":"Id","label":"Id","type":"id","soapType":"tns:ID","nillable":false,"createable":false,"updateable":false,"externalId":false,"length":0,"precision":0,"scale":0,"digits":0,"referenceTo":[],"relationshipName":null,"relationshipOrder":null,"cascadeDelete":false,"restrictedDelete":false,"picklistValues":[],"restrictedPicklist":false,"dependentPicklist":false,"autoNumber":false,"calculated":false,"defaultValue":null,"defaultedOnCreate":false,"nameField":false,"compoundFieldName":null,"htmlFormatted":false,"filterable":true,"sortable":true,"groupable":true,"unique":false},"options":{"kind":"Id"}}`
+	const nameDef = `{"v":2,"field":{"name":"Name","label":"Name","type":"string","soapType":"xsd:string","nillable":false,"createable":true,"updateable":true,"externalId":false,"length":80,"precision":0,"scale":0,"digits":0,"referenceTo":[],"relationshipName":null,"relationshipOrder":null,"cascadeDelete":false,"restrictedDelete":false,"picklistValues":[],"restrictedPicklist":false,"dependentPicklist":false,"autoNumber":false,"calculated":false,"defaultValue":null,"defaultedOnCreate":false,"nameField":true,"compoundFieldName":null,"htmlFormatted":false,"filterable":true,"sortable":true,"groupable":true,"unique":false},"options":{"kind":"Text"}}`
+	stmts := []struct {
+		sql  string
+		args []any
+	}{
+		{"SET ROLE salescompel_owner", nil},
+		{"SELECT set_config('salescompel.tenant_id','t1',false)", nil},
+		{"CREATE TABLE sc_records.o_alpha000000000000000000000001(tenant_id text NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,id varchar(18) NOT NULL,name varchar(80) NOT NULL,f_alpha000000000000000000000001 varchar(18),PRIMARY KEY(tenant_id,id))", nil},
+		{"CREATE TABLE sc_records.o_beta0000000000000000000000001(tenant_id text NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,id varchar(18) NOT NULL,name varchar(80) NOT NULL,f_beta0000000000000000000000001 varchar(18),PRIMARY KEY(tenant_id,id))", nil},
+		{`INSERT INTO sc_catalog.objects VALUES('alpha00000000000000000000000001','t1','Alpha__c','Alpha','Widgets',false,'sc_records','o_alpha000000000000000000000001','a00')`, nil},
+		{`INSERT INTO sc_catalog.objects VALUES('beta00000000000000000000000001','t1','Beta__c','Beta','Widgets',false,'sc_records','o_beta0000000000000000000000001','b00')`, nil},
+		{`INSERT INTO sc_catalog.fields VALUES('alpha-id','t1','alpha00000000000000000000000001','Id','id',$1::jsonb,0)`, []any{idDef}},
+		{`INSERT INTO sc_catalog.fields VALUES('alpha-name','t1','alpha00000000000000000000000001','Name','name',$1::jsonb,1)`, []any{nameDef}},
+		{`INSERT INTO sc_catalog.fields VALUES('alpha-acct','t1','alpha00000000000000000000000001','Acct__c','f_alpha000000000000000000000001',$1::jsonb,2)`, []any{lookupDef("f_alpha000000000000000000000001")}},
+		{`INSERT INTO sc_catalog.fields VALUES('beta-id','t1','beta00000000000000000000000001','Id','id',$1::jsonb,0)`, []any{idDef}},
+		{`INSERT INTO sc_catalog.fields VALUES('beta-name','t1','beta00000000000000000000000001','Name','name',$1::jsonb,1)`, []any{nameDef}},
+		{`INSERT INTO sc_catalog.fields VALUES('beta-acct','t1','beta00000000000000000000000001','Acct__c','f_beta0000000000000000000000001',$1::jsonb,2)`, []any{lookupDef("f_beta0000000000000000000000001")}},
+		{"UPDATE sc_catalog.revisions SET revision=2 WHERE tenant_id='t1'", nil},
+		{"INSERT INTO sc_records.o_alpha000000000000000000000001 VALUES('t1','a00000000000001AAA','Alpha',NULL)", nil},
+		{"INSERT INTO sc_records.o_beta0000000000000000000000001 VALUES('t1','a00000000000002AAA','Beta',NULL)", nil},
+		{"INSERT INTO accounts(tenant_id,id,name) VALUES('t1','001000000000001AAA','Acme')", nil},
+		{"INSERT INTO contacts(tenant_id,id,last_name,account_id) VALUES('t1','003000000000001AAA','L','001000000000001AAA')", nil},
+		{"RESET ROLE", nil},
+	}
+	for _, st := range stmts {
+		if _, e := p.Exec(ctx, st.sql, st.args...); e != nil {
+			t.Fatalf("%s: %v", st.sql, e)
+		}
+	}
+	snapshot := func() string {
+		var out string
+		p.QueryRow(ctx, `SELECT (SELECT jsonb_agg(jsonb_build_array(id,name) ORDER BY id) FROM accounts)::text||
+			(SELECT jsonb_agg(jsonb_build_array(id,last_name,account_id) ORDER BY id) FROM contacts)::text||
+			(SELECT jsonb_agg(jsonb_build_array(tenant_id,id,api_name,physical_column,ordinal) ORDER BY id) FROM sc_catalog.fields WHERE api_name IN ('Id','Name','Acct__c','AccountId'))::text||
+			(SELECT jsonb_agg(jsonb_build_array(tenant_id,id,api_name,plural_label) ORDER BY api_name) FROM sc_catalog.objects WHERE NOT standard)::text`).Scan(&out)
+		return out
+	}
+	before := snapshot()
+	if e := Up(ctx, p); e != nil {
+		t.Fatal(e)
+	}
+	if after := snapshot(); after != before {
+		t.Fatalf("0005 changed values or IDs:\n%s\n%s", before, after)
+	}
+	names := map[string]string{}
+	rows, e := p.Query(ctx, `SELECT o.api_name||'.'||f.api_name, f.definition->'options'->>'childRelationshipName' FROM sc_catalog.fields f JOIN sc_catalog.objects o ON o.tenant_id=f.tenant_id AND o.id=f.object_id WHERE f.tenant_id='t1' AND f.definition->'options'->>'kind' IN ('Lookup','MasterDetail') ORDER BY o.api_name,f.ordinal`)
+	if e != nil {
+		t.Fatal(e)
+	}
+	for rows.Next() {
+		var key, nm string
+		rows.Scan(&key, &nm)
+		names[key] = nm
+	}
+	rows.Close()
+	if names["Alpha__c.Acct__c"] != "Widgets__r" {
+		t.Fatalf("Alpha name %q", names["Alpha__c.Acct__c"])
+	}
+	if names["Beta__c.Acct__c"] != "Widgets__r2" {
+		t.Fatalf("Beta name %q", names["Beta__c.Acct__c"])
+	}
+	if names["Contact.AccountId"] != "Contacts" {
+		t.Fatalf("Contact.AccountId name %q", names["Contact.AccountId"])
+	}
+	var raw []byte
+	p.QueryRow(ctx, "SELECT definition FROM sc_catalog.fields WHERE id='alpha-acct'").Scan(&raw)
+	f, e := metadata.DecodeDefinition(raw)
+	if e != nil || f.Options.ChildRelationshipName != "Widgets__r" || f.Options.Kind != fieldtype.Lookup || f.Name != "Acct__c" {
+		t.Fatalf("alpha definition after 0005: %v %#v", e, f)
 	}
 }
 

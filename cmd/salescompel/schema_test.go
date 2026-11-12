@@ -23,8 +23,8 @@ func TestSchemaFieldFlags(t *testing.T) {
 	if err != nil || req.Field.StartingNumber != 1 {
 		t.Fatalf("auto-number default start: %v %#v", err, req.Field)
 	}
-	req, err = parseSchemaArgs("field", []string{"--tenant", "t", "--object", "O__c", "--name", "R__c", "--label", "R", "--type", "Lookup", "--reference-to", "Account", "--delete-behavior", "Restrict", "--relationship-name", "Acct__r", "--required"})
-	if err != nil || req.Field.ReferenceTo != "Account" || req.Field.DeleteBehavior != "Restrict" || req.Field.RelationshipName != "Acct__r" || !req.Field.Required {
+	req, err = parseSchemaArgs("field", []string{"--tenant", "t", "--object", "O__c", "--name", "R__c", "--label", "R", "--type", "Lookup", "--reference-to", "Account", "--delete-behavior", "Restrict", "--relationship-name", "Acct__r", "--child-relationship-name", "Accts", "--required"})
+	if err != nil || req.Field.ReferenceTo != "Account" || req.Field.DeleteBehavior != "Restrict" || req.Field.RelationshipName != "Acct__r" || req.Field.ChildRelationshipName != "Accts" || !req.Field.Required {
 		t.Fatalf("lookup flags: %v %#v", err, req.Field)
 	}
 	for name, args := range map[string][]string{
@@ -80,5 +80,11 @@ func TestSchemaDefinitionFile(t *testing.T) {
 	os.WriteFile(bad, []byte(`{"name":"X__c","label":"X","type":"Text","colour":"red"}`), 0o600)
 	if _, err := parseSchemaArgs("field", []string{"--tenant", "t", "--object", "O__c", "--definition", bad}); err == nil {
 		t.Error("unknown definition key accepted")
+	}
+	child := filepath.Join(dir, "child.json")
+	os.WriteFile(child, []byte(`{"name":"Acct__c","label":"Acct","type":"Lookup","referenceTo":"Account","childRelationshipName":"Accts"}`), 0o600)
+	req, err = parseSchemaArgs("field", []string{"--tenant", "t", "--object", "O__c", "--definition", child})
+	if err != nil || req.Field.ChildRelationshipName != "Accts" {
+		t.Fatalf("child relationship definition %v %#v", err, req.Field)
 	}
 }

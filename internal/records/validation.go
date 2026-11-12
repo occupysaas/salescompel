@@ -42,6 +42,14 @@ func Describe(p Principal, object string) (Object, error) {
 			d.Fields = append(d.Fields, f)
 		}
 	}
+	d.ChildRelationships = []metadata.ChildRelationship{}
+	if p.Catalog != nil {
+		for _, cr := range p.Catalog.ChildRelationships(d.Name) {
+			if allowed(p, cr.ChildSObject, cr.Field) {
+				d.ChildRelationships = append(d.ChildRelationships, cr)
+			}
+		}
+	}
 	return d, nil
 }
 func Validate(p Principal, object string, data map[string]any, create bool) error {

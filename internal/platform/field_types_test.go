@@ -71,7 +71,7 @@ func newTypedFixture(t *testing.T) typedFixture {
 		{Object: "Item__c", Name: "Tel__c", Type: "Phone"},
 		{Object: "Item__c", Name: "Site__c", Type: "Url"},
 		{Object: "Item__c", Name: "Parent__c", Type: "Lookup", ReferenceTo: "Parent__c"},
-		{Object: "Item__c", Name: "Keep__c", Type: "Lookup", ReferenceTo: "Parent__c", DeleteBehavior: "Restrict"},
+		{Object: "Item__c", Name: "Keep__c", Type: "Lookup", ReferenceTo: "Parent__c", DeleteBehavior: "Restrict", ChildRelationshipName: "Keeps__r"},
 		{Object: "Item__c", Name: "Serial__c", Type: "AutoNumber", DisplayFormat: "S-{000}", StartingNumber: 7},
 		{Object: "Child__c", Name: "Parent__c", Type: "MasterDetail", ReferenceTo: "Parent__c"},
 		{Object: "Grandchild__c", Name: "Child__c", Type: "MasterDetail", ReferenceTo: "Child__c"},

@@ -68,6 +68,12 @@ func manifest() []change {
 	}
 	sum4 := sha256.Sum256(sql4)
 	m = append(m, change{Entry{4, "field types", hex.EncodeToString(sum4[:]), false}, func(ctx context.Context, tx pgx.Tx) error { _, e := tx.Exec(ctx, string(sql4)); return e }})
+	sql5, s5Err := sources.ReadFile("migrations/0005_child_relationships.sql")
+	if s5Err != nil {
+		panic("migration: embedded 0005_child_relationships.sql unreadable")
+	}
+	sum5 := sha256.Sum256(sql5)
+	m = append(m, change{Entry{5, "child relationships", hex.EncodeToString(sum5[:]), false}, func(ctx context.Context, tx pgx.Tx) error { _, e := tx.Exec(ctx, string(sql5)); return e }})
 	return m
 
 }
