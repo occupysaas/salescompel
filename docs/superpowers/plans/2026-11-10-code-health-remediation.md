@@ -179,3 +179,34 @@ residual gate sweep: typed describe shapes (`DescribeField`,
 `guardrails-allow` on the one JSforce connection parameter that cannot be
 typed from `createRequire`. Upstream's Plan 28 behaviour is unchanged and
 the pattern scan is clean.
+
+### Task 12: Residual sweep, journal fail-check and final matrix — DONE
+
+Residual gate sweep (local DevGate tooling) and the recorded verification
+matrix on the ai03 verify host (self-hosted fleet; PostgreSQL 17):
+
+- [x] Journal queue regression test (review request on PR #5): an append
+      queued behind a failing write still reaches `journal.jsonl`. Fail-check
+      on ai03: passes against the settled-wrapper fix (6/6 in
+      `node --test test/external-id-recovery.test.ts`); reverts to FAIL with
+      `injected write failure` when the queue stores the raw chained promise;
+      passes again with the fix restored.
+- [x] `go build ./...`, `go vet ./...` — pass.
+- [x] `go test ./...` — pass, all 11 packages (platform 51s, migration 6.6s,
+      metadata 6.0s; PG-backed on ai03).
+- [x] `npm run typecheck`, `npm run format:check`, `npm run validate` — pass.
+- [x] `npm test` (compat acceptance) — 469 tests, 463 pass, 0 fail, 6 skipped.
+      Matrix #1's two preflight failures were environmental (`git ls-files`
+      without `.git` in the verify tree) and are green with the tree synced.
+- [x] DevGate gates: guardrails pattern scan, semantic scan (SEMANTIC-001,
+      SEMANTIC-005), silent-success scan, corruption scan, pattern ratchet —
+      clean; size regression vs main — 0 over hard limit, 0 pre-existing
+      oversize (29 soft-limit warnings tracked by Task 9).
+- [x] fw-charset-01 was red on 7 files (56 deny-listed glyphs: the Plan 28/29
+      docs added across this stack and on main in e8567c3, plus temporal.go
+      and text.go comments). All replaced with "Sec." / "+/-" prose; the gate
+      is green (471 allowed codepoints unchanged).
+
+Sign-off identity: every commit carries
+`Signed-off-by: TheArchitectit <TheArchitectit@vbrainstorm.com>` (DCO review
+follow-up on PR #5; the placeholder sign-off is gone).
