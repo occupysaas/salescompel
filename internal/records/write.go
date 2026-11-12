@@ -7,14 +7,13 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"maps"
-	"salescompel/internal/query"
 	"salescompel/internal/recordid"
+	"salescompel/internal/soql"
 	"sort"
 	"strings"
 	"time"
 )
 
-type Query = query.Query
 type database interface {
 	Exec(context.Context, string, ...any) (pgconn.CommandTag, error)
 	Query(context.Context, string, ...any) (pgx.Rows, error)
@@ -227,18 +226,19 @@ func (s *Tx) Read(ctx context.Context, object, id string) (map[string]any, error
 	if err != nil {
 		return nil, dbError(pgx.ErrNoRows)
 	}
-	q := Query{Object: object, HasWhere: true, WhereField: "Id", WhereValue: &id, Limit: 1}
+	names := make([]string, 0, len(d.Fields))
 	for _, f := range d.Fields {
-		q.Fields = append(q.Fields, f.Name)
+		names = append(names, f.Name)
 	}
-	rows, err := s.Select(ctx, q)
+	text := "SELECT " + strings.Join(names, ",") + " FROM " + object + " WHERE Id = '" + id + "' LIMIT 1"
+	res, err := s.Query(ctx, text, soql.Options{BatchSize: 1})
 	if err != nil {
 		return nil, err
 	}
-	if len(rows) == 0 {
+	if res.TotalSize == 0 {
 		return nil, dbError(pgx.ErrNoRows)
 	}
-	return rows[0], nil
+	return res.Records[0], nil
 }
 func (s *Tx) UpsertAccount(ctx context.Context, key string, data map[string]any) (string, bool, error) {
 	p := s.principal

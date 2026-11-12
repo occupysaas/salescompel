@@ -274,11 +274,8 @@ func (c *compiler) compileOrder(order []BoundOrder, root string, obj metadata.Ob
 		case NullLast:
 			part += " NULLS LAST"
 		default:
-			if o.Desc {
-				part += " NULLS LAST"
-			} else {
-				part += " NULLS FIRST"
-			}
+			// SOQL default is NULLS FIRST for both ASC and DESC.
+			part += " NULLS FIRST"
 		}
 		parts = append(parts, part)
 	}

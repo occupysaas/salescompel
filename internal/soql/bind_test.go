@@ -62,8 +62,11 @@ func newBindFixture() bindFixture {
 			bField("Multi__c", fieldtype.MultiselectPicklist),
 			bField("Long__c", fieldtype.LongTextArea),
 			bRef("Parent__c", "Parent__r", "Items__r", "Parent__c"),
+			bRef("Group__c", "Group__r", "Items__r", "Group__c"),
 		}}
 	parent := metadata.Object{Name: "Parent__c", Label: "Parent", PluralLabel: "Parents", Prefix: "a12",
+		Fields: []metadata.Field{bField("Id", fieldtype.Id), bField("Name", fieldtype.Text)}}
+	group := metadata.Object{Name: "Group__c", Label: "Group", PluralLabel: "Groups", Prefix: "a15",
 		Fields: []metadata.Field{bField("Id", fieldtype.Id), bField("Name", fieldtype.Text)}}
 	typed := metadata.Object{Name: "Typed__c", Label: "Typed", PluralLabel: "Typed items", Prefix: "a13",
 		Fields: []metadata.Field{
@@ -77,7 +80,7 @@ func newBindFixture() bindFixture {
 			bField("Name", fieldtype.Text),
 			bRef("Self__c", "Self__r", "Loops__r", "Loop__c"),
 		}}
-	snap := metadata.Snapshot{Tenant: "t1", Objects: append(std, item, parent, typed, loop)}
+	snap := metadata.Snapshot{Tenant: "t1", Objects: append(std, item, parent, group, typed, loop)}
 	fixed := time.Date(2026, 11, 11, 15, 0, 0, 0, time.UTC)
 	return bindFixture{
 		snap:       snap,
@@ -340,15 +343,18 @@ func TestBindAggregateRules(t *testing.T) {
 
 func TestBindResultKeys(t *testing.T) {
 	f := newBindFixture()
-	// Duplicate Aggregate/Call aliases and child subquery keys are rejected.
-	// Duplicate FieldRef selections are allowed (map collapses).
+	// Path-leaf collisions and alias/child duplicates are rejected; exact same-field duplicates collapse.
 	for _, text := range []string{
+		"select account.name, name from contact",
+		"select Parent__r.Name, Group__r.Name from Item__c",
 		"select SUM(Amount__c) expr0, COUNT(Id) expr0 from Item__c",
 		"select Name, COUNT(Id) Name from Item__c group by Name",
-		// Child subqueries key on the relationship name like fields.
 		"select (select Id from Typeditems__r), (select Id from Typeditems__r) from Item__c",
 	} {
 		wantCode(t, mustBind(t, f, text, f.admin), "MALFORMED_QUERY")
+	}
+	if _, err := f.bind("select Name, Id, Name from Item__c", f.admin); err != nil {
+		t.Fatalf("same-field duplicate should bind: %v", err)
 	}
 	// An explicit expr0 alias owns the key; generated numbering skips it.
 	b, err := f.bind("select SUM(Amount__c) expr0, COUNT(Id) from Item__c", f.admin)
@@ -531,31 +537,23 @@ func assertRange(t *testing.T, items []BoundExpr, field string) {
 	if !ok || lt.Op != "<" {
 		t.Fatalf("range end = %#v", items[1])
 	}
-	start, ok := ge.Right.Value.(time.Time)
-	if !ok {
-		t.Fatalf("range start value = %#v", ge.Right.Value)
-	}
-	end, ok := lt.Right.Value.(time.Time)
-	if !ok {
-		t.Fatalf("range end value = %#v", lt.Right.Value)
-	}
-	if !end.After(start) {
-		t.Fatalf("range [%v, %v) is empty or reversed", start, end)
+	start, ok1 := ge.Right.Value.(time.Time)
+	end, ok2 := lt.Right.Value.(time.Time)
+	if !ok1 || !ok2 || !end.After(start) {
+		t.Fatalf("bad range [%#v, %#v)", ge.Right.Value, lt.Right.Value)
 	}
 }
 
 // assertNotRange checks NOT (range) for the named field.
 func assertNotRange(t *testing.T, e BoundExpr, field string) {
 	t.Helper()
-	not, ok := e.(*BoundNot)
-	if !ok {
-		t.Fatalf("NOT = %#v", e)
+	if not, ok := e.(*BoundNot); ok {
+		if and, ok := not.Expr.(*BoundAnd); ok && len(and.Items) == 2 {
+			assertRange(t, and.Items, field)
+			return
+		}
 	}
-	and, ok := not.Expr.(*BoundAnd)
-	if !ok || len(and.Items) != 2 {
-		t.Fatalf("NOT range = %#v", not.Expr)
-	}
-	assertRange(t, and.Items, field)
+	t.Fatalf("NOT range = %#v", e)
 }
 
 func TestBindOrderByResolution(t *testing.T) {

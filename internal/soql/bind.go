@@ -33,13 +33,14 @@ type binder struct {
 }
 
 type bindCtx struct {
-	aliases map[string]BoundValue // select aliases, lower-cased keys
-	keys    map[string]bool       // result keys already taken, lower-cased
-	reserve map[string]bool       // explicit aliases that own their exprN
-	exprN   int
-	inOr    bool // a semi-join under OR is refused
-	child   bool // child subquery: refuse aggregates, GROUP BY, OFFSET, nesting
-	having  bool // binding HAVING: aggregates are legal here, not in WHERE
+	aliases  map[string]BoundValue // select aliases, lower-cased keys
+	keys     map[string]bool       // result keys already taken, lower-cased
+	keyPaths map[string]string     // key → path signature for FieldRef dedup
+	reserve  map[string]bool       // explicit aliases that own their exprN
+	exprN    int
+	inOr     bool // a semi-join under OR is refused
+	child    bool // child subquery: refuse aggregates, GROUP BY, OFFSET, nesting
+	having   bool // binding HAVING: aggregates are legal here, not in WHERE
 }
 
 // nextExprKey numbers unaliased aggregate and function items expr0, expr1, …
@@ -66,10 +67,32 @@ func (c *bindCtx) takeKey(key string) error {
 	return nil
 }
 
-// recordKey records a key without refusing duplicates. Simple field
-// references may repeat (SELECT Name,Id,Name); the result map collapses them.
-func (c *bindCtx) recordKey(key string) {
-	c.keys[strings.ToLower(key)] = true
+// recordKey records a FieldRef result key. Exact same-field duplicates
+// (same key, same path) collapse; distinct paths sharing a leaf name reject.
+func (c *bindCtx) recordKey(key, pathSig string) error {
+	lower := strings.ToLower(key)
+	if existing, ok := c.keyPaths[lower]; ok {
+		if existing != pathSig {
+			return malformed("duplicate field selected")
+		}
+		return nil // same field, same path: collapse
+	}
+	c.keys[lower] = true
+	c.keyPaths[lower] = pathSig
+	return nil
+}
+
+// pathSig returns a signature for a parent-path so identical paths collapse
+// and distinct paths sharing a leaf name are distinguished.
+func pathSig(path []PathStep) string {
+	if len(path) == 0 {
+		return ""
+	}
+	parts := make([]string, len(path))
+	for i, s := range path {
+		parts[i] = s.Object.Name
+	}
+	return strings.Join(parts, ".")
 }
 
 // reserveAliases marks explicit select aliases so generated exprN keys skip
@@ -109,10 +132,11 @@ func (b *binder) queryObj(q *Query, obj metadata.Object, child bool) (*Bound, er
 	}
 	b.joined[obj.Name] = true
 	ctx := &bindCtx{
-		aliases: map[string]BoundValue{},
-		keys:    map[string]bool{},
-		reserve: reserveAliases(q.Select),
-		child:   child,
+		aliases:  map[string]BoundValue{},
+		keys:     map[string]bool{},
+		keyPaths: map[string]string{},
+		reserve:  reserveAliases(q.Select),
+		child:    child,
 	}
 
 	cols, children, err := b.bindSelect(q, obj, ctx)
@@ -211,8 +235,9 @@ func (b *binder) bindSelect(q *Query, obj metadata.Object, ctx *bindCtx) ([]Boun
 			if err != nil {
 				return nil, nil, err
 			}
-			// Simple field references may repeat; the result map collapses them.
-			ctx.recordKey(c.Key)
+			if err := ctx.recordKey(c.Key, pathSig(c.Path)); err != nil {
+				return nil, nil, err
+			}
 			cols = append(cols, c)
 		case *Aggregate:
 			if ctx.child {

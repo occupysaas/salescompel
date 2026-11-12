@@ -380,3 +380,67 @@ func TestParentPathArgsInOrder(t *testing.T) {
 		t.Fatalf("parent-path WHERE marker not found in args: %v", plan.Stmt.Args)
 	}
 }
+
+// TestSemiJoinParentPathFilter verifies that a semi-join subquery with a
+// parent-path WHERE filter carries the sub-compiler's joins into the subquery FROM.
+func TestSemiJoinParentPathFilter(t *testing.T) {
+	item := cObj("Item__c", "a11",
+		cField("Id", fieldtype.Id),
+		cField("Txt__c", fieldtype.Text),
+	)
+	parent := cObj("Parent__c", "a12",
+		cField("Id", fieldtype.Id),
+		cField("Name", fieldtype.Text),
+	)
+	relName := "Parent__r"
+	parentRef := metadata.Complete(metadata.Field{
+		Name: "Parent__c", Column: "col_parent", Nillable: true,
+		ReferenceTo: []string{"Parent__c"}, RelationshipName: &relName,
+		Options: metadata.Options{Kind: fieldtype.Lookup},
+	})
+	item.Fields = append(item.Fields, parentRef)
+	nameVal := cField("Name", fieldtype.Text)
+
+	b := &Bound{
+		Object:  item,
+		Columns: []BoundColumn{{Key: "Id", Field: cField("Id", fieldtype.Id)}},
+		Where: &BoundIn{
+			Left: BoundValue{Field: cField("Id", fieldtype.Id)},
+			Semi: &Bound{
+				Object:  item,
+				Columns: []BoundColumn{{Key: "Id", Field: cField("Id", fieldtype.Id)}},
+				Where: &BoundCmp{
+					Left:  BoundValue{Path: []PathStep{{Object: parent, Via: parentRef}}, Field: nameVal},
+					Op:    "=",
+					Right: Param{Value: marker, Cast: "text"},
+				},
+			},
+		},
+	}
+
+	plan, err := Compile(b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sql := plan.Stmt.SQL
+	// The subquery must include a LEFT JOIN for the parent-path filter.
+	if !strings.Contains(sql, "LEFT JOIN") {
+		t.Fatalf("semi-join subquery missing parent-path JOIN: %s", sql)
+	}
+	if !strings.Contains(sql, "IN (SELECT") {
+		t.Fatalf("semi-join missing IN (SELECT: %s", sql)
+	}
+	// Marker must be in args, not SQL.
+	if strings.Contains(sql, marker) {
+		t.Fatalf("marker leaked into SQL: %s", sql)
+	}
+	found := false
+	for _, a := range plan.Stmt.Args {
+		if s, ok := a.(string); ok && strings.Contains(s, marker) {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("semi-join parent-path marker not found in args: %v", plan.Stmt.Args)
+	}
+}

@@ -364,8 +364,39 @@ func TestParentPathNulls(t *testing.T) {
 	})
 
 	t.Run("forged parent id yields null path", func(t *testing.T) {
-		foreignParent, _ := s.Create(ctx, f.other, "Parent__c", map[string]any{"Name": "Foreign"})
-		if _, err := s.Create(ctx, p, "Item__c", map[string]any{"Txt__c": "Forged", "Parent__c": foreignParent}); err != nil {
+		// Create Parent__c metadata for f.other so we get a real foreign ID.
+		obj, err := metadata.CreateObject(ctx, s.pool, f.other.Tenant, metadata.ObjectInput{Name: "Parent__c", Label: "Parent", PluralLabel: "Parents"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { s.pool.Exec(context.Background(), "DROP TABLE IF EXISTS "+obj.TableSQL()+" CASCADE") })
+		foreignParent, err := s.Create(ctx, f.other, "Parent__c", map[string]any{"Name": "Foreign"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		// Create item with a valid parent, then swap the parent_id to the
+		// foreign ID via raw SQL (bypassing FK) so the path must come back null.
+		validParent, err := s.Create(ctx, p, "Parent__c", map[string]any{"Name": "Valid"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		itemID, err := s.Create(ctx, p, "Item__c", map[string]any{"Txt__c": "Forged", "Parent__c": validParent})
+		if err != nil {
+			t.Fatal(err)
+		}
+		parentCol := f.cols["Item__c.Parent__c"]
+		tx, err := s.pool.Begin(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer tx.Rollback(ctx)
+		if _, err = tx.Exec(ctx, "SET LOCAL session_replication_role = 'replica'"); err != nil {
+			t.Fatal(err)
+		}
+		if _, err = tx.Exec(ctx, "UPDATE "+f.items.TableSQL()+" SET \""+parentCol+"\" = $1 WHERE tenant_id = $2 AND id = $3", foreignParent, p.Tenant, itemID); err != nil {
+			t.Fatal(err)
+		}
+		if err = tx.Commit(ctx); err != nil {
 			t.Fatal(err)
 		}
 		res := soqlQuery(t, s, p, "SELECT Txt__c, Parent__r.Name FROM Item__c WHERE Txt__c = 'Forged'")
@@ -399,6 +430,10 @@ func TestSOQLExistingBehavior(t *testing.T) {
 	_, _ = s.Create(ctx, a, "Account", map[string]any{"Name": "MixedCase"})
 	_, _ = s.Create(ctx, a, "Account", map[string]any{"Name": "\u00e9"})
 	_, _ = s.Create(ctx, a, "Account", map[string]any{"Name": "I"})
+	// Accounts with varying Compat_Text__c for null-ordering replay.
+	_, _ = s.Create(ctx, a, "Account", map[string]any{"Name": "T1", "Compat_Text__c": "alpha"})
+	_, _ = s.Create(ctx, a, "Account", map[string]any{"Name": "T2", "Compat_Text__c": "beta"})
+	_, _ = s.Create(ctx, a, "Account", map[string]any{"Name": "T3"})
 	_, _ = s.Create(ctx, b, "Account", map[string]any{"Name": name})
 
 	rp := strings.NewReplacer("$accountId", accID, "$contactId", contactID, "$nullContactId", nullContactID, "$name", name)
@@ -413,6 +448,13 @@ func TestSOQLExistingBehavior(t *testing.T) {
 		"select id from account where id = '" + accID[:15] + "'",
 		"select id from contact where accountid = '" + accID[:15] + "'",
 		"select id from account where name = 'absent'",
+		// foundation_query_test.go null-ordering queries
+		"select id, compat_text__c from account order by compat_text__c ASC",
+		"select id, compat_text__c from account order by compat_text__c ASC NULLS FIRST",
+		"select id, compat_text__c from account order by compat_text__c ASC NULLS LAST",
+		"select id, compat_text__c from account order by compat_text__c DESC",
+		"select id, compat_text__c from account order by compat_text__c DESC NULLS FIRST",
+		"select id, compat_text__c from account order by compat_text__c DESC NULLS LAST",
 		// query_test.go
 		"SELECT Id,Account.Name FROM Contact WHERE LastName = 'Contact' ORDER BY LastName DESC LIMIT 2",
 		// column fixture successful cases

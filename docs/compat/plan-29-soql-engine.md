@@ -122,6 +122,12 @@ should reconcile these before or during the named task.
 - **Winter '27 SOQL additions outside scope.** `FORMULA()` in WHERE (Beta, API
   68.0, not in production) and `SET OPTIONS` ([Winter '27 developer
   guide][c23]).
+- **Aggregate queries return `QUERY_TOO_COMPLICATED`.** Aggregate functions
+  and `COUNT()` are not yet supported by the engine. The binder rejects them
+  with `QUERY_TOO_COMPLICATED` ("aggregate queries are not yet supported")
+  rather than `MALFORMED_QUERY`. Task 7/9 should note this code choice:
+  `QUERY_TOO_COMPLICATED` signals a capability gap that a later task may
+  close, while `MALFORMED_QUERY` would imply permanently invalid syntax.
 
 ## Items reserved for Task 10
 

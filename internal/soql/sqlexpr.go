@@ -175,6 +175,10 @@ func (c *compiler) compileSemi(in *BoundIn, left, root string) (string, error) {
 		}
 		where += " AND (" + w + ")"
 	}
+	// Carry sub-compiler joins (from parent-path filters) into the subquery FROM.
+	for _, js := range sc.joins {
+		from += " LEFT JOIN " + js.table + " " + js.alias + " ON " + js.on
+	}
 	subSQL := "SELECT " + col + " FROM " + from + " WHERE " + where
 	c.args = sc.args
 	op := " IN "
