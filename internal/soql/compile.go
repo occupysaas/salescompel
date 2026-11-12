@@ -26,6 +26,7 @@ type Plan struct {
 	PathAlias map[string]string        // path key -> join alias
 	Compound  map[int][]metadata.Field // column index -> compound component fields
 	LimitArg  int                      // index into Stmt.Args of the LIMIT parameter
+	RootID    *int                     // hidden root id result index when children are present
 }
 
 type joinSpec struct {
@@ -50,9 +51,6 @@ func Compile(b *Bound) (*Plan, error) {
 	if b.Aggregate {
 		return nil, tooComplicated("aggregate queries are not yet supported")
 	}
-	if len(b.Children) > 0 {
-		return nil, tooComplicated("child subqueries are not yet supported")
-	}
 	c := &compiler{joinMap: map[string]string{}}
 	return c.compile(b)
 }
@@ -75,37 +73,15 @@ func (c *compiler) compile(b *Bound) (*Plan, error) {
 		return nil, err
 	}
 
-	var selParts []string
-	compound := map[int][]metadata.Field{}
-	for i, col := range b.Columns {
-		ownerObj := b.Object
-		owner := root
-		if len(col.Path) > 0 {
-			alias, err := c.ensureJoin(root, col.Path)
-			if err != nil {
-				return nil, err
-			}
-			owner = alias
-			ownerObj = col.Path[len(col.Path)-1].Object
-		}
-		if col.Field.Compound() {
-			comps, exprs, err := c.compoundExprs(owner, ownerObj, col.Field)
-			if err != nil {
-				return nil, err
-			}
-			compound[i] = comps
-			selParts = append(selParts, exprs...)
-			continue
-		}
-		expr := c.fieldExpr(owner, BoundValue{Path: col.Path, Field: col.Field, Agg: col.Agg, Func: col.Func, Label: col.Label})
-		selParts = append(selParts, expr)
+	selParts, compound, joinIDs, err := c.compileSelection(b, root)
+	if err != nil {
+		return nil, err
 	}
-
-	joinIDs := map[string]int{}
-	base := len(selParts)
-	for ji, js := range c.joins {
-		selParts = append(selParts, js.alias+".id")
-		joinIDs[js.alias] = base + ji
+	var rootID *int
+	if len(b.Children) > 0 {
+		idx := len(selParts)
+		rootID = &idx
+		selParts = append(selParts, root+".id")
 	}
 
 	from := b.Object.TableSQL() + " " + root
@@ -141,6 +117,120 @@ func (c *compiler) compile(b *Bound) (*Plan, error) {
 		PathAlias: pathAlias,
 		Compound:  compound,
 		LimitArg:  limitArg - 1, // zero-based index into Args
+		RootID:    rootID,
+	}, nil
+}
+
+func (c *compiler) compileSelection(b *Bound, root string) ([]string, map[int][]metadata.Field, map[string]int, error) {
+	var parts []string
+	compound := map[int][]metadata.Field{}
+	for i, col := range b.Columns {
+		ownerObj := b.Object
+		owner := root
+		if len(col.Path) > 0 {
+			alias, err := c.ensureJoin(root, col.Path)
+			if err != nil {
+				return nil, nil, nil, err
+			}
+			owner = alias
+			ownerObj = col.Path[len(col.Path)-1].Object
+		}
+		if col.Field.Compound() {
+			comps, exprs, err := c.compoundExprs(owner, ownerObj, col.Field)
+			if err != nil {
+				return nil, nil, nil, err
+			}
+			compound[i] = comps
+			parts = append(parts, exprs...)
+			continue
+		}
+		parts = append(parts, c.fieldExpr(owner, BoundValue{
+			Path: col.Path, Field: col.Field, Agg: col.Agg, Func: col.Func, Label: col.Label,
+		}))
+	}
+	joinIDs := map[string]int{}
+	base := len(parts)
+	for i, js := range c.joins {
+		parts = append(parts, js.alias+".id")
+		joinIDs[js.alias] = base + i
+	}
+	return parts, compound, joinIDs, nil
+}
+
+type childPlan struct {
+	stmt Statement
+	plan *Plan
+}
+
+// CompileChild compiles one child query for all parent IDs on a parent page.
+// ROW_NUMBER applies LIMIT independently to each parent and leaves one extra
+// row at the candidate ceiling so the executor can reject overflow.
+// spec: child-01
+func CompileChild(child BoundChild, parentIDs []string) (Statement, error) {
+	plan, err := compileChildPlan(child, parentIDs)
+	if err != nil {
+		return Statement{}, err
+	}
+	return plan.stmt, nil
+}
+
+func compileChildPlan(child BoundChild, parentIDs []string) (*childPlan, error) {
+	b := child.Query
+	if b == nil {
+		return nil, malformed("empty child query")
+	}
+	var refField metadata.Field
+	for _, field := range b.Object.Fields {
+		if strings.EqualFold(field.Name, child.Relationship.Field) {
+			refField = field
+			break
+		}
+	}
+	if refField.Column == "" {
+		return nil, contract.FieldProblem("INVALID_FIELD", "Field is unavailable", child.Relationship.Field)
+	}
+	root := "r"
+	c := &compiler{joinMap: map[string]string{}}
+	tenantArg := c.addArg(b.Object.Tenant)
+	parentsArg := c.addArg(parentIDs)
+	ref := root + "." + pgx.Identifier{refField.Column}.Sanitize()
+	where := fmt.Sprintf("%s.tenant_id=$%d AND %s = ANY($%d::text[])", root, tenantArg, ref, parentsArg)
+	if b.Where != nil {
+		w, err := c.compileExpr(b.Where, root, b.Object)
+		if err != nil {
+			return nil, err
+		}
+		where += " AND (" + w + ")"
+	}
+	order, err := c.compileOrder(b.Order, root, b.Object)
+	if err != nil {
+		return nil, err
+	}
+	if order == "" {
+		order = root + ".id"
+	}
+	parts, compound, joinIDs, err := c.compileSelection(b, root)
+	if err != nil {
+		return nil, err
+	}
+	baseParts := append([]string{ref + " AS __parent_id"}, parts...)
+	baseParts = append(baseParts, "ROW_NUMBER() OVER (PARTITION BY "+ref+" ORDER BY "+order+") AS __child_rank")
+
+	from := b.Object.TableSQL() + " " + root
+	for _, js := range c.joins {
+		from += " LEFT JOIN " + js.table + " " + js.alias + " ON " + js.on
+	}
+	baseSQL := "SELECT " + strings.Join(baseParts, ",") + " FROM " + from + " WHERE " + where
+	fetch := maxChildRows + 1
+	if b.Limit != nil && *b.Limit < maxChildRows {
+		fetch = *b.Limit
+	}
+	rankArg := c.addArg(fetch)
+	sql := "SELECT * FROM (" + baseSQL + ") __children WHERE __child_rank <= $" + itoa(rankArg) +
+		" ORDER BY __parent_id,__child_rank"
+	return &childPlan{
+		stmt: Statement{SQL: sql, Args: c.args},
+		plan: &Plan{Columns: b.Columns, JoinIDs: joinIDs, PathAlias: c.joinMap, Compound: compound},
 	}, nil
 }
 

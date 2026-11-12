@@ -14,6 +14,7 @@ const (
 	maxOrderKeys    = 32
 	maxOffset       = 2_000
 	maxFieldsLimit  = 200
+	maxChildRows    = 2_000
 )
 
 func tooComplicated(msg string) error {

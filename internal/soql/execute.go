@@ -84,12 +84,20 @@ func executePlan(ctx context.Context, tx pgx.Tx, bound *Bound, plan *Plan, opt O
 	defer rows.Close()
 
 	records := make([]map[string]any, 0, 16)
+	var parentIDs []string
 	for rows.Next() {
 		vals, e := rows.Values()
 		if e != nil {
 			return Result{}, dbErr(e)
 		}
 		records = append(records, shapeRow(bound, plan, vals))
+		if plan.RootID != nil {
+			id, ok := vals[*plan.RootID].(string)
+			if !ok {
+				return Result{}, malformed("parent id is unavailable for child query")
+			}
+			parentIDs = append(parentIDs, id)
+		}
 	}
 	if err = rows.Err(); err != nil {
 		return Result{}, dbErr(err)
@@ -105,7 +113,72 @@ func executePlan(ctx context.Context, tx pgx.Tx, bound *Bound, plan *Plan, opt O
 	if bound.Limit != nil && total > *bound.Limit {
 		return Result{}, tooComplicated("result exceeds one page; add LIMIT or a narrower filter")
 	}
+	rows.Close()
+	if err = executeChildren(ctx, tx, bound.Children, records, parentIDs); err != nil {
+		return Result{}, err
+	}
 	return Result{TotalSize: total, Done: true, Records: records}, nil
+}
+
+// executeChildren runs one statement per relationship for the whole parent
+// page, never one statement per parent, and groups the rows back by parent ID.
+// spec: child-01
+func executeChildren(ctx context.Context, tx pgx.Tx, children []BoundChild, records []map[string]any, parentIDs []string) error {
+	if len(children) == 0 {
+		return nil
+	}
+	groups := make([]map[string][]map[string]any, len(children))
+	for i, child := range children {
+		groups[i] = map[string][]map[string]any{}
+		if len(parentIDs) == 0 {
+			continue
+		}
+		compiled, err := compileChildPlan(child, parentIDs)
+		if err != nil {
+			return err
+		}
+		rows, err := tx.Query(ctx, compiled.stmt.SQL, compiled.stmt.Args...)
+		if err != nil {
+			return dbErr(err)
+		}
+		for rows.Next() {
+			vals, err := rows.Values()
+			if err != nil {
+				rows.Close()
+				return dbErr(err)
+			}
+			parent, ok := vals[0].(string)
+			if !ok {
+				rows.Close()
+				return malformed("child parent id is unavailable")
+			}
+			// Strip the hidden parent id and row number before normal shaping.
+			record := shapeRow(child.Query, compiled.plan, vals[1:len(vals)-1])
+			groups[i][parent] = append(groups[i][parent], record)
+			if len(groups[i][parent]) > maxChildRows {
+				rows.Close()
+				return tooComplicated("child relationship exceeds candidate limit; add a LIMIT to the subquery")
+			}
+		}
+		if err := rows.Err(); err != nil {
+			rows.Close()
+			return dbErr(err)
+		}
+		rows.Close()
+	}
+	for i, child := range children {
+		for j, record := range records {
+			rows := groups[i][parentIDs[j]]
+			if len(rows) == 0 {
+				record[child.Key] = nil
+				continue
+			}
+			record[child.Key] = map[string]any{
+				"totalSize": len(rows), "done": true, "records": rows,
+			}
+		}
+	}
+	return nil
 }
 
 // shapeRow builds one REST JSON record from a result row.
