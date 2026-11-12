@@ -86,3 +86,8 @@ func (s *Store) Provision(ctx context.Context, token string, p Principal) error 
 func (s *Store) Authenticate(ctx context.Context, token string) (Principal, error) {
 	return s.AuthenticateAt(ctx, token, time.Now())
 }
+
+// SetCurrency changes a tenant's corporate currency (operator store only).
+func (s *Store) SetCurrency(ctx context.Context, tenant, code string) error {
+	return metadata.SetCurrency(ctx, s.pool, tenant, code)
+}

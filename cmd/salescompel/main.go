@@ -49,7 +49,14 @@ func dispatch(args []string, out io.Writer) error {
 	case "user", "oauth-app":
 		return adminCommand(ctx, s, args, out)
 	case "provision":
-		return s.Provision(ctx, os.Getenv("SALESCOMPEL_TOKEN"), platform.Principal{Tenant: os.Getenv("SALESCOMPEL_TENANT"), User: os.Getenv("SALESCOMPEL_USER"), Role: os.Getenv("SALESCOMPEL_ROLE")})
+		tenant := os.Getenv("SALESCOMPEL_TENANT")
+		if e := s.Provision(ctx, os.Getenv("SALESCOMPEL_TOKEN"), platform.Principal{Tenant: tenant, User: os.Getenv("SALESCOMPEL_USER"), Role: os.Getenv("SALESCOMPEL_ROLE")}); e != nil {
+			return e
+		}
+		if code := os.Getenv("SALESCOMPEL_CURRENCY"); code != "" {
+			return s.SetCurrency(ctx, tenant, code)
+		}
+		return nil
 	case "serve":
 		fs := flag.NewFlagSet("serve", flag.ContinueOnError)
 		addr := fs.String("addr", "127.0.0.1:8080", "listen address")

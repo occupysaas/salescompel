@@ -65,5 +65,22 @@ func Load(ctx context.Context, tx pgx.Tx, tenant string) (Snapshot, error) {
 			return out, e
 		}
 	}
-	return out, nil
+	stored, e := tx.Query(ctx, "SELECT o.api_name,a.api_name,a.kind,a.source FROM sc_catalog.artifacts a JOIN sc_catalog.objects o ON o.tenant_id=a.tenant_id AND o.id=a.object_id WHERE a.tenant_id=$1 ORDER BY o.api_name,a.api_name", tenant)
+	if e != nil {
+		return out, e
+	}
+	defer stored.Close()
+	out.Stored = []StoredField{}
+	for stored.Next() {
+		var sf StoredField
+		var source []byte
+		if e = stored.Scan(&sf.Object, &sf.Name, &sf.Kind, &source); e != nil {
+			return out, e
+		}
+		var head struct{ Label string }
+		json.Unmarshal(source, &head)
+		sf.Label = head.Label
+		out.Stored = append(out.Stored, sf)
+	}
+	return out, stored.Err()
 }
