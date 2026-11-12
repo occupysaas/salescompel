@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"salescompel/internal/metadata"
 	"os"
 	"strings"
 	"testing"
@@ -203,5 +204,40 @@ func TestCurrencyBridge(t *testing.T) {
 	}
 	if code, _ := get("SELECT DefaultCurrencyIsoCode FROM Organizations"); code != 400 {
 		t.Fatalf("near miss served %d", code)
+	}
+}
+
+func TestStoredFieldsEndpoint(t *testing.T) {
+	f := newTypedFixture(t)
+	ctx := context.Background()
+	if _, e := metadata.CreateStoredField(ctx, f.s.pool, f.p.Tenant, "Item__c", []byte(`{"name":"Score__c","label":"Score","type":"Formula","formula":"1"}`)); e != nil {
+		t.Fatal(e)
+	}
+	h := NewHandler(f.s, "")
+	get := func(path, token string) (int, map[string]any) {
+		r := httptest.NewRequest(http.MethodGet, "/services/data/v65.0/"+path, nil)
+		r.Header.Set("Authorization", "Bearer "+token)
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, r)
+		var out map[string]any
+		json.Unmarshal(w.Body.Bytes(), &out)
+		return w.Code, out
+	}
+	code, out := get("candidate/sobjects/item__c/storedFields", "token-"+f.p.Tenant)
+	list, _ := out["storedFields"].([]any)
+	if code != 200 || len(list) != 1 || list[0].(map[string]any)["name"] != "Score__c" || list[0].(map[string]any)["type"] != "Formula" || list[0].(map[string]any)["label"] != "Score" {
+		t.Fatalf("stored fields %d %v", code, out)
+	}
+	if code, out = get("candidate/sobjects/Parent__c/storedFields", "token-"+f.p.Tenant); code != 200 || len(out["storedFields"].([]any)) != 0 {
+		t.Fatalf("empty list %d %v", code, out)
+	}
+	if code, _ = get("candidate/sobjects/Item__c/storedFields", "token-"+f.other.Tenant); code != 404 {
+		t.Fatalf("other tenant saw object: %d", code)
+	}
+	d, _ := f.s.Describe(ctx, f.p, "Item__c")
+	for _, fd := range d.Fields {
+		if fd.Name == "Score__c" {
+			t.Fatal("stored field described")
+		}
 	}
 }

@@ -45,5 +45,12 @@
   "oauth.scope.web": "Solicitar acesso à web (sem acesso adicional nesta versão).",
   "oauth.scope.refresh_token": "Manter o acesso com um token de atualização até a revogação.",
   "oauth.scope.offline_access": "Manter o acesso com um token de atualização até a revogação.",
-  "action.refreshObjects": "Atualizar objetos"
+  "action.refreshObjects": "Atualizar objetos",
+  "field.none": "— Nenhum —",
+  "field.storedHeading": "Não ativo no SalesCompel",
+  "field.storedHint": "Armazenados a partir de uma definição que o SalesCompel ainda não executa. Estes campos não são exibidos, calculados nem salvos.",
+  "field.timeZone": "Datas e horas são exibidas no fuso horário do seu navegador.",
+  "field.lookupManual": "ID do registro",
+  "field.invalidNumber": "Digite um número com dígitos e um ponto decimal opcional.",
+  "field.numberRange": "Este número tem dígitos demais para o campo."
 }

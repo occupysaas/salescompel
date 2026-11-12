@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"salescompel/internal/metadata"
 	"salescompel/internal/query"
 	"salescompel/internal/records"
 	"strings"
@@ -274,11 +275,6 @@ func NewHandlerWithOptions(s *Store, assetDir string, o Options) http.Handler {
 				return
 			}
 			if isCurrencyDiscovery(r.URL.Query().Get("q")) {
-				catalog, e := s.Catalog(ctx, p)
-				if e != nil {
-					writeError(w, e)
-					return
-				}
 				writeJSON(w, 200, map[string]any{"totalSize": 1, "done": true, "records": []any{map[string]any{"attributes": map[string]any{"type": "Organization"}, "DefaultCurrencyIsoCode": catalog.Currency}}})
 				return
 			}
@@ -312,6 +308,25 @@ func NewHandlerWithOptions(s *Store, assetDir string, o Options) http.Handler {
 				result["columnMetadata"] = metadata
 			}
 			writeJSON(w, 200, result)
+			return
+		}
+		if parts[0] == "candidate" && len(parts) == 4 && parts[1] == "sobjects" && parts[3] == "storedFields" {
+			// Candidate-only: stored-not-enforced definitions are never described.
+			if !method(w, r, "GET") {
+				return
+			}
+			definition, lookupErr := catalog.Object(parts[2])
+			if lookupErr != nil {
+				writeError(w, problem(404, "NOT_FOUND", "Object not found"))
+				return
+			}
+			stored := []metadata.StoredField{}
+			for _, sf := range catalog.Stored {
+				if sf.Object == definition.Name {
+					stored = append(stored, sf)
+				}
+			}
+			writeJSON(w, 200, map[string]any{"storedFields": stored})
 			return
 		}
 		if parts[0] != "sobjects" {

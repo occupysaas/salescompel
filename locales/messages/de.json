@@ -45,5 +45,12 @@
   "oauth.scope.web": "Webzugriff anfordern (kein zusätzlicher Zugriff in dieser Version).",
   "oauth.scope.refresh_token": "Zugriff mit einem Aktualisierungstoken bis zum Widerruf behalten.",
   "oauth.scope.offline_access": "Zugriff mit einem Aktualisierungstoken bis zum Widerruf behalten.",
-  "action.refreshObjects": "Objekte aktualisieren"
+  "action.refreshObjects": "Objekte aktualisieren",
+  "field.none": "— Keine —",
+  "field.storedHeading": "In SalesCompel nicht aktiv",
+  "field.storedHint": "Aus einer Definition gespeichert, die SalesCompel noch nicht ausführen kann. Diese Felder werden weder angezeigt noch berechnet oder gespeichert.",
+  "field.timeZone": "Datums- und Zeitwerte werden in der Zeitzone Ihres Browsers angezeigt.",
+  "field.lookupManual": "Datensatz-ID",
+  "field.invalidNumber": "Geben Sie eine Zahl aus Ziffern und optionalem Dezimalpunkt ein.",
+  "field.numberRange": "Diese Zahl hat zu viele Stellen für das Feld."
 }

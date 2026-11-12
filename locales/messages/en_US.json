@@ -166,5 +166,12 @@
   "oauth.scope.web": "Request web access (no additional access in this release).",
   "oauth.scope.refresh_token": "Keep access with a refresh token until revoked.",
   "oauth.scope.offline_access": "Keep access with a refresh token until revoked.",
-  "action.refreshObjects": "Refresh objects"
+  "action.refreshObjects": "Refresh objects",
+  "field.none": "— None —",
+  "field.storedHeading": "Not active in SalesCompel",
+  "field.storedHint": "Stored from a definition SalesCompel cannot run yet. These fields are not shown, calculated or saved.",
+  "field.timeZone": "Date/time values are shown in your browser's time zone.",
+  "field.lookupManual": "Record ID",
+  "field.invalidNumber": "Enter a number using digits and an optional decimal point.",
+  "field.numberRange": "This number has too many digits for the field."
 }

@@ -45,5 +45,12 @@
   "oauth.scope.web": "בקשת גישה לאינטרנט (ללא גישה נוספת בגרסה זו).",
   "oauth.scope.refresh_token": "שמירת הגישה באמצעות אסימון רענון עד לביטולה.",
   "oauth.scope.offline_access": "שמירת הגישה באמצעות אסימון רענון עד לביטולה.",
-  "action.refreshObjects": "רענון אובייקטים"
+  "action.refreshObjects": "רענון אובייקטים",
+  "field.none": "— ללא —",
+  "field.storedHeading": "לא פעיל ב-SalesCompel",
+  "field.storedHint": "נשמרו מהגדרה ש-SalesCompel עדיין לא יכול להפעיל. שדות אלה אינם מוצגים, מחושבים או נשמרים.",
+  "field.timeZone": "תאריכים ושעות מוצגים באזור הזמן של הדפדפן שלך.",
+  "field.lookupManual": "מזהה רשומה",
+  "field.invalidNumber": "הזינו מספר המורכב מספרות ומנקודה עשרונית אופציונלית.",
+  "field.numberRange": "למספר זה יש יותר מדי ספרות עבור השדה."
 }

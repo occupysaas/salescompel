@@ -277,6 +277,68 @@ td {
   border: 0;
   min-width: 0;
 }
+.editor select,
+.editor textarea {
+  display: block;
+  width: 100%;
+  border: 1px solid #cbd7cd;
+  background: #fbfcfa;
+  border-radius: 7px;
+  padding: 12px;
+  margin-top: 8px;
+  color: #173d33;
+  font: inherit;
+}
+.editor textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+.editor label.checkbox,
+.editor fieldset.multi label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 450;
+}
+.editor label.checkbox input,
+.editor fieldset.multi input {
+  width: auto;
+  margin: 0;
+}
+.editor fieldset.multi {
+  margin-bottom: 18px;
+}
+.editor fieldset.multi legend {
+  font-size: 14px;
+  font-weight: 550;
+  margin-bottom: 8px;
+}
+.editor fieldset.multi label {
+  margin-bottom: 6px;
+}
+.editor .read-only output {
+  display: block;
+  margin-top: 8px;
+  padding: 12px 0;
+  font-weight: 450;
+  overflow-wrap: anywhere;
+}
+.editor .hint {
+  display: block;
+  margin-top: 6px;
+  font-weight: 400;
+  color: #4f6a60;
+}
+.stored-note {
+  margin-top: 24px;
+  padding: 18px;
+  border: 1px dashed #b9c8bb;
+  border-radius: 12px;
+}
+.stored-note h2 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
 .form-actions {
   display: flex;
   gap: 10px;

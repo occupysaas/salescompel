@@ -1,6 +1,19 @@
 <script setup lang="ts">
 import { computed, ref, onUnmounted } from "vue";
-import { loadCatalog, type ObjectSummary } from "./catalog";
+import {
+  loadCatalog,
+  loadCurrency,
+  loadStoredFields,
+  type ObjectSummary,
+  type StoredField,
+} from "./catalog";
+import FieldInput from "./FieldInput.vue";
+import {
+  formatValue,
+  fromApiValue,
+  toApiValue,
+  type ControlValue,
+} from "./fields";
 import {
   api as request,
   setToken,
@@ -34,8 +47,38 @@ const object = ref("Account"),
   records = ref<RecordData[]>([]);
 const editing = ref(false),
   recordID = ref(""),
-  values = ref<Record<string, string>>({}),
+  values = ref<Record<string, ControlValue>>({}),
+  current = ref<RecordData>({}),
   confirmDelete = ref(false);
+const currency = ref("USD"),
+  stored = ref<StoredField[]>([]),
+  lookupOptions = ref<Record<string, { id: string; name: string }[]>>({});
+const locale = computed(
+  () => languages.find((l) => l.code === language.value)?.bcp47 ?? "en-US",
+);
+function writable(field: Field) {
+  return recordID.value ? field.updateable : field.createable;
+}
+async function loadLookups(d: Description, current: number) {
+  const out: Record<string, { id: string; name: string }[]> = {};
+  for (const f of d.fields) {
+    const target = f.referenceTo?.[0];
+    if (f.type !== "reference" || !target || out[f.name]) continue;
+    try {
+      const q = `SELECT Id,Name FROM ${target} ORDER BY Name LIMIT 200`;
+      const r = await api<{ records: { Id: string; Name: unknown }[] }>(
+        `query?q=${encodeURIComponent(q)}`,
+      );
+      out[f.name] = r.records.map((x) => ({
+        id: x.Id,
+        name: String(x.Name ?? x.Id),
+      }));
+    } catch {
+      out[f.name] = []; // manual ID entry remains available
+    }
+  }
+  if (current === generation) lookupOptions.value = out;
+}
 const fields = computed(
   () => description.value?.fields.filter((f) => f.name !== "Id") ?? [],
 );
@@ -84,6 +127,7 @@ async function refreshCatalog() {
     records.value = [];
     description.value = null;
     objects.value = await loadCatalog(lifetime.signal);
+    currency.value = await loadCurrency(lifetime.signal);
     if (!objects.value.some((o) => o.name === object.value))
       object.value = objects.value[0]?.name ?? "";
     if (object.value) await load();
@@ -112,6 +156,7 @@ async function load() {
   description.value = null;
   editing.value = false;
   const d = await api<Description>(`sobjects/${object.value}/describe`);
+  const storedFields = await loadStoredFields(object.value, lifetime.signal);
   const q = `SELECT ${d.fields.map((f) => f.name).join(",")} FROM ${object.value} ORDER BY ${object.value === "Contact" ? "LastName" : "Name"} LIMIT 2000`;
   const result = await api<{ records: RecordData[] }>(
     `query?q=${encodeURIComponent(q)}`,
@@ -119,11 +164,14 @@ async function load() {
   if (current !== generation || lifetime.signal.aborted) return;
   description.value = d;
   records.value = result.records;
+  stored.value = storedFields;
+  await loadLookups(d, current);
 }
 async function connect() {
   await action(async () => {
     setToken(draftToken.value.trim());
     objects.value = await loadCatalog(lifetime.signal);
+    currency.value = await loadCurrency(lifetime.signal);
     object.value = objects.value.some((o) => o.name === "Account")
       ? "Account"
       : (objects.value[0]?.name ?? "");
@@ -145,6 +193,10 @@ function disconnect() {
   editing.value = false;
   recordID.value = "";
   values.value = {};
+  current.value = {};
+  stored.value = [];
+  lookupOptions.value = {};
+  currency.value = "USD";
   error.value = "";
 }
 async function switchObject(name: string) {
@@ -158,7 +210,15 @@ async function switchObject(name: string) {
 }
 function create() {
   recordID.value = "";
+  current.value = {};
   values.value = {};
+  for (const f of fields.value) {
+    const def = f.picklistValues?.find((p) => p.defaultValue && p.active);
+    values.value[f.name] = fromApiValue(
+      f,
+      f.type === "boolean" ? f.defaultValue === true : (def?.value ?? null),
+    );
+  }
   editing.value = true;
   confirmDelete.value = false;
   error.value = "";
@@ -168,7 +228,8 @@ async function edit(row: RecordData) {
     const record = await api<RecordData>(`sobjects/${object.value}/${row.Id}`);
     values.value = {};
     for (const f of fields.value)
-      values.value[f.name] = String(record[f.name] ?? "");
+      values.value[f.name] = fromApiValue(f, record[f.name]);
+    current.value = record;
     recordID.value = String(row.Id);
     editing.value = true;
     confirmDelete.value = false;
@@ -176,11 +237,10 @@ async function edit(row: RecordData) {
 }
 async function save() {
   await action(async () => {
-    const data: Record<string, string | null> = {};
+    const data: Record<string, unknown> = {};
     for (const f of fields.value) {
-      if (recordID.value ? !f.updateable : !f.createable) continue;
-      const value = values.value[f.name] ?? "";
-      data[f.name] = value === "" && f.nillable ? null : value;
+      if (!writable(f)) continue;
+      data[f.name] = toApiValue(f, values.value[f.name] ?? "");
     }
     await api(
       `sobjects/${object.value}${recordID.value ? "/" + recordID.value : ""}`,
@@ -330,7 +390,14 @@ async function changeLanguage(event: Event) {
                     </button>
                   </td>
                   <td v-if="secondaryField" class="secondary">
-                    {{ row[secondaryField.name] ?? "—" }}
+                    {{
+                      formatValue(
+                        secondaryField,
+                        row[secondaryField.name],
+                        locale,
+                        currency,
+                      )
+                    }}
                   </td>
                 </tr>
               </tbody>
@@ -343,20 +410,26 @@ async function changeLanguage(event: Event) {
             </p>
             <form @submit.prevent="save">
               <fieldset :disabled="busy">
-                <label v-for="field in fields" :key="field.name"
-                  >{{ label(field)
-                  }}<input
+                <template v-for="field in fields" :key="field.name">
+                  <FieldInput
+                    v-if="writable(field) || recordID"
                     v-model="values[field.name]"
-                    :required="!field.nillable"
-                    :maxlength="field.length || undefined"
-                    :disabled="
-                      recordID ? !field.updateable : !field.createable
-                    "
-                /></label>
+                    :field="field"
+                    :label="label(field)"
+                    :disabled="busy"
+                    :readonly="!writable(field)"
+                    :display="current[field.name]"
+                    :locale="locale"
+                    :currency="currency"
+                    :lookup-options="lookupOptions[field.name] ?? []"
+                  />
+                </template>
                 <div class="form-actions">
                   <button class="primary" type="submit">
-                    {{ t("action.save") }}</button
-                  ><button type="button" @click="editing = false">
+                    {{ t("action.save") }}</button><button
+                    type="button"
+                    @click="editing = false"
+                  >
                     {{ t("action.cancel") }}
                   </button>
                 </div>
@@ -371,8 +444,10 @@ async function changeLanguage(event: Event) {
                 <div v-if="confirmDelete" class="confirmation">
                   <p>{{ t("delete.question") }}</p>
                   <button class="danger" type="button" @click="remove">
-                    {{ t("action.confirm") }}</button
-                  ><button type="button" @click="confirmDelete = false">
+                    {{ t("action.confirm") }}</button><button
+                    type="button"
+                    @click="confirmDelete = false"
+                  >
                     {{ t("action.cancel") }}
                   </button>
                 </div>
@@ -380,6 +455,15 @@ async function changeLanguage(event: Event) {
             </form>
           </section>
         </div>
+        <section v-if="stored.length" class="stored-note" role="note">
+          <h2>{{ t("field.storedHeading") }}</h2>
+          <p>{{ t("field.storedHint") }}</p>
+          <ul>
+            <li v-for="item in stored" :key="item.name">
+              {{ item.label }} <code>{{ item.name }}</code> — {{ item.type }}
+            </li>
+          </ul>
+        </section>
       </template>
     </main>
   </div>

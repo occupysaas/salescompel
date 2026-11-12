@@ -877,6 +877,40 @@ paths:
           required: true
           schema:
             type: string
+  /services/data/v65.0/candidate/sobjects/{object}/storedFields:
+    get:
+      operationId: candidateStoredFields
+      x-source:
+        - https://github.com/occupysaas/salescompel/blob/5b0c57e/docs/superpowers/specs/2026-11-11-plan-28-field-types-design.md
+      description: "Candidate-only extension, not a Salesforce resource: lists stored-not-enforced definitions (formula, roll-up summary, encrypted text, geolocation, rich text) retained for an object. They are never described or served as fields."
+      responses:
+        "200":
+          description: Current candidate response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StoredFields"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: object
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            pattern: ^[A-Za-z][A-Za-z0-9_]*$
   /services/data/v65.0/sobjects/{object}/describe:
     get:
       operationId: candidateDescribeDynamic
@@ -2334,6 +2368,37 @@ components:
                 - string
                 - "null"
               maxLength: 80
+    StoredFields:
+      type: object
+      additionalProperties: false
+      required:
+        - storedFields
+      properties:
+        storedFields:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - object
+              - name
+              - label
+              - type
+            properties:
+              object:
+                type: string
+              name:
+                type: string
+                pattern: ^[A-Za-z][A-Za-z0-9_]*__c$
+              label:
+                type: string
+              type:
+                enum:
+                  - Formula
+                  - RollupSummary
+                  - EncryptedText
+                  - Geolocation
+                  - RichTextArea
     CurrencyProjection:
       type: object
       additionalProperties: false

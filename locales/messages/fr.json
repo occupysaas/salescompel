@@ -45,5 +45,12 @@
   "oauth.scope.web": "Demander un accès web (aucun accès supplémentaire dans cette version).",
   "oauth.scope.refresh_token": "Conserver l’accès avec un jeton de renouvellement jusqu’à sa révocation.",
   "oauth.scope.offline_access": "Conserver l’accès avec un jeton de renouvellement jusqu’à sa révocation.",
-  "action.refreshObjects": "Actualiser les objets"
+  "action.refreshObjects": "Actualiser les objets",
+  "field.none": "— Aucun —",
+  "field.storedHeading": "Non actif dans SalesCompel",
+  "field.storedHint": "Enregistrés à partir d'une définition que SalesCompel ne peut pas encore exécuter. Ces champs ne sont ni affichés, ni calculés, ni enregistrés.",
+  "field.timeZone": "Les dates et heures sont affichées dans le fuseau horaire de votre navigateur.",
+  "field.lookupManual": "ID d'enregistrement",
+  "field.invalidNumber": "Saisissez un nombre composé de chiffres et d'un point décimal facultatif.",
+  "field.numberRange": "Ce nombre comporte trop de chiffres pour ce champ."
 }
