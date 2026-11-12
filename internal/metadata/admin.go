@@ -310,9 +310,13 @@ func Inspect(s Snapshot) map[string]any {
 	for _, o := range s.Objects {
 		fields := []map[string]any{}
 		for _, f := range o.Fields {
-			raw, _ := json.Marshal(f)
+			// Best-effort rendering for the operator: a field that cannot be
+			// round-tripped still appears, with its identifying names.
+			raw, mErr := json.Marshal(f)
 			m := map[string]any{}
-			json.Unmarshal(raw, &m)
+			if mErr != nil || json.Unmarshal(raw, &m) != nil {
+				m = map[string]any{"name": f.Name, "label": f.Label}
+			}
 			m["status"] = "active"
 			fields = append(fields, m)
 		}

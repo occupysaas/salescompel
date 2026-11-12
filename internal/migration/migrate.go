@@ -62,7 +62,10 @@ func manifest() []change {
 	}
 	sum3 := sha256.Sum256(sql3)
 	m = append(m, change{Entry{3, "tenant row security", hex.EncodeToString(sum3[:]), false}, func(ctx context.Context, tx pgx.Tx) error { _, e := tx.Exec(ctx, string(sql3)); return e }})
-	sql4, _ := sources.ReadFile("migrations/0004_field_types.sql")
+	sql4, s4Err := sources.ReadFile("migrations/0004_field_types.sql")
+	if s4Err != nil {
+		panic("migration: embedded 0004_field_types.sql unreadable")
+	}
 	sum4 := sha256.Sum256(sql4)
 	m = append(m, change{Entry{4, "field types", hex.EncodeToString(sum4[:]), false}, func(ctx context.Context, tx pgx.Tx) error { _, e := tx.Exec(ctx, string(sql4)); return e }})
 	return m
