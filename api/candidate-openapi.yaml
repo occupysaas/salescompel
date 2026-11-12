@@ -3,7 +3,7 @@ jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
 info:
   title: SalesCompel implemented candidate API
   version: 0.1.0
-  description: Object and field API names are case-insensitive; responses use canonical names. REST body duplicates use the last value; case-differing Composite fields reject. Text equality uses simple Unicode case mapping without normalization. ORDER BY defaults to nulls first in both directions and honors NULLS FIRST or NULLS LAST. Independent candidate contract, not Salesforce parity certification. Only the listed canonical paths are implemented. Provisioned bearer credentials and OAuth login/refresh are supported. Field policy, Unicode/nonblank validation, SOQL execution, own-user identity and tenant isolation remain server checks. Null/omission and the columns extension reflect existing candidate behavior. No Composite, collections, Bulk, pagination or metadata deployment is provided. Tenant-defined optional Text fields and custom objects are resolved from persistent metadata. Schema changes use operator CLI commands; no Metadata API deployment is provided.
+  description: Object and field API names are case-insensitive; responses use canonical names. REST body duplicates use the last value; case-differing Composite fields reject. Text equality uses simple Unicode case mapping without normalization. ORDER BY defaults to nulls first in both directions and honors NULLS FIRST or NULLS LAST. Independent candidate contract, not Salesforce parity certification. Only the listed canonical paths are implemented. Provisioned bearer credentials and OAuth login/refresh are supported. Field policy, Unicode/nonblank validation, SOQL execution, own-user identity and tenant isolation remain server checks. Null/omission and the columns extension reflect existing candidate behavior. No Composite, collections, Bulk, pagination or metadata deployment is provided. Tenant-defined custom objects and typed fields (text, numbers, currency, percent, dates, checkboxes, picklists, email, phone, URL, lookup, master-detail and auto-number) are resolved from persistent metadata; values are exact decimals, never binary floating point. Compound Name and Address fields are read-only. Formula, roll-up summary, encrypted, geolocation and rich text definitions are stored, not enforced, and never described. Schema changes use operator CLI commands; no Metadata API deployment is provided.
 servers:
   - url: /
 security:
@@ -901,7 +901,7 @@ paths:
           $ref: "#/components/responses/MethodError"
         "500":
           $ref: "#/components/responses/Error"
-      description: "Candidate default: tenant-defined Text objects/fields. Describe and server-side validation enforce the tenant catalog; schema writes are operator-only."
+      description: "Candidate default: tenant-defined objects and typed fields. Describe and server-side validation enforce the tenant catalog; schema writes are operator-only."
       parameters:
         - name: object
           in: path
@@ -941,7 +941,7 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/DynamicCreate"
-      description: "Candidate default: tenant-defined Text objects/fields. Describe and server-side validation enforce the tenant catalog; schema writes are operator-only."
+      description: "Candidate default: tenant-defined objects and typed fields. Describe and server-side validation enforce the tenant catalog; schema writes are operator-only."
       parameters:
         - name: object
           in: path
@@ -993,7 +993,7 @@ paths:
           schema:
             type: string
             minLength: 1
-      description: "Candidate default: tenant-defined Text objects/fields. Describe and server-side validation enforce the tenant catalog; schema writes are operator-only."
+      description: "Candidate default: tenant-defined objects and typed fields. Describe and server-side validation enforce the tenant catalog; schema writes are operator-only."
     patch:
       operationId: candidateUpdateDynamic
       x-source:
@@ -1037,7 +1037,7 @@ paths:
           schema:
             type: string
             minLength: 1
-      description: "Candidate default: tenant-defined Text objects/fields. Describe and server-side validation enforce the tenant catalog; schema writes are operator-only."
+      description: "Candidate default: tenant-defined objects and typed fields. Describe and server-side validation enforce the tenant catalog; schema writes are operator-only."
     delete:
       operationId: candidateDeleteDynamic
       x-source:
@@ -1075,7 +1075,7 @@ paths:
           schema:
             type: string
             minLength: 1
-      description: "Candidate default: tenant-defined Text objects/fields. Describe and server-side validation enforce the tenant catalog; schema writes are operator-only."
+      description: "Candidate default: tenant-defined objects and typed fields. Describe and server-side validation enforce the tenant catalog; schema writes are operator-only."
 components:
   securitySchemes:
     bearerAuth:
@@ -1141,12 +1141,101 @@ components:
             - string
             - "null"
           maxLength: 80
-      patternProperties:
-        ^(?!Compat_Text__c$|Compat_Key__c$)[A-Za-z][A-Za-z0-9_]*__c$:
+        Phone:
+          type:
+            - string
+            - "null"
+          maxLength: 40
+        Fax:
+          type:
+            - string
+            - "null"
+          maxLength: 40
+        Website:
           type:
             - string
             - "null"
           maxLength: 255
+        Type:
+          type:
+            - string
+            - "null"
+          maxLength: 255
+        Industry:
+          type:
+            - string
+            - "null"
+          maxLength: 255
+        AnnualRevenue:
+          anyOf:
+            - type: number
+            - type: string
+              pattern: ^-?(?:\d+\.?\d*|\.\d+)$
+            - type: "null"
+        NumberOfEmployees:
+          anyOf:
+            - type: number
+            - type: string
+              pattern: ^-?(?:\d+\.?\d*|\.\d+)$
+            - type: "null"
+        Description:
+          type:
+            - string
+            - "null"
+          maxLength: 32000
+        BillingStreet:
+          type:
+            - string
+            - "null"
+          maxLength: 255
+        BillingCity:
+          type:
+            - string
+            - "null"
+          maxLength: 40
+        BillingState:
+          type:
+            - string
+            - "null"
+          maxLength: 80
+        BillingPostalCode:
+          type:
+            - string
+            - "null"
+          maxLength: 20
+        BillingCountry:
+          type:
+            - string
+            - "null"
+          maxLength: 80
+        ShippingStreet:
+          type:
+            - string
+            - "null"
+          maxLength: 255
+        ShippingCity:
+          type:
+            - string
+            - "null"
+          maxLength: 40
+        ShippingState:
+          type:
+            - string
+            - "null"
+          maxLength: 80
+        ShippingPostalCode:
+          type:
+            - string
+            - "null"
+          maxLength: 20
+        ShippingCountry:
+          type:
+            - string
+            - "null"
+          maxLength: 80
+      patternProperties:
+        ^(?!Compat_Text__c$|Compat_Key__c$)[A-Za-z][A-Za-z0-9_]*__c$:
+          $ref: "#/components/schemas/FieldValue"
     AccountPatch:
       type: object
       additionalProperties: false
@@ -1166,12 +1255,101 @@ components:
             - string
             - "null"
           maxLength: 80
-      patternProperties:
-        ^(?!Compat_Text__c$|Compat_Key__c$)[A-Za-z][A-Za-z0-9_]*__c$:
+        Phone:
+          type:
+            - string
+            - "null"
+          maxLength: 40
+        Fax:
+          type:
+            - string
+            - "null"
+          maxLength: 40
+        Website:
           type:
             - string
             - "null"
           maxLength: 255
+        Type:
+          type:
+            - string
+            - "null"
+          maxLength: 255
+        Industry:
+          type:
+            - string
+            - "null"
+          maxLength: 255
+        AnnualRevenue:
+          anyOf:
+            - type: number
+            - type: string
+              pattern: ^-?(?:\d+\.?\d*|\.\d+)$
+            - type: "null"
+        NumberOfEmployees:
+          anyOf:
+            - type: number
+            - type: string
+              pattern: ^-?(?:\d+\.?\d*|\.\d+)$
+            - type: "null"
+        Description:
+          type:
+            - string
+            - "null"
+          maxLength: 32000
+        BillingStreet:
+          type:
+            - string
+            - "null"
+          maxLength: 255
+        BillingCity:
+          type:
+            - string
+            - "null"
+          maxLength: 40
+        BillingState:
+          type:
+            - string
+            - "null"
+          maxLength: 80
+        BillingPostalCode:
+          type:
+            - string
+            - "null"
+          maxLength: 20
+        BillingCountry:
+          type:
+            - string
+            - "null"
+          maxLength: 80
+        ShippingStreet:
+          type:
+            - string
+            - "null"
+          maxLength: 255
+        ShippingCity:
+          type:
+            - string
+            - "null"
+          maxLength: 40
+        ShippingState:
+          type:
+            - string
+            - "null"
+          maxLength: 80
+        ShippingPostalCode:
+          type:
+            - string
+            - "null"
+          maxLength: 20
+        ShippingCountry:
+          type:
+            - string
+            - "null"
+          maxLength: 80
+      patternProperties:
+        ^(?!Compat_Text__c$|Compat_Key__c$)[A-Za-z][A-Za-z0-9_]*__c$:
+          $ref: "#/components/schemas/FieldValue"
     AccountUpsert:
       type: object
       additionalProperties: false
@@ -1208,12 +1386,74 @@ components:
             - string
             - "null"
           maxLength: 18
-      patternProperties:
-        ^[A-Za-z][A-Za-z0-9_]*__c$:
+        Salutation:
           type:
             - string
             - "null"
           maxLength: 255
+        Title:
+          type:
+            - string
+            - "null"
+          maxLength: 128
+        Department:
+          type:
+            - string
+            - "null"
+          maxLength: 80
+        Email:
+          type:
+            - string
+            - "null"
+          maxLength: 80
+        Phone:
+          type:
+            - string
+            - "null"
+          maxLength: 40
+        MobilePhone:
+          type:
+            - string
+            - "null"
+          maxLength: 40
+        Birthdate:
+          type:
+            - string
+            - "null"
+          pattern: ^\d{4}-\d{2}-\d{2}$
+        Description:
+          type:
+            - string
+            - "null"
+          maxLength: 32000
+        MailingStreet:
+          type:
+            - string
+            - "null"
+          maxLength: 255
+        MailingCity:
+          type:
+            - string
+            - "null"
+          maxLength: 40
+        MailingState:
+          type:
+            - string
+            - "null"
+          maxLength: 80
+        MailingPostalCode:
+          type:
+            - string
+            - "null"
+          maxLength: 20
+        MailingCountry:
+          type:
+            - string
+            - "null"
+          maxLength: 80
+      patternProperties:
+        ^[A-Za-z][A-Za-z0-9_]*__c$:
+          $ref: "#/components/schemas/FieldValue"
     ContactPatch:
       type: object
       additionalProperties: false
@@ -1233,12 +1473,74 @@ components:
             - string
             - "null"
           maxLength: 18
-      patternProperties:
-        ^[A-Za-z][A-Za-z0-9_]*__c$:
+        Salutation:
           type:
             - string
             - "null"
           maxLength: 255
+        Title:
+          type:
+            - string
+            - "null"
+          maxLength: 128
+        Department:
+          type:
+            - string
+            - "null"
+          maxLength: 80
+        Email:
+          type:
+            - string
+            - "null"
+          maxLength: 80
+        Phone:
+          type:
+            - string
+            - "null"
+          maxLength: 40
+        MobilePhone:
+          type:
+            - string
+            - "null"
+          maxLength: 40
+        Birthdate:
+          type:
+            - string
+            - "null"
+          pattern: ^\d{4}-\d{2}-\d{2}$
+        Description:
+          type:
+            - string
+            - "null"
+          maxLength: 32000
+        MailingStreet:
+          type:
+            - string
+            - "null"
+          maxLength: 255
+        MailingCity:
+          type:
+            - string
+            - "null"
+          maxLength: 40
+        MailingState:
+          type:
+            - string
+            - "null"
+          maxLength: 80
+        MailingPostalCode:
+          type:
+            - string
+            - "null"
+          maxLength: 20
+        MailingCountry:
+          type:
+            - string
+            - "null"
+          maxLength: 80
+      patternProperties:
+        ^[A-Za-z][A-Za-z0-9_]*__c$:
+          $ref: "#/components/schemas/FieldValue"
     CreateResult:
       type: object
       additionalProperties: false
@@ -1321,12 +1623,101 @@ components:
             - string
             - "null"
           maxLength: 80
-      patternProperties:
-        ^(?!Compat_Text__c$|Compat_Key__c$)[A-Za-z][A-Za-z0-9_]*__c$:
+        Phone:
+          type:
+            - string
+            - "null"
+          maxLength: 40
+        Fax:
+          type:
+            - string
+            - "null"
+          maxLength: 40
+        Website:
           type:
             - string
             - "null"
           maxLength: 255
+        Type:
+          type:
+            - string
+            - "null"
+          maxLength: 255
+        Industry:
+          type:
+            - string
+            - "null"
+          maxLength: 255
+        AnnualRevenue:
+          type:
+            - number
+            - "null"
+        NumberOfEmployees:
+          type:
+            - number
+            - "null"
+        Description:
+          type:
+            - string
+            - "null"
+          maxLength: 32000
+        BillingStreet:
+          type:
+            - string
+            - "null"
+          maxLength: 255
+        BillingCity:
+          type:
+            - string
+            - "null"
+          maxLength: 40
+        BillingState:
+          type:
+            - string
+            - "null"
+          maxLength: 80
+        BillingPostalCode:
+          type:
+            - string
+            - "null"
+          maxLength: 20
+        BillingCountry:
+          type:
+            - string
+            - "null"
+          maxLength: 80
+        BillingAddress:
+          $ref: "#/components/schemas/AddressValue"
+        ShippingStreet:
+          type:
+            - string
+            - "null"
+          maxLength: 255
+        ShippingCity:
+          type:
+            - string
+            - "null"
+          maxLength: 40
+        ShippingState:
+          type:
+            - string
+            - "null"
+          maxLength: 80
+        ShippingPostalCode:
+          type:
+            - string
+            - "null"
+          maxLength: 20
+        ShippingCountry:
+          type:
+            - string
+            - "null"
+          maxLength: 80
+        ShippingAddress:
+          $ref: "#/components/schemas/AddressValue"
+      patternProperties:
+        ^(?!Compat_Text__c$|Compat_Key__c$)[A-Za-z][A-Za-z0-9_]*__c$:
+          $ref: "#/components/schemas/FieldValue"
     ContactRead:
       type: object
       additionalProperties: false
@@ -1355,12 +1746,81 @@ components:
             - string
             - "null"
           maxLength: 18
-      patternProperties:
-        ^[A-Za-z][A-Za-z0-9_]*__c$:
+        Salutation:
           type:
             - string
             - "null"
           maxLength: 255
+        Title:
+          type:
+            - string
+            - "null"
+          maxLength: 128
+        Department:
+          type:
+            - string
+            - "null"
+          maxLength: 80
+        Email:
+          type:
+            - string
+            - "null"
+          maxLength: 80
+        Phone:
+          type:
+            - string
+            - "null"
+          maxLength: 40
+        MobilePhone:
+          type:
+            - string
+            - "null"
+          maxLength: 40
+        Birthdate:
+          type:
+            - string
+            - "null"
+          pattern: ^\d{4}-\d{2}-\d{2}$
+        Description:
+          type:
+            - string
+            - "null"
+          maxLength: 32000
+        MailingStreet:
+          type:
+            - string
+            - "null"
+          maxLength: 255
+        MailingCity:
+          type:
+            - string
+            - "null"
+          maxLength: 40
+        MailingState:
+          type:
+            - string
+            - "null"
+          maxLength: 80
+        MailingPostalCode:
+          type:
+            - string
+            - "null"
+          maxLength: 20
+        MailingCountry:
+          type:
+            - string
+            - "null"
+          maxLength: 80
+        Name:
+          type:
+            - string
+            - "null"
+          maxLength: 511
+        MailingAddress:
+          $ref: "#/components/schemas/AddressValue"
+      patternProperties:
+        ^[A-Za-z][A-Za-z0-9_]*__c$:
+          $ref: "#/components/schemas/FieldValue"
     AccountProjection:
       type: object
       additionalProperties: false
@@ -1385,12 +1845,101 @@ components:
             - string
             - "null"
           maxLength: 80
-      patternProperties:
-        ^(?!Compat_Text__c$|Compat_Key__c$)[A-Za-z][A-Za-z0-9_]*__c$:
+        Phone:
+          type:
+            - string
+            - "null"
+          maxLength: 40
+        Fax:
+          type:
+            - string
+            - "null"
+          maxLength: 40
+        Website:
           type:
             - string
             - "null"
           maxLength: 255
+        Type:
+          type:
+            - string
+            - "null"
+          maxLength: 255
+        Industry:
+          type:
+            - string
+            - "null"
+          maxLength: 255
+        AnnualRevenue:
+          type:
+            - number
+            - "null"
+        NumberOfEmployees:
+          type:
+            - number
+            - "null"
+        Description:
+          type:
+            - string
+            - "null"
+          maxLength: 32000
+        BillingStreet:
+          type:
+            - string
+            - "null"
+          maxLength: 255
+        BillingCity:
+          type:
+            - string
+            - "null"
+          maxLength: 40
+        BillingState:
+          type:
+            - string
+            - "null"
+          maxLength: 80
+        BillingPostalCode:
+          type:
+            - string
+            - "null"
+          maxLength: 20
+        BillingCountry:
+          type:
+            - string
+            - "null"
+          maxLength: 80
+        BillingAddress:
+          $ref: "#/components/schemas/AddressValue"
+        ShippingStreet:
+          type:
+            - string
+            - "null"
+          maxLength: 255
+        ShippingCity:
+          type:
+            - string
+            - "null"
+          maxLength: 40
+        ShippingState:
+          type:
+            - string
+            - "null"
+          maxLength: 80
+        ShippingPostalCode:
+          type:
+            - string
+            - "null"
+          maxLength: 20
+        ShippingCountry:
+          type:
+            - string
+            - "null"
+          maxLength: 80
+        ShippingAddress:
+          $ref: "#/components/schemas/AddressValue"
+      patternProperties:
+        ^(?!Compat_Text__c$|Compat_Key__c$)[A-Za-z][A-Za-z0-9_]*__c$:
+          $ref: "#/components/schemas/FieldValue"
     ContactProjection:
       type: object
       additionalProperties: false
@@ -1431,12 +1980,81 @@ components:
                     - string
                     - "null"
                   maxLength: 255
-      patternProperties:
-        ^[A-Za-z][A-Za-z0-9_]*__c$:
+        Salutation:
           type:
             - string
             - "null"
           maxLength: 255
+        Title:
+          type:
+            - string
+            - "null"
+          maxLength: 128
+        Department:
+          type:
+            - string
+            - "null"
+          maxLength: 80
+        Email:
+          type:
+            - string
+            - "null"
+          maxLength: 80
+        Phone:
+          type:
+            - string
+            - "null"
+          maxLength: 40
+        MobilePhone:
+          type:
+            - string
+            - "null"
+          maxLength: 40
+        Birthdate:
+          type:
+            - string
+            - "null"
+          pattern: ^\d{4}-\d{2}-\d{2}$
+        Description:
+          type:
+            - string
+            - "null"
+          maxLength: 32000
+        MailingStreet:
+          type:
+            - string
+            - "null"
+          maxLength: 255
+        MailingCity:
+          type:
+            - string
+            - "null"
+          maxLength: 40
+        MailingState:
+          type:
+            - string
+            - "null"
+          maxLength: 80
+        MailingPostalCode:
+          type:
+            - string
+            - "null"
+          maxLength: 20
+        MailingCountry:
+          type:
+            - string
+            - "null"
+          maxLength: 80
+        Name:
+          type:
+            - string
+            - "null"
+          maxLength: 511
+        MailingAddress:
+          $ref: "#/components/schemas/AddressValue"
+      patternProperties:
+        ^[A-Za-z][A-Za-z0-9_]*__c$:
+          $ref: "#/components/schemas/FieldValue"
     Column:
       oneOf:
         - type: object
@@ -1493,6 +2111,7 @@ components:
               - $ref: "#/components/schemas/AccountProjection"
               - $ref: "#/components/schemas/ContactProjection"
               - $ref: "#/components/schemas/OrganizationProjection"
+              - $ref: "#/components/schemas/CurrencyProjection"
               - $ref: "#/components/schemas/DynamicProjection"
         columnMetadata:
           type: array
@@ -1505,12 +2124,35 @@ components:
         - name
         - label
         - type
+        - soapType
         - nillable
         - createable
         - updateable
         - externalId
         - length
+        - precision
+        - scale
+        - digits
         - referenceTo
+        - relationshipName
+        - relationshipOrder
+        - cascadeDelete
+        - restrictedDelete
+        - picklistValues
+        - restrictedPicklist
+        - dependentPicklist
+        - autoNumber
+        - calculated
+        - defaultValue
+        - defaultedOnCreate
+        - nameField
+        - compoundFieldName
+        - htmlFormatted
+        - filterable
+        - sortable
+        - groupable
+        - unique
+      description: "Formula, roll-up summary, encrypted text, geolocation and rich text definitions are stored, not enforced: they are retained for the operator but never described or served."
       properties:
         name:
           type: string
@@ -1521,7 +2163,31 @@ components:
           enum:
             - id
             - string
+            - textarea
+            - double
+            - int
+            - currency
+            - percent
+            - date
+            - datetime
+            - boolean
+            - picklist
+            - multipicklist
+            - email
+            - phone
+            - url
             - reference
+            - address
+        soapType:
+          enum:
+            - tns:ID
+            - xsd:string
+            - xsd:double
+            - xsd:int
+            - xsd:date
+            - xsd:dateTime
+            - xsd:boolean
+            - urn:address
         nillable:
           type: boolean
         createable:
@@ -1533,11 +2199,159 @@ components:
         length:
           type: integer
           minimum: 0
+        precision:
+          type: integer
+          minimum: 0
+          maximum: 18
+        scale:
+          type: integer
+          minimum: 0
+          maximum: 18
+        digits:
+          type: integer
+          minimum: 0
         referenceTo:
           type: array
           items:
             type: string
             minLength: 1
+        relationshipName:
+          type:
+            - string
+            - "null"
+        relationshipOrder:
+          type:
+            - integer
+            - "null"
+          minimum: 0
+          maximum: 1
+        cascadeDelete:
+          type: boolean
+        restrictedDelete:
+          type: boolean
+        picklistValues:
+          type: array
+          maxItems: 1000
+          items:
+            $ref: "#/components/schemas/PicklistValue"
+        restrictedPicklist:
+          type: boolean
+        dependentPicklist:
+          const: false
+        autoNumber:
+          type: boolean
+        calculated:
+          const: false
+        defaultValue:
+          anyOf:
+            - type: boolean
+            - type: string
+            - type: "null"
+        defaultedOnCreate:
+          type: boolean
+        nameField:
+          type: boolean
+        compoundFieldName:
+          type:
+            - string
+            - "null"
+        htmlFormatted:
+          const: false
+        filterable:
+          type: boolean
+        sortable:
+          type: boolean
+        groupable:
+          type: boolean
+        unique:
+          type: boolean
+    PicklistValue:
+      type: object
+      additionalProperties: false
+      required:
+        - active
+        - defaultValue
+        - label
+        - value
+        - validFor
+      properties:
+        active:
+          type: boolean
+        defaultValue:
+          type: boolean
+        label:
+          type: string
+          maxLength: 255
+        value:
+          type: string
+          minLength: 1
+          maxLength: 255
+        validFor:
+          type: "null"
+    FieldValue:
+      description: "Custom field value. Text kinds are strings; Number, Currency and Percent are JSON numbers (writes also accept plain decimal strings); Date is YYYY-MM-DD; Date/Time is YYYY-MM-DDThh:mm:ss.000+0000 in UTC (writes accept RFC 3339 offsets); Checkbox is boolean; multi-select is ';'-separated; references are record IDs. The tenant catalog and server validation decide each field's type."
+      anyOf:
+        - type: string
+          maxLength: 131072
+        - type: number
+        - type: boolean
+        - type: "null"
+    AddressValue:
+      description: Read-only compound address, null when every component is empty. Write the component fields instead.
+      anyOf:
+        - type: "null"
+        - type: object
+          additionalProperties: false
+          required:
+            - street
+            - city
+            - state
+            - postalCode
+            - country
+          properties:
+            street:
+              type:
+                - string
+                - "null"
+              maxLength: 255
+            city:
+              type:
+                - string
+                - "null"
+              maxLength: 40
+            state:
+              type:
+                - string
+                - "null"
+              maxLength: 80
+            postalCode:
+              type:
+                - string
+                - "null"
+              maxLength: 20
+            country:
+              type:
+                - string
+                - "null"
+              maxLength: 80
+    CurrencyProjection:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+        - DefaultCurrencyIsoCode
+      properties:
+        attributes:
+          type: object
+          additionalProperties: false
+          required:
+            - type
+          properties:
+            type:
+              const: Organization
+        DefaultCurrencyIsoCode:
+          type: string
+          pattern: ^[A-Z]{3}$
     ObjectDescribe:
       type: object
       additionalProperties: false
@@ -2181,8 +2995,6 @@ components:
     DynamicCreate:
       type: object
       additionalProperties: false
-      required:
-        - Name
       properties:
         Name:
           type: string
@@ -2190,10 +3002,7 @@ components:
           maxLength: 80
       patternProperties:
         ^[A-Za-z][A-Za-z0-9_]*__c$:
-          type:
-            - string
-            - "null"
-          maxLength: 255
+          $ref: "#/components/schemas/FieldValue"
     DynamicPatch:
       type: object
       additionalProperties: false
@@ -2204,10 +3013,7 @@ components:
           maxLength: 80
       patternProperties:
         ^[A-Za-z][A-Za-z0-9_]*__c$:
-          type:
-            - string
-            - "null"
-          maxLength: 255
+          $ref: "#/components/schemas/FieldValue"
     DynamicProjection:
       type: object
       additionalProperties: false
@@ -2223,10 +3029,7 @@ components:
           maxLength: 80
       patternProperties:
         ^[A-Za-z][A-Za-z0-9_]*__c$:
-          type:
-            - string
-            - "null"
-          maxLength: 255
+          $ref: "#/components/schemas/FieldValue"
     DynamicRead:
       type: object
       additionalProperties: false
@@ -2244,10 +3047,7 @@ components:
           maxLength: 80
       patternProperties:
         ^[A-Za-z][A-Za-z0-9_]*__c$:
-          type:
-            - string
-            - "null"
-          maxLength: 255
+          $ref: "#/components/schemas/FieldValue"
   responses:
     Error:
       description: Current candidate response

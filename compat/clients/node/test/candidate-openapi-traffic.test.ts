@@ -448,6 +448,9 @@ test("validates dynamic custom object creation and text maps", async () => {
     body: bytes({ Name: "Project", Notes__c: "hello" }),
   };
   valid(v.validate(e));
-  e.request.body = bytes({ Name: "Project", Notes__c: 42 });
+  // Plan 28: custom values may be numbers or booleans; objects never are.
+  e.request.body = bytes({ Name: "Project", Notes__c: 42, Done__c: true });
+  valid(v.validate(e));
+  e.request.body = bytes({ Name: "Project", Notes__c: { nested: 1 } });
   assert.deepEqual(v.validate(e).requestIssues, ["request-schema"]);
 });
