@@ -226,7 +226,9 @@ test("leaving the connected route returns to a credential-free preview and requi
           ? connectedDiscovery
           : route.request().url().includes("/describe")
             ? connectedAccount
-            : { records: [], totalSize: 0, done: true },
+            : route.request().url().endsWith("/storedFields")
+              ? { storedFields: [] }
+              : { records: [], totalSize: 0, done: true },
       ),
     });
   });
@@ -236,7 +238,7 @@ test("leaving the connected route returns to a credential-free preview and requi
     .fill("synthetic-token-for-browser-test");
   await page.getByRole("button", { name: "Connect", exact: true }).click();
   await expect(page.getByRole("button", { name: "New record" })).toBeVisible();
-  expect(auth).toHaveLength(3);
+  expect(auth).toHaveLength(5);
   expect(
     auth.every((value) => value === "Bearer synthetic-token-for-browser-test"),
   ).toBe(true);
@@ -244,11 +246,11 @@ test("leaving the connected route returns to a credential-free preview and requi
   await expect(
     page.getByRole("heading", { name: "Accounts", exact: true }),
   ).toBeVisible();
-  expect(auth).toHaveLength(3);
+  expect(auth).toHaveLength(5);
   await page.getByRole("link", { name: "Return to connected app" }).click();
   await expect(page.getByLabel("Access token")).toHaveValue("");
   await expect(page.getByRole("button", { name: "New record" })).toHaveCount(0);
-  expect(auth).toHaveLength(3);
+  expect(auth).toHaveLength(5);
 });
 
 test("pending connected reads cannot dispatch follow-up requests inside preview", async ({
@@ -296,8 +298,10 @@ test("pending connected reads cannot dispatch follow-up requests inside preview"
   release();
   // Let the deliberately held response propagate before asserting no follow-up.
   await page.waitForTimeout(250);
-  expect(requests).toHaveLength(2);
-  expect(requests.some((url) => url.includes("/query"))).toBe(false);
+  // Discovery, tenant currency, then the held describe; nothing follows it.
+  expect(requests).toHaveLength(3);
+  expect(requests.some((url) => url.includes("/storedFields"))).toBe(false);
+  expect(requests.filter((url) => url.includes("/query"))).toHaveLength(1);
 });
 
 test("primary save button retains AA contrast on hover in both themes", async ({
