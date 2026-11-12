@@ -77,8 +77,16 @@ func (b *binder) bindCompare(c *Compare, obj metadata.Object, ctx *bindCtx) (Bou
 		}
 		return &BoundCmp{Left: left, Op: op, Right: Param{Value: nil}}, nil
 	}
-	if op == "LIKE" && !textLike(left.Field.Kind()) {
+	if op == "LIKE" && (left.Agg != "" || left.Func != "" || !textLike(left.Field.Kind())) {
 		return nil, contract.Invalid("INVALID_QUERY_FILTER_OPERATOR", "LIKE is not valid for this field type")
+	}
+	// Aggregates and functions type the operand by literal kind (HAVING).
+	if left.Agg != "" || (left.Func != "" && !left.Label) {
+		right, err := b.typeByKind(c.Right)
+		if err != nil {
+			return nil, err
+		}
+		return &BoundCmp{Left: left, Op: op, Right: right}, nil
 	}
 	right, err := b.typeLiteral(fieldOwner(obj, left), left.Field, c.Right)
 	if err != nil {
@@ -252,6 +260,44 @@ func wrongType(f metadata.Field) error {
 	return contract.FieldProblem("INVALID_FIELD",
 		"value of filter criterion for field '"+name+"' must be of type "+typ+" and should not be enclosed in quotes",
 		name)
+}
+
+// typeByKind types a literal for an aggregate or function result, which has
+// no field describe type (HAVING). spec: soql-05
+func (b *binder) typeByKind(lit Literal) (Param, error) {
+	switch lit.Kind {
+	case LitNull:
+		return Param{Value: nil}, nil
+	case LitBool:
+		return Param{Value: lit.Text == "true", Cast: "bool"}, nil
+	case LitNumber:
+		s, err := fieldtype.Decimal(json.Number(lit.Text), 18, 8)
+		if err != nil {
+			return Param{}, malformed("invalid numeric literal")
+		}
+		return Param{Value: s, Cast: "numeric"}, nil
+	case LitString:
+		return Param{Value: lit.Text, Cast: "text"}, nil
+	case LitDate:
+		t, err := fieldtype.ParseDateTime(lit.Text + "T00:00:00Z")
+		if err != nil {
+			return Param{}, malformed("invalid date literal")
+		}
+		return Param{Value: t, Cast: "date"}, nil
+	case LitDateTime:
+		t, err := fieldtype.ParseDateTime(lit.Text)
+		if err != nil {
+			return Param{}, malformed("invalid date-time literal")
+		}
+		return Param{Value: t, Cast: "timestamptz"}, nil
+	case LitDateLiteral:
+		start, _, err := DateLiteralRange(lit, b.now().UTC())
+		if err != nil {
+			return Param{}, err
+		}
+		return Param{Value: start, Cast: "timestamptz"}, nil
+	}
+	return Param{}, malformed("invalid literal")
 }
 
 func (b *binder) typeLiteral(owner metadata.Object, f metadata.Field, lit Literal) (Param, error) {

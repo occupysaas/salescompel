@@ -325,4 +325,8 @@ func TestBindAggregateRules(t *testing.T) {
 	if !b.CountOnly || !b.Aggregate {
 		t.Fatalf("COUNT() flags: %#v", b)
 	}
+	// HAVING compares aggregates by literal kind, not the argument's field type.
+	if _, err = f.bind("select COUNT(Id) from Item__c having COUNT(Id) > 5", f.admin); err != nil {
+		t.Fatalf("HAVING COUNT(Id) > 5: %v", err)
+	}
 }
