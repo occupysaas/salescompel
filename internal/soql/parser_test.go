@@ -187,6 +187,36 @@ func TestParseNodePositions(t *testing.T) {
 			t.Errorf("Call Pos = %d want %d", call.Pos.Offset, want)
 		}
 	})
+
+	t.Run("fields all", func(t *testing.T) {
+		const text = "SELECT FIELDS(ALL) FROM Account"
+		q, err := Parse(text)
+		if err != nil {
+			t.Fatal(err)
+		}
+		fa, ok := q.Select[0].(*FieldsAll)
+		if !ok {
+			t.Fatalf("select[0] = %T want *FieldsAll", q.Select[0])
+		}
+		if want := strings.Index(text, "FIELDS"); fa.Pos.Offset != want {
+			t.Errorf("FieldsAll Pos = %d want %d", fa.Pos.Offset, want)
+		}
+	})
+
+	t.Run("includes", func(t *testing.T) {
+		const text = "SELECT Id FROM Account WHERE Tags__c INCLUDES ('a')"
+		q, err := Parse(text)
+		if err != nil {
+			t.Fatal(err)
+		}
+		inc, ok := q.Where.(*Includes)
+		if !ok {
+			t.Fatalf("Where = %T want *Includes", q.Where)
+		}
+		if want := strings.Index(text, "Tags__c"); inc.Pos.Offset != want {
+			t.Errorf("Includes Pos = %d want %d", inc.Pos.Offset, want)
+		}
+	})
 }
 
 func TestParseErrorMessages(t *testing.T) {
