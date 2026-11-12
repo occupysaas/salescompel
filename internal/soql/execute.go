@@ -64,6 +64,14 @@ func executePlan(ctx context.Context, tx pgx.Tx, bound *Bound, plan *Plan, opt O
 		batch = 2000
 	}
 
+	// Fetch one extra row past the page cap so overflow is detectable.
+	// When the user LIMIT already fits in one batch, use it directly.
+	fetchLimit := batch + 1
+	if bound.Limit != nil && *bound.Limit <= batch {
+		fetchLimit = *bound.Limit
+	}
+	plan.Stmt.Args[plan.LimitArg] = fetchLimit
+
 	rows, err := tx.Query(ctx, plan.Stmt.SQL, plan.Stmt.Args...)
 	if err != nil {
 		return Result{}, dbErr(err)
@@ -83,8 +91,11 @@ func executePlan(ctx context.Context, tx pgx.Tx, bound *Bound, plan *Plan, opt O
 	}
 
 	total := len(records)
-	if bound.Limit == nil && total > batch {
-		return Result{}, tooComplicated("result exceeds one page; add LIMIT or a narrower filter")
+	// Done true only when the full result fits in one page.
+	if bound.Limit == nil || *bound.Limit > batch {
+		if total > batch {
+			return Result{}, tooComplicated("result exceeds one page; add LIMIT or a narrower filter")
+		}
 	}
 	if bound.Limit != nil && total > *bound.Limit {
 		return Result{}, tooComplicated("result exceeds one page; add LIMIT or a narrower filter")

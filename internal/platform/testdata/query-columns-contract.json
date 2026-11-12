@@ -745,18 +745,36 @@
     {
       "id": "unsupported-traversal",
       "principal": "admin",
-      "query": "SELECT Account.Id FROM Contact",
+      "query": "SELECT Account.Id FROM Contact WHERE LastName = 'Contact'",
       "querySuffix": "&columns=true",
-      "expectedStatus": 400,
-      "expectedBody": [
-        {
-          "errorCode": "INVALID_FIELD",
-          "message": "Field is unavailable",
-          "fields": [
-            "Account.Id"
-          ]
-        }
-      ],
+      "expectedStatus": 200,
+      "expectedBody": {
+        "totalSize": 1,
+        "done": true,
+        "records": [
+          {
+            "attributes": {
+              "type": "Contact"
+            },
+            "Account": {
+              "Id": "$accountId",
+              "attributes": {
+                "type": "Account"
+              }
+            }
+          }
+        ],
+        "columnMetadata": [
+          {
+            "columnName": "Account",
+            "joinColumns": [
+              {
+                "columnName": "Id"
+              }
+            ]
+          }
+        ]
+      },
       "basis": [
         "candidate-contract",
         "existing-policy"
@@ -771,7 +789,7 @@
       "expectedBody": [
         {
           "errorCode": "MALFORMED_QUERY",
-          "message": "Unsupported or incomplete query"
+          "message": "expected select item"
         }
       ],
       "basis": [
@@ -787,8 +805,8 @@
       "expectedStatus": 400,
       "expectedBody": [
         {
-          "errorCode": "MALFORMED_QUERY",
-          "message": "Unsupported query syntax"
+          "errorCode": "QUERY_TOO_COMPLICATED",
+          "message": "aggregate queries are not yet supported"
         }
       ],
       "basis": [

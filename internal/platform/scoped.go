@@ -27,6 +27,8 @@ func (s *Store) Read(ctx context.Context, p Principal, object, id string) (map[s
 	e := s.within(ctx, p, func(s *Store, p Principal) error { var e error; out, e = s.recordTx(p).Read(ctx, object, id); return e })
 	return out, e
 }
+// Select is a deprecated wrapper kept for existing unit tests until Task 9.
+// Deprecated: use Query or QueryColumns.
 func (s *Store) Select(ctx context.Context, p Principal, q Query) ([]map[string]any, error) {
 	var out []map[string]any
 	e := s.within(ctx, p, func(s *Store, p Principal) error { var e error; out, e = s.recordTx(p).Select(ctx, q); return e })
@@ -42,6 +44,19 @@ func (s *Store) Query(ctx context.Context, p Principal, text string, batch int) 
 		return e
 	})
 	return out, e
+}
+
+// QueryColumns executes SOQL text and returns REST column metadata alongside
+// the result. Single engine path for columns=true requests.
+func (s *Store) QueryColumns(ctx context.Context, p Principal, text string, batch int) (soqleng.Result, []map[string]any, error) {
+	var out soqleng.Result
+	var md []map[string]any
+	e := s.within(ctx, p, func(s *Store, p Principal) error {
+		var e error
+		out, md, e = s.recordTx(p).QueryColumns(ctx, text, soqleng.Options{BatchSize: batch})
+		return e
+	})
+	return out, md, e
 }
 func (s *Store) Upsert(ctx context.Context, p Principal, key string, data map[string]any) (string, bool, error) {
 	for name, v := range data {

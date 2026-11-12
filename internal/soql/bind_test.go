@@ -340,10 +340,9 @@ func TestBindAggregateRules(t *testing.T) {
 
 func TestBindResultKeys(t *testing.T) {
 	f := newBindFixture()
-	// Duplicate field keys, including a parent-path leaf against a local field.
+	// Duplicate Aggregate/Call aliases and child subquery keys are rejected.
+	// Duplicate FieldRef selections are allowed (map collapses).
 	for _, text := range []string{
-		"select Name, Name from Item__c",
-		"select account.name, name from contact",
 		"select SUM(Amount__c) expr0, COUNT(Id) expr0 from Item__c",
 		"select Name, COUNT(Id) Name from Item__c group by Name",
 		// Child subqueries key on the relationship name like fields.

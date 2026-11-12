@@ -17,12 +17,15 @@ type Statement struct {
 }
 
 // Plan is a compiled query with the metadata the shaper needs.
+// Compile returns *Plan (rather than bare Statement) because the shaper
+// needs JoinIDs, PathAlias and Compound alongside the SQL.
 type Plan struct {
 	Stmt      Statement
 	Columns   []BoundColumn
 	JoinIDs   map[string]int           // join alias -> SQL result index of hidden id
 	PathAlias map[string]string        // path key -> join alias
 	Compound  map[int][]metadata.Field // column index -> compound component fields
+	LimitArg  int                      // index into Stmt.Args of the LIMIT parameter
 }
 
 type joinSpec struct {
@@ -118,7 +121,8 @@ func (c *compiler) compile(b *Bound) (*Plan, error) {
 	if b.Limit != nil {
 		limit = *b.Limit
 	}
-	sql += fmt.Sprintf(" LIMIT $%d", c.addArg(limit))
+	limitArg := c.addArg(limit)
+	sql += fmt.Sprintf(" LIMIT $%d", limitArg)
 	if b.Offset != nil {
 		sql += fmt.Sprintf(" OFFSET $%d", c.addArg(*b.Offset))
 	}
@@ -133,6 +137,7 @@ func (c *compiler) compile(b *Bound) (*Plan, error) {
 		JoinIDs:   joinIDs,
 		PathAlias: pathAlias,
 		Compound:  compound,
+		LimitArg:  limitArg - 1, // zero-based index into Args
 	}, nil
 }
 

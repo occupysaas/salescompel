@@ -8,9 +8,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"strconv"
 	"salescompel/internal/metadata"
-	"salescompel/internal/query"
 	"salescompel/internal/records"
 	"strings"
 	"unicode/utf8"
@@ -293,39 +291,16 @@ func NewHandlerWithOptions(s *Store, assetDir string, o Options) http.Handler {
 				return
 			}
 			if columns {
-				// Column metadata path keeps the old grammar for Task 5.
-				q, e := ParseQuery(qtext)
+				res, md, e := s.QueryColumns(ctx, p, qtext, 2000)
 				if e != nil {
 					writeError(w, e)
 					return
 				}
-				rows, e := s.Select(ctx, p, q)
-				if e != nil {
-					writeError(w, e)
-					return
-				}
-				result := map[string]any{"totalSize": len(rows), "done": true, "records": rows}
-				md, err := query.ColumnMetadata(p, q)
-				if err != nil {
-					writeError(w, err)
-					return
-				}
-				result["columnMetadata"] = md
+				result := map[string]any{"totalSize": res.TotalSize, "done": res.Done, "records": res.Records, "columnMetadata": md}
 				writeJSON(w, 200, result)
 				return
 			}
-			batch := 2000
-			if v := r.Header.Get("Sforce-Query-Options"); v != "" {
-				for _, part := range strings.Split(v, ";") {
-					kv := strings.SplitN(strings.TrimSpace(part), "=", 2)
-					if len(kv) == 2 && strings.EqualFold(kv[0], "batchSize") {
-						if n, err := strconv.Atoi(kv[1]); err == nil && n > 0 {
-							batch = n
-						}
-					}
-				}
-			}
-			res, e := s.Query(ctx, p, qtext, batch)
+			res, e := s.Query(ctx, p, qtext, 2000)
 			if e != nil {
 				writeError(w, e)
 				return

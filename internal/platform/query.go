@@ -11,4 +11,6 @@ const (
 	NullLast    = query.NullLast
 )
 
+// ParseQuery is a deprecated wrapper kept for existing unit tests until Task 9.
+// Deprecated: use Store.Query which parses SOQL text directly.
 var ParseQuery = query.Parse

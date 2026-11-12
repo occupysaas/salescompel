@@ -160,7 +160,9 @@ func (c *compiler) compileIn(in *BoundIn, root string) (string, error) {
 
 func (c *compiler) compileSemi(in *BoundIn, left, root string) (string, error) {
 	sub := in.Semi
-	sc := &compiler{joinMap: map[string]string{}}
+	// Sub-compiler continues the outer arg numbering so placeholder
+	// positions in the sub-SQL match the combined args slice.
+	sc := &compiler{joinMap: map[string]string{}, args: c.args}
 	subRoot := "s"
 	tenantArg := sc.addArg(sub.Object.Tenant)
 	col := subRoot + "." + pgx.Identifier{sub.Columns[0].Field.Column}.Sanitize()
@@ -174,7 +176,7 @@ func (c *compiler) compileSemi(in *BoundIn, left, root string) (string, error) {
 		where += " AND (" + w + ")"
 	}
 	subSQL := "SELECT " + col + " FROM " + from + " WHERE " + where
-	c.args = append(c.args, sc.args...)
+	c.args = sc.args
 	op := " IN "
 	if in.Not {
 		op = " NOT IN "

@@ -1,6 +1,7 @@
 package platform
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"strings"
@@ -27,6 +28,49 @@ func soqlErr(t *testing.T, s *Store, p Principal, text string) error {
 	return err
 }
 
+func runOldEngine(ctx context.Context, t *testing.T, s *Store, p Principal, text string) (string, []byte) {
+	t.Helper()
+	q, err := ParseQuery(text)
+	if err != nil {
+		code, _ := apiCode(err)
+		return code, nil
+	}
+	rows, err := s.Select(ctx, p, q)
+	if err != nil {
+		code, _ := apiCode(err)
+		return code, nil
+	}
+	b, _ := json.Marshal(map[string]any{"totalSize": len(rows), "done": true, "records": rows})
+	return "", b
+}
+
+func runNewEngine(ctx context.Context, t *testing.T, s *Store, p Principal, text string) (string, []byte) {
+	t.Helper()
+	res, err := s.Query(ctx, p, text, 2000)
+	if err != nil {
+		code, _ := apiCode(err)
+		return code, nil
+	}
+	b, _ := json.Marshal(map[string]any{"totalSize": res.TotalSize, "done": res.Done, "records": res.Records})
+	return "", b
+}
+
+func assertEnginesAgree(t *testing.T, s *Store, p Principal, text string) {
+	t.Helper()
+	ctx := context.Background()
+	oldCode, oldJSON := runOldEngine(ctx, t, s, p, text)
+	newCode, newJSON := runNewEngine(ctx, t, s, p, text)
+	if oldCode != "" || newCode != "" {
+		if oldCode != newCode {
+			t.Fatalf("error code mismatch for %q: old=%s new=%s", text, oldCode, newCode)
+		}
+		return
+	}
+	if !bytes.Equal(oldJSON, newJSON) {
+		t.Fatalf("JSON mismatch for %q:\nold: %s\nnew: %s", text, oldJSON, newJSON)
+	}
+}
+
 func TestSOQLRecordQueries(t *testing.T) {
 	f := newTypedFixture(t)
 	s, p := f.s, f.p
@@ -40,7 +84,6 @@ func TestSOQLRecordQueries(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	item1, err := s.Create(ctx, p, "Item__c", map[string]any{
 		"Txt__c": "Alpha", "Num__c": json.Number("42.5"), "Flag__c": true,
 		"Day__c": "2026-06-15", "At__c": "2026-06-15T12:00:00Z",
@@ -66,87 +109,56 @@ func TestSOQLRecordQueries(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	t.Run("text equality case-insensitive", func(t *testing.T) {
-		res := soqlQuery(t, s, p, "SELECT Id FROM Item__c WHERE Txt__c = 'alpha'")
-		if res.TotalSize != 1 {
-			t.Fatal(res.TotalSize)
+	t.Run("comparison operators per kind", func(t *testing.T) {
+		cases := []struct {
+			query string
+			count int
+		}{
+			{"SELECT Id FROM Item__c WHERE Txt__c = 'Alpha'", 1},
+			{"SELECT Id FROM Item__c WHERE Txt__c = 'alpha'", 1},
+			{"SELECT Id FROM Item__c WHERE Stage__c = 'closed'", 1},
+			{"SELECT Id FROM Item__c WHERE Name = 'it-0001'", 1},
+			{"SELECT Id FROM Item__c WHERE Txt__c != 'Alpha'", 2},
+			{"SELECT Id FROM Item__c WHERE Txt__c LIKE 'al%'", 1},
+			{"SELECT Id FROM Item__c WHERE Txt__c LIKE 'a\\%%'", 0},
+			{"SELECT Id FROM Item__c WHERE Txt__c IN ('Alpha','Beta')", 2},
+			{"SELECT Id FROM Item__c WHERE Txt__c NOT IN ('Alpha')", 2},
+			{"SELECT Id FROM Item__c WHERE Txt__c = null", 1},
+			{"SELECT Id FROM Item__c WHERE Txt__c != null", 2},
+			{"SELECT Id FROM Item__c WHERE Num__c = 42.5", 1},
+			{"SELECT Id FROM Item__c WHERE Num__c > 20", 1},
+			{"SELECT Id FROM Item__c WHERE Num__c < 42.5", 1},
+			{"SELECT Id FROM Item__c WHERE Num__c <= 10", 1},
+			{"SELECT Id FROM Item__c WHERE Num__c >= 42.5", 1},
+			{"SELECT Id FROM Item__c WHERE Num__c != 42.5", 2},
+			{"SELECT Id FROM Item__c WHERE Flag__c = true", 2},
+			{"SELECT Id FROM Item__c WHERE Flag__c = false", 1},
+			{"SELECT Id FROM Item__c WHERE Day__c = 2026-06-15", 1},
+			{"SELECT Id FROM Item__c WHERE Day__c > 2026-01-01", 2},
+			{"SELECT Id FROM Item__c WHERE Day__c < 2026-06-15", 1},
+			{"SELECT Id FROM Item__c WHERE Day__c <= 2026-06-15", 2},
+			{"SELECT Id FROM Item__c WHERE Day__c >= 2026-06-15", 2},
+			{"SELECT Id FROM Item__c WHERE Day__c != 2026-06-15", 2},
+			{"SELECT Id FROM Item__c WHERE At__c = 2026-06-15T12:00:00Z", 1},
+			{"SELECT Id FROM Item__c WHERE At__c > 2026-01-01T00:00:00Z", 1},
+			{"SELECT Id FROM Item__c WHERE At__c < 2026-06-15T12:00:00Z", 1},
+			{"SELECT Id FROM Item__c WHERE At__c != 2026-06-15T12:00:00Z", 2},
+			{"SELECT Id FROM Item__c WHERE Stage__c = 'Open'", 2},
+			{"SELECT Id FROM Item__c WHERE Stage__c != 'Open'", 1},
+			{"SELECT Id FROM Item__c WHERE Stage__c IN ('Open')", 2},
+			{"SELECT Id FROM Item__c WHERE Stage__c NOT IN ('Open')", 1},
+			{"SELECT Id FROM Item__c WHERE Multi__c INCLUDES ('A')", 1},
+			{"SELECT Id FROM Item__c WHERE Multi__c EXCLUDES ('A')", 2},
+			{"SELECT Id FROM Item__c WHERE Multi__c INCLUDES ('A','C')", 2},
+			{"SELECT Id FROM Item__c WHERE Multi__c INCLUDES ('A;B','C')", 2},
+			{"SELECT Id FROM Item__c WHERE Mail__c = 'a@b.co'", 1},
+			{"SELECT Id FROM Item__c WHERE Mail__c LIKE 'a@%'", 1},
 		}
-		res = soqlQuery(t, s, p, "SELECT Id FROM Item__c WHERE Stage__c = 'closed'")
-		if res.TotalSize != 1 {
-			t.Fatal(res.TotalSize)
-		}
-	})
-
-	t.Run("autonumber equality case-insensitive", func(t *testing.T) {
-		res := soqlQuery(t, s, p, "SELECT Id FROM Item__c WHERE Name = 'it-0001'")
-		if res.TotalSize != 1 {
-			t.Fatal(res.TotalSize, res.Records)
-		}
-	})
-
-	t.Run("numeric comparison", func(t *testing.T) {
-		res := soqlQuery(t, s, p, "SELECT Id FROM Item__c WHERE Num__c > 20")
-		if res.TotalSize != 1 {
-			t.Fatal(res.TotalSize)
-		}
-		res = soqlQuery(t, s, p, "SELECT Id FROM Item__c WHERE Num__c <= 42.5")
-		if res.TotalSize != 2 {
-			t.Fatal(res.TotalSize)
-		}
-	})
-
-	t.Run("bool equality", func(t *testing.T) {
-		res := soqlQuery(t, s, p, "SELECT Id FROM Item__c WHERE Flag__c = true")
-		if res.TotalSize != 2 {
-			t.Fatal(res.TotalSize)
-		}
-	})
-
-	t.Run("null tests", func(t *testing.T) {
-		res := soqlQuery(t, s, p, "SELECT Id FROM Item__c WHERE Txt__c = null")
-		if res.TotalSize != 1 {
-			t.Fatal(res.TotalSize)
-		}
-		res = soqlQuery(t, s, p, "SELECT Id FROM Item__c WHERE Txt__c != null")
-		if res.TotalSize != 2 {
-			t.Fatal(res.TotalSize)
-		}
-	})
-
-	t.Run("like", func(t *testing.T) {
-		res := soqlQuery(t, s, p, `SELECT Id FROM Item__c WHERE Txt__c LIKE 'al%'`)
-		if res.TotalSize != 1 {
-			t.Fatal(res.TotalSize)
-		}
-		res = soqlQuery(t, s, p, `SELECT Id FROM Item__c WHERE Txt__c LIKE 'a\\%%'`)
-		if res.TotalSize != 0 {
-			t.Fatal(res.TotalSize)
-		}
-	})
-
-	t.Run("in and not in", func(t *testing.T) {
-		res := soqlQuery(t, s, p, "SELECT Id FROM Item__c WHERE Stage__c IN ('Open','Closed')")
-		if res.TotalSize != 3 {
-			t.Fatal(res.TotalSize)
-		}
-		res = soqlQuery(t, s, p, "SELECT Id FROM Item__c WHERE Txt__c NOT IN ('Alpha')")
-		if res.TotalSize != 2 {
-			t.Fatal("NOT IN should include null rows:", res.TotalSize)
-		}
-	})
-
-	t.Run("includes and excludes", func(t *testing.T) {
-		res := soqlQuery(t, s, p, "SELECT Id FROM Item__c WHERE Multi__c INCLUDES ('A;B')")
-		if res.TotalSize != 1 {
-			t.Fatal(res.TotalSize)
-		}
-		res = soqlQuery(t, s, p, "SELECT Id FROM Item__c WHERE Multi__c INCLUDES ('C')")
-		if res.TotalSize != 1 {
-			t.Fatal(res.TotalSize)
-		}
-		res = soqlQuery(t, s, p, "SELECT Id FROM Item__c WHERE Multi__c EXCLUDES ('A')")
-		if res.TotalSize != 2 {
-			t.Fatal(res.TotalSize)
+		for _, tc := range cases {
+			res := soqlQuery(t, s, p, tc.query)
+			if res.TotalSize != tc.count {
+				t.Fatalf("%s: got %d want %d", tc.query, res.TotalSize, tc.count)
+			}
 		}
 	})
 
@@ -159,31 +171,55 @@ func TestSOQLRecordQueries(t *testing.T) {
 		if res.TotalSize != 2 {
 			t.Fatal(res.TotalSize)
 		}
-		err := soqlErr(t, s, p, "SELECT Id FROM Item__c WHERE Txt__c = 'Alpha' OR Txt__c = 'Beta' AND Num__c = 10")
-		if err == nil {
-			t.Fatal("mixed AND and OR without parens should be rejected")
+		if err := soqlErr(t, s, p, "SELECT Id FROM Item__c WHERE Txt__c = 'Alpha' OR Txt__c = 'Beta' AND Num__c = 10"); err == nil {
+			t.Fatal("mixed AND/OR without parens should be rejected")
 		}
 	})
 
-	t.Run("date literals", func(t *testing.T) {
-		res := soqlQuery(t, s, p, "SELECT Id FROM Item__c WHERE Day__c = 2026-06-15")
-		if res.TotalSize != 1 {
+	t.Run("order by limit offset", func(t *testing.T) {
+		res := soqlQuery(t, s, p, "SELECT Id, Txt__c FROM Item__c ORDER BY Txt__c ASC NULLS LAST LIMIT 10")
+		if res.TotalSize != 3 {
 			t.Fatal(res.TotalSize)
 		}
-		res = soqlQuery(t, s, p, "SELECT Id FROM Item__c WHERE Day__c > 2026-01-01")
+		if res.Records[2]["Txt__c"] != nil {
+			t.Fatal("NULLS LAST should put null last:", res.Records[2])
+		}
+		res = soqlQuery(t, s, p, "SELECT Id, Txt__c FROM Item__c ORDER BY Txt__c ASC NULLS FIRST LIMIT 10 OFFSET 1")
 		if res.TotalSize != 2 {
 			t.Fatal(res.TotalSize)
 		}
-		res = soqlQuery(t, s, p, "SELECT Id FROM Item__c WHERE At__c >= 2026-06-15T00:00:00Z")
+	})
+
+	t.Run("multi-key order by", func(t *testing.T) {
+		res := soqlQuery(t, s, p, "SELECT Id, Stage__c, Txt__c FROM Item__c ORDER BY Stage__c ASC, Txt__c ASC NULLS LAST")
+		if res.TotalSize != 3 {
+			t.Fatal(res.TotalSize)
+		}
+		if res.Records[0]["Stage__c"] != "Closed" {
+			t.Fatal("first should be Closed:", res.Records[0])
+		}
+	})
+
+	t.Run("parent path on contact", func(t *testing.T) {
+		res := soqlQuery(t, s, p, "SELECT LastName, Account.Name FROM Contact")
+		if res.TotalSize != 1 {
+			t.Fatal(res.TotalSize)
+		}
+		acc, ok := res.Records[0]["Account"].(map[string]any)
+		if !ok || acc["Name"] != "Acme" {
+			t.Fatal(res.Records[0])
+		}
+	})
+
+	t.Run("id filter normalization", func(t *testing.T) {
+		res := soqlQuery(t, s, p, "SELECT Id FROM Item__c WHERE Id = '"+item1[:15]+"'")
 		if res.TotalSize != 1 {
 			t.Fatal(res.TotalSize)
 		}
 	})
 
-	t.Run("date literal TODAY with fixed clock via RunAST", func(t *testing.T) {
+	t.Run("date literal TODAY with fixed clock", func(t *testing.T) {
 		now := time.Date(2026, 6, 15, 12, 0, 0, 0, time.UTC)
-		clock := func() time.Time { return now }
-		ctx := context.Background()
 		tx, err := f.s.pool.Begin(ctx)
 		if err != nil {
 			t.Fatal(err)
@@ -200,46 +236,12 @@ func TestSOQLRecordQueries(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		res, err := soqleng.Run(ctx, tx, exec, snap, "SELECT Id FROM Item__c WHERE Day__c = TODAY", soqleng.Options{Now: clock})
+		res, err := soqleng.Run(ctx, tx, exec, snap, "SELECT Id FROM Item__c WHERE Day__c = TODAY", soqleng.Options{Now: func() time.Time { return now }})
 		if err != nil {
 			t.Fatal(err)
 		}
 		if res.TotalSize != 1 {
 			t.Fatal("TODAY with fixed clock should match 2026-06-15:", res.TotalSize)
-		}
-	})
-
-	t.Run("order by limit offset", func(t *testing.T) {
-		res := soqlQuery(t, s, p, "SELECT Id, Txt__c FROM Item__c ORDER BY Txt__c ASC NULLS LAST LIMIT 10")
-		if res.TotalSize != 3 {
-			t.Fatal(res.TotalSize)
-		}
-		last := res.Records[2]
-		if last["Txt__c"] != nil {
-			t.Fatal("NULLS LAST should put null last:", last)
-		}
-		res = soqlQuery(t, s, p, "SELECT Id, Txt__c FROM Item__c ORDER BY Txt__c ASC NULLS FIRST LIMIT 10 OFFSET 1")
-		if res.TotalSize != 2 {
-			t.Fatal(res.TotalSize)
-		}
-	})
-
-	t.Run("parent path on contact", func(t *testing.T) {
-		res := soqlQuery(t, s, p, "SELECT LastName, Account.Name FROM Contact")
-		if res.TotalSize != 1 {
-			t.Fatal(res.TotalSize)
-		}
-		rec := res.Records[0]
-		acc, ok := rec["Account"].(map[string]any)
-		if !ok || acc["Name"] != "Acme" {
-			t.Fatal(rec)
-		}
-	})
-
-	t.Run("id filter normalization", func(t *testing.T) {
-		res := soqlQuery(t, s, p, "SELECT Id FROM Item__c WHERE Id = '"+item1[:15]+"'")
-		if res.TotalSize != 1 {
-			t.Fatal(res.TotalSize)
 		}
 	})
 }
@@ -249,119 +251,198 @@ func TestParentPathNulls(t *testing.T) {
 	s, p := f.s, f.p
 	ctx := context.Background()
 
-	// Create a three-level chain: Item__c -> Parent__c -> Group__c -> Region__c
-	// The typed fixture has Parent__c. Add Group__c and Region__c via metadata.
-	// For simplicity, use standard Account -> Contact path which already exists.
-	accWith, _ := s.Create(ctx, p, "Account", map[string]any{"Name": "HasContact"})
-	accWithout, _ := s.Create(ctx, p, "Account", map[string]any{"Name": "NoContact"})
-	_ = accWithout
-	_, _ = s.Create(ctx, p, "Contact", map[string]any{"LastName": "WithAcc", "AccountId": accWith})
-	_, _ = s.Create(ctx, p, "Contact", map[string]any{"LastName": "NoAcc"})
+	groupObj, err := metadata.CreateObject(ctx, s.pool, p.Tenant, metadata.ObjectInput{Name: "Group__c", Label: "Group", PluralLabel: "Groups"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	regionObj, err := metadata.CreateObject(ctx, s.pool, p.Tenant, metadata.ObjectInput{Name: "Region__c", Label: "Region", PluralLabel: "Regions"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		s.pool.Exec(context.Background(), "DROP TABLE IF EXISTS "+groupObj.TableSQL()+" CASCADE")
+		s.pool.Exec(context.Background(), "DROP TABLE IF EXISTS "+regionObj.TableSQL()+" CASCADE")
+	})
+	if _, err = metadata.CreateField(ctx, s.pool, p.Tenant, metadata.FieldInput{Object: "Parent__c", Name: "Group__c", Label: "Group__c", Type: "Lookup", ReferenceTo: "Group__c"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = metadata.CreateField(ctx, s.pool, p.Tenant, metadata.FieldInput{Object: "Group__c", Name: "Region__c", Label: "Region__c", Type: "Lookup", ReferenceTo: "Region__c"}); err != nil {
+		t.Fatal(err)
+	}
 
-	t.Run("null parent at first level", func(t *testing.T) {
-		res := soqlQuery(t, s, p, "SELECT LastName, Account.Name FROM Contact ORDER BY LastName")
-		if res.TotalSize != 2 {
+	regionID, err := s.Create(ctx, p, "Region__c", map[string]any{"Name": "West"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	groupWithRegion, err := s.Create(ctx, p, "Group__c", map[string]any{"Name": "G1", "Region__c": regionID})
+	if err != nil {
+		t.Fatal(err)
+	}
+	groupNoRegion, err := s.Create(ctx, p, "Group__c", map[string]any{"Name": "G2"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	parentWithGroup, err := s.Create(ctx, p, "Parent__c", map[string]any{"Name": "P1", "Group__c": groupWithRegion})
+	if err != nil {
+		t.Fatal(err)
+	}
+	parentNoGroup, err := s.Create(ctx, p, "Parent__c", map[string]any{"Name": "P2", "Group__c": groupNoRegion})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err = s.Create(ctx, p, "Item__c", map[string]any{"Txt__c": "FullChain", "Parent__c": parentWithGroup}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = s.Create(ctx, p, "Item__c", map[string]any{"Txt__c": "NullRegion", "Parent__c": parentNoGroup}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = s.Create(ctx, p, "Item__c", map[string]any{"Txt__c": "NoParent"}); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("three-level chain", func(t *testing.T) {
+		res := soqlQuery(t, s, p, "SELECT Txt__c, Parent__r.Group__r.Region__r.Name FROM Item__c ORDER BY Txt__c")
+		if res.TotalSize != 3 {
 			t.Fatal(res.TotalSize)
 		}
-		withAcc := res.Records[0]
-		noAcc := res.Records[1]
-		if withAcc["LastName"] != "NoAcc" {
-			t.Fatal("ORDER BY LastName should sort NoAcc first:", withAcc)
+		byKey := map[string]map[string]any{}
+		for _, rec := range res.Records {
+			byKey[rec["Txt__c"].(string)] = rec
 		}
-		if noAcc["LastName"] != "WithAcc" {
-			t.Fatal(noAcc)
+		full := byKey["FullChain"]
+		parent, ok := full["Parent__r"].(map[string]any)
+		if !ok {
+			t.Fatal("FullChain missing Parent__r:", full)
 		}
-		if withAcc["Account"] != nil {
-			t.Fatal("null parent should be nil:", withAcc["Account"])
+		grp, ok := parent["Group__r"].(map[string]any)
+		if !ok {
+			t.Fatal("FullChain missing Group__r:", parent)
 		}
-		acc, ok := noAcc["Account"].(map[string]any)
-		if !ok || acc["Name"] != "HasContact" {
-			t.Fatal(noAcc)
+		reg, ok := grp["Region__r"].(map[string]any)
+		if !ok || reg["Name"] != "West" {
+			t.Fatal("FullChain missing Region__r.Name:", grp)
+		}
+		nr := byKey["NullRegion"]
+		p2, ok := nr["Parent__r"].(map[string]any)
+		if !ok {
+			t.Fatal("NullRegion missing Parent__r:", nr)
+		}
+		g2, ok := p2["Group__r"].(map[string]any)
+		if !ok {
+			t.Fatal("NullRegion missing Group__r:", p2)
+		}
+		if g2["Region__r"] != nil {
+			t.Fatal("NullRegion Region__r should be nil:", g2)
+		}
+		if byKey["NoParent"]["Parent__r"] != nil {
+			t.Fatal("NoParent Parent__r should be nil:", byKey["NoParent"])
 		}
 	})
 
-	t.Run("order by parent puts nulls first", func(t *testing.T) {
-		res := soqlQuery(t, s, p, "SELECT LastName, Account.Name FROM Contact ORDER BY Account.Name")
-		if res.TotalSize != 2 {
+	t.Run("order by parent nulls first", func(t *testing.T) {
+		res := soqlQuery(t, s, p, "SELECT Txt__c, Parent__r.Name FROM Item__c ORDER BY Parent__r.Name")
+		if res.TotalSize != 3 {
 			t.Fatal(res.TotalSize)
 		}
-		if res.Records[0]["Account"] != nil {
+		if res.Records[0]["Parent__r"] != nil {
 			t.Fatal("null parent should sort first (ASC NULLS FIRST):", res.Records[0])
 		}
 	})
 
-	t.Run("custom chain with null intermediate", func(t *testing.T) {
-		// Item__c has Parent__c (lookup to Parent__c).
-		// Create items with and without parents.
-		parentID, _ := s.Create(ctx, p, "Parent__c", map[string]any{"Name": "P1"})
-		_, _ = s.Create(ctx, p, "Item__c", map[string]any{"Txt__c": "WithParent", "Parent__c": parentID})
-		_, _ = s.Create(ctx, p, "Item__c", map[string]any{"Txt__c": "NoParent"})
-
-		res := soqlQuery(t, s, p, "SELECT Txt__c, Parent__r.Name FROM Item__c ORDER BY Txt__c")
+	t.Run("standard contact null order", func(t *testing.T) {
+		accWith, _ := s.Create(ctx, p, "Account", map[string]any{"Name": "HasContact"})
+		_, _ = s.Create(ctx, p, "Contact", map[string]any{"LastName": "WithAcc", "AccountId": accWith})
+		_, _ = s.Create(ctx, p, "Contact", map[string]any{"LastName": "NoAcc"})
+		res := soqlQuery(t, s, p, "SELECT LastName, Account.Name FROM Contact ORDER BY Account.Name")
 		if res.TotalSize < 2 {
 			t.Fatal(res.TotalSize)
 		}
-		var foundWith, foundWithout bool
-		for _, rec := range res.Records {
-			switch rec["Txt__c"] {
-			case "WithParent":
-				foundWith = true
-				parent, ok := rec["Parent__r"].(map[string]any)
-				if !ok || parent["Name"] != "P1" {
-					t.Fatal(rec)
-				}
-			case "NoParent":
-				foundWithout = true
-				if rec["Parent__r"] != nil {
-					t.Fatal("null parent should be nil:", rec["Parent__r"])
-				}
-			}
+		if res.Records[0]["Account"] != nil {
+			t.Fatal("null parent should sort first:", res.Records[0])
 		}
-		if !foundWith || !foundWithout {
-			t.Fatal(res.Records)
+	})
+
+	t.Run("forged parent id yields null path", func(t *testing.T) {
+		foreignParent, _ := s.Create(ctx, f.other, "Parent__c", map[string]any{"Name": "Foreign"})
+		if _, err := s.Create(ctx, p, "Item__c", map[string]any{"Txt__c": "Forged", "Parent__c": foreignParent}); err != nil {
+			t.Fatal(err)
+		}
+		res := soqlQuery(t, s, p, "SELECT Txt__c, Parent__r.Name FROM Item__c WHERE Txt__c = 'Forged'")
+		if res.TotalSize != 1 {
+			t.Fatal(res.TotalSize)
+		}
+		if res.Records[0]["Parent__r"] != nil {
+			t.Fatal("cross-tenant parent should yield null path:", res.Records[0])
 		}
 	})
 }
 
 func TestSOQLExistingBehavior(t *testing.T) {
-	f := newTypedFixture(t)
-	s, p := f.s, f.p
+	s := testStore(t)
+	a, b := principals(t, s)
 	ctx := context.Background()
-	_, _ = s.Create(ctx, p, "Account", map[string]any{"Name": "Behavior"})
-	_, _ = s.Create(ctx, p, "Contact", map[string]any{"LastName": "Behave", "FirstName": "Test"})
+
+	name := "Plan16 oracle"
+	accID, err := s.Create(ctx, a, "Account", map[string]any{"Name": name, "Compat_Key__c": "owned-key"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	contactID, err := s.Create(ctx, a, "Contact", map[string]any{"LastName": "Contact", "AccountId": accID})
+	if err != nil {
+		t.Fatal(err)
+	}
+	nullContactID, err := s.Create(ctx, a, "Contact", map[string]any{"LastName": "Unlinked"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, _ = s.Create(ctx, a, "Account", map[string]any{"Name": "MixedCase"})
+	_, _ = s.Create(ctx, a, "Account", map[string]any{"Name": "\u00e9"})
+	_, _ = s.Create(ctx, a, "Account", map[string]any{"Name": "I"})
+	_, _ = s.Create(ctx, b, "Account", map[string]any{"Name": name})
+
+	rp := strings.NewReplacer("$accountId", accID, "$contactId", contactID, "$nullContactId", nullContactID, "$name", name)
 
 	queries := []string{
-		"SELECT Id, Name FROM Account",
-		"SELECT Id, Name FROM Account WHERE Name = 'Behavior'",
-		"SELECT Id, Name FROM Account WHERE Name = 'behavior'",
-		"SELECT Id, LastName FROM Contact",
-		"SELECT Id, LastName FROM Contact WHERE LastName = 'Behave'",
-		"SELECT Id, Name FROM Account ORDER BY Name ASC LIMIT 10",
-		"SELECT Id, Name FROM Account ORDER BY Name DESC NULLS LAST LIMIT 10",
+		// foundation_query_test.go executed queries
 		"select id, name from account",
+		"select account.name from contact",
+		"select id from account where name = 'MixedCase'",
+		"select id from account where name = 'mixedcase'",
+		"select id from account where name = 'I'",
+		"select id from account where id = '" + accID[:15] + "'",
+		"select id from contact where accountid = '" + accID[:15] + "'",
+		"select id from account where name = 'absent'",
+		// query_test.go
+		"SELECT Id,Account.Name FROM Contact WHERE LastName = 'Contact' ORDER BY LastName DESC LIMIT 2",
+		// column fixture successful cases
+		"SELECT Id,Name,Compat_Text__c,Compat_Key__c FROM Account WHERE Id = '" + accID + "'",
+		"SELECT Id,FirstName,LastName,AccountId FROM Contact WHERE Id = '" + contactID + "'",
+		"SELECT Id,Name FROM Account WHERE Name = 'absent'",
+		"SELECT Id,AccountId FROM Contact WHERE LastName = 'absent'",
+		"SELECT Name,Id,Name FROM Account WHERE Id = '" + accID + "'",
+		"SELECT Compat_Text__c FROM Account WHERE Id = '" + accID + "'",
+		"SELECT Compat_Key__c FROM Account WHERE Id = '" + accID + "'",
+		"SELECT FirstName,AccountId FROM Contact WHERE Id = '" + nullContactID + "'",
+		"SELECT Id,Name FROM Account WHERE Id = '" + accID + "'",
+		"SELECT Id,Account.Name FROM Contact WHERE Id = '" + contactID + "'",
+		"SELECT Id,Account.Name FROM Contact WHERE Id = '" + nullContactID + "'",
+		"SELECT name FROM Account WHERE Id = '" + accID + "'",
 	}
-
-	for _, qtext := range queries {
-		t.Run(qtext, func(t *testing.T) {
-			res := soqlQuery(t, s, p, qtext)
-			// Verify shape: each record has attributes with type and url
-			for _, rec := range res.Records {
-				attrs, ok := rec["attributes"].(map[string]any)
-				if !ok {
-					t.Fatal("missing attributes:", rec)
-				}
-				if attrs["type"] == nil {
-					t.Fatal("missing type:", attrs)
-				}
-				if id, hasID := rec["Id"].(string); hasID {
-					url, hasURL := attrs["url"].(string)
-					if !hasURL || !strings.Contains(url, id) {
-						t.Fatal("missing or wrong url:", attrs)
-					}
-				}
-			}
+	errQueries := []string{
+		"SELECT Id FROM Account WHERE Id = 'bad'",
+		"SELECT Id FROM Nope",
+		"SELECT Missing FROM Account",
+		"SELECT FROM Account",
+	}
+	for _, qtext := range append(queries, errQueries...) {
+		t.Run(qtext[:min(40, len(qtext))], func(t *testing.T) {
+			assertEnginesAgree(t, s, a, rp.Replace(qtext))
 		})
 	}
+	t.Run("cross-tenant-empty", func(t *testing.T) {
+		assertEnginesAgree(t, s, b, "SELECT Id,Name FROM Account WHERE Id = '"+accID+"'")
+	})
 }
 
 func TestSOQLCrossTenant(t *testing.T) {
@@ -369,7 +450,6 @@ func TestSOQLCrossTenant(t *testing.T) {
 	a, b := principals(t, s)
 	ctx := context.Background()
 
-	// Both tenants use standard Account/Contact.
 	accA, err := s.Create(ctx, a, "Account", map[string]any{"Name": "AccA"})
 	if err != nil {
 		t.Fatal(err)
@@ -378,12 +458,10 @@ func TestSOQLCrossTenant(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = s.Create(ctx, a, "Contact", map[string]any{"LastName": "ContactA", "AccountId": accA})
-	if err != nil {
+	if _, err = s.Create(ctx, a, "Contact", map[string]any{"LastName": "ContactA", "AccountId": accA}); err != nil {
 		t.Fatal(err)
 	}
-	_, err = s.Create(ctx, b, "Contact", map[string]any{"LastName": "ContactB", "AccountId": accB})
-	if err != nil {
+	if _, err = s.Create(ctx, b, "Contact", map[string]any{"LastName": "ContactB", "AccountId": accB}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -399,19 +477,16 @@ func TestSOQLCrossTenant(t *testing.T) {
 	})
 
 	t.Run("forged parent id filtered", func(t *testing.T) {
-		res := soqlQuery(t, s, a, "SELECT LastName FROM Contact WHERE AccountId = '"+accB+"'")
-		if res.TotalSize != 0 {
+		if res := soqlQuery(t, s, a, "SELECT LastName FROM Contact WHERE AccountId = '"+accB+"'"); res.TotalSize != 0 {
 			t.Fatal("cross-tenant filter returned rows:", res.TotalSize)
 		}
 	})
 
 	t.Run("other tenant cannot see tenant A rows", func(t *testing.T) {
-		res := soqlQuery(t, s, b, "SELECT LastName FROM Contact WHERE LastName = 'ContactA'")
-		if res.TotalSize != 0 {
+		if res := soqlQuery(t, s, b, "SELECT LastName FROM Contact WHERE LastName = 'ContactA'"); res.TotalSize != 0 {
 			t.Fatal("cross-tenant read:", res.TotalSize)
 		}
-		res = soqlQuery(t, s, b, "SELECT Name FROM Account WHERE Name = 'AccA'")
-		if res.TotalSize != 0 {
+		if res := soqlQuery(t, s, b, "SELECT Name FROM Account WHERE Name = 'AccA'"); res.TotalSize != 0 {
 			t.Fatal("cross-tenant account read:", res.TotalSize)
 		}
 	})

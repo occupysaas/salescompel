@@ -66,6 +66,12 @@ func (c *bindCtx) takeKey(key string) error {
 	return nil
 }
 
+// recordKey records a key without refusing duplicates. Simple field
+// references may repeat (SELECT Name,Id,Name); the result map collapses them.
+func (c *bindCtx) recordKey(key string) {
+	c.keys[strings.ToLower(key)] = true
+}
+
 // reserveAliases marks explicit select aliases so generated exprN keys skip
 // numbers the aliases own. spec: soql-02
 func reserveAliases(items []SelectItem) map[string]bool {
@@ -205,9 +211,8 @@ func (b *binder) bindSelect(q *Query, obj metadata.Object, ctx *bindCtx) ([]Boun
 			if err != nil {
 				return nil, nil, err
 			}
-			if err := ctx.takeKey(c.Key); err != nil {
-				return nil, nil, err
-			}
+			// Simple field references may repeat; the result map collapses them.
+			ctx.recordKey(c.Key)
 			cols = append(cols, c)
 		case *Aggregate:
 			if ctx.child {

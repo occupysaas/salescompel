@@ -2,6 +2,8 @@ package records
 
 import (
 	"context"
+	"time"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"salescompel/internal/metadata"
@@ -53,6 +55,26 @@ func (t *Tx) Query(ctx context.Context, text string, opt soql.Options) (soql.Res
 // QueryAST executes a parsed SOQL AST through the engine.
 func (t *Tx) QueryAST(ctx context.Context, q *soql.Query, opt soql.Options) (soql.Result, error) {
 	return soql.RunAST(ctx, t.db, t.execution, t.catalog, q, opt)
+}
+
+// QueryColumns executes SOQL text and returns REST column metadata alongside
+// the result. Used by the columns=true HTTP path.
+func (t *Tx) QueryColumns(ctx context.Context, text string, opt soql.Options) (soql.Result, []map[string]any, error) {
+	q, err := soql.Parse(text)
+	if err != nil {
+		return soql.Result{}, nil, err
+	}
+	now := opt.Now
+	if now == nil {
+		now = time.Now
+	}
+	bound, err := soql.Bind(q, t.catalog, t.execution.Principal, now)
+	if err != nil {
+		return soql.Result{}, nil, err
+	}
+	md := soql.ColumnMetadata(bound.Columns)
+	res, err := soql.RunAST(ctx, t.db, t.execution, t.catalog, q, opt)
+	return res, md, err
 }
 func DBError(err error) error { return dbError(err) }
 func CanonicalFields(p Principal, object string, data map[string]any) (map[string]any, error) {
