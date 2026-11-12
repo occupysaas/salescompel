@@ -26,9 +26,9 @@ with DCO sign-off.
 
 ## 4. Binder, limits and date literals
 
-- [ ] 4.1 Failing tests: `TestBindNames`, `TestBindLiteralTypes`, `TestBindSecurity`, `TestBindLimits`, `TestBindAggregateRules`, `TestDateLiteralRanges`
-- [ ] 4.2 Implement `internal/soql/{bind,types,limits,dates}.go`; range-predicate semantics for date literals
-- [ ] 4.3 Commit `feat: bind SOQL against the tenant catalog`
+- [x] 4.1 Failing tests: `TestBindNames`, `TestBindLiteralTypes`, `TestBindSecurity`, `TestBindLimits`, `TestBindAggregateRules`, `TestDateLiteralRanges`
+- [x] 4.2 Implement `internal/soql/{bind,types,limits,dates}.go`; range-predicate semantics for date literals
+- [x] 4.3 Commit `feat: bind SOQL against the tenant catalog`
 
 ## 5. Compiler and executor
 
