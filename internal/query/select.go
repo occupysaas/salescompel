@@ -22,10 +22,17 @@ func Select(ctx context.Context, tx pgx.Tx, execution policy.ExecutionContext, c
 		return nil, invalid("MALFORMED_QUERY", "Invalid selection")
 	}
 	expressions := []string{}
+	type item struct {
+		name       string
+		field      Field
+		components []Field
+	}
+	items := []item{}
 	join := false
 	for _, name := range q.Fields {
 		if q.Object == "Contact" && name == "Account.Name" {
 			expressions = append(expressions, "a.name")
+			items = append(items, item{name: name})
 			join = true
 			continue
 		}
@@ -33,7 +40,21 @@ func Select(ctx context.Context, tx pgx.Tx, execution policy.ExecutionContext, c
 		if err != nil {
 			return nil, err
 		}
-		expressions = append(expressions, "r."+pgx.Identifier{f.Column}.Sanitize())
+		if f.Compound() {
+			parts := []Field{}
+			for _, c := range f.Options.Components {
+				cf, err := catalog.Field(q.Object, c)
+				if err != nil {
+					return nil, err
+				}
+				parts = append(parts, cf)
+				expressions = append(expressions, selectExpression(cf))
+			}
+			items = append(items, item{name: f.Name, field: f, components: parts})
+			continue
+		}
+		expressions = append(expressions, selectExpression(f))
+		items = append(items, item{name: f.Name, field: f})
 	}
 	from := table(p, q.Object) + " r"
 	if join {
@@ -46,11 +67,17 @@ func Select(ctx context.Context, tx pgx.Tx, execution policy.ExecutionContext, c
 		if err != nil {
 			return nil, err
 		}
+		if !f.Filterable {
+			return nil, fieldProblem("INVALID_FIELD", "Field cannot be filtered", f.Name)
+		}
 		if q.WhereValue == nil {
 			sql += " AND r." + pgx.Identifier{f.Column}.Sanitize() + " IS NULL"
 		} else {
-			if f.Type == "string" {
-				sql += " AND lower(r." + f.Column + " COLLATE pg_c_utf8) = lower($2 COLLATE pg_c_utf8)"
+			if literalFilterPending(f.Kind()) {
+				return nil, invalid("MALFORMED_QUERY", "Filter on this field type is not yet supported")
+			}
+			if caseInsensitive(f.Kind()) {
+				sql += " AND lower(r." + pgx.Identifier{f.Column}.Sanitize() + " COLLATE pg_c_utf8) = lower($2 COLLATE pg_c_utf8)"
 			} else {
 				sql += " AND r." + pgx.Identifier{f.Column}.Sanitize() + "=$2"
 			}
@@ -61,6 +88,9 @@ func Select(ctx context.Context, tx pgx.Tx, execution policy.ExecutionContext, c
 		f, err := field(p, q.Object, q.Order)
 		if err != nil {
 			return nil, err
+		}
+		if !f.Sortable {
+			return nil, fieldProblem("INVALID_FIELD", "Field cannot be sorted", f.Name)
 		}
 		sql += " ORDER BY r." + pgx.Identifier{f.Column}.Sanitize()
 		if q.Desc {
@@ -92,16 +122,22 @@ func Select(ctx context.Context, tx pgx.Tx, execution policy.ExecutionContext, c
 			return nil, dbError(e)
 		}
 		record := map[string]any{"attributes": map[string]any{"type": q.Object}}
-		for i, name := range q.Fields {
-			if name == "Account.Name" {
-				if values[i] == nil {
+		at := 0
+		for _, it := range items {
+			switch {
+			case it.name == "Account.Name":
+				if values[at] == nil {
 					record["Account"] = nil
 				} else {
-					record["Account"] = map[string]any{"Name": values[i], "attributes": map[string]any{"type": "Account"}}
+					record["Account"] = map[string]any{"Name": values[at], "attributes": map[string]any{"type": "Account"}}
 				}
-			} else {
-				f, _ := field(p, q.Object, name)
-				record[f.Name] = values[i]
+				at++
+			case it.components != nil:
+				record[it.name] = addressValue(it.field, it.components, values[at:at+len(it.components)])
+				at += len(it.components)
+			default:
+				record[it.name] = wireValue(it.field, values[at])
+				at++
 			}
 		}
 		if id, ok := record["Id"].(string); ok {

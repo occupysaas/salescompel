@@ -317,3 +317,9 @@ func isOrganizationDiscovery(q string) bool {
 	q = strings.ReplaceAll(q, ",", " , ")
 	return strings.EqualFold(strings.Join(strings.Fields(q), " "), "SELECT Name , InstanceName , IsSandbox , TrialExpirationDate , NamespacePrefix , OrganizationType FROM Organization")
 }
+
+// isCurrencyDiscovery matches exactly the tenant currency bridge query used by
+// the connected editor (Salesforce's documented Organization field name).
+func isCurrencyDiscovery(q string) bool {
+	return strings.EqualFold(strings.Join(strings.Fields(q), " "), "SELECT DefaultCurrencyIsoCode FROM Organization")
+}

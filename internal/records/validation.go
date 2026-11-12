@@ -33,8 +33,6 @@ func Describe(p Principal, object string) (Object, error) {
 			if f.Label == "" {
 				f.Label = f.Name
 			}
-			f.Createable = f.Name != "Id"
-			f.Updateable = f.Createable
 			if f.ReferenceTo == nil {
 				f.ReferenceTo = []string{}
 			}

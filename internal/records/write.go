@@ -212,9 +212,7 @@ func (s *Tx) Read(ctx context.Context, object, id string) (map[string]any, error
 	}
 	q := Query{Object: object, HasWhere: true, WhereField: "Id", WhereValue: &id, Limit: 1}
 	for _, f := range d.Fields {
-		if !f.Compound() {
-			q.Fields = append(q.Fields, f.Name)
-		}
+		q.Fields = append(q.Fields, f.Name)
 	}
 	rows, err := s.Select(ctx, q)
 	if err != nil {

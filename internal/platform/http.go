@@ -273,6 +273,15 @@ func NewHandlerWithOptions(s *Store, assetDir string, o Options) http.Handler {
 				writeJSON(w, 200, map[string]any{"totalSize": 1, "done": true, "records": []any{map[string]any{"Name": p.Tenant, "InstanceName": nil, "IsSandbox": false, "TrialExpirationDate": nil, "NamespacePrefix": nil, "OrganizationType": "SalesCompel"}}})
 				return
 			}
+			if isCurrencyDiscovery(r.URL.Query().Get("q")) {
+				catalog, e := s.Catalog(ctx, p)
+				if e != nil {
+					writeError(w, e)
+					return
+				}
+				writeJSON(w, 200, map[string]any{"totalSize": 1, "done": true, "records": []any{map[string]any{"attributes": map[string]any{"type": "Organization"}, "DefaultCurrencyIsoCode": catalog.Currency}}})
+				return
+			}
 			q, e := ParseQuery(r.URL.Query().Get("q"))
 			if e != nil {
 				writeError(w, e)
