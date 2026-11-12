@@ -21,21 +21,21 @@ func (p *parser) valueList() ([]ValueExpr, error) {
 }
 
 func (p *parser) valueExpr() (ValueExpr, error) {
-	name, ok := p.acceptName()
+	tok, ok := p.acceptName()
 	if !ok {
 		return nil, malformed("expected field or function")
 	}
 	if p.at(LParen) {
-		return p.call(name)
+		return p.call(tok.Text, tok.Pos)
 	}
-	return p.fieldRef(name)
+	return p.fieldRef(tok.Text, tok.Pos)
 }
 
 // call parses COUNT/COUNT_DISTINCT/SUM/AVG/MIN/MAX, toLabel and the
 // documented date functions; anything else is refused naming the function.
 // spec: soql-02
-func (p *parser) call(name string) (ValueExpr, error) {
-	pos := p.next().Pos // (
+func (p *parser) call(name string, pos Pos) (ValueExpr, error) {
+	p.next() // (
 	lower := strings.ToLower(name)
 	switch {
 	case aggFunc[lower]:
@@ -75,24 +75,25 @@ func (p *parser) call(name string) (ValueExpr, error) {
 }
 
 func (p *parser) argField() (*FieldRef, error) {
-	name, ok := p.acceptName()
+	tok, ok := p.acceptName()
 	if !ok {
 		return nil, malformed("expected field argument")
 	}
 	if p.at(LParen) {
 		return nil, malformed("expected field argument")
 	}
-	return p.fieldRef(name)
+	return p.fieldRef(tok.Text, tok.Pos)
 }
 
-func (p *parser) fieldRef(name string) (*FieldRef, error) {
+// fieldRef builds a path node. pos is the first token of the reference.
+func (p *parser) fieldRef(name string, pos Pos) (*FieldRef, error) {
 	parts := strings.Split(name, ".")
 	for _, s := range parts {
 		if s == "" {
 			return nil, malformed("malformed field path")
 		}
 	}
-	return &FieldRef{Path: parts, Pos: p.peek().Pos}, nil
+	return &FieldRef{Path: parts, Pos: pos}, nil
 }
 
 func (p *parser) orderItem() (OrderItem, error) {
@@ -126,6 +127,7 @@ func (p *parser) orderItem() (OrderItem, error) {
 // expr parses one parenthesis level, refusing mixed AND/OR without parentheses.
 // spec: soql-05
 func (p *parser) expr() (Expr, error) {
+	pos := p.peek().Pos
 	first, err := p.term()
 	if err != nil {
 		return nil, err
@@ -152,9 +154,9 @@ func (p *parser) expr() (Expr, error) {
 		return first, nil
 	}
 	if conn == "and" {
-		return &And{Items: items, Pos: p.peek().Pos}, nil
+		return &And{Items: items, Pos: pos}, nil
 	}
-	return &Or{Items: items, Pos: p.peek().Pos}, nil
+	return &Or{Items: items, Pos: pos}, nil
 }
 
 func (p *parser) term() (Expr, error) {
@@ -170,6 +172,7 @@ func (p *parser) term() (Expr, error) {
 }
 
 func (p *parser) primary() (Expr, error) {
+	pos := p.peek().Pos
 	if p.at(LParen) {
 		p.next()
 		e, err := p.expr()
@@ -186,7 +189,6 @@ func (p *parser) primary() (Expr, error) {
 	if err != nil {
 		return nil, err
 	}
-	pos := p.peek().Pos
 	switch {
 	case p.at(Op):
 		op := p.next().Text
@@ -243,9 +245,10 @@ func (p *parser) in(left ValueExpr, neg bool, pos Pos) (Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		if err := p.expect(RParen, ")"); err != nil {
-			return nil, err
+		if !p.at(RParen) {
+			return nil, malformed("unterminated subquery: expected )")
 		}
+		p.next()
 		return &In{Left: left, Not: neg, Sub: q, Pos: pos}, nil
 	}
 	values, err := p.literalList()
@@ -292,13 +295,10 @@ func (p *parser) literal() (Literal, error) {
 		p.next()
 		name := t.Text
 		n := 0
+		// The lexer has already required and validated the :n suffix, so the
+		// digits are guaranteed to fit an int.
 		if i := strings.IndexByte(name, ':'); i >= 0 {
-			v, err := strconv.Atoi(name[i+1:])
-			if err != nil {
-				return Literal{}, malformed("malformed date literal")
-			}
-			name = name[:i]
-			n = v
+			name, n = name[:i], digitsInt(name[i+1:])
 		}
 		return Literal{Kind: LitDateLiteral, Text: name, N: n}, nil
 	case Keyword:

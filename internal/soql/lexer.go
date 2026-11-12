@@ -257,7 +257,7 @@ func (l *lexer) lexWord() (Token, error) {
 				return Token{}, malformed("relative date literal requires :n")
 			}
 			if _, err := strconv.Atoi(l.src[nstart:j]); err != nil {
-				return Token{}, malformed("relative date literal requires :n")
+				return Token{}, malformed("relative date literal :n is out of range")
 			}
 			l.i = j
 			return Token{Kind: DateLiteral, Text: strings.ToUpper(l.src[start:l.i]), Pos: Pos{Offset: start}}, nil
@@ -282,6 +282,16 @@ func digits(s string) bool {
 		}
 	}
 	return true
+}
+
+// digitsInt converts a digit-only string. Callers must have validated it:
+// the lexer rejects an empty or out-of-range :n suffix.
+func digitsInt(s string) int {
+	n := 0
+	for i := 0; i < len(s); i++ {
+		n = n*10 + int(s[i]-'0')
+	}
+	return n
 }
 func isIdentStart(c byte) bool {
 	return c == '_' || c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z'

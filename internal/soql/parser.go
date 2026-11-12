@@ -50,7 +50,7 @@ func (p *parser) query() (*Query, error) {
 	if !ok {
 		return nil, malformed("expected object or relationship name")
 	}
-	q.From = Name(name)
+	q.From = Name(name.Text)
 	alias, err := p.alias()
 	if err != nil {
 		return nil, err
@@ -129,7 +129,7 @@ func (p *parser) query() (*Query, error) {
 		if !ok {
 			return nil, malformed("expected WITH mode")
 		}
-		m := strings.ToUpper(mode)
+		m := strings.ToUpper(mode.Text)
 		switch m {
 		case "SECURITY_ENFORCED", "USER_MODE", "SYSTEM_MODE":
 			q.With = m
@@ -147,25 +147,26 @@ func (p *parser) selectItem() (SelectItem, error) {
 		if err != nil {
 			return nil, err
 		}
-		if err := p.expect(RParen, ")"); err != nil {
-			return nil, err
+		if !p.at(RParen) {
+			return nil, malformed("unterminated subquery: expected )")
 		}
+		p.next()
 		return &SubQuery{Query: q, Pos: pos}, nil
 	}
 	if p.atKeyword("typeof") {
 		return p.typeOf()
 	}
-	name, ok := p.acceptName()
+	tok, ok := p.acceptName()
 	if !ok {
 		return nil, malformed("expected select item")
 	}
 	if !p.at(LParen) {
-		return p.fieldRef(name)
+		return p.fieldRef(tok.Text, tok.Pos)
 	}
-	if strings.EqualFold(name, "fields") {
-		return p.fieldsAll()
+	if strings.EqualFold(tok.Text, "fields") {
+		return p.fieldsAll(tok.Pos)
 	}
-	v, err := p.call(name)
+	v, err := p.call(tok.Text, tok.Pos)
 	if err != nil {
 		return nil, err
 	}
@@ -179,23 +180,27 @@ func (p *parser) selectItem() (SelectItem, error) {
 	case *Call:
 		t.Alias = alias
 	}
-	return v.(SelectItem), nil
+	item, ok := v.(SelectItem)
+	if !ok {
+		return nil, malformed("expected select item")
+	}
+	return item, nil
 }
 
-func (p *parser) fieldsAll() (SelectItem, error) {
+func (p *parser) fieldsAll(pos Pos) (SelectItem, error) {
 	p.next() // (
 	kind, ok := p.acceptName()
 	if !ok {
 		return nil, malformed("expected FIELDS kind")
 	}
-	k := strings.ToUpper(kind)
+	k := strings.ToUpper(kind.Text)
 	if k != "ALL" && k != "CUSTOM" && k != "STANDARD" {
 		return nil, malformed("FIELDS kind must be ALL, CUSTOM or STANDARD")
 	}
 	if err := p.expect(RParen, ")"); err != nil {
 		return nil, err
 	}
-	return &FieldsAll{Kind: k, Pos: p.toks[p.i-1].Pos}, nil
+	return &FieldsAll{Kind: k, Pos: pos}, nil
 }
 
 func (p *parser) typeOf() (SelectItem, error) {
@@ -204,7 +209,7 @@ func (p *parser) typeOf() (SelectItem, error) {
 	if !ok {
 		return nil, malformed("expected TYPEOF relationship")
 	}
-	t := &TypeOf{Rel: Name(rel), Pos: pos}
+	t := &TypeOf{Rel: Name(rel.Text), Pos: pos}
 	for p.atKeyword("when") {
 		p.next()
 		typ, ok := p.acceptName()
@@ -218,7 +223,7 @@ func (p *parser) typeOf() (SelectItem, error) {
 		if err != nil {
 			return nil, err
 		}
-		t.Whens = append(t.Whens, TypeOfWhen{Type: Name(typ), Fields: fields})
+		t.Whens = append(t.Whens, TypeOfWhen{Type: Name(typ.Text), Fields: fields})
 	}
 	if len(t.Whens) == 0 {
 		return nil, malformed("TYPEOF requires at least one WHEN branch")
@@ -268,20 +273,21 @@ func (p *parser) expectKeyword(w string) error {
 	return nil
 }
 
-// acceptName takes a word where a name is expected. Clause keywords are
-// refused so a duplicated clause stays an error, while Order remains a name.
-func (p *parser) acceptName() (string, bool) {
+// acceptName takes a word where a name is expected and returns its token.
+// Clause keywords are refused so a duplicated clause stays an error, while
+// Order remains a name.
+func (p *parser) acceptName() (Token, bool) {
 	t := p.peek()
 	switch t.Kind {
 	case Ident:
 		p.next()
-		return t.Text, true
+		return t, true
 	case Keyword:
 		if clauseKeyword[strings.ToLower(t.Text)] {
-			return "", false
+			return Token{}, false
 		}
 		p.next()
-		return t.Text, true
+		return t, true
 	}
-	return "", false
+	return Token{}, false
 }

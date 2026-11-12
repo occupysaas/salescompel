@@ -301,8 +301,3 @@ func (o OrderItem) MarshalJSON() ([]byte, error) {
 func (n NullPlacement) MarshalJSON() ([]byte, error) {
 	return json.Marshal(n.String())
 }
-
-func (q *Query) MarshalJSON() ([]byte, error) {
-	type plain Query
-	return json.Marshal((*plain)(q))
-}

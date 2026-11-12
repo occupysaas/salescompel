@@ -89,3 +89,52 @@ func malformedCode(err error) bool {
 	var ae *contract.APIError
 	return errors.As(err, &ae) && ae.Code == "MALFORMED_QUERY"
 }
+
+func TestLexDateTimeZone(t *testing.T) {
+	for _, text := range []string{
+		"2026-01-01T00:00:00Z",
+		"2026-01-01T00:00:00+05:30",
+		"2026-01-01T00:00:00-08:00",
+		"2026-01-01T00:00:00.123Z",
+	} {
+		ts, err := Lex(text)
+		if err != nil {
+			t.Errorf("Lex(%q) error %v", text, err)
+			continue
+		}
+		if ts[0].Kind != DateTime || ts[0].Text != text {
+			t.Errorf("Lex(%q) token = (%v,%q)", text, ts[0].Kind, ts[0].Text)
+		}
+	}
+	for _, text := range []string{
+		"2026-01-01T00:00:00",
+		"2026-01-01T00:00:00.5",
+		"2026-01-01T00:00:00+05",
+		"2026-01-01T00:00:00+5:00",
+		"2026-01-01T00:00:00+05-30",
+	} {
+		if _, err := Lex(text); !malformedCode(err) {
+			t.Errorf("Lex(%q) error = %v want MALFORMED_QUERY", text, err)
+		}
+	}
+}
+
+func TestLexRelativeDateLiteralN(t *testing.T) {
+	ts, err := Lex("LAST_N_DAYS:30")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ts[0].Kind != DateLiteral || ts[0].Text != "LAST_N_DAYS:30" {
+		t.Fatalf("token = (%v,%q)", ts[0].Kind, ts[0].Text)
+	}
+	for _, text := range []string{"LAST_N_DAYS", "LAST_N_DAYS:", "LAST_N_DAYS:x"} {
+		if _, err := Lex(text); !malformedCode(err) {
+			t.Errorf("Lex(%q) error = %v want MALFORMED_QUERY", text, err)
+		}
+	}
+	_, err = Lex("LAST_N_DAYS:99999999999999999999")
+	var ae *contract.APIError
+	if !errors.As(err, &ae) || ae.Message != "relative date literal :n is out of range" {
+		t.Errorf("overflow error = %v want out-of-range message", err)
+	}
+}
