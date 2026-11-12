@@ -1,12 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, rm, appendFile } from "node:fs/promises";
+import { mkdtemp, rm, appendFile, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   initializeRun,
   appendJournal,
   readRun,
+  type JournalEvent,
 } from "../src/external-id-recovery.ts";
 import { parseExternalIdConfig } from "../src/external-id-contract.ts";
 import { profile } from "../src/validate.ts";
@@ -29,6 +30,35 @@ test("durable intent/dispatched survives interrupted report and rejects truncate
   assert.equal((await readRun(c, dir)).events.length, 2);
   await appendFile(join(dir, "journal.jsonl"), "{");
   await assert.rejects(readRun(c, dir));
+});
+
+// Regression: a rejected append must not poison the per-directory queue.
+// The second append is registered while the first is still pending and must
+// still reach journal.jsonl after the first one fails.
+test("failed appendJournal leaves the queued follow-up append intact", async (t) => {
+  const dir = await mkdtemp(join(tmpdir(), "p9-journal-"));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  const c = await testConfig();
+  await initializeRun(c, dir, "a".repeat(24));
+  const boom = {
+    kind: "intent",
+    id: "poison:first",
+    toJSON() {
+      throw new Error("injected write failure");
+    },
+  } as unknown as JournalEvent;
+  const first = appendJournal(dir, boom);
+  const second = appendJournal(dir, { kind: "intent", id: "queued:second" });
+  await assert.rejects(first, /injected write failure/);
+  await second;
+  const lines = (await readFile(join(dir, "journal.jsonl"), "utf8"))
+    .split("\n")
+    .filter(Boolean)
+    .map((line) => JSON.parse(line) as JournalEvent);
+  assert.deepEqual(
+    lines.map((e) => e.id),
+    ["queued:second"],
+  );
 });
 
 import { localProbe } from "./external-id-test-server.ts";
