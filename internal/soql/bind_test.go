@@ -189,6 +189,7 @@ func TestBindLiteralTypes(t *testing.T) {
 		t.Fatalf("message echoes the query value: %q", ae.Message)
 	}
 	for _, c := range []struct{ text, code string }{
+		{"select Id from Item__c where At__c = 2026-01-01T00:00:00", "MALFORMED_QUERY"},
 		{"select Id from Item__c where Day__c = 2026-01-01T00:00:00", "MALFORMED_QUERY"},
 		{"select Id from Item__c where Id = 'not-an-id'", "INVALID_QUERY_FILTER_OPERATOR"},
 		{"select Id from Item__c where Txt__c INCLUDES ('A')", "INVALID_QUERY_FILTER_OPERATOR"},
@@ -248,9 +249,9 @@ func TestBindSecurity(t *testing.T) {
 
 func TestBindLimits(t *testing.T) {
 	f := newBindFixture()
-	long := "select Id " + strings.Repeat(" ", 100001) + "from Item__c"
+	long := "select Id " + strings.Repeat(" ", 99979) + "from Item__c"
 	wantCode(t, mustBind(t, f, long, f.admin), "QUERY_TOO_COMPLICATED")
-	where := "Txt__c = '" + strings.Repeat("a", 4000) + "'"
+	where := "Txt__c = '" + strings.Repeat("a", 3990) + "'"
 	wantCode(t, mustBind(t, f, "select Id from Item__c where "+where, f.admin), "QUERY_TOO_COMPLICATED")
 	subs := make([]string, 21)
 	for i := range subs {

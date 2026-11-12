@@ -112,6 +112,10 @@ should reconcile these before or during the named task.
   ([ORDER BY][c29]).
 - **Not confirmed:** the 35 joined objects and 32 ORDER BY keys that the spec
   states as documented were not found in the retrieved pages.
+- **ORDER BY key cap.** The binder caps ORDER BY at 32 keys (`soql-05`) and
+  returns `MALFORMED_QUERY` above the cap. The reference pages do not specify
+  an error code for an over-cap ORDER BY, so `MALFORMED_QUERY` is a local
+  choice.
 - **`FIELDS()` duplicate-field error.** The reference says a duplicate in the
   SELECT list is an error, but the exact message is not shown ([SELECT
   fields][c13]).

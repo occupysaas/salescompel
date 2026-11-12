@@ -12,7 +12,7 @@ type Clock func() time.Time
 // Param is a typed literal carried as a SQL parameter, never as query text.
 // Value is a string, bool or UTC time.Time; a nil Value is null. Cast names
 // the SQL type the compiler should use (text, numeric, bool, date, timestamptz).
-// spec: soql-06
+// spec: soql-01
 type Param struct {
 	Value any
 	Cast  string
