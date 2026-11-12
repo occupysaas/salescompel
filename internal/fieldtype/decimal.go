@@ -98,7 +98,11 @@ func expandExponent(lit string) (string, error) {
 	}
 	mantissa, expText := lit[:i], strings.TrimPrefix(lit[i+1:], "+")
 	negative := strings.HasPrefix(mantissa, "-")
-	whole, frac, _ := strings.Cut(strings.TrimPrefix(mantissa, "-"), ".")
+	mant := strings.TrimPrefix(mantissa, "-")
+	whole, frac := mant, ""
+	if dot := strings.IndexByte(mant, '.'); dot >= 0 {
+		whole, frac = mant[:dot], mant[dot+1:]
+	}
 	expNegative := strings.HasPrefix(expText, "-")
 	expDigits := strings.TrimPrefix(expText, "-")
 	if whole == "" && frac == "" || !digits(whole) || !digits(frac) || expDigits == "" || !digits(expDigits) {

@@ -11,7 +11,7 @@ func ValidText(s string, max int) bool {
 	return utf8.ValidString(s) && !strings.ContainsRune(s, 0) && utf8.RuneCountInString(s) <= max
 }
 
-// ValidEmail applies the candidate address grammar (spec §2).
+// ValidEmail applies the candidate address grammar (spec Sec. 2).
 func ValidEmail(s string) bool {
 	if !ValidText(s, 80) || strings.Count(s, "@") != 1 {
 		return false
@@ -21,8 +21,8 @@ func ValidEmail(s string) bool {
 			return false
 		}
 	}
-	local, domain, _ := strings.Cut(s, "@")
-	if local == "" || !strings.Contains(domain, ".") {
+	local, domain, found := strings.Cut(s, "@")
+	if !found || local == "" || !strings.Contains(domain, ".") {
 		return false
 	}
 	for _, label := range strings.Split(domain, ".") {
