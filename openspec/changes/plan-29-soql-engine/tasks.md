@@ -38,9 +38,9 @@ with DCO sign-off.
 
 ## 6. Child subqueries and semi-joins
 
-- [ ] 6.1 Failing tests: `TestChildSubqueries`, `TestSemiJoins`
-- [ ] 6.2 `BoundChild` + `CompileChild` (`ROW_NUMBER() OVER (PARTITION BY parent …)`); semi/anti-joins
-- [ ] 6.3 Commit `feat: add child subqueries and semi-joins`
+- [x] 6.1 Failing tests: `TestChildSubqueries`, `TestSemiJoins`
+- [x] 6.2 `BoundChild` + `CompileChild` (`ROW_NUMBER() OVER (PARTITION BY parent …)`); semi/anti-joins
+- [x] 6.3 Commit `feat: add child subqueries and semi-joins`
 
 ## 7. Aggregates, grouping and field functions
 
