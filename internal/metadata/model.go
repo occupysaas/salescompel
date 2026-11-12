@@ -145,21 +145,58 @@ func (s Snapshot) Field(object, name string) (Field, error) {
 	return Field{}, contract.FieldProblem("INVALID_FIELD", "Field is unavailable", name)
 }
 
-// DefaultChildRelationshipName derives the parent-side name for a child
-// object: its plural label with non-alphanumeric characters removed, plus
-// "__r" on custom children.
-// spec: child-01
-func DefaultChildRelationshipName(child Object) string {
+// asciiAlnum keeps only ASCII letters and digits, matching the PL/pgSQL
+// strip in migration 0005 (non-ASCII removed first so collation-sensitive
+// classes and case-folded ranges cannot keep accented or look-alike letters,
+// then every other character).
+func asciiAlnum(s string) string {
 	var b strings.Builder
-	for _, r := range child.PluralLabel {
+	for _, r := range s {
 		if r >= 'A' && r <= 'Z' || r >= 'a' && r <= 'z' || r >= '0' && r <= '9' {
 			b.WriteRune(r)
 		}
 	}
-	if strings.HasSuffix(child.Name, "__c") {
-		b.WriteString("__r")
-	}
 	return b.String()
+}
+
+// DefaultChildRelationshipName derives the parent-side name for a child
+// object: its plural label with non-alphanumeric characters removed, plus
+// "__r" on custom children. The result can be empty, start with a digit or
+// exceed childRelNameMax; minting callers must fall back to
+// FallbackChildRelationshipName when it is not a valid identifier.
+// spec: child-01
+func DefaultChildRelationshipName(child Object) string {
+	b := asciiAlnum(child.PluralLabel)
+	if strings.HasSuffix(child.Name, "__c") {
+		b += "__r"
+	}
+	return b
+}
+
+// FallbackChildRelationshipName is the stable name migration 0005 mints when
+// DefaultChildRelationshipName is not a valid identifier: "Rel" plus the
+// reference field's api_name stripped to ASCII alphanumerics, truncated so
+// the whole name fits childRelNameMax and always matches childRelNamePattern.
+// spec: child-01
+func FallbackChildRelationshipName(fieldAPIName string) string {
+	stem := asciiAlnum(fieldAPIName)
+	if len(stem) > childRelNameMax-3 {
+		stem = stem[:childRelNameMax-3]
+	}
+	return "Rel" + stem
+}
+
+// MintChildRelationshipName is the name migration 0005 writes for a reference
+// field that carries no explicit childRelationshipName: the derived default
+// when it is a valid identifier, otherwise FallbackChildRelationshipName.
+// The create path does not fall back; it rejects an invalid derived default
+// and asks for --child-relationship-name.
+// spec: child-01
+func MintChildRelationshipName(child Object, fieldAPIName string) string {
+	if nm := DefaultChildRelationshipName(child); childRelNamePattern.MatchString(nm) {
+		return nm
+	}
+	return FallbackChildRelationshipName(fieldAPIName)
 }
 
 func childRelationshipName(o Object, f Field) string {

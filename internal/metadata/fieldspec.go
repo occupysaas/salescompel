@@ -34,9 +34,13 @@ type ColumnDDL struct {
 	ForeignKey string // optional complete FOREIGN KEY constraint clause
 }
 
+// childRelNameMax caps parent-side relationship names, matching the stem
+// limit on relationshipName below. childRelNamePattern must agree.
+const childRelNameMax = 40
+
 var (
 	relationshipName    = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]{0,39}__r$`)
-	childRelNamePattern = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]*$`)
+	childRelNamePattern = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]{0,39}$`)
 )
 
 func fail(format string, args ...any) error { return fmt.Errorf("invalid field: "+format, args...) }
@@ -200,6 +204,9 @@ func BuildField(in FieldInput, target Object, snapshot Snapshot, hasRecords bool
 			childName = DefaultChildRelationshipName(target)
 		}
 		if !childRelNamePattern.MatchString(childName) {
+			if in.ChildRelationshipName == "" {
+				return Field{}, ddl, fail("invalid child relationship name %q; pass --child-relationship-name to choose another", childName)
+			}
 			return Field{}, ddl, fail("invalid child relationship name %q", childName)
 		}
 		for _, o := range snapshot.Objects {

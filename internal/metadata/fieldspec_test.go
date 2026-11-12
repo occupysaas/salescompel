@@ -383,6 +383,9 @@ func TestChildRelationshipDefaults(t *testing.T) {
 	if got := DefaultChildRelationshipName(Object{Name: "Contact", Label: "Contact", PluralLabel: "Contacts"}); got != "Contacts" {
 		t.Fatalf("standard default %q", got)
 	}
+	if got := DefaultChildRelationshipName(Object{Name: "Cafe__c", Label: "Cafe", PluralLabel: "Cafés"}); got != "Cafs__r" {
+		t.Fatalf("accented default %q", got)
+	}
 	s, project := specSnapshot()
 	f, _, err := BuildField(FieldInput{Name: "A__c", Label: "A", Type: "Lookup", ReferenceTo: "Account", ChildRelationshipName: "Foos"}, project, s, false)
 	if err != nil || f.Options.ChildRelationshipName != "Foos" {
@@ -424,6 +427,60 @@ func TestChildRelationshipDefaults(t *testing.T) {
 	}
 	if _, _, err := s2.ChildRelationship("Account", "Nope"); err == nil {
 		t.Fatal("unknown child relationship resolved")
+	}
+}
+
+func TestChildRelationshipNameMinting(t *testing.T) {
+	// Spec table: migration 0005 mints exactly these names, via
+	// MintChildRelationshipName, for every reference field that carries no
+	// explicit childRelationshipName.
+	cases := []struct{ plural, object, field, want string }{
+		{"Typed items", "Typed__c", "Lk__c", "Typeditems__r"},
+		{"Cafés", "Cafe__c", "Lk__c", "Cafs__r"},
+		{"Contacts", "Contact", "AccountId", "Contacts"},
+		{"123 Widgets", "W__c", "DigitLk__c", "RelDigitLkc"},
+		{"παιδιά", "K__c", "GreekLk__c", "RelGreekLkc"},
+		{"!!!", "E__c", "BangLk__c", "RelBangLkc"},
+		{strings.Repeat("A", 41), "L__c", "LongLk__c", "RelLongLkc"}, // over the 40-char cap
+	}
+	for _, c := range cases {
+		obj := Object{Name: c.object, PluralLabel: c.plural}
+		if got := MintChildRelationshipName(obj, c.field); got != c.want {
+			t.Errorf("mint(%q) = %q, want %q", c.plural, got, c.want)
+		}
+	}
+	if got := FallbackChildRelationshipName("Acct__c"); got != "RelAcctc" {
+		t.Fatalf("fallback %q", got)
+	}
+	if got := FallbackChildRelationshipName(strings.Repeat("x", 60)); len(got) != 40 {
+		t.Fatalf("fallback not capped at 40: %q", got)
+	}
+}
+
+func TestChildRelationshipNameCapAndHint(t *testing.T) {
+	s, project := specSnapshot()
+	// Explicit names honor the 40-character cap, like relationshipName.
+	if _, _, err := BuildField(FieldInput{Name: "A__c", Label: "A", Type: "Lookup", ReferenceTo: "Account", ChildRelationshipName: strings.Repeat("x", 40)}, project, s, false); err != nil {
+		t.Fatalf("40-char name rejected: %v", err)
+	}
+	if _, _, err := BuildField(FieldInput{Name: "B__c", Label: "B", Type: "Lookup", ReferenceTo: "Account", ChildRelationshipName: strings.Repeat("x", 41)}, project, s, false); err == nil {
+		t.Fatal("41-char name accepted")
+	}
+	// An invalid derived default (digit-leading after stripping) asks for an
+	// explicit override instead of silently falling back.
+	digit := Object{Name: "W__c", Label: "W", PluralLabel: "123 Widgets", Schema: "sc_records", Table: "o_w", Fields: []Field{{Name: "Id", Options: Options{Kind: fieldtype.Id}}}}
+	_, _, err := BuildField(FieldInput{Name: "X__c", Label: "X", Type: "Lookup", ReferenceTo: "Account"}, digit, s, false)
+	if err == nil || !strings.Contains(err.Error(), "--child-relationship-name") {
+		t.Fatalf("derived default error %v", err)
+	}
+	_, _, err = BuildField(FieldInput{Name: "Y__c", Label: "Y", Type: "Lookup", ReferenceTo: "Account", ChildRelationshipName: "bad name"}, digit, s, false)
+	if err == nil || strings.Contains(err.Error(), "--child-relationship-name") {
+		t.Fatalf("explicit name error %v", err)
+	}
+	// A derived default that is a valid identifier still mints on create.
+	f, _, err := BuildField(FieldInput{Name: "Z__c", Label: "Z", Type: "Lookup", ReferenceTo: "Account"}, Object{Name: "Cafe__c", Label: "Cafe", PluralLabel: "Cafés", Schema: "sc_records", Table: "o_c", Fields: []Field{{Name: "Id", Options: Options{Kind: fieldtype.Id}}}}, s, false)
+	if err != nil || f.Options.ChildRelationshipName != "Cafs__r" {
+		t.Fatalf("accented default create %v %#v", err, f.Options)
 	}
 }
 
