@@ -136,3 +136,11 @@
 - [x] `tsc --noEmit`, `prettier --check`, `npm test`, `cli validate`: PASS.
 - [x] `go test ./...`: only DB-gated tests fail locally (`TEST_DATABASE_URL` unset); rest pass.
 - [x] `node --test <file>` per compat test file: all pass except `candidate-acceptance-run.test.ts`, whose Go toolchain test needs a 1.25 `GOROOT` that this sandbox misconfigures (pre-existing on HEAD).
+
+Re-verified 2026-11-11 (Plan 28 Task 10): `guardrails-scan`, `semantic-scan`,
+`pattern-ratchet`, `silent-success-scan`, charset/encoding/corruption/
+manifest-join/exec-bits and the size gate are all green; `go test -count=1
+./internal/... ./cmd/...` passes against PG 17 on ai03; the compat suite runs
+to completion with a single pre-existing Go-toolchain failure (Task 9b fixed
+the suite-killing cleanup behind it).
+
