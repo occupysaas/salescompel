@@ -1,6 +1,13 @@
 # Plan 28 — Field types I
 
-**Status:** Draft for review
+> **Superseded (2026-11-11):** This draft design predates upstream's completed
+> Plan 28. The implemented design lives in
+> [2026-11-11-plan-28-field-types-design](2026-11-11-plan-28-field-types-design.md),
+> with the execution record in
+> [docs/compat/plan-28-field-types.md](../../compat/plan-28-field-types.md).
+> Kept for history only.
+
+**Status:** Draft for review — superseded, see banner
 **Date:** 2026-11-10
 **Depends on:** Plan 27 (dynamic schema and tenant isolation)
 **Roadmap:** First release roadmap, Stage B, item 28

@@ -1,5 +1,12 @@
 # Plan 28 — Field types I Implementation Plan
 
+> **Superseded (2026-11-11):** This draft predates upstream's completed Plan 28.
+> The implemented work and its record live in
+> [2026-11-11-plan-28-field-types](2026-11-11-plan-28-field-types.md),
+> [2026-11-11-plan-28-field-types-design](../specs/2026-11-11-plan-28-field-types-design.md)
+> and [docs/compat/plan-28-field-types.md](../../compat/plan-28-field-types.md).
+> Kept for history only; do not execute this plan.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Broaden field types from `id`/`string`/`reference` to the full first-release set with decimal arithmetic and graduated validation.
