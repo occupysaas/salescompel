@@ -58,7 +58,11 @@ OAuth login and identity now support authorization code with PKCE, refresh, JWT
 bearer and client credentials. See the [Plan 26 operator guide and gaps](docs/compat/plan-26-oauth-login.md).
 Plan 27 provides explicit migrations, tenant row-level security and dynamic
 objects and fields. See the [operator guide and verification](docs/compat/plan-27-dynamic-schema.md).
-The next priority is Plan 28: broader field types. [Plan 25 foundation decisions](docs/compat/plan-25-foundation-decisions.md)
+Plan 28 adds typed fields (numbers, currency, percent, dates, checkboxes,
+picklists, email, phone, URL, lookup, master-detail, auto-number), compound
+Name and Address and common standard Account/Contact fields. See the
+[field types guide and verification](docs/compat/plan-28-field-types.md).
+The next priority is Plan 29: the SOQL engine. [Plan 25 foundation decisions](docs/compat/plan-25-foundation-decisions.md)
 now define the bounded REST, query and external-ID defaults and remaining gaps. See the
 [progress roadmap and estimate assumptions](docs/plans/2026-10-20-progress-and-remaining-roadmap.md)
 and the [full architecture and milestone gates](docs/plans/2026-10-14-salesforce-compatibility-roadmap.md).

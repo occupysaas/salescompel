@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Status:** Draft for maintainer review, 2026-11-11.
+**Status:** Implemented and verified 2026-11-11. See [decisions, gaps and evidence](../../compat/plan-28-field-types.md).
 
 **Goal:** Make every Plan 28 field type definable, describable and usable through REST, Composite, the bounded query, unmodified JSforce and simple-salesforce, and the connected editor, with exact decimals and honest stored-not-enforced definitions.
 

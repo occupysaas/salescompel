@@ -1,6 +1,6 @@
 # Plan 28 — Field types I
 
-**Status:** Draft for maintainer review, 2026-11-11.
+**Status:** Implemented and verified 2026-11-11. See [decisions, gaps and evidence](../../compat/plan-28-field-types.md).
 **Date:** 2026-11-11
 **Depends on:** Plan 27 (typed tenant metadata, generated physical columns, RLS, schema CLI).
 **Roadmap:** [first release roadmap](2026-11-04-salescompel-first-release-roadmap-design.md), Plan 28; "Stored, not enforced" in §1.
