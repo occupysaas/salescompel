@@ -35,6 +35,7 @@ func writeError(w http.ResponseWriter, err error) {
 func body(r *http.Request) (map[string]any, error) {
 	data := map[string]any{}
 	dec := json.NewDecoder(r.Body)
+	dec.UseNumber()
 	start, err := dec.Token()
 	if err != nil || start != json.Delim('{') {
 		return nil, invalid("JSON_PARSER_ERROR", "Expected a JSON object")

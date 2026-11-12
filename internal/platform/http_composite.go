@@ -1,6 +1,7 @@
 package platform
 
 import (
+	"bytes"
 	"encoding/json"
 	"io"
 	"regexp"
@@ -77,7 +78,7 @@ func decodeComposite(r io.Reader) (CompositeRequest, error) {
 				return fail()
 			}
 		} else {
-			if !present || json.Unmarshal(b, &sub.Body) != nil || sub.Body == nil {
+			if !present || decodeExact(b, &sub.Body) != nil || sub.Body == nil {
 				return fail()
 			}
 		}
@@ -165,4 +166,12 @@ func containsCompositeMarker(value any) bool {
 		}
 	}
 	return false
+}
+
+// decodeExact decodes JSON keeping numbers as json.Number, so field values
+// never pass through binary floating point.
+func decodeExact(raw []byte, v any) error {
+	d := json.NewDecoder(bytes.NewReader(raw))
+	d.UseNumber()
+	return d.Decode(v)
 }
