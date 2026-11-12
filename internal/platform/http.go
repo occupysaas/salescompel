@@ -192,8 +192,8 @@ func NewHandlerWithOptions(s *Store, assetDir string, o Options) http.Handler {
 				w.Header().Set("Content-Type", apicontract.CandidateOpenAPIContentType)
 				w.WriteHeader(http.StatusOK)
 				if _, wErr := io.WriteString(w, apicontract.CandidateOpenAPI()); wErr != nil {
-				return
-			}
+					return
+				}
 			}
 			return
 		}
