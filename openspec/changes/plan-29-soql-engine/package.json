@@ -1,0 +1,28 @@
+{
+  "schema_version": "devgate.openspec.package/v1",
+  "package_id": "salescompel.plan-29-soql-engine",
+  "package_version": "1.0.0",
+  "normative_inventory": [
+    {
+      "path": "specs/soql-engine/spec.md",
+      "kind": "normative",
+      "digest": "sha256:1d91a5be3d7df118e8db179019fe30600bfb49797e294b8aaca0c01f3319df53"
+    },
+    {
+      "path": "proposal.md",
+      "kind": "normative",
+      "digest": "sha256:921188f1534843f88ba128958237271d5c000cef4264d7f6ad77b7a006beb5a6"
+    },
+    {
+      "path": "design.md",
+      "kind": "normative",
+      "digest": "sha256:8c4b2412a406631da314ec609c33e0604857c23a7215f1e29ffa3ca17ba13189"
+    },
+    {
+      "path": "tasks.md",
+      "kind": "informative",
+      "digest": "sha256:c67b1f50b7a41fc0c6ef9c34244e89814d6ce3886cece392b2b2df58dc4cc6f3"
+    }
+  ],
+  "imports": []
+}
