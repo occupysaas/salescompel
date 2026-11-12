@@ -127,7 +127,12 @@ function checkDecimal(event: Event) {
   </fieldset>
   <label v-else-if="field.type === 'picklist'"
     >{{ label
-    }}<select v-model="text" :required="!field.nillable" :disabled="disabled">
+    }}<select
+      v-model="text"
+      :aria-label="label"
+      :required="!field.nillable"
+      :disabled="disabled"
+    >
       <option v-if="field.nillable" value="">{{ t("field.none") }}</option>
       <option
         v-for="option in options"
