@@ -148,6 +148,7 @@ func (s Snapshot) Field(object, name string) (Field, error) {
 // DefaultChildRelationshipName derives the parent-side name for a child
 // object: its plural label with non-alphanumeric characters removed, plus
 // "__r" on custom children.
+// spec: child-01
 func DefaultChildRelationshipName(child Object) string {
 	var b strings.Builder
 	for _, r := range child.PluralLabel {
@@ -170,6 +171,7 @@ func childRelationshipName(o Object, f Field) string {
 
 // ChildRelationships lists every lookup and master-detail field that
 // references object, in catalog order.
+// spec: child-01
 func (s Snapshot) ChildRelationships(object string) []ChildRelationship {
 	if _, e := s.Object(object); e != nil {
 		return nil
@@ -194,6 +196,7 @@ func (s Snapshot) ChildRelationships(object string) []ChildRelationship {
 
 // ChildRelationship resolves a child relationship name against a parent
 // object, case-insensitively.
+// spec: child-01
 func (s Snapshot) ChildRelationship(parent, name string) (Object, Field, error) {
 	if _, e := s.Object(parent); e != nil {
 		return Object{}, Field{}, e

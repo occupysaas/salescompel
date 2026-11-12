@@ -19,10 +19,10 @@ with DCO sign-off.
 
 ## 3. Child relationship metadata
 
-- [ ] 3.1 Failing tests: `TestChildRelationshipDefaults`, `TestDescribeChildRelationships`, `TestMigrationChildRelationshipBackfill`, seed parity, CLI flag parse
-- [ ] 3.2 Migration 0005 + `Snapshot.ChildRelationship(s)` + `DefaultChildRelationshipName` + CLI `--child-relationship-name` + describe `childRelationships`
-- [ ] 3.3 Regenerate describe golden; only `childRelationships` may change
-- [ ] 3.4 Commit `feat: name and describe child relationships`
+- [x] 3.1 Failing tests: `TestChildRelationshipDefaults`, `TestDescribeChildRelationships`, `TestMigrationChildRelationshipBackfill`, seed parity, CLI flag parse
+- [x] 3.2 Migration 0005 + `Snapshot.ChildRelationship(s)` + `DefaultChildRelationshipName` + CLI `--child-relationship-name` + describe `childRelationships`
+- [x] 3.3 Regenerate describe golden; only `childRelationships` may change
+- [x] 3.4 Commit `feat: name and describe child relationships`
 
 ## 4. Binder, limits and date literals
 

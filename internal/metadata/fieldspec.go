@@ -194,6 +194,7 @@ func BuildField(in FieldInput, target Object, snapshot Snapshot, hasRecords bool
 			}
 		}
 		f.ReferenceTo, f.RelationshipName, f.Length = []string{parent.Name}, &rel, 18
+		// spec: child-01
 		childName := in.ChildRelationshipName
 		if childName == "" {
 			childName = DefaultChildRelationshipName(target)
