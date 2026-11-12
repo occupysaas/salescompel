@@ -347,3 +347,30 @@ func TestSchemaCurrency(t *testing.T) {
 		t.Fatalf("currency %q", snap.Currency)
 	}
 }
+
+func TestSharedStandardTableRules(t *testing.T) {
+	s, _ := specSnapshot()
+	account, _ := s.Object("Account")
+	for _, in := range []FieldInput{
+		{Name: "Req__c", Label: "R", Type: "Text", Length: 5, Required: true},
+		{Name: "Seq__c", Label: "S", Type: "AutoNumber", DisplayFormat: "S-{0}"},
+	} {
+		if _, _, err := BuildField(in, account, s, false); err == nil {
+			t.Errorf("%s on shared standard table accepted", in.Type)
+		}
+	}
+	if _, _, err := BuildField(FieldInput{Name: "Ok__c", Label: "O", Type: "Text", Length: 5}, account, s, false); err != nil {
+		t.Errorf("optional field on standard object rejected: %v", err)
+	}
+}
+
+func TestRequiredLookupRestricts(t *testing.T) {
+	s, project := specSnapshot()
+	f, ddl, err := BuildField(FieldInput{Name: "Acct__c", Label: "A", Type: "Lookup", ReferenceTo: "Account", Required: true}, project, s, false)
+	if err != nil || f.Options.DeleteBehavior != "Restrict" || !strings.Contains(ddl.ForeignKey, "ON DELETE RESTRICT") {
+		t.Fatalf("required lookup %v %q %q", err, f.Options.DeleteBehavior, ddl.ForeignKey)
+	}
+	if _, _, err := BuildField(FieldInput{Name: "Acct__c", Label: "A", Type: "Lookup", ReferenceTo: "Account", Required: true, DeleteBehavior: "SetNull"}, project, s, false); err == nil {
+		t.Fatal("required SetNull lookup accepted")
+	}
+}

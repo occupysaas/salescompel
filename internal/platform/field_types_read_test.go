@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"salescompel/internal/metadata"
 	"os"
+	"salescompel/internal/metadata"
 	"strings"
 	"testing"
 )

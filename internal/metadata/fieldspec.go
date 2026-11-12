@@ -73,6 +73,11 @@ func BuildField(in FieldInput, target Object, snapshot Snapshot, hasRecords bool
 			return Field{}, ddl, fail("%s does not apply to %s", name, k)
 		}
 	}
+	// Standard objects share one physical table across tenants, so a NOT NULL
+	// or auto-numbered column would affect every tenant's records.
+	if target.Standard && (in.Required || k == fieldtype.AutoNumber) {
+		return Field{}, ddl, fail("required and auto-number fields cannot be added to standard objects, whose storage is shared")
+	}
 	if in.Required && hasRecords {
 		return Field{}, ddl, fail("required fields can only be added to objects without records")
 	}
@@ -186,7 +191,15 @@ func BuildField(in FieldInput, target Object, snapshot Snapshot, hasRecords bool
 		f.ReferenceTo, f.RelationshipName, f.Length = []string{parent.Name}, &rel, 18
 		action := ""
 		if k == fieldtype.Lookup {
-			switch in.DeleteBehavior {
+			behavior := in.DeleteBehavior
+			if in.Required {
+				// A required lookup cannot be cleared when its parent is deleted.
+				if behavior == "SetNull" {
+					return Field{}, ddl, fail("a required lookup must use the Restrict delete behavior")
+				}
+				behavior = "Restrict"
+			}
+			switch behavior {
 			case "", "SetNull":
 				f.Options.DeleteBehavior, action = "SetNull", fmt.Sprintf("SET NULL (%s)", col)
 			case "Restrict":

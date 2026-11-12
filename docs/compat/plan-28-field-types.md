@@ -101,7 +101,7 @@ Types: `Text` (`--length` 1–255), `TextArea`, `LongTextArea` (`--length`
 `--relationship-name`), `MasterDetail` (`--reference-to`, `--reparentable`;
 custom child objects without records only, at most two) and `AutoNumber`
 (`--display-format`, `--starting-number`, default 1; existing records are
-numbered in Id order). `--required` applies only to objects without records.
+numbered in Id order). `--required` applies only to custom objects without records; required lookups use `Restrict`. Required and AutoNumber fields are refused on Account and Contact.
 Flags that do not apply to a type are rejected. `provision` accepts
 `SALESCOMPEL_CURRENCY` for the tenant's display currency.
 
@@ -131,6 +131,11 @@ cannot be added after creation (Plan 35).
   121 would truncate names.
 - Migration 4 writes catalog rows per tenant with that tenant's context, so
   forced row security holds when the operator is not a superuser.
+- Exponent-form JSON number literals are expanded exactly (Python/JavaScript
+  floats such as `1e+16`); exponents inside decimal strings stay rejected.
+- Required and AutoNumber fields are refused on Account and Contact, whose
+  table is shared by every tenant; a required Lookup always uses `Restrict`.
+- The connected editor sends only changed fields on update.
 - Query column metadata is unchanged (column name only); IS NULL filters remain
   allowed on every filterable type.
 - Lookups in the connected editor are text inputs with record suggestions, so

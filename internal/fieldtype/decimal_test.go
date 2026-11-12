@@ -38,6 +38,13 @@ func TestDecimal(t *testing.T) {
 		{18, 2, "+1", "", ErrSyntax},
 		{18, 2, "1.2.3", "", ErrSyntax},
 		{18, 2, "-", "", ErrSyntax},
+		{18, 0, json.Number("1e+16"), "10000000000000000", nil},
+		{18, 6, json.Number("5e-05"), "0.000050", nil},
+		{18, 2, json.Number("-1.25E1"), "-12.50", nil},
+		{18, 2, json.Number("1e-7"), "0.00", nil},
+		{18, 0, json.Number("1e18"), "", ErrRange},
+		{18, 0, json.Number("1e999999999"), "", ErrRange},
+		{18, 2, json.Number("1e-999999999"), "0.00", nil},
 	}
 	for _, c := range cases {
 		got, err := Decimal(c.in, c.p, c.s)

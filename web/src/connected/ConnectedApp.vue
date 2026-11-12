@@ -9,6 +9,7 @@ import {
 } from "./catalog";
 import FieldInput from "./FieldInput.vue";
 import {
+  changedFields,
   formatValue,
   fromApiValue,
   toApiValue,
@@ -49,6 +50,7 @@ const editing = ref(false),
   recordID = ref(""),
   values = ref<Record<string, ControlValue>>({}),
   current = ref<RecordData>({}),
+  original = ref<Record<string, ControlValue>>({}),
   confirmDelete = ref(false);
 const currency = ref("USD"),
   stored = ref<StoredField[]>([]),
@@ -229,6 +231,7 @@ async function edit(row: RecordData) {
     values.value = {};
     for (const f of fields.value)
       values.value[f.name] = fromApiValue(f, record[f.name]);
+    original.value = { ...values.value };
     current.value = record;
     recordID.value = String(row.Id);
     editing.value = true;
@@ -238,8 +241,11 @@ async function edit(row: RecordData) {
 async function save() {
   await action(async () => {
     const data: Record<string, unknown> = {};
+    const changed = recordID.value
+      ? new Set(changedFields(fields.value, original.value, values.value))
+      : null;
     for (const f of fields.value) {
-      if (!writable(f)) continue;
+      if (!writable(f) || (changed && !changed.has(f.name))) continue;
       data[f.name] = toApiValue(f, values.value[f.name] ?? "");
     }
     await api(

@@ -166,3 +166,19 @@ export function formatValue(
   }
   return String(value);
 }
+
+/** Names of fields whose control value differs from the loaded record, so an
+ * update never rewrites values the user did not touch. */
+export function changedFields(
+  fields: FieldInfo[],
+  original: Record<string, ControlValue>,
+  current: Record<string, ControlValue>,
+): string[] {
+  return fields
+    .filter(
+      (f) =>
+        JSON.stringify(original[f.name] ?? "") !==
+        JSON.stringify(current[f.name] ?? ""),
+    )
+    .map((f) => f.name);
+}

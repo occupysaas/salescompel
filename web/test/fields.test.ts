@@ -8,6 +8,7 @@ import {
   formatValue,
   toApiValue,
   fromApiValue,
+  changedFields,
   type FieldInfo,
 } from "../src/connected/fields.ts";
 
@@ -107,4 +108,22 @@ test("display formatting follows locale and tenant currency", () => {
     formatValue(f("url"), "javascript:alert(1)", "en-US", "USD"),
     "javascript:alert(1)",
   );
+});
+
+test("updates send only the fields the user changed", () => {
+  const fields = [
+    f("datetime", { name: "At__c" }),
+    f("string", { name: "Name" }),
+    f("multipicklist", { name: "M__c" }),
+  ];
+  const original = { At__c: "2026-03-09T04:30", Name: "A", M__c: ["A"] };
+  assert.deepEqual(
+    changedFields(fields, original, { ...original, Name: "B" }),
+    ["Name"],
+  );
+  assert.deepEqual(
+    changedFields(fields, original, { ...original, M__c: ["A", "B"] }),
+    ["M__c"],
+  );
+  assert.deepEqual(changedFields(fields, original, { ...original }), []);
 });
