@@ -26,11 +26,9 @@ func monthStart(t time.Time) time.Time {
 }
 
 func addMonths(t time.Time, n int) time.Time {
-	y, m, d := t.Date()
-	// Normalize to the first of the month before adding, then restore day
-	// only when the result is still that month (month-start inputs).
-	base := time.Date(y, m, 1, 0, 0, 0, 0, time.UTC)
-	return base.AddDate(0, n, 0).AddDate(0, 0, d-1)
+	y, m, _ := t.Date()
+	// Callers pass month starts, so add whole months from the first.
+	return time.Date(y, m, 1, 0, 0, 0, 0, time.UTC).AddDate(0, n, 0)
 }
 
 func quarterStart(t time.Time) time.Time {

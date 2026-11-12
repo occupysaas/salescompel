@@ -137,7 +137,9 @@ func exprCounts(e Expr) (subs, semis int, err error) {
 			if er != nil {
 				return 0, 0, er
 			}
-			return 1 + s, 1 + m, nil
+			// A semi-join counts toward the semi-join cap only; the 20-cap is
+			// child subqueries. spec: soql-06
+			return s, 1 + m, nil
 		}
 	case *Includes:
 		if len(t.Values) > maxInList {

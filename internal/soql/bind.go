@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"salescompel/internal/contract"
-	"salescompel/internal/fieldtype"
 	"salescompel/internal/metadata"
 	"salescompel/internal/policy"
 )
@@ -34,10 +33,55 @@ type binder struct {
 }
 
 type bindCtx struct {
-	aliases map[string]BoundValue
+	aliases map[string]BoundValue // select aliases, lower-cased keys
+	keys    map[string]bool       // result keys already taken, lower-cased
+	reserve map[string]bool       // explicit aliases that own their exprN
 	exprN   int
 	inOr    bool // a semi-join under OR is refused
 	child   bool // child subquery: refuse aggregates, GROUP BY, OFFSET, nesting
+}
+
+// nextExprKey numbers unaliased aggregate and function items expr0, expr1, …
+// among themselves, skipping any number an explicit alias already owns.
+// spec: soql-02
+func (c *bindCtx) nextExprKey() string {
+	for {
+		key := "expr" + strconv.Itoa(c.exprN)
+		c.exprN++
+		if !c.reserve[strings.ToLower(key)] && !c.keys[strings.ToLower(key)] {
+			return key
+		}
+	}
+}
+
+// takeKey records a SELECT result key, refusing duplicates.
+// spec: soql-02
+func (c *bindCtx) takeKey(key string) error {
+	lower := strings.ToLower(key)
+	if c.keys[lower] {
+		return malformed("duplicate result key in SELECT")
+	}
+	c.keys[lower] = true
+	return nil
+}
+
+// reserveAliases marks explicit select aliases so generated exprN keys skip
+// numbers the aliases own. spec: soql-02
+func reserveAliases(items []SelectItem) map[string]bool {
+	out := map[string]bool{}
+	for _, item := range items {
+		switch t := item.(type) {
+		case *Aggregate:
+			if t.Alias != "" {
+				out[strings.ToLower(t.Alias)] = true
+			}
+		case *Call:
+			if t.Alias != "" {
+				out[strings.ToLower(t.Alias)] = true
+			}
+		}
+	}
+	return out
 }
 
 func (b *binder) query(q *Query, child bool) (*Bound, error) {
@@ -57,7 +101,12 @@ func (b *binder) queryObj(q *Query, obj metadata.Object, child bool) (*Bound, er
 		return nil, malformed("WITH SYSTEM_MODE is not supported")
 	}
 	b.joined[obj.Name] = true
-	ctx := &bindCtx{aliases: map[string]BoundValue{}, child: child}
+	ctx := &bindCtx{
+		aliases: map[string]BoundValue{},
+		keys:    map[string]bool{},
+		reserve: reserveAliases(q.Select),
+		child:   child,
+	}
 
 	cols, children, err := b.bindSelect(q, obj, ctx)
 	if err != nil {
@@ -121,7 +170,6 @@ func (b *binder) bindLimitOffset(q *Query, child bool) error {
 func (b *binder) bindSelect(q *Query, obj metadata.Object, ctx *bindCtx) ([]BoundColumn, []BoundChild, error) {
 	var cols []BoundColumn
 	var children []BoundChild
-	seen := map[string]bool{}
 	for _, item := range q.Select {
 		switch t := item.(type) {
 		case *TypeOf:
@@ -132,11 +180,9 @@ func (b *binder) bindSelect(q *Query, obj metadata.Object, ctx *bindCtx) ([]Boun
 				return nil, nil, err
 			}
 			for _, c := range exp {
-				key := pathKey(c.Path, c.Field.Name)
-				if seen[key] {
-					return nil, nil, malformed("duplicate field in SELECT")
+				if err := ctx.takeKey(c.Key); err != nil {
+					return nil, nil, err
 				}
-				seen[key] = true
 				cols = append(cols, c)
 			}
 		case *SubQuery:
@@ -149,19 +195,14 @@ func (b *binder) bindSelect(q *Query, obj metadata.Object, ctx *bindCtx) ([]Boun
 			}
 			children = append(children, ch)
 		case *FieldRef:
-			c, v, err := b.bindFieldRef(obj, t, ctx)
+			c, _, err := b.bindFieldRef(obj, t, ctx)
 			if err != nil {
 				return nil, nil, err
 			}
-			key := pathKey(c.Path, c.Field.Name)
-			if seen[key] {
-				return nil, nil, malformed("duplicate field in SELECT")
+			if err := ctx.takeKey(c.Key); err != nil {
+				return nil, nil, err
 			}
-			seen[key] = true
 			cols = append(cols, c)
-			if c.Key != "" {
-				ctx.aliases[c.Key] = v
-			}
 		case *Aggregate:
 			if ctx.child {
 				return nil, nil, malformed("aggregates are not supported in subqueries")
@@ -170,122 +211,24 @@ func (b *binder) bindSelect(q *Query, obj metadata.Object, ctx *bindCtx) ([]Boun
 			if err != nil {
 				return nil, nil, err
 			}
+			if err := ctx.takeKey(c.Key); err != nil {
+				return nil, nil, err
+			}
 			cols = append(cols, c)
-			ctx.aliases[c.Key] = v
+			ctx.aliases[strings.ToLower(c.Key)] = v
 		case *Call:
 			c, v, err := b.bindCall(obj, t, ctx)
 			if err != nil {
 				return nil, nil, err
 			}
+			if err := ctx.takeKey(c.Key); err != nil {
+				return nil, nil, err
+			}
 			cols = append(cols, c)
-			ctx.aliases[c.Key] = v
+			ctx.aliases[strings.ToLower(c.Key)] = v
 		}
 	}
 	return cols, children, nil
-}
-
-func pathKey(path []PathStep, field string) string {
-	parts := make([]string, 0, len(path)+1)
-	for _, s := range path {
-		parts = append(parts, s.Object.Name+"/"+s.Via.Name)
-	}
-	parts = append(parts, field)
-	return strings.Join(parts, "|")
-}
-
-func (b *binder) bindFieldRef(obj metadata.Object, ref *FieldRef, ctx *bindCtx) (BoundColumn, BoundValue, error) {
-	path, f, err := b.resolvePath(obj, ref.Path)
-	if err != nil {
-		return BoundColumn{}, BoundValue{}, err
-	}
-	key := f.Name
-	c := BoundColumn{Key: key, Path: path, Field: f}
-	v := BoundValue{Path: path, Field: f, Key: key}
-	ctx.aliases[key] = v
-	return c, v, nil
-}
-
-func (b *binder) bindAggregate(obj metadata.Object, a *Aggregate, ctx *bindCtx) (BoundColumn, BoundValue, error) {
-	// spec: soql-02
-	fn := strings.ToUpper(a.Func)
-	var path []PathStep
-	var f metadata.Field
-	if a.Arg != nil {
-		p, fl, err := b.resolvePath(obj, a.Arg.Path)
-		if err != nil {
-			return BoundColumn{}, BoundValue{}, err
-		}
-		path, f = p, fl
-		if err := checkAggKind(fn, f); err != nil {
-			return BoundColumn{}, BoundValue{}, err
-		}
-	} else if fn != "COUNT" {
-		return BoundColumn{}, BoundValue{}, malformed("expected field argument for " + fn)
-	}
-	key := a.Alias
-	if key == "" {
-		key = "expr" + strconv.Itoa(ctx.exprN)
-		ctx.exprN++
-	}
-	c := BoundColumn{Key: key, Path: path, Field: f, Agg: fn}
-	v := BoundValue{Path: path, Field: f, Agg: fn, Key: key}
-	return c, v, nil
-}
-
-func (b *binder) bindCall(obj metadata.Object, call *Call, ctx *bindCtx) (BoundColumn, BoundValue, error) {
-	// spec: soql-02
-	if len(call.Args) != 1 {
-		return BoundColumn{}, BoundValue{}, malformed("function " + call.Func + " expects one field")
-	}
-	ref, ok := call.Args[0].(*FieldRef)
-	if !ok {
-		return BoundColumn{}, BoundValue{}, malformed("function " + call.Func + " expects a field")
-	}
-	path, f, err := b.resolvePath(obj, ref.Path)
-	if err != nil {
-		return BoundColumn{}, BoundValue{}, err
-	}
-	label := strings.EqualFold(call.Func, "toLabel")
-	fn := call.Func
-	if label {
-		fn = "toLabel"
-		if k := f.Kind(); k != fieldtype.Picklist && k != fieldtype.MultiselectPicklist {
-			return BoundColumn{}, BoundValue{}, malformed("toLabel expects a picklist field")
-		}
-	} else if !dateFunc[strings.ToLower(call.Func)] {
-		return BoundColumn{}, BoundValue{}, malformed("function " + call.Func + " is not supported")
-	} else {
-		fn = strings.ToUpper(call.Func)
-		if k := f.Kind(); k != fieldtype.Date && k != fieldtype.DateTime {
-			return BoundColumn{}, BoundValue{}, malformed("function " + fn + " expects a date field")
-		}
-	}
-	key := call.Alias
-	if key == "" {
-		key = "expr" + strconv.Itoa(ctx.exprN)
-		ctx.exprN++
-	}
-	c := BoundColumn{Key: key, Path: path, Field: f, Func: fn, Label: label}
-	v := BoundValue{Path: path, Field: f, Func: fn, Label: label, Key: key}
-	return c, v, nil
-}
-
-func checkAggKind(fn string, f metadata.Field) error {
-	// spec: soql-02
-	k := f.Kind()
-	ok := false
-	switch fn {
-	case "SUM", "AVG":
-		ok = k.Numeric()
-	case "MIN", "MAX":
-		ok = k.Numeric() || k == fieldtype.Date || k == fieldtype.DateTime || k.Filterable()
-	case "COUNT", "COUNT_DISTINCT":
-		ok = f.Filterable && k != fieldtype.LongTextArea
-	}
-	if !ok {
-		return malformed("aggregate function does not accept this field type")
-	}
-	return nil
 }
 
 // --- paths ---
@@ -471,6 +414,10 @@ func (b *binder) finishAggregates(q *Query, out *Bound, child bool) error {
 	out.CountOnly = countOnly && hasAgg && len(out.Columns) == 1
 	if hasAgg && len(out.GroupBy) == 0 && plain {
 		return malformed("aggregates cannot be mixed with plain fields without GROUP BY")
+	}
+	// spec: soql-05 — HAVING is an aggregate-query clause.
+	if out.Having != nil && !out.Aggregate {
+		return malformed("HAVING requires aggregation or GROUP BY")
 	}
 	return nil
 }

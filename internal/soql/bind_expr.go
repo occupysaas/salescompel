@@ -68,7 +68,7 @@ func (b *binder) bindCompare(c *Compare, obj metadata.Object, ctx *bindCtx) (Bou
 	if left.Label {
 		return b.bindLabelCmp(left, op, c.Right)
 	}
-	if c.Right.Kind == LitDateLiteral && isTemporal(left.Field) {
+	if c.Right.Kind == LitDateLiteral && comparesTemporal(left) {
 		return b.bindDateLiteralCmp(left, op, c.Right)
 	}
 	if c.Right.Kind == LitNull {
@@ -80,9 +80,9 @@ func (b *binder) bindCompare(c *Compare, obj metadata.Object, ctx *bindCtx) (Bou
 	if op == "LIKE" && (left.Agg != "" || left.Func != "" || !textLike(left.Field.Kind())) {
 		return nil, contract.Invalid("INVALID_QUERY_FILTER_OPERATOR", "LIKE is not valid for this field type")
 	}
-	// Aggregates and functions type the operand by literal kind (HAVING).
+	// Aggregates and date functions type the HAVING operand by result kind.
 	if left.Agg != "" || (left.Func != "" && !left.Label) {
-		right, err := b.typeByKind(c.Right)
+		right, err := b.typeHaving(fieldOwner(obj, left), left, c.Right)
 		if err != nil {
 			return nil, err
 		}
@@ -140,6 +140,22 @@ func isTemporal(f metadata.Field) bool {
 	return k == fieldtype.Date || k == fieldtype.DateTime
 }
 
+// comparesTemporal reports whether the left operand's value is the field's
+// date or date-time instant, so a date literal becomes a range. Aggregates
+// and date functions whose result is numeric do not. spec: soql-04
+func comparesTemporal(left BoundValue) bool {
+	if !isTemporal(left.Field) {
+		return false
+	}
+	switch {
+	case left.Func != "":
+		return left.Func == "DAY_ONLY"
+	case left.Agg != "":
+		return left.Agg == "MIN" || left.Agg == "MAX"
+	}
+	return true
+}
+
 func textLike(k fieldtype.Kind) bool {
 	switch k {
 	case fieldtype.Text, fieldtype.TextArea, fieldtype.Email, fieldtype.Phone,
@@ -173,6 +189,11 @@ func (b *binder) bindIn(in *In, obj metadata.Object, ctx *bindCtx) (BoundExpr, e
 		return nil, tooComplicated("IN list is too long")
 	}
 	owner := fieldOwner(obj, left)
+	for _, lit := range in.Values {
+		if lit.Kind == LitDateLiteral {
+			return b.bindInRanges(left, in, owner)
+		}
+	}
 	vals := make([]Param, 0, len(in.Values))
 	for _, lit := range in.Values {
 		p, err := b.typeLiteral(owner, left.Field, lit)
@@ -182,6 +203,52 @@ func (b *binder) bindIn(in *In, obj metadata.Object, ctx *bindCtx) (BoundExpr, e
 		vals = append(vals, p)
 	}
 	return &BoundIn{Left: left, Not: in.Not, Values: vals}, nil
+}
+
+// bindInRanges expands date literals in an IN list into OR-of-ranges with the
+// same half-open semantics as bindDateLiteralCmp. spec: soql-04
+func (b *binder) bindInRanges(left BoundValue, in *In, owner metadata.Object) (BoundExpr, error) {
+	if !comparesTemporal(left) {
+		return nil, wrongType(left.Field)
+	}
+	cast := "timestamptz"
+	if left.Field.Kind() == fieldtype.Date {
+		cast = "date"
+	}
+	items := make([]BoundExpr, 0, len(in.Values))
+	for _, lit := range in.Values {
+		if lit.Kind == LitDateLiteral {
+			start, end, err := DateLiteralRange(lit, b.now().UTC())
+			if err != nil {
+				return nil, err
+			}
+			ge := BoundCmp{Left: left, Op: ">=", Right: Param{Value: start, Cast: cast}}
+			lt := BoundCmp{Left: left, Op: "<", Right: Param{Value: end, Cast: cast}}
+			items = append(items, &BoundAnd{Items: []BoundExpr{&ge, &lt}})
+			continue
+		}
+		p, err := b.typeLiteral(owner, left.Field, lit)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, &BoundCmp{Left: left, Op: "=", Right: p})
+	}
+	var body BoundExpr = items[0]
+	if len(items) > 1 {
+		body = &BoundOr{Items: items}
+	}
+	if !in.Not {
+		return body, nil
+	}
+	notExpr := BoundExpr(&BoundNot{Expr: body})
+	// NOT IN includes null rows on a nullable plain field, matching BoundIn.
+	if left.Agg == "" && left.Func == "" && left.Field.Nillable {
+		return &BoundOr{Items: []BoundExpr{
+			&BoundCmp{Left: left, Op: "=", Right: Param{Value: nil}},
+			notExpr,
+		}}, nil
+	}
+	return notExpr, nil
 }
 
 func (b *binder) bindSemi(left BoundValue, in *In, ctx *bindCtx) (BoundExpr, error) {
@@ -262,42 +329,21 @@ func wrongType(f metadata.Field) error {
 		name)
 }
 
-// typeByKind types a literal for an aggregate or function result, which has
-// no field describe type (HAVING). spec: soql-05
-func (b *binder) typeByKind(lit Literal) (Param, error) {
-	switch lit.Kind {
-	case LitNull:
-		return Param{Value: nil}, nil
-	case LitBool:
-		return Param{Value: lit.Text == "true", Cast: "bool"}, nil
-	case LitNumber:
-		s, err := fieldtype.Decimal(json.Number(lit.Text), 18, 8)
-		if err != nil {
-			return Param{}, malformed("invalid numeric literal")
-		}
-		return Param{Value: s, Cast: "numeric"}, nil
-	case LitString:
-		return Param{Value: lit.Text, Cast: "text"}, nil
-	case LitDate:
-		t, err := fieldtype.ParseDateTime(lit.Text + "T00:00:00Z")
-		if err != nil {
-			return Param{}, malformed("invalid date literal")
-		}
-		return Param{Value: t, Cast: "date"}, nil
-	case LitDateTime:
-		t, err := fieldtype.ParseDateTime(lit.Text)
-		if err != nil {
-			return Param{}, malformed("invalid date-time literal")
-		}
-		return Param{Value: t, Cast: "timestamptz"}, nil
-	case LitDateLiteral:
-		start, _, err := DateLiteralRange(lit, b.now().UTC())
-		if err != nil {
-			return Param{}, err
-		}
-		return Param{Value: start, Cast: "timestamptz"}, nil
+// typeHaving types a HAVING comparison operand. MIN and MAX type against the
+// argument field; SUM, AVG, COUNT, COUNT_DISTINCT and date functions compare
+// as numbers. spec: soql-05
+func (b *binder) typeHaving(owner metadata.Object, left BoundValue, lit Literal) (Param, error) {
+	if left.Agg == "MIN" || left.Agg == "MAX" {
+		return b.typeLiteral(owner, left.Field, lit)
 	}
-	return Param{}, malformed("invalid literal")
+	if lit.Kind != LitNumber {
+		return Param{}, malformed("comparison expects a numeric value")
+	}
+	s, err := fieldtype.Decimal(json.Number(lit.Text), 18, 8)
+	if err != nil {
+		return Param{}, malformed("invalid numeric literal")
+	}
+	return Param{Value: s, Cast: "numeric"}, nil
 }
 
 func (b *binder) typeLiteral(owner metadata.Object, f metadata.Field, lit Literal) (Param, error) {
@@ -325,7 +371,7 @@ func (b *binder) typeLiteral(owner metadata.Object, f metadata.Field, lit Litera
 		if k == fieldtype.Id || k.Reference() {
 			return b.idParam(owner, f, lit.Text)
 		}
-		if !textLike(k) && k != fieldtype.MultiselectPicklist && k != fieldtype.TextArea {
+		if !textLike(k) && k != fieldtype.MultiselectPicklist {
 			return Param{}, wrongType(f)
 		}
 		return Param{Value: lit.Text, Cast: "text"}, nil
@@ -357,18 +403,9 @@ func (b *binder) typeLiteral(owner metadata.Object, f metadata.Field, lit Litera
 		}
 		return Param{Value: t, Cast: "timestamptz"}, nil
 	case LitDateLiteral:
-		if !isTemporal(f) {
-			return Param{}, wrongType(f)
-		}
-		start, _, err := DateLiteralRange(lit, b.now().UTC())
-		if err != nil {
-			return Param{}, err
-		}
-		cast := "timestamptz"
-		if k == fieldtype.Date {
-			cast = "date"
-		}
-		return Param{Value: start, Cast: cast}, nil
+		// Temporal comparisons rewrite date literals into ranges before
+		// typing; a date literal left here is the wrong type for the field.
+		return Param{}, wrongType(f)
 	}
 	return Param{}, wrongType(f)
 }
@@ -415,33 +452,24 @@ func (b *binder) resolveValue(v ValueExpr, obj metadata.Object, ctx *bindCtx) (B
 		}
 		return BoundValue{Path: path, Field: f, Agg: fn}, nil
 	case *Call:
-		if len(t.Args) != 1 {
-			return BoundValue{}, malformed("function " + t.Func + " expects one field")
-		}
-		ref, ok := t.Args[0].(*FieldRef)
-		if !ok {
-			return BoundValue{}, malformed("function " + t.Func + " expects a field")
-		}
-		path, f, err := b.resolvePath(obj, ref.Path)
+		path, f, fn, label, err := b.callArg(obj, t)
 		if err != nil {
 			return BoundValue{}, err
-		}
-		label := strings.EqualFold(t.Func, "toLabel")
-		fn := t.Func
-		if label {
-			fn = "toLabel"
-		} else {
-			fn = strings.ToUpper(t.Func)
 		}
 		return BoundValue{Path: path, Field: f, Func: fn, Label: label}, nil
 	}
 	return BoundValue{}, malformed("expected field or function")
 }
 
-// bindOrderValue resolves an ORDER BY key, honouring select aliases.
+// bindOrderValue resolves an ORDER BY key. Unqualified names resolve against
+// the object's fields first, then select aliases.
+// spec: soql-05
 func (b *binder) bindOrderValue(v ValueExpr, obj metadata.Object, ctx *bindCtx) (BoundValue, error) {
 	if ref, ok := v.(*FieldRef); ok && len(ref.Path) == 1 {
-		if av, ok := ctx.aliases[ref.Path[0]]; ok {
+		if _, err := b.snap.Field(obj.Name, ref.Path[0]); err == nil {
+			return b.resolveValue(v, obj, ctx)
+		}
+		if av, ok := ctx.aliases[strings.ToLower(ref.Path[0])]; ok {
 			return av, nil
 		}
 	}

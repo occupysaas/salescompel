@@ -111,7 +111,7 @@ func TestBindNames(t *testing.T) {
 	if b.Object.Name != "Item__c" || len(b.Columns) != 1 || b.Columns[0].Key != "Txt__c" || b.Columns[0].Field.Name != "Txt__c" {
 		t.Fatalf("object/field canonicalisation wrong: %#v", b.Columns)
 	}
-	b, err = f.bind("select account.name, name from contact", f.admin)
+	b, err = f.bind("select account.name, lastname from contact", f.admin)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -121,6 +121,9 @@ func TestBindNames(t *testing.T) {
 	if b.Columns[0].Key != "Name" || len(b.Columns[0].Path) != 1 ||
 		b.Columns[0].Path[0].Object.Name != "Account" || b.Columns[0].Path[0].Via.Name != "AccountId" {
 		t.Fatalf("relationship not canonical: %#v", b.Columns[0])
+	}
+	if b.Columns[1].Key != "LastName" {
+		t.Fatalf("leaf key wrong: %#v", b.Columns[1])
 	}
 	// Child relationship names are case-insensitive and canonical.
 	b, err = f.bind("select name, (select name from typeditems__r) from item__c", f.admin)
@@ -329,5 +332,221 @@ func TestBindAggregateRules(t *testing.T) {
 	// HAVING compares aggregates by literal kind, not the argument's field type.
 	if _, err = f.bind("select COUNT(Id) from Item__c having COUNT(Id) > 5", f.admin); err != nil {
 		t.Fatalf("HAVING COUNT(Id) > 5: %v", err)
+	}
+}
+
+func TestBindResultKeys(t *testing.T) {
+	f := newBindFixture()
+	// Duplicate field keys, including a parent-path leaf against a local field.
+	for _, text := range []string{
+		"select Name, Name from Item__c",
+		"select account.name, name from contact",
+		"select SUM(Amount__c) expr0, COUNT(Id) expr0 from Item__c",
+		"select Name, COUNT(Id) Name from Item__c group by Name",
+	} {
+		wantCode(t, mustBind(t, f, text, f.admin), "MALFORMED_QUERY")
+	}
+	// An explicit expr0 alias owns the key; generated numbering skips it.
+	b, err := f.bind("select SUM(Amount__c) expr0, COUNT(Id) from Item__c", f.admin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if b.Columns[0].Key != "expr0" || b.Columns[1].Key != "expr1" {
+		t.Fatalf("skip keys = %#v", b.Columns)
+	}
+	// The same alias later in the list still reserves the number.
+	b, err = f.bind("select COUNT(Id), SUM(Amount__c) expr0 from Item__c", f.admin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if b.Columns[0].Key != "expr1" || b.Columns[1].Key != "expr0" {
+		t.Fatalf("reserve keys = %#v", b.Columns)
+	}
+}
+
+func TestBindHavingTyping(t *testing.T) {
+	f := newBindFixture()
+	for _, text := range []string{
+		"select SUM(Amount__c) from Item__c having SUM(Amount__c) = 'x'",
+		"select COUNT(Id) from Item__c having COUNT(Id) = true",
+		"select COUNT(Id) from Item__c having COUNT(Id) = 'x'",
+		"select CALENDAR_YEAR(At__c) from Item__c group by CALENDAR_YEAR(At__c) having CALENDAR_YEAR(At__c) = true",
+	} {
+		wantCode(t, mustBind(t, f, text, f.admin), "MALFORMED_QUERY")
+	}
+	// MIN/MAX type against the argument field, so a wrong literal is INVALID_FIELD.
+	wantCode(t, mustBind(t, f, "select MIN(Day__c) from Item__c having MIN(Day__c) = 'x'", f.admin), "INVALID_FIELD")
+	for _, text := range []string{
+		"select SUM(Amount__c) from Item__c having SUM(Amount__c) = 5",
+		"select MIN(Day__c) from Item__c having MIN(Day__c) = 2026-11-11",
+		"select MAX(At__c) from Item__c having MAX(At__c) = 2026-01-01T00:00:00Z",
+		"select CALENDAR_YEAR(At__c) from Item__c group by CALENDAR_YEAR(At__c) having CALENDAR_YEAR(At__c) = 2026",
+	} {
+		if _, err := f.bind(text, f.admin); err != nil {
+			t.Errorf("Bind(%s) = %v, want ok", text, err)
+		}
+	}
+	// HAVING without aggregation or GROUP BY is refused.
+	wantCode(t, mustBind(t, f, "select Name from Item__c having Name = 'x'", f.admin), "MALFORMED_QUERY")
+	wantCode(t, mustBind(t, f, "select Name from Item__c having COUNT(Id) > 5", f.admin), "MALFORMED_QUERY")
+	// A date function result is numeric, so a date literal is refused; only
+	// MIN/MAX over a temporal field compare as that temporal value.
+	wantCode(t, mustBind(t, f, "select CALENDAR_YEAR(At__c) from Item__c group by CALENDAR_YEAR(At__c) having CALENDAR_YEAR(At__c) = TODAY", f.admin), "MALFORMED_QUERY")
+	wantCode(t, mustBind(t, f, "select COUNT(Day__c) from Item__c having COUNT(Day__c) = TODAY", f.admin), "MALFORMED_QUERY")
+	b, err := f.bind("select MIN(Day__c) from Item__c having MIN(Day__c) = TODAY", f.admin)
+	if err != nil {
+		t.Fatalf("MIN(Day__c) = TODAY: %v", err)
+	}
+	if _, ok := b.Having.(*BoundAnd); !ok {
+		t.Fatalf("MIN(Day__c) = TODAY rewrote to %#v, want range", b.Having)
+	}
+}
+
+func TestBindFunctionArgs(t *testing.T) {
+	f := newBindFixture()
+	// The SELECT rules hold in WHERE and GROUP BY.
+	for _, text := range []string{
+		"select Id from Item__c where toLabel(Txt__c) = 'x'",
+		"select Id from Item__c where CALENDAR_YEAR(Txt__c) = 2026",
+		"select CALENDAR_YEAR(Txt__c) from Item__c group by CALENDAR_YEAR(Txt__c)",
+		"select Id from Item__c where toLabel(Num__c) = 'x'",
+		"select Id from Item__c order by CALENDAR_YEAR(Txt__c)",
+	} {
+		wantCode(t, mustBind(t, f, text, f.admin), "MALFORMED_QUERY")
+	}
+	for _, text := range []string{
+		"select Id from Item__c where toLabel(Stage__c) = 'Closed label'",
+		"select Id from Item__c where CALENDAR_YEAR(At__c) = 2026",
+		"select Id from Item__c where CALENDAR_YEAR(Day__c) = 2026",
+	} {
+		if _, err := f.bind(text, f.admin); err != nil {
+			t.Errorf("Bind(%s) = %v, want ok", text, err)
+		}
+	}
+}
+
+func TestBindDateLiteralIN(t *testing.T) {
+	f := newBindFixture()
+	// At__c IN (TODAY) is the day's half-open range, not the midnight instant.
+	b, err := f.bind("select Id from Item__c where At__c in (TODAY)", f.admin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	and, ok := b.Where.(*BoundAnd)
+	if !ok || len(and.Items) != 2 {
+		t.Fatalf("IN (TODAY) = %#v, want two-sided range", b.Where)
+	}
+	assertRange(t, and.Items, "At__c")
+	// IN (TODAY, YESTERDAY) is an OR of ranges.
+	b, err = f.bind("select Id from Item__c where At__c in (TODAY, YESTERDAY)", f.admin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	or, ok := b.Where.(*BoundOr)
+	if !ok || len(or.Items) != 2 {
+		t.Fatalf("IN (TODAY, YESTERDAY) = %#v, want OR of ranges", b.Where)
+	}
+	for _, it := range or.Items {
+		sub, ok := it.(*BoundAnd)
+		if !ok || len(sub.Items) != 2 {
+			t.Fatalf("range item = %#v", it)
+		}
+		assertRange(t, sub.Items, "At__c")
+	}
+	// A date literal mixed with an instant keeps both shapes.
+	b, err = f.bind("select Id from Item__c where At__c in (TODAY, 2026-01-01T00:00:00Z)", f.admin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	or, ok = b.Where.(*BoundOr)
+	if !ok || len(or.Items) != 2 {
+		t.Fatalf("mixed IN = %#v", b.Where)
+	}
+	// NOT IN on a nullable field includes null rows.
+	b, err = f.bind("select Id from Item__c where At__c not in (TODAY)", f.admin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	or, ok = b.Where.(*BoundOr)
+	if !ok || len(or.Items) != 2 {
+		t.Fatalf("NOT IN (TODAY) = %#v, want null OR not-range", b.Where)
+	}
+	// Date fields use the date cast.
+	b, err = f.bind("select Id from Item__c where Day__c in (TODAY)", f.admin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	and, ok = b.Where.(*BoundAnd)
+	if !ok {
+		t.Fatalf("Day__c IN = %#v", b.Where)
+	}
+	ge := and.Items[0].(*BoundCmp)
+	if ge.Right.Cast != "date" {
+		t.Fatalf("Day__c cast = %q want date", ge.Right.Cast)
+	}
+	// Date literals outside IN still refuse on non-temporal fields.
+	wantCode(t, mustBind(t, f, "select Id from Item__c where Txt__c in (TODAY)", f.admin), "INVALID_FIELD")
+}
+
+// assertRange checks a >= start and < end pair for the named field.
+func assertRange(t *testing.T, items []BoundExpr, field string) {
+	t.Helper()
+	ge, ok := items[0].(*BoundCmp)
+	if !ok || ge.Op != ">=" || ge.Left.Field.Name != field {
+		t.Fatalf("range start = %#v", items[0])
+	}
+	lt, ok := items[1].(*BoundCmp)
+	if !ok || lt.Op != "<" {
+		t.Fatalf("range end = %#v", items[1])
+	}
+	start, ok := ge.Right.Value.(time.Time)
+	if !ok {
+		t.Fatalf("range start value = %#v", ge.Right.Value)
+	}
+	end, ok := lt.Right.Value.(time.Time)
+	if !ok {
+		t.Fatalf("range end value = %#v", lt.Right.Value)
+	}
+	if !end.After(start) {
+		t.Fatalf("range [%v, %v) is empty or reversed", start, end)
+	}
+}
+
+func TestBindOrderByResolution(t *testing.T) {
+	f := newBindFixture()
+	// Unqualified ORDER BY names resolve against the object's fields first.
+	b, err := f.bind("select account.name from contact order by name", f.admin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(b.Order) != 1 || b.Order[0].Value.Field.Name != "Name" || len(b.Order[0].Value.Path) != 0 {
+		t.Fatalf("order by name resolved to %#v, want Contact.Name", b.Order)
+	}
+	// Aliases resolve when the name is not a field.
+	b, err = f.bind("select COUNT(Id) total from Item__c order by total", f.admin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if b.Order[0].Value.Agg != "COUNT" {
+		t.Fatalf("order by total = %#v", b.Order[0].Value)
+	}
+	b, err = f.bind("select COUNT(Id) from Item__c order by expr0", f.admin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if b.Order[0].Value.Agg != "COUNT" {
+		t.Fatalf("order by expr0 = %#v", b.Order[0].Value)
+	}
+}
+
+func TestBindChildClauses(t *testing.T) {
+	f := newBindFixture()
+	for _, text := range []string{
+		"select name, (select name from typeditems__r offset 1) from item__c",
+		"select name, (select count(Id) from typeditems__r) from item__c",
+		"select name, (select name from typeditems__r group by name) from item__c",
+		"select name, (select name from typeditems__r having name = 'x') from item__c",
+	} {
+		wantCode(t, mustBind(t, f, text, f.admin), "MALFORMED_QUERY")
 	}
 }

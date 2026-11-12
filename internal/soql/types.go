@@ -25,8 +25,8 @@ type PathStep struct {
 	Via    metadata.Field
 }
 
-// BoundValue is a typed scalar: a field path, an aggregate, a function call
-// or a constant parameter. Key is the result key (select key, alias) when set.
+// BoundValue is a typed scalar: a field path, an aggregate or a function
+// call. Key is the result key (select key, alias) when set.
 type BoundValue struct {
 	Path  []PathStep
 	Field metadata.Field
@@ -34,7 +34,6 @@ type BoundValue struct {
 	Func  string // toLabel or a documented date function
 	Label bool   // Func is toLabel
 	Key   string
-	Param *Param // constant operand when set
 }
 
 // BoundColumn is one SELECT item with its result key.
