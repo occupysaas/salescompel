@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"salescompel/internal/metadata"
 	"salescompel/internal/query"
 	"salescompel/internal/records"
@@ -272,17 +273,13 @@ func NewHandlerWithOptions(s *Store, assetDir string, o Options) http.Handler {
 			if !method(w, r, "GET") {
 				return
 			}
-			if isOrganizationDiscovery(r.URL.Query().Get("q")) {
+			qtext := r.URL.Query().Get("q")
+			if isOrganizationDiscovery(qtext) {
 				writeJSON(w, 200, map[string]any{"totalSize": 1, "done": true, "records": []any{map[string]any{"Name": p.Tenant, "InstanceName": nil, "IsSandbox": false, "TrialExpirationDate": nil, "NamespacePrefix": nil, "OrganizationType": "SalesCompel"}}})
 				return
 			}
-			if isCurrencyDiscovery(r.URL.Query().Get("q")) {
+			if isCurrencyDiscovery(qtext) {
 				writeJSON(w, 200, map[string]any{"totalSize": 1, "done": true, "records": []any{map[string]any{"attributes": map[string]any{"type": "Organization"}, "DefaultCurrencyIsoCode": catalog.Currency}}})
-				return
-			}
-			q, e := ParseQuery(r.URL.Query().Get("q"))
-			if e != nil {
-				writeError(w, e)
 				return
 			}
 			options, optionErr := url.ParseQuery(r.URL.RawQuery)
@@ -295,20 +292,45 @@ func NewHandlerWithOptions(s *Store, assetDir string, o Options) http.Handler {
 				writeError(w, e)
 				return
 			}
-			rows, e := s.Select(ctx, p, q)
-			if e != nil {
-				writeError(w, e)
-				return
-			}
-			result := map[string]any{"totalSize": len(rows), "done": true, "records": rows}
 			if columns {
-				metadata, err := query.ColumnMetadata(p, q)
+				// Column metadata path keeps the old grammar for Task 5.
+				q, e := ParseQuery(qtext)
+				if e != nil {
+					writeError(w, e)
+					return
+				}
+				rows, e := s.Select(ctx, p, q)
+				if e != nil {
+					writeError(w, e)
+					return
+				}
+				result := map[string]any{"totalSize": len(rows), "done": true, "records": rows}
+				md, err := query.ColumnMetadata(p, q)
 				if err != nil {
 					writeError(w, err)
 					return
 				}
-				result["columnMetadata"] = metadata
+				result["columnMetadata"] = md
+				writeJSON(w, 200, result)
+				return
 			}
+			batch := 2000
+			if v := r.Header.Get("Sforce-Query-Options"); v != "" {
+				for _, part := range strings.Split(v, ";") {
+					kv := strings.SplitN(strings.TrimSpace(part), "=", 2)
+					if len(kv) == 2 && strings.EqualFold(kv[0], "batchSize") {
+						if n, err := strconv.Atoi(kv[1]); err == nil && n > 0 {
+							batch = n
+						}
+					}
+				}
+			}
+			res, e := s.Query(ctx, p, qtext, batch)
+			if e != nil {
+				writeError(w, e)
+				return
+			}
+			result := map[string]any{"totalSize": res.TotalSize, "done": res.Done, "records": res.Records}
 			writeJSON(w, 200, result)
 			return
 		}

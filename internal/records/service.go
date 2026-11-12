@@ -7,6 +7,7 @@ import (
 	"salescompel/internal/metadata"
 	"salescompel/internal/policy"
 	"salescompel/internal/query"
+	"salescompel/internal/soql"
 )
 
 type Service struct{ Pool *pgxpool.Pool }
@@ -42,6 +43,16 @@ func (t *Tx) Delete(ctx context.Context, object, id string) error {
 }
 func (t *Tx) Select(ctx context.Context, q query.Query) ([]map[string]any, error) {
 	return query.Select(ctx, t.db, t.execution, t.catalog, q)
+}
+
+// Query executes SOQL text through the engine.
+func (t *Tx) Query(ctx context.Context, text string, opt soql.Options) (soql.Result, error) {
+	return soql.Run(ctx, t.db, t.execution, t.catalog, text, opt)
+}
+
+// QueryAST executes a parsed SOQL AST through the engine.
+func (t *Tx) QueryAST(ctx context.Context, q *soql.Query, opt soql.Options) (soql.Result, error) {
+	return soql.RunAST(ctx, t.db, t.execution, t.catalog, q, opt)
 }
 func DBError(err error) error { return dbError(err) }
 func CanonicalFields(p Principal, object string, data map[string]any) (map[string]any, error) {

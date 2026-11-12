@@ -3,6 +3,8 @@ package platform
 import (
 	"context"
 	"strings"
+
+	soqleng "salescompel/internal/soql"
 )
 
 func (s *Store) Create(ctx context.Context, p Principal, object string, data map[string]any) (string, error) {
@@ -28,6 +30,17 @@ func (s *Store) Read(ctx context.Context, p Principal, object, id string) (map[s
 func (s *Store) Select(ctx context.Context, p Principal, q Query) ([]map[string]any, error) {
 	var out []map[string]any
 	e := s.within(ctx, p, func(s *Store, p Principal) error { var e error; out, e = s.recordTx(p).Select(ctx, q); return e })
+	return out, e
+}
+
+// Query executes SOQL text through the engine and returns the REST result shape.
+func (s *Store) Query(ctx context.Context, p Principal, text string, batch int) (soqleng.Result, error) {
+	var out soqleng.Result
+	e := s.within(ctx, p, func(s *Store, p Principal) error {
+		var e error
+		out, e = s.recordTx(p).Query(ctx, text, soqleng.Options{BatchSize: batch})
+		return e
+	})
 	return out, e
 }
 func (s *Store) Upsert(ctx context.Context, p Principal, key string, data map[string]any) (string, bool, error) {

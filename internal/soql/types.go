@@ -1,6 +1,7 @@
 package soql
 
 import (
+	"strings"
 	"time"
 
 	"salescompel/internal/metadata"
@@ -23,6 +24,21 @@ type Param struct {
 type PathStep struct {
 	Object metadata.Object
 	Via    metadata.Field
+}
+
+// key returns a stable map key for a path prefix.
+func (p PathStep) key() string { return p.Object.Name + "/" + p.Via.Name }
+
+// pathKeyOf returns the map key for a path slice, matching the compiler's pathKey.
+func pathKeyOf(path []PathStep) string {
+	if len(path) == 0 {
+		return ""
+	}
+	parts := make([]string, len(path))
+	for i, s := range path {
+		parts[i] = s.key()
+	}
+	return strings.Join(parts, "|")
 }
 
 // BoundValue is a typed scalar: a field path, an aggregate or a function
