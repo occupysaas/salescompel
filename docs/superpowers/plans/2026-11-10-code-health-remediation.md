@@ -144,3 +144,38 @@ manifest-join/exec-bits and the size gate are all green; `go test -count=1
 to completion with a single pre-existing Go-toolchain failure (Task 9b fixed
 the suite-killing cleanup behind it).
 
+
+### Task 11: Rebase reconciliation follow-up — `candidate-schema.ts` re-split — DONE
+
+The rebase onto upstream main (which closed Plan 28) grew `candidate-schema.ts`
+back to 1128 lines: upstream's Plan 28 field-type acceptance landed in the old
+split's body, so the Task 8 module set was dropped during conflict resolution
+rather than losing upstream code. Re-split against the reconciled content:
+
+- [x] `candidate-schema-runtime.ts` (144): runtime env WeakMap, bootstrap,
+      env recording, `ownerCommand`, `schemaOperation`, `cleanupSchema`.
+- [x] `candidate-schema-field-fixtures.ts` (215): `fieldTypeNames`, field
+      specs, `createFieldTypeFixtures`, `runFieldTypesPython`.
+- [x] `candidate-schema-checks.ts` (205): `runSchemaGate` (provision + worker).
+- [x] `candidate-schema-client-checks.ts` (263): `runSchemaClientGate`
+      (JSforce + OpenAPI traffic validation).
+- [x] `candidate-schema-field-checks.ts` (301): `SchemaClientContext`,
+      `fieldTypeClientChecks` (Plan 28 typed CRUD/relationships).
+- [x] `candidate-schema-restart.ts` (44): `verifySchemaRestart`.
+- [x] `candidate-schema.ts` (13): facade; public exports unchanged
+      (`bootstrapSchemaDatabase`, `recordRuntimeEnvironment`,
+      `runtimeEnvironment`, `fieldTypeNames`, `cleanupSchema`, `runSchemaGate`,
+      `SchemaClientContext`, `runSchemaClientGate`, `verifySchemaRestart`).
+- [x] Folded in the pending typecheck/PREVENT-011 fixes for upstream's Plan 28
+      code (composite body casts, `nameWrite.body?.[0]`, storedFields cast,
+      typed `rejectsWith` predicate, typed `runFieldTypesPython` report) and
+      dropped the dead `appendFile` import.
+- [x] `tsc --noEmit` and `prettier --check` pass; all files under the hard limit.
+
+Residual PREVENT-011 `any` annotations inside `fieldTypeClientChecks`
+(jsforce describe shapes) were relocated as-is and then eliminated by the
+residual gate sweep: typed describe shapes (`DescribeField`,
+`DescribeTable`), a typed `rejectsWith` predicate, and a reasoned
+`guardrails-allow` on the one JSforce connection parameter that cannot be
+typed from `createRequire`. Upstream's Plan 28 behaviour is unchanged and
+the pattern scan is clean.
