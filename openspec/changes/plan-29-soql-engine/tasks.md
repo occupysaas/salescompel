@@ -32,9 +32,9 @@ with DCO sign-off.
 
 ## 5. Compiler and executor
 
-- [ ] 5.1 Failing tests: `TestCompileParameterized`, `TestSOQLRecordQueries`, `TestParentPathNulls`, `TestSOQLExistingBehavior`, cross-tenant
-- [ ] 5.2 Implement `internal/soql/{compile,sqlexpr,execute,shape}.go` + `records.Tx.Query` + `Store.Query` facade; tenant-prefixed LEFT JOINs
-- [ ] 5.3 Commit `feat: execute SOQL record queries through one engine`
+- [x] 5.1 Failing tests: `TestCompileParameterized`, `TestSOQLRecordQueries`, `TestParentPathNulls`, `TestSOQLExistingBehavior`, cross-tenant
+- [x] 5.2 Implement `internal/soql/{compile,sqlexpr,execute,shape}.go` + `records.Tx.Query` + `Store.Query` facade; tenant-prefixed LEFT JOINs
+- [x] 5.3 Commit `feat: execute SOQL record queries through one engine`
 
 ## 6. Child subqueries and semi-joins
 
