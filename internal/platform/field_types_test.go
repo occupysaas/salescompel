@@ -275,10 +275,10 @@ func TestAutoNumberConcurrent(t *testing.T) {
 	errs := make([]error, 8)
 	for i := range ids {
 		wg.Add(1)
-		go func(i int) {
+		go func(ctx context.Context, i int) {
 			defer wg.Done()
 			ids[i], errs[i] = f.s.Create(ctx, f.p, "Item__c", map[string]any{})
-		}(i)
+		}(ctx, i)
 	}
 	wg.Wait()
 	seen := map[string]bool{}
