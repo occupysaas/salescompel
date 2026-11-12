@@ -329,3 +329,9 @@ sources:
     version: Plan 27 candidate defaults
     claim: Tenant-defined Text schema, operator commands and bounded dynamic data routes; not live reference evidence
     extraction: documentation-reviewed
+  - id: field-types-plan28
+    url: https://github.com/occupysaas/salescompel/blob/5b0c57e11a0b36849f6f35c101e09c0494791e01/docs/superpowers/specs/2026-11-11-plan-28-field-types-design.md
+    accessedAt: 2026-11-11
+    version: Plan 28 candidate defaults
+    claim: Typed tenant fields, stored-not-enforced definitions and the candidate-only storedFields listing; not live reference evidence
+    extraction: documentation-reviewed

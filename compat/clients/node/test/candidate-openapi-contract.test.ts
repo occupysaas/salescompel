@@ -47,6 +47,11 @@ const expected = [
   ["/services/data/v65.0/sobjects/User/{userId}", "get", "candidateOwnUser65"],
   ["/services/data/v65.0/sobjects", "get", "candidateDescribeGlobal"],
   [
+    "/services/data/v65.0/candidate/sobjects/{object}/storedFields",
+    "get",
+    "candidateStoredFields",
+  ],
+  [
     "/services/data/v65.0/sobjects/Account/describe",
     "get",
     "candidateDescribeAccount",

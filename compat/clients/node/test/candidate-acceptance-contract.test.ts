@@ -276,6 +276,7 @@ test("OAuth acceptance requires every client and policy proof before restart", a
       "restart/policy",
       "restart/oauth-refresh",
       "restart/schema",
+      "restart/field-types",
     ].map((id) => ({ id, outcome: "passed" })),
   };
   assert.equal(assessCoverage("restart", restart).outcome, "passed");

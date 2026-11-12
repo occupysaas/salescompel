@@ -881,7 +881,7 @@ paths:
     get:
       operationId: candidateStoredFields
       x-source:
-        - https://github.com/occupysaas/salescompel/blob/5b0c57e/docs/superpowers/specs/2026-11-11-plan-28-field-types-design.md
+        - https://github.com/occupysaas/salescompel/blob/5b0c57e11a0b36849f6f35c101e09c0494791e01/docs/superpowers/specs/2026-11-11-plan-28-field-types-design.md
       description: "Candidate-only extension, not a Salesforce resource: lists stored-not-enforced definitions (formula, roll-up summary, encrypted text, geolocation, rich text) retained for an object. They are never described or served as fields."
       responses:
         "200":

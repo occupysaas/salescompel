@@ -48,6 +48,12 @@ export const candidateOperations: readonly (readonly [
   ),
   [base + "/sobjects", "get", "candidateDescribeGlobal", ["200"]],
   [
+    base + "/candidate/sobjects/{object}/storedFields",
+    "get",
+    "candidateStoredFields",
+    ["200"],
+  ],
+  [
     base + "/sobjects/{object}/describe",
     "get",
     "candidateDescribeDynamic",

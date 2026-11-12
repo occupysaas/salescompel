@@ -96,10 +96,12 @@ func run(ctx context.Context) error {
 		if _, e = tx.Exec(ctx, "SELECT pg_advisory_xact_lock(739102)"); e != nil {
 			return e
 		}
-		prefix := "P27_" + id[:12]
+		owned := func(name string) bool {
+			return strings.HasPrefix(name, "P27_"+id[:12]) || strings.HasPrefix(name, "P28_"+id[:12])
+		}
 		for i := len(ops) - 1; i >= 0; i-- {
 			op := ops[i]
-			if !(strings.HasPrefix(op.Name, prefix) || (op.Kind == "field" && strings.HasPrefix(op.Object, prefix))) || !regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]*__c$`).MatchString(op.Name) || (op.Tenant != "00D"+id[:12]+"EAA" && op.Tenant != "00D"+id[12:]+"EAA") {
+			if !(owned(op.Name) || ((op.Kind == "field" || op.Kind == "stored") && owned(op.Object))) || !regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]*__c$`).MatchString(op.Name) || (op.Tenant != "00D"+id[:12]+"EAA" && op.Tenant != "00D"+id[12:]+"EAA") {
 				return errors.New("unowned schema cleanup")
 			}
 			tx.Exec(ctx, "SELECT set_config('salescompel.tenant_id',$1,true)", op.Tenant)
@@ -119,6 +121,10 @@ func run(ctx context.Context) error {
 					return e
 				}
 				if _, e = tx.Exec(ctx, "DELETE FROM sc_catalog.fields WHERE tenant_id=$1 AND object_id=$2 AND api_name=$3", op.Tenant, obj, op.Name); e != nil {
+					return e
+				}
+			} else if op.Kind == "stored" {
+				if _, e = tx.Exec(ctx, "DELETE FROM sc_catalog.artifacts a USING sc_catalog.objects o WHERE a.tenant_id=$1 AND o.tenant_id=a.tenant_id AND o.id=a.object_id AND o.api_name=$2 AND a.api_name=$3", op.Tenant, op.Object, op.Name); e != nil {
 					return e
 				}
 			} else if op.Kind == "object" {
