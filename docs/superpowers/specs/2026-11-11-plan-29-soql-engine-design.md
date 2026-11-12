@@ -4,7 +4,7 @@
 **Date:** 2026-11-11
 **Depends on:** Plan 27 (tenant catalog, RLS, record service), Plan 28 (typed fields, relationship metadata). Uses the paging decisions recorded in Plan 25.
 **Roadmap:** [first release roadmap](2026-11-04-salescompel-first-release-roadmap-design.md), Plan 29 (Full depth); [Plan 25 decisions for Plan 29](2026-11-04-plan-25-foundation-decisions-design.md#decisions-recorded-for-plan-29).
-**Implementation:** to be written with `superpowers:writing-plans` after this spec is reviewed.
+**Implementation:** [Plan 29](../plans/2026-11-11-plan-29-soql-engine.md).
 
 ## Intent and outcome
 
