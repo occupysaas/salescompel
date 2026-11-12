@@ -77,7 +77,7 @@ row says which part is documented and which part is the default.
 | 10. Wrong-type code | The wrong-type literal error uses `INVALID_FIELD`, and error messages never echo query values | gap | WHERE values must match the field type, dates and numbers take no quotes, and strings use single quotes ([WHERE][c16]). The error code is not stated in the retrieved pages. Community threads report the message `value of filter criterion for field 'X' must be of type ... and should not be enclosed in quotes` ([Stack Exchange][c17]); `INVALID_FIELD` is the candidate code. Never echoing query values is a local logging choice. |
 | 11. `IN` element cap | `IN` lists are capped at 1,000 elements | gap | Salesforce documents a 4,000-character limit on strings in a WHERE clause, not an element cap ([WHERE][c16], [limits cheatsheet][c1]). The 1,000-element cap is a recorded deviation. |
 | 12. `NOT IN` null rule | SQL three-valued logic is rewritten so null rows come back for `NOT IN` on a nullable field | gap | Same evidence as item 6. Secondary sources report null rows are kept; no Salesforce page and no live observation confirms it. Candidate default. |
-| 13. `INCLUDES` case | Multi-select matching folds case; storage stays Plan 28 canonical text and the compiler splits with `string_to_array` | documented | String comparisons are case-insensitive except on unique case-sensitive fields and follow the user's locale ([Comparison Operators][c18]). The multi-select page documents `INCLUDES`, `EXCLUDES` and `;` as AND but does not restate case handling ([Query Multi-Select Picklists][c19]). Case-folding with `string_to_array(col, ';')` is an internal choice; locale-specific casing waits for Plan 33. |
+| 13. `INCLUDES` case | Multi-select matching folds case; storage stays Plan 28 canonical text and the compiler splits with `string_to_array` | gap | String comparisons are case-insensitive except on unique case-sensitive fields and follow the user's locale ([Comparison Operators][c18]). The multi-select page documents `INCLUDES`, `EXCLUDES` and `;` as AND but does not restate case handling ([Query Multi-Select Picklists][c19]). Case-folding with `string_to_array(col, ';')` is an internal choice; locale-specific casing waits for Plan 33. |
 | 14. Wrong-type error | Wrong-type literal gives `INVALID_FIELD` with the documented "value of filter criterion for field 'X' must be of type ... and should not be enclosed in quotes" wording | gap | Same evidence as item 10, with which this row overlaps. The wording is reported in community threads; the `INVALID_FIELD` code and the no-value-echo rule remain candidates. |
 
 ## Findings for later tasks
@@ -87,9 +87,12 @@ should reconcile these before or during the named task.
 
 - **OFFSET above 2,000.** The reference says an offset greater than 2,000
   returns `NUMBER_OUTSIDE_VALID_RANGE` ([OFFSET][c20]), while the plan's Task 4
-  test expects `MALFORMED_QUERY` for `OFFSET 2001`. No observation exists, so
-  the spec and plan were not edited here. The builder should adopt the
-  documented code and update both documents together, or record the deviation.
+  test expects `MALFORMED_QUERY` for `OFFSET 2001`. **Decision (lead,
+  2026-11-12):** keep `MALFORMED_QUERY`. The design locks a closed error
+  vocabulary of six codes (`soql-06`); `NUMBER_OUTSIDE_VALID_RANGE` is outside
+  that set. The deviation is recorded here rather than expanding the vocabulary
+  mid-plan. Revisit only if unmodified clients are shown to switch on this
+  exact code.
 - **`COUNT()` records.** SOAP `QueryResult` documents `size` as the count and
   `records` as null ([COUNT()][c21], [QueryResult][c22]). The REST empty-array
   shape in the spec is not stated in the retrieved REST pages; treat it as a

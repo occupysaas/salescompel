@@ -6,9 +6,9 @@ with DCO sign-off.
 
 ## 1. Reference review record
 
-- [ ] 1.1 Create `docs/compat/plan-29-soql-engine.md`; review release notes since 2026-11-11 and each spec Sources URL (search when direct fetch is refused, as in Plan 28); record "no session" for trial-org observations
-- [ ] 1.2 Status table: one row per candidate (calls 1–11, NOT IN null rule, INCLUDES case, wrong-type error) marked observed/documented/gap
-- [ ] 1.3 Commit `docs: record Plan 29 reference review`
+- [x] 1.1 Create `docs/compat/plan-29-soql-engine.md`; review release notes since 2026-11-11 and each spec Sources URL (search when direct fetch is refused, as in Plan 28); record "no session" for trial-org observations
+- [x] 1.2 Status table: one row per candidate (calls 1–11, NOT IN null rule, INCLUDES case, wrong-type error) marked observed/documented/gap
+- [x] 1.3 Commit `docs: record Plan 29 reference review`
 
 ## 2. Lexer, AST and parser
 
