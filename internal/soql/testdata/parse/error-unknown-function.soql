@@ -1,0 +1,1 @@
+SELECT FOO(Id) FROM Item__c

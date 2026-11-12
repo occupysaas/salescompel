@@ -1,0 +1,15 @@
+{
+ "select": [
+  {
+   "kind": "fields",
+   "arg": "CUSTOM"
+  }
+ ],
+ "from": "Item__c",
+ "where": null,
+ "groupBy": null,
+ "having": null,
+ "orderBy": null,
+ "limit": 200,
+ "offset": null
+}

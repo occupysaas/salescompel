@@ -1,0 +1,49 @@
+{
+ "select": [
+  {
+   "kind": "field",
+   "path": [
+    "Id"
+   ]
+  }
+ ],
+ "from": "Account",
+ "where": {
+  "kind": "or",
+  "items": [
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Name"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "string",
+     "text": "x"
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Name"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "string",
+     "text": "y"
+    }
+   }
+  ]
+ },
+ "groupBy": null,
+ "having": null,
+ "orderBy": null,
+ "limit": null,
+ "offset": null
+}

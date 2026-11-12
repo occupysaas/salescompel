@@ -1,0 +1,1 @@
+SELECT Id FROM Item__c WHERE toLabel(Stage__c) = 'Closed label'

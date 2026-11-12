@@ -1,0 +1,21 @@
+{
+ "select": [
+  {
+   "kind": "field",
+   "path": [
+    "Parent__r",
+    "Group__r",
+    "Region__r",
+    "Zone__r",
+    "Name"
+   ]
+  }
+ ],
+ "from": "Item__c",
+ "where": null,
+ "groupBy": null,
+ "having": null,
+ "orderBy": null,
+ "limit": null,
+ "offset": null
+}

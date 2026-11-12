@@ -1,0 +1,1 @@
+SELECT Id FROM Item__c WHERE Name = 'a' AND Num__c > 5 OR Name = 'b'

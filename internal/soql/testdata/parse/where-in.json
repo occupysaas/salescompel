@@ -1,0 +1,37 @@
+{
+ "select": [
+  {
+   "kind": "field",
+   "path": [
+    "Id"
+   ]
+  }
+ ],
+ "from": "Item__c",
+ "where": {
+  "kind": "in",
+  "left": {
+   "kind": "field",
+   "path": [
+    "Stage__c"
+   ]
+  },
+  "not": false,
+  "values": [
+   {
+    "kind": "string",
+    "text": "Open"
+   },
+   {
+    "kind": "string",
+    "text": "Closed"
+   }
+  ],
+  "sub": null
+ },
+ "groupBy": null,
+ "having": null,
+ "orderBy": null,
+ "limit": null,
+ "offset": null
+}

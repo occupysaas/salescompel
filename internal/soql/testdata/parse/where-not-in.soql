@@ -1,0 +1,1 @@
+SELECT Id FROM Item__c WHERE Parent__c NOT IN ('a','b')

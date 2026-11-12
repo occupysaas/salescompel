@@ -1,0 +1,30 @@
+{
+ "select": [
+  {
+   "kind": "field",
+   "path": [
+    "Id"
+   ]
+  }
+ ],
+ "from": "Item__c",
+ "where": {
+  "kind": "compare",
+  "left": {
+   "kind": "field",
+   "path": [
+    "Num__c"
+   ]
+  },
+  "op": "\u003e",
+  "right": {
+   "kind": "number",
+   "text": "5"
+  }
+ },
+ "groupBy": null,
+ "having": null,
+ "orderBy": null,
+ "limit": null,
+ "offset": null
+}

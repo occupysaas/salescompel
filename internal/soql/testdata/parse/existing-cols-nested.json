@@ -1,0 +1,37 @@
+{
+ "select": [
+  {
+   "kind": "field",
+   "path": [
+    "Id"
+   ]
+  },
+  {
+   "kind": "field",
+   "path": [
+    "Account",
+    "Name"
+   ]
+  }
+ ],
+ "from": "Contact",
+ "where": {
+  "kind": "compare",
+  "left": {
+   "kind": "field",
+   "path": [
+    "Id"
+   ]
+  },
+  "op": "=",
+  "right": {
+   "kind": "string",
+   "text": "003000000000001"
+  }
+ },
+ "groupBy": null,
+ "having": null,
+ "orderBy": null,
+ "limit": null,
+ "offset": null
+}

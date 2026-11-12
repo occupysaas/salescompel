@@ -1,0 +1,1 @@
+SELECT Id,FirstName,LastName,AccountId FROM Contact WHERE Id = '003000000000001'

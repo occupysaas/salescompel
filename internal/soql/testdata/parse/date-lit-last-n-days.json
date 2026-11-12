@@ -1,0 +1,31 @@
+{
+ "select": [
+  {
+   "kind": "field",
+   "path": [
+    "Id"
+   ]
+  }
+ ],
+ "from": "Item__c",
+ "where": {
+  "kind": "compare",
+  "left": {
+   "kind": "field",
+   "path": [
+    "Day__c"
+   ]
+  },
+  "op": "=",
+  "right": {
+   "kind": "dateLiteral",
+   "text": "LAST_N_DAYS",
+   "n": 30
+  }
+ },
+ "groupBy": null,
+ "having": null,
+ "orderBy": null,
+ "limit": null,
+ "offset": null
+}

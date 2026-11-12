@@ -1,0 +1,16 @@
+{
+ "select": [
+  {
+   "kind": "agg",
+   "func": "COUNT",
+   "arg": null
+  }
+ ],
+ "from": "Item__c",
+ "where": null,
+ "groupBy": null,
+ "having": null,
+ "orderBy": null,
+ "limit": null,
+ "offset": null
+}

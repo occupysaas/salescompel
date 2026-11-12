@@ -1,0 +1,1 @@
+SELECT Name, (SELECT LastName FROM Contacts ORDER BY LastName LIMIT 2) FROM Account

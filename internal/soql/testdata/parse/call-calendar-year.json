@@ -1,0 +1,47 @@
+{
+ "select": [
+  {
+   "kind": "call",
+   "func": "CALENDAR_YEAR",
+   "args": [
+    {
+     "kind": "field",
+     "path": [
+      "CreatedDate"
+     ]
+    }
+   ],
+   "alias": "y"
+  },
+  {
+   "kind": "agg",
+   "func": "COUNT",
+   "arg": {
+    "kind": "field",
+    "path": [
+     "Id"
+    ]
+   }
+  }
+ ],
+ "from": "Item__c",
+ "where": null,
+ "groupBy": [
+  {
+   "kind": "call",
+   "func": "CALENDAR_YEAR",
+   "args": [
+    {
+     "kind": "field",
+     "path": [
+      "CreatedDate"
+     ]
+    }
+   ]
+  }
+ ],
+ "having": null,
+ "orderBy": null,
+ "limit": null,
+ "offset": null
+}

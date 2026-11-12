@@ -1,0 +1,1 @@
+SELECT DAY_IN_YEAR(CreatedDate) diy, DAY_ONLY(At__c) doy, HOUR_IN_DAY(At__c) hid, WEEK_IN_MONTH(CreatedDate) wim, WEEK_IN_YEAR(CreatedDate) wiy FROM Item__c

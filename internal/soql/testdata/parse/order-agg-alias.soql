@@ -1,0 +1,1 @@
+SELECT COUNT(Id) total FROM Item__c GROUP BY Stage__c ORDER BY total, COUNT(Id) DESC

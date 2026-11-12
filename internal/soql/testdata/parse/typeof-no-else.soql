@@ -1,0 +1,1 @@
+SELECT TYPEOF What WHEN Account THEN Phone, Email END FROM Event

@@ -1,0 +1,75 @@
+{
+ "select": [
+  {
+   "kind": "field",
+   "path": [
+    "Stage__c"
+   ]
+  },
+  {
+   "kind": "agg",
+   "func": "COUNT",
+   "arg": {
+    "kind": "field",
+    "path": [
+     "Id"
+    ]
+   },
+   "alias": "total"
+  },
+  {
+   "kind": "agg",
+   "func": "SUM",
+   "arg": {
+    "kind": "field",
+    "path": [
+     "Amount__c"
+    ]
+   }
+  },
+  {
+   "kind": "agg",
+   "func": "AVG",
+   "arg": {
+    "kind": "field",
+    "path": [
+     "Amount__c"
+    ]
+   }
+  },
+  {
+   "kind": "agg",
+   "func": "MIN",
+   "arg": {
+    "kind": "field",
+    "path": [
+     "Day__c"
+    ]
+   }
+  },
+  {
+   "kind": "agg",
+   "func": "MAX",
+   "arg": {
+    "kind": "field",
+    "path": [
+     "At__c"
+    ]
+   }
+  }
+ ],
+ "from": "Item__c",
+ "where": null,
+ "groupBy": [
+  {
+   "kind": "field",
+   "path": [
+    "Stage__c"
+   ]
+  }
+ ],
+ "having": null,
+ "orderBy": null,
+ "limit": null,
+ "offset": null
+}

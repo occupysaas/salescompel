@@ -1,0 +1,57 @@
+{
+ "select": [
+  {
+   "kind": "field",
+   "path": [
+    "Id"
+   ]
+  }
+ ],
+ "from": "Account",
+ "where": {
+  "kind": "in",
+  "left": {
+   "kind": "field",
+   "path": [
+    "Id"
+   ]
+  },
+  "not": false,
+  "values": null,
+  "sub": {
+   "select": [
+    {
+     "kind": "field",
+     "path": [
+      "AccountId"
+     ]
+    }
+   ],
+   "from": "Contact",
+   "where": {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "LastName"
+     ]
+    },
+    "op": "LIKE",
+    "right": {
+     "kind": "string",
+     "text": "A%"
+    }
+   },
+   "groupBy": null,
+   "having": null,
+   "orderBy": null,
+   "limit": null,
+   "offset": null
+  }
+ },
+ "groupBy": null,
+ "having": null,
+ "orderBy": null,
+ "limit": null,
+ "offset": null
+}

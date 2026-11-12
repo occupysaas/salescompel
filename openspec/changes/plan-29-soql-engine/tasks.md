@@ -12,10 +12,10 @@ with DCO sign-off.
 
 ## 2. Lexer, AST and parser
 
-- [ ] 2.1 Failing tests: `TestLexEscapes`, `TestParseGolden` (testdata/parse corpus), `FuzzParse`
-- [ ] 2.2 Implement `internal/soql/{token,lexer,ast,parser}.go`; goldens via `UPDATE_GOLDEN=1` reviewed by hand
-- [ ] 2.3 `GOTOOLCHAIN=go1.25.0 go test ./internal/soql -count=1` and `go test ./internal/soql -run '^$' -fuzz FuzzParse -fuzztime 60s` pass
-- [ ] 2.4 Commit `feat: add SOQL lexer and parser`
+- [x] 2.1 Failing tests: `TestLexEscapes`, `TestParseGolden` (testdata/parse corpus), `FuzzParse`
+- [x] 2.2 Implement `internal/soql/{token,lexer,ast,parser}.go`; goldens via `UPDATE_GOLDEN=1` reviewed by hand
+- [x] 2.3 `GOTOOLCHAIN=go1.25.0 go test ./internal/soql -count=1` and `go test ./internal/soql -run '^$' -fuzz FuzzParse -fuzztime 60s` pass
+- [x] 2.4 Commit `feat: add SOQL lexer and parser`
 
 ## 3. Child relationship metadata
 

@@ -1,0 +1,30 @@
+{
+ "select": [
+  {
+   "kind": "field",
+   "path": [
+    "Id"
+   ]
+  }
+ ],
+ "from": "Item__c",
+ "where": {
+  "kind": "compare",
+  "left": {
+   "kind": "field",
+   "path": [
+    "Parent__c"
+   ]
+  },
+  "op": "!=",
+  "right": {
+   "kind": "null",
+   "text": ""
+  }
+ },
+ "groupBy": null,
+ "having": null,
+ "orderBy": null,
+ "limit": null,
+ "offset": null
+}

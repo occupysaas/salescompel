@@ -1,0 +1,57 @@
+{
+ "select": [
+  {
+   "kind": "field",
+   "path": [
+    "Name"
+   ]
+  },
+  {
+   "kind": "subquery",
+   "query": {
+    "select": [
+     {
+      "kind": "field",
+      "path": [
+       "Name"
+      ]
+     },
+     {
+      "kind": "subquery",
+      "query": {
+       "select": [
+        {
+         "kind": "field",
+         "path": [
+          "Id"
+         ]
+        }
+       ],
+       "from": "Items__r",
+       "where": null,
+       "groupBy": null,
+       "having": null,
+       "orderBy": null,
+       "limit": null,
+       "offset": null
+      }
+     }
+    ],
+    "from": "Contacts",
+    "where": null,
+    "groupBy": null,
+    "having": null,
+    "orderBy": null,
+    "limit": null,
+    "offset": null
+   }
+  }
+ ],
+ "from": "Account",
+ "where": null,
+ "groupBy": null,
+ "having": null,
+ "orderBy": null,
+ "limit": null,
+ "offset": null
+}

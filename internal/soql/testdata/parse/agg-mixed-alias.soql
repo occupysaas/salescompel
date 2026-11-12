@@ -1,0 +1,1 @@
+SELECT Stage__c, COUNT(Id) total, SUM(Amount__c), AVG(Amount__c), MIN(Day__c), MAX(At__c) FROM Item__c GROUP BY Stage__c

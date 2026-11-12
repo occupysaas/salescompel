@@ -1,0 +1,1 @@
+SELECT Stage__c, COUNT(Id) total FROM Item__c GROUP BY Stage__c HAVING COUNT(Id) > 1 ORDER BY Stage__c

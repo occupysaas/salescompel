@@ -1,0 +1,1 @@
+SELECT Id FROM Item__c WHERE Multi__c INCLUDES ('A;B','C')

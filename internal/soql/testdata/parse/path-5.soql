@@ -1,0 +1,1 @@
+SELECT Parent__r.Group__r.Region__r.Zone__r.Area__r.Name FROM Item__c

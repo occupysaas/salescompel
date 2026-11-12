@@ -1,0 +1,36 @@
+{
+ "select": [
+  {
+   "kind": "field",
+   "path": [
+    "Id"
+   ]
+  }
+ ],
+ "from": "Item__c",
+ "where": {
+  "kind": "compare",
+  "left": {
+   "kind": "call",
+   "func": "toLabel",
+   "args": [
+    {
+     "kind": "field",
+     "path": [
+      "Stage__c"
+     ]
+    }
+   ]
+  },
+  "op": "=",
+  "right": {
+   "kind": "string",
+   "text": "Closed label"
+  }
+ },
+ "groupBy": null,
+ "having": null,
+ "orderBy": null,
+ "limit": null,
+ "offset": null
+}

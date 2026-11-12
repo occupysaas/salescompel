@@ -1,0 +1,681 @@
+{
+ "select": [
+  {
+   "kind": "field",
+   "path": [
+    "Id"
+   ]
+  }
+ ],
+ "from": "Item__c",
+ "where": {
+  "kind": "or",
+  "items": [
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "YESTERDAY",
+     "n": 0
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "TODAY",
+     "n": 0
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "TOMORROW",
+     "n": 0
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "LAST_WEEK",
+     "n": 0
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "THIS_WEEK",
+     "n": 0
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "NEXT_WEEK",
+     "n": 0
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "LAST_MONTH",
+     "n": 0
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "THIS_MONTH",
+     "n": 0
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "NEXT_MONTH",
+     "n": 0
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "LAST_QUARTER",
+     "n": 0
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "THIS_QUARTER",
+     "n": 0
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "NEXT_QUARTER",
+     "n": 0
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "LAST_YEAR",
+     "n": 0
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "THIS_YEAR",
+     "n": 0
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "NEXT_YEAR",
+     "n": 0
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "LAST_90_DAYS",
+     "n": 0
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "NEXT_90_DAYS",
+     "n": 0
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "LAST_FISCAL_QUARTER",
+     "n": 0
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "THIS_FISCAL_QUARTER",
+     "n": 0
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "NEXT_FISCAL_QUARTER",
+     "n": 0
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "LAST_FISCAL_YEAR",
+     "n": 0
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "THIS_FISCAL_YEAR",
+     "n": 0
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "NEXT_FISCAL_YEAR",
+     "n": 0
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "LAST_N_DAYS",
+     "n": 30
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "NEXT_N_DAYS",
+     "n": 30
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "N_DAYS_AGO",
+     "n": 3
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "LAST_N_WEEKS",
+     "n": 2
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "NEXT_N_WEEKS",
+     "n": 2
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "N_WEEKS_AGO",
+     "n": 1
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "LAST_N_MONTHS",
+     "n": 2
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "NEXT_N_MONTHS",
+     "n": 2
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "N_MONTHS_AGO",
+     "n": 1
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "LAST_N_QUARTERS",
+     "n": 2
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "NEXT_N_QUARTERS",
+     "n": 2
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "N_QUARTERS_AGO",
+     "n": 1
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "LAST_N_YEARS",
+     "n": 2
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "NEXT_N_YEARS",
+     "n": 2
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "N_YEARS_AGO",
+     "n": 1
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "LAST_N_FISCAL_QUARTERS",
+     "n": 2
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "NEXT_N_FISCAL_QUARTERS",
+     "n": 2
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "N_FISCAL_QUARTERS_AGO",
+     "n": 1
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "LAST_N_FISCAL_YEARS",
+     "n": 2
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "NEXT_N_FISCAL_YEARS",
+     "n": 2
+    }
+   },
+   {
+    "kind": "compare",
+    "left": {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    },
+    "op": "=",
+    "right": {
+     "kind": "dateLiteral",
+     "text": "N_FISCAL_YEARS_AGO",
+     "n": 1
+    }
+   }
+  ]
+ },
+ "groupBy": null,
+ "having": null,
+ "orderBy": null,
+ "limit": null,
+ "offset": null
+}

@@ -1,0 +1,1 @@
+SELECT Name, (SELECT Name, (SELECT Id FROM Items__r) FROM Contacts) FROM Account

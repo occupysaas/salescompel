@@ -1,0 +1,1 @@
+SELECT Id FROM Account WHERE Id IN (SELECT AccountId FROM Contact WHERE LastName LIKE 'A%')

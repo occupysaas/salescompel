@@ -1,0 +1,37 @@
+{
+ "select": [
+  {
+   "kind": "field",
+   "path": [
+    "Id"
+   ]
+  }
+ ],
+ "from": "Item__c",
+ "where": {
+  "kind": "in",
+  "left": {
+   "kind": "field",
+   "path": [
+    "Parent__c"
+   ]
+  },
+  "not": true,
+  "values": [
+   {
+    "kind": "string",
+    "text": "a"
+   },
+   {
+    "kind": "string",
+    "text": "b"
+   }
+  ],
+  "sub": null
+ },
+ "groupBy": null,
+ "having": null,
+ "orderBy": null,
+ "limit": null,
+ "offset": null
+}
