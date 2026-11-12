@@ -323,6 +323,9 @@ td {
   font-weight: 450;
   overflow-wrap: anywhere;
 }
+.editor .field-hint {
+  margin: -12px 0 18px;
+}
 .editor .hint {
   display: block;
   margin-top: 6px;

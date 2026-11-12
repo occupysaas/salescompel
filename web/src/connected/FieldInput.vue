@@ -56,6 +56,9 @@ const lookups = computed(() => {
     return [...props.lookupOptions, { id: current, name: current }];
   return props.lookupOptions;
 });
+// Stable element ids for the datalist and the described-by hint.
+const listId = `lookup-${props.field.name}`;
+const hintId = `hint-${props.field.name}`;
 const textArea = computed(() => props.field.type === "textarea");
 const inputType = computed(
   () =>
@@ -135,33 +138,43 @@ function checkDecimal(event: Event) {
       </option>
     </select></label
   >
-  <label v-else-if="field.type === 'reference' && lookupOptions.length"
-    >{{ label
-    }}<select v-model="text" :required="!field.nillable" :disabled="disabled">
-      <option v-if="field.nillable" value="">{{ t("field.none") }}</option>
+  <template v-else-if="field.type === 'reference'">
+    <label
+      >{{ label
+      }}<input
+        v-model="text"
+        type="text"
+        autocomplete="off"
+        :list="listId"
+        :required="!field.nillable"
+        :placeholder="t('field.lookupManual')"
+        :disabled="disabled" /></label
+    ><datalist :id="listId">
       <option v-for="option in lookups" :key="option.id" :value="option.id">
-        {{
-          option.name === option.id
-            ? option.id
-            : `${option.name} (${option.id})`
-        }}
+        {{ option.name }}
       </option>
-    </select></label
-  >
-  <label v-else-if="isNumeric(field)"
-    >{{ label
-    }}<input
-      v-model="text"
-      type="text"
-      inputmode="decimal"
-      autocomplete="off"
-      :required="!field.nillable"
-      :disabled="disabled"
-      @input="checkDecimal"
-    /><small v-if="preview" class="hint" data-testid="number-preview">{{
-      preview
-    }}</small></label
-  >
+    </datalist>
+  </template>
+  <template v-else-if="isNumeric(field)">
+    <label
+      >{{ label
+      }}<input
+        v-model="text"
+        type="text"
+        inputmode="decimal"
+        autocomplete="off"
+        :aria-describedby="preview ? hintId : undefined"
+        :required="!field.nillable"
+        :disabled="disabled"
+        @input="checkDecimal" /></label
+    ><small
+      v-if="preview"
+      :id="hintId"
+      class="hint field-hint"
+      data-testid="number-preview"
+      >{{ preview }}</small
+    >
+  </template>
   <label v-else-if="textArea"
     >{{ label
     }}<textarea
@@ -171,20 +184,22 @@ function checkDecimal(event: Event) {
       :disabled="disabled"
     ></textarea>
   </label>
-  <label v-else
-    >{{ label
-    }}<input
-      v-model="text"
-      :type="inputType"
-      :inputmode="field.type === 'url' ? 'url' : undefined"
-      :required="!field.nillable"
-      :maxlength="field.length || undefined"
-      :placeholder="
-        field.type === 'reference' ? t('field.lookupManual') : undefined
-      "
-      :disabled="disabled"
-    /><small v-if="field.type === 'datetime'" class="hint">{{
-      t("field.timeZone")
-    }}</small></label
-  >
+  <template v-else>
+    <label
+      >{{ label
+      }}<input
+        v-model="text"
+        :type="inputType"
+        :inputmode="field.type === 'url' ? 'url' : undefined"
+        :aria-describedby="field.type === 'datetime' ? hintId : undefined"
+        :required="!field.nillable"
+        :maxlength="field.length || undefined"
+        :disabled="disabled" /></label
+    ><small
+      v-if="field.type === 'datetime'"
+      :id="hintId"
+      class="hint field-hint"
+      >{{ t("field.timeZone") }}</small
+    >
+  </template>
 </template>
