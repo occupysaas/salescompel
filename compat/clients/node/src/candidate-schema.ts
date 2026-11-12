@@ -1044,10 +1044,16 @@ async function fieldTypeClientChecks(
   const person = await conn.sobject("Contact").retrieve(contact);
   expect(person, { Name: "Ada " + lastName, Birthdate: "1815-12-10" });
   assert.equal(person.MailingAddress.city, "London");
-  await rejectsWith(
-    conn.sobject("Contact").update({ Id: contact, Name: "x" }),
-    "INVALID_FIELD_FOR_INSERT_UPDATE",
+  // Outside the JSforce recorder: this request is invalid by contract on purpose.
+  const nameWrite = await candidateRequest(
+    c,
+    "admin",
+    `/services/data/v65.0/sobjects/Contact/${contact}`,
+    "PATCH",
+    { Name: "x" },
   );
+  assert.equal(nameWrite.status, 400);
+  assert.equal(nameWrite.body[0].errorCode, "INVALID_FIELD_FOR_INSERT_UPDATE");
   passed("schema/field-types-standard");
 
   const stored = await candidateRequest(
