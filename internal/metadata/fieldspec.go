@@ -34,8 +34,8 @@ type ColumnDDL struct {
 	ForeignKey string // optional complete FOREIGN KEY constraint clause
 }
 
-// childRelNameMax caps parent-side relationship names, matching the stem
-// limit on relationshipName below. childRelNamePattern must agree.
+// childRelNameMax caps the full parent-side child relationship name.
+// childRelNamePattern must agree.
 const childRelNameMax = 40
 
 var (
