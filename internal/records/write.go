@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"maps"
 	"salescompel/internal/query"
 	"salescompel/internal/recordid"
 	"sort"
@@ -255,9 +256,7 @@ func (s *Tx) UpsertAccount(ctx context.Context, key string, data map[string]any)
 		}
 	}
 	copyData := map[string]any{}
-	for k, v := range data {
-		copyData[k] = v
-	}
+	maps.Copy(copyData, data)
 	copyData["Compat_Key__c"] = key
 	if err := Validate(p, "Account", copyData, false); err != nil {
 		return "", false, err
