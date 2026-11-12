@@ -41,25 +41,28 @@ func TestBindLimitsAtCap(t *testing.T) {
 	if _, err := f.bind("select Id from Item__c where Num__c in ("+strings.Join(in, ",")+")", f.admin); err != nil {
 		t.Fatalf("1,000-element IN: %v", err)
 	}
-	// Child subqueries: 20 pass; 21 are refused. Semi-joins do not count
+	// Child subqueries: 20 distinct relationship names pass; 21 are refused
+	// (over case in TestBindLimits). Same-name children collide on the result
+	// key and are refused in TestBindResultKeys. Semi-joins do not count
 	// toward the child cap.
-	subs := make([]string, 20)
+	kids := newChildFixture(maxSubqueries)
+	subs := make([]string, maxSubqueries)
 	for i := range subs {
-		subs[i] = "(select Id from Contacts)"
+		subs[i] = "(select Id from Children" + strconv.Itoa(i+1) + "__r)"
 	}
-	if _, err := f.bind("select "+strings.Join(subs, ", ")+" from Account", f.admin); err != nil {
-		t.Fatalf("20 child subqueries: %v", err)
+	if _, err := kids.bind("select "+strings.Join(subs, ", ")+" from P0", kids.admin); err != nil {
+		t.Fatalf("%d child subqueries: %v", maxSubqueries, err)
 	}
 	// Semi-joins: 2 pass; 3 are refused (over case in TestBindLimits).
-	two := "select Id from Account where Id in (select AccountId from Contact) and Id in (select AccountId from Contact)"
-	if _, err := f.bind(two, f.admin); err != nil {
+	two := "select Id from P0 where Id in (select Id from C1) and Id in (select Id from C1)"
+	if _, err := kids.bind(two, kids.admin); err != nil {
 		t.Fatalf("2 semi-joins: %v", err)
 	}
 	// 20 child subqueries plus 2 semi-joins stay within both caps.
 	mixed := "select " + strings.Join(subs, ", ") +
-		" from Account where Id in (select AccountId from Contact) and Id in (select AccountId from Contact)"
-	if _, err := f.bind(mixed, f.admin); err != nil {
-		t.Fatalf("20 children + 2 semis: %v", err)
+		" from P0 where Id in (select Id from C1) and Id in (select Id from C1)"
+	if _, err := kids.bind(mixed, kids.admin); err != nil {
+		t.Fatalf("%d children + 2 semis: %v", maxSubqueries, err)
 	}
 	// Relative N at 1,000 passes; 1,001 is refused in TestBindLiteralRanges.
 	if _, err := f.bind("select Id from Item__c where Day__c = LAST_N_DAYS:1000", f.admin); err != nil {
@@ -81,6 +84,28 @@ func TestBindOrderKeyCap(t *testing.T) {
 		t.Fatalf("%d ORDER BY keys: %v", maxOrderKeys, err)
 	}
 	wantCode(t, mustBind(t, f, keys(maxOrderKeys+1), f.admin), "MALFORMED_QUERY")
+}
+
+// newChildFixture builds parent P0 with n child relationships: C1..Cn each
+// hold one lookup back to P0 under ChildrenN__r.
+func newChildFixture(n int) bindFixture {
+	objs := make([]metadata.Object, n+1)
+	objs[0] = metadata.Object{Name: "P0", Label: "P0", PluralLabel: "Ps", Prefix: "a50",
+		Fields: []metadata.Field{bField("Id", fieldtype.Id)}}
+	for i := 1; i <= n; i++ {
+		s := strconv.Itoa(i)
+		objs[i] = metadata.Object{Name: "C" + s, Label: "C" + s, PluralLabel: "Cs" + s, Prefix: "a5" + s,
+			Fields: []metadata.Field{
+				bField("Id", fieldtype.Id),
+				bRef("P0__c", "P0__r", "Children"+s+"__r", "P0"),
+			}}
+	}
+	fixed := newBindFixture()
+	return bindFixture{
+		snap:  metadata.Snapshot{Tenant: "t1", Objects: objs},
+		admin: policy.Principal{Tenant: "t1", Role: "admin"},
+		now:   fixed.now,
+	}
 }
 
 // newJoinFixture builds J0 with n lookup fields to J1..Jn so a select of

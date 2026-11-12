@@ -39,6 +39,7 @@ type bindCtx struct {
 	exprN   int
 	inOr    bool // a semi-join under OR is refused
 	child   bool // child subquery: refuse aggregates, GROUP BY, OFFSET, nesting
+	having  bool // binding HAVING: aggregates are legal here, not in WHERE
 }
 
 // nextExprKey numbers unaliased aggregate and function items expr0, expr1, …
@@ -59,7 +60,7 @@ func (c *bindCtx) nextExprKey() string {
 func (c *bindCtx) takeKey(key string) error {
 	lower := strings.ToLower(key)
 	if c.keys[lower] {
-		return malformed("duplicate result key in SELECT")
+		return malformed("duplicate field selected")
 	}
 	c.keys[lower] = true
 	return nil
@@ -120,7 +121,9 @@ func (b *binder) queryObj(q *Query, obj metadata.Object, child bool) (*Bound, er
 	if err != nil {
 		return nil, err
 	}
-	having, err := b.bindExpr(q.Having, obj, ctx)
+	hctx := *ctx
+	hctx.having = true
+	having, err := b.bindExpr(q.Having, obj, &hctx)
 	if err != nil {
 		return nil, err
 	}
@@ -191,6 +194,9 @@ func (b *binder) bindSelect(q *Query, obj metadata.Object, ctx *bindCtx) ([]Boun
 			}
 			ch, err := b.bindChild(obj, t.Query)
 			if err != nil {
+				return nil, nil, err
+			}
+			if err := ctx.takeKey(ch.Key); err != nil {
 				return nil, nil, err
 			}
 			children = append(children, ch)

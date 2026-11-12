@@ -45,6 +45,8 @@ func bRef(name, rel, child, target string) metadata.Field {
 
 func newBindFixture() bindFixture {
 	std := metadata.StandardObjects()
+	reqDay := bField("ReqDay__c", fieldtype.Date)
+	reqDay.Nillable = false
 	item := metadata.Object{Name: "Item__c", Label: "Item", PluralLabel: "Items", Prefix: "a11",
 		Fields: []metadata.Field{
 			bField("Id", fieldtype.Id),
@@ -53,6 +55,7 @@ func newBindFixture() bindFixture {
 			bField("Num__c", fieldtype.Number),
 			bField("Amount__c", fieldtype.Currency),
 			bField("Day__c", fieldtype.Date),
+			reqDay,
 			bField("At__c", fieldtype.DateTime),
 			bField("Flag__c", fieldtype.Checkbox),
 			bField("Stage__c", fieldtype.Picklist),
@@ -343,6 +346,8 @@ func TestBindResultKeys(t *testing.T) {
 		"select account.name, name from contact",
 		"select SUM(Amount__c) expr0, COUNT(Id) expr0 from Item__c",
 		"select Name, COUNT(Id) Name from Item__c group by Name",
+		// Child subqueries key on the relationship name like fields.
+		"select (select Id from Typeditems__r), (select Id from Typeditems__r) from Item__c",
 	} {
 		wantCode(t, mustBind(t, f, text, f.admin), "MALFORMED_QUERY")
 	}
@@ -371,16 +376,22 @@ func TestBindHavingTyping(t *testing.T) {
 		"select COUNT(Id) from Item__c having COUNT(Id) = true",
 		"select COUNT(Id) from Item__c having COUNT(Id) = 'x'",
 		"select CALENDAR_YEAR(At__c) from Item__c group by CALENDAR_YEAR(At__c) having CALENDAR_YEAR(At__c) = true",
+		// Aggregates are refused in WHERE; they stay legal in HAVING.
+		"select Id from Item__c where SUM(Amount__c) > 5",
+		"select Id from Item__c where COUNT(Id) > 5",
 	} {
 		wantCode(t, mustBind(t, f, text, f.admin), "MALFORMED_QUERY")
 	}
-	// MIN/MAX type against the argument field, so a wrong literal is INVALID_FIELD.
+	// MIN/MAX type against the argument field and DAY_ONLY as a date: wrong literals are INVALID_FIELD.
 	wantCode(t, mustBind(t, f, "select MIN(Day__c) from Item__c having MIN(Day__c) = 'x'", f.admin), "INVALID_FIELD")
+	wantCode(t, mustBind(t, f, "select Id from Item__c where DAY_ONLY(At__c) = 5", f.admin), "INVALID_FIELD")
 	for _, text := range []string{
 		"select SUM(Amount__c) from Item__c having SUM(Amount__c) = 5",
 		"select MIN(Day__c) from Item__c having MIN(Day__c) = 2026-11-11",
 		"select MAX(At__c) from Item__c having MAX(At__c) = 2026-01-01T00:00:00Z",
 		"select CALENDAR_YEAR(At__c) from Item__c group by CALENDAR_YEAR(At__c) having CALENDAR_YEAR(At__c) = 2026",
+		"select Id from Item__c where DAY_ONLY(At__c) = 2026-03-09",
+		"select DAY_ONLY(At__c) from Item__c group by DAY_ONLY(At__c) having DAY_ONLY(At__c) = 2026-01-01",
 	} {
 		if _, err := f.bind(text, f.admin); err != nil {
 			t.Errorf("Bind(%s) = %v, want ok", text, err)
@@ -411,6 +422,8 @@ func TestBindFunctionArgs(t *testing.T) {
 		"select CALENDAR_YEAR(Txt__c) from Item__c group by CALENDAR_YEAR(Txt__c)",
 		"select Id from Item__c where toLabel(Num__c) = 'x'",
 		"select Id from Item__c order by CALENDAR_YEAR(Txt__c)",
+		// The shared callArg path holds on the HAVING side too.
+		"select COUNT(Id) from Item__c having toLabel(Txt__c) = 'x'",
 	} {
 		wantCode(t, mustBind(t, f, text, f.admin), "MALFORMED_QUERY")
 	}
@@ -453,7 +466,7 @@ func TestBindDateLiteralIN(t *testing.T) {
 		}
 		assertRange(t, sub.Items, "At__c")
 	}
-	// A date literal mixed with an instant keeps both shapes.
+	// Mixed IN: the date literal expands to a range, the instant stays equality.
 	b, err = f.bind("select Id from Item__c where At__c in (TODAY, 2026-01-01T00:00:00Z)", f.admin)
 	if err != nil {
 		t.Fatal(err)
@@ -462,7 +475,16 @@ func TestBindDateLiteralIN(t *testing.T) {
 	if !ok || len(or.Items) != 2 {
 		t.Fatalf("mixed IN = %#v", b.Where)
 	}
-	// NOT IN on a nullable field includes null rows.
+	rangeAnd, ok := or.Items[0].(*BoundAnd)
+	if !ok {
+		t.Fatalf("mixed IN range = %#v", or.Items[0])
+	}
+	assertRange(t, rangeAnd.Items, "At__c")
+	eq, ok := or.Items[1].(*BoundCmp)
+	if !ok || eq.Op != "=" || eq.Right.Cast != "timestamptz" {
+		t.Fatalf("mixed IN literal = %#v", or.Items[1])
+	}
+	// NOT IN on a nillable plain field is OR(IS NULL, NOT …).
 	b, err = f.bind("select Id from Item__c where At__c not in (TODAY)", f.admin)
 	if err != nil {
 		t.Fatal(err)
@@ -471,6 +493,17 @@ func TestBindDateLiteralIN(t *testing.T) {
 	if !ok || len(or.Items) != 2 {
 		t.Fatalf("NOT IN (TODAY) = %#v, want null OR not-range", b.Where)
 	}
+	isNull, ok := or.Items[0].(*BoundCmp)
+	if !ok || isNull.Op != "=" || isNull.Right.Value != nil {
+		t.Fatalf("NOT IN null arm = %#v", or.Items[0])
+	}
+	assertNotRange(t, or.Items[1], "At__c")
+	// NOT IN on a non-nillable plain field is just NOT the range.
+	b, err = f.bind("select Id from Item__c where ReqDay__c not in (TODAY)", f.admin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertNotRange(t, b.Where, "ReqDay__c")
 	// Date fields use the date cast.
 	b, err = f.bind("select Id from Item__c where Day__c in (TODAY)", f.admin)
 	if err != nil {
@@ -510,6 +543,20 @@ func assertRange(t *testing.T, items []BoundExpr, field string) {
 	if !end.After(start) {
 		t.Fatalf("range [%v, %v) is empty or reversed", start, end)
 	}
+}
+
+// assertNotRange checks NOT (range) for the named field.
+func assertNotRange(t *testing.T, e BoundExpr, field string) {
+	t.Helper()
+	not, ok := e.(*BoundNot)
+	if !ok {
+		t.Fatalf("NOT = %#v", e)
+	}
+	and, ok := not.Expr.(*BoundAnd)
+	if !ok || len(and.Items) != 2 {
+		t.Fatalf("NOT range = %#v", not.Expr)
+	}
+	assertRange(t, and.Items, field)
 }
 
 func TestBindOrderByResolution(t *testing.T) {

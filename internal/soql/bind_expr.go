@@ -57,7 +57,7 @@ func (b *binder) bindExpr(e Expr, obj metadata.Object, ctx *bindCtx) (BoundExpr,
 
 func (b *binder) bindCompare(c *Compare, obj metadata.Object, ctx *bindCtx) (BoundExpr, error) {
 	// spec: soql-03, soql-04
-	left, err := b.resolveValue(c.Left, obj, ctx)
+	left, err := b.filterValue(c.Left, obj, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +175,7 @@ func fieldOwner(root metadata.Object, v BoundValue) metadata.Object {
 
 func (b *binder) bindIn(in *In, obj metadata.Object, ctx *bindCtx) (BoundExpr, error) {
 	// spec: soql-03, soql-06
-	left, err := b.resolveValue(in.Left, obj, ctx)
+	left, err := b.filterValue(in.Left, obj, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -295,7 +295,7 @@ func (b *binder) bindSemi(left BoundValue, in *In, ctx *bindCtx) (BoundExpr, err
 
 func (b *binder) bindIncludes(inc *Includes, obj metadata.Object, ctx *bindCtx) (BoundExpr, error) {
 	// spec: soql-03
-	left, err := b.resolveValue(inc.Left, obj, ctx)
+	left, err := b.filterValue(inc.Left, obj, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -329,12 +329,20 @@ func wrongType(f metadata.Field) error {
 		name)
 }
 
-// typeHaving types a HAVING comparison operand. MIN and MAX type against the
-// argument field; SUM, AVG, COUNT, COUNT_DISTINCT and date functions compare
-// as numbers. spec: soql-05
+// typeHaving types an aggregate or date-function comparison operand. MIN and
+// MAX type against the argument field; DAY_ONLY compares as a date; SUM, AVG,
+// COUNT, COUNT_DISTINCT and the other date functions compare as numbers.
+// spec: soql-05
 func (b *binder) typeHaving(owner metadata.Object, left BoundValue, lit Literal) (Param, error) {
 	if left.Agg == "MIN" || left.Agg == "MAX" {
 		return b.typeLiteral(owner, left.Field, lit)
+	}
+	if left.Func == "DAY_ONLY" {
+		// DAY_ONLY yields the argument's calendar date, not its instant.
+		day := left.Field
+		day.Options.Kind = fieldtype.Date
+		day.Type = fieldtype.Date.DescribeType()
+		return b.typeLiteral(owner, day, lit)
 	}
 	if lit.Kind != LitNumber {
 		return Param{}, malformed("comparison expects a numeric value")
@@ -423,6 +431,19 @@ func (b *binder) idParam(owner metadata.Object, f metadata.Field, input string) 
 		return Param{}, contract.FieldProblem("INVALID_QUERY_FILTER_OPERATOR", "Invalid ID filter", f.Name)
 	}
 	return Param{Value: id, Cast: "text"}, nil
+}
+
+// filterValue binds a WHERE or HAVING operand. Aggregates are refused outside
+// HAVING so the compiler never sees one in WHERE. spec: soql-03
+func (b *binder) filterValue(v ValueExpr, obj metadata.Object, ctx *bindCtx) (BoundValue, error) {
+	left, err := b.resolveValue(v, obj, ctx)
+	if err != nil {
+		return BoundValue{}, err
+	}
+	if left.Agg != "" && !ctx.having {
+		return BoundValue{}, malformed("aggregates are not allowed in WHERE")
+	}
+	return left, nil
 }
 
 // resolveValue binds a group/having/order operand without assigning select keys.
