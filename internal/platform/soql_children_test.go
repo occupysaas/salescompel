@@ -133,11 +133,33 @@ func TestChildSubqueries(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		err = soqlErr(t, s, p, "SELECT Id, (SELECT Id FROM Contacts ORDER BY Id) FROM Account WHERE Id = '"+emptyID+"'")
-		var api *APIError
-		if !errors.As(err, &api) || api.Code != "QUERY_TOO_COMPLICATED" ||
-			api.Message != "child relationship exceeds candidate limit; add a LIMIT to the subquery" {
-			t.Fatalf("child cap error %v", err)
+		for _, tc := range []struct {
+			name, limit string
+			want        int
+			overflow    bool
+		}{
+			{name: "exact cap", limit: " LIMIT 2000", want: 2000},
+			{name: "below cap", limit: " LIMIT 1999", want: 1999},
+			{name: "no limit", overflow: true},
+			{name: "over cap", limit: " LIMIT 2001", overflow: true},
+		} {
+			t.Run(tc.name, func(t *testing.T) {
+				query := "SELECT Id, (SELECT Id FROM Contacts ORDER BY Id" + tc.limit + ") FROM Account WHERE Id = '" + emptyID + "'"
+				if !tc.overflow {
+					res := soqlQuery(t, s, p, query)
+					total, done, rows := childResult(t, res.Records[0], "Contacts")
+					if total != tc.want || len(rows) != tc.want || !done {
+						t.Fatalf("limited child total=%d rows=%d done=%v", total, len(rows), done)
+					}
+					return
+				}
+				err = soqlErr(t, s, p, query)
+				var api *APIError
+				if !errors.As(err, &api) || api.Code != "QUERY_TOO_COMPLICATED" ||
+					api.Message != "child relationship exceeds candidate limit; add a LIMIT to the subquery" {
+					t.Fatalf("child cap error %v", err)
+				}
+			})
 		}
 	})
 }

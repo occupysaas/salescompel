@@ -222,7 +222,7 @@ func compileChildPlan(child BoundChild, parentIDs []string) (*childPlan, error) 
 	}
 	baseSQL := "SELECT " + strings.Join(baseParts, ",") + " FROM " + from + " WHERE " + where
 	fetch := maxChildRows + 1
-	if b.Limit != nil && *b.Limit < maxChildRows {
+	if b.Limit != nil && *b.Limit <= maxChildRows {
 		fetch = *b.Limit
 	}
 	rankArg := c.addArg(fetch)
