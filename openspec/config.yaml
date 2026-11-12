@@ -1,0 +1,13 @@
+schema: spec-driven
+
+context: |
+  SalesCompel is a public Salesforce-compatible CRM (Go 1.25, PostgreSQL 17,
+  pgx v5, Vue 3 web client). Narrative specs live in docs/superpowers/specs/
+  and implementation plans in docs/superpowers/plans/; OpenSpec change packages
+  formalize roadmap items as requirement deltas with WHEN/THEN scenarios.
+  Conventions: DCO sign-off on every commit (git commit -s); stacked PRs to
+  main via the fork; all test/verification runs on the self-hosted fleet
+  (ai03 verify host, never the sandbox); files under 500 lines; no new runtime
+  dependencies without a plan note; CLEAN_ROOM.md black-box testing only.
+  Requirement ID namespaces: soql-* (query engine), page-* (locators/paging),
+  child-* (child relationship metadata), rec-* (records), meta-* (metadata).

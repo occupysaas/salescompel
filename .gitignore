@@ -17,6 +17,7 @@ web/playwright-report/
 .devgate/
 .agent-guardrails/
 .guardrails/
+.claude/
 .gitmodules
 .github/workflows/devgate.yml
 .plan28-local.md
