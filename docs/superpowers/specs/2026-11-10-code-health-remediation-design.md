@@ -52,6 +52,12 @@ The 11 hard-limit files carry reasoned overrides in `scope.json` that
 currently grandfather them. This pass splits each one so the overrides can
 be removed and the ratchet reaches zero.
 
+### Test hygiene — fix in this effort
+
+| ID | Count | Location | Problem |
+|----|-------|----------|---------|
+| Kill-target-zero | 1 | `compat/clients/node/test/candidate-acceptance-process.test.ts:65` | `process.kill(Number(trimmed))` unguarded: an empty result file yields `pid = 0`, and `process.kill(0, "SIGKILL")` signals the caller's **own** process group — killing the test runner and any shell that invoked it (observed exit 137, suite aborts after 17 tests). |
+
 ### Deferred / false positive
 
 | ID | Count | Decision | Reason |
@@ -114,7 +120,15 @@ access. Files: `candidate-acceptance-preflight.ts:263`,
 `candidate-acceptance-results.ts:163`, `external-id-native.ts:52`,
 `metadata-read-process.ts:92`, `process-clients.ts:67`.
 
-### 7. File splits — all files must be under 500 lines
+### 7. Kill targets must be validated before signal (test hygiene)
+
+A signal to pid 0 or a negative pid addresses a process group, not a process;
+passing through an empty parse silently targets the caller's own group. Fix:
+parse the grandchild pid only after asserting the result file is non-empty and
+the pid is a positive integer, refuse otherwise, and keep the existing
+`try/catch` on the signal. No production code change.
+
+### 8. File splits — all files must be under 500 lines
 
 Hard requirement: every source file under 500 lines. Split oversize files
 by responsibility into sibling modules. Each split preserves the original

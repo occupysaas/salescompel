@@ -117,6 +117,16 @@
 - [x] Committed as `test: split oversized compat test files by behaviour`.
 - [x] Remaining src files over 300 lines are cohesive modules with no further clear seam; the hard gate (500) is clean, so soft warnings are recorded as remaining debt.
 
+### Task 9b: Process-group kill target validation (test hygiene) — DONE
+
+**File:** `compat/clients/node/test/candidate-acceptance-process.test.ts` (the only unguarded `process.kill` in the repo).
+
+- [x] Reproduced: empty result capture → `pid = Number("") = 0`; `process.kill(0, "SIGKILL")` signals the caller's own process group, killing the test runner and the invoking shell (exit 137; suite aborts after the subprocess tests). Isolated with a standalone `node -e` proof in a fresh `setsid` session.
+- [x] Guard added: assert the result file is non-empty and the parsed pid is a positive integer before any signal; keep the existing `try/catch`.
+- [x] Regression test: cleanup target is rejected on empty/zero/negative pids, so no signal reaches pid 0 or a group.
+- [x] Root cause of the vacuous pass: the grandchild's `-e` source was escaped incorrectly (a literal newline inside a string literal → SyntaxError), so it exited 1 before printing; the capture was empty and the old test passed anyway. Inner source fixed to keep the escape through all layers.
+- [x] Full suite re-run in an isolated session: 463 tests, 456 pass, 1 fail — only `candidate-acceptance-run.test.ts`'s Go-toolchain test (pre-existing at HEAD: `go 1.23.4` vs `go.mod` ≥1.25, sandbox misconfigures the toolchain path). Verified failing identically without these edits.
+
 ### Task 10: Final gate run and verification — DONE
 
 - [x] `guardrails-scan.mjs`: pattern scan clean.

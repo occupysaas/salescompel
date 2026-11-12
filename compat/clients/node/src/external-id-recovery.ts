@@ -106,6 +106,7 @@ export async function initializeRun(
 const queues = new Map<string, Promise<void>>();
 export async function appendJournal(dir: string, event: JournalEvent) {
   const previous = queues.get(dir) ?? Promise.resolve();
+  // guardrails-allow SEMANTIC-001: rejection handled by the two-arg `then` below, re-thrown by `await next`
   const next = previous.then(async () => {
     const f = await open(join(dir, "journal.jsonl"), "a", 0o600);
     try {
