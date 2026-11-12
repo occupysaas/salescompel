@@ -274,7 +274,7 @@ func (c *compiler) compileOrder(order []BoundOrder, root string, obj metadata.Ob
 		case NullLast:
 			part += " NULLS LAST"
 		default:
-			// SOQL default is NULLS FIRST for both ASC and DESC.
+			// Plan 25 product default: nulls first in both directions.
 			part += " NULLS FIRST"
 		}
 		parts = append(parts, part)

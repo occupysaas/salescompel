@@ -69,30 +69,17 @@ func (c *bindCtx) takeKey(key string) error {
 
 // recordKey records a FieldRef result key. Exact same-field duplicates
 // (same key, same path) collapse; distinct paths sharing a leaf name reject.
-func (c *bindCtx) recordKey(key, pathSig string) error {
+func (c *bindCtx) recordKey(key, pkey string) error {
 	lower := strings.ToLower(key)
 	if existing, ok := c.keyPaths[lower]; ok {
-		if existing != pathSig {
+		if existing != pkey {
 			return malformed("duplicate field selected")
 		}
 		return nil // same field, same path: collapse
 	}
 	c.keys[lower] = true
-	c.keyPaths[lower] = pathSig
+	c.keyPaths[lower] = pkey
 	return nil
-}
-
-// pathSig returns a signature for a parent-path so identical paths collapse
-// and distinct paths sharing a leaf name are distinguished.
-func pathSig(path []PathStep) string {
-	if len(path) == 0 {
-		return ""
-	}
-	parts := make([]string, len(path))
-	for i, s := range path {
-		parts[i] = s.Object.Name
-	}
-	return strings.Join(parts, ".")
 }
 
 // reserveAliases marks explicit select aliases so generated exprN keys skip
@@ -235,7 +222,7 @@ func (b *binder) bindSelect(q *Query, obj metadata.Object, ctx *bindCtx) ([]Boun
 			if err != nil {
 				return nil, nil, err
 			}
-			if err := ctx.recordKey(c.Key, pathSig(c.Path)); err != nil {
+			if err := ctx.recordKey(c.Key, pathKeyOf(c.Path)); err != nil {
 				return nil, nil, err
 			}
 			cols = append(cols, c)

@@ -63,6 +63,9 @@ func newBindFixture() bindFixture {
 			bField("Long__c", fieldtype.LongTextArea),
 			bRef("Parent__c", "Parent__r", "Items__r", "Parent__c"),
 			bRef("Group__c", "Group__r", "Items__r", "Group__c"),
+			bRef("Keep__c", "Keep__r", "Keeps__r", "Parent__c"),
+			bRef("OwnerId", "Owner", "Owned__r", "Parent__c"),
+			bRef("CreatedById", "CreatedBy", "Created__r", "Parent__c"),
 		}}
 	parent := metadata.Object{Name: "Parent__c", Label: "Parent", PluralLabel: "Parents", Prefix: "a12",
 		Fields: []metadata.Field{bField("Id", fieldtype.Id), bField("Name", fieldtype.Text)}}
@@ -347,6 +350,8 @@ func TestBindResultKeys(t *testing.T) {
 	for _, text := range []string{
 		"select account.name, name from contact",
 		"select Parent__r.Name, Group__r.Name from Item__c",
+		"select Parent__r.Name, Keep__r.Name from Item__c",
+		"select Owner.Name, CreatedBy.Name from Item__c",
 		"select SUM(Amount__c) expr0, COUNT(Id) expr0 from Item__c",
 		"select Name, COUNT(Id) Name from Item__c group by Name",
 		"select (select Id from Typeditems__r), (select Id from Typeditems__r) from Item__c",
@@ -529,17 +534,14 @@ func TestBindDateLiteralIN(t *testing.T) {
 // assertRange checks a >= start and < end pair for the named field.
 func assertRange(t *testing.T, items []BoundExpr, field string) {
 	t.Helper()
-	ge, ok := items[0].(*BoundCmp)
-	if !ok || ge.Op != ">=" || ge.Left.Field.Name != field {
-		t.Fatalf("range start = %#v", items[0])
+	ge, _ := items[0].(*BoundCmp)
+	lt, _ := items[1].(*BoundCmp)
+	if ge == nil || lt == nil || ge.Op != ">=" || ge.Left.Field.Name != field || lt.Op != "<" {
+		t.Fatalf("range = %#v", items)
 	}
-	lt, ok := items[1].(*BoundCmp)
-	if !ok || lt.Op != "<" {
-		t.Fatalf("range end = %#v", items[1])
-	}
-	start, ok1 := ge.Right.Value.(time.Time)
-	end, ok2 := lt.Right.Value.(time.Time)
-	if !ok1 || !ok2 || !end.After(start) {
+	start, _ := ge.Right.Value.(time.Time)
+	end, _ := lt.Right.Value.(time.Time)
+	if !end.After(start) {
 		t.Fatalf("bad range [%#v, %#v)", ge.Right.Value, lt.Right.Value)
 	}
 }
