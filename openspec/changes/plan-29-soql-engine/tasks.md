@@ -50,9 +50,9 @@ with DCO sign-off.
 
 ## 8. Paging and query locators
 
-- [ ] 8.1 Failing tests: `TestPagingBoundaries`, `TestPagingDeletion`, `TestLocatorRules`, `TestLocatorCatalogChange`, `TestQueryLocatorsRLS`, HTTP batchSize clamp
-- [ ] 8.2 Migration 0006 + `locator.go` + `NextPage` + `Store.QueryMore` + `GET /query/{locator}`
-- [ ] 8.3 Commit `feat: page SOQL results with query locators`
+- [x] 8.1 Failing tests: `TestPagingBoundaries`, `TestPagingDeletion`, `TestLocatorRules`, `TestLocatorCatalogChange`, `TestQueryLocatorsRLS`, HTTP batchSize clamp
+- [x] 8.2 Migration 0006 + `locator.go` + `NextPage` + `Store.QueryMore` + `GET /query/{locator}`
+- [x] 8.3 Commit `feat: page SOQL results with query locators`
 
 ## 9. Column metadata and retire old grammar
 
