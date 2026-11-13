@@ -6,6 +6,8 @@ sources:
   - soql
   - soap
   - bulk
+  - rest-limits-resource
+  - rest-limit-info-header
 # Behaviors found missing from pilot.yaml in the 2026-10-15 review, including
 # every row of the candidate's "deferred" table in plan-2-implementation.md.
 # Each needs M1 reference observation before the candidate changes behavior.
@@ -162,9 +164,15 @@ contracts:
       Sforce-Limit-Info; exhausted quotas return the observed error
     preconditions:
       - Explicit API version
+      - Reference user has View Setup and Configuration for the limits resource
     assertions:
       - /limits includes DailyApiRequests with Max and Remaining
       - Sforce-Limit-Info header format matches the reference
+      - Sforce-Limit-Info includes api-usage used and maximum counts
+      - Versions URI header exception and additional entries are checked separately
+    # Documentation says resource counters may lag usage by up to five minutes;
+    # do not require the response counters and header to match in a single call.
+    # Offline checker examples are synthetic, not Salesforce reference evidence.
     observationStatus: not_run
   - id: request-headers
     milestone: M1/M3
