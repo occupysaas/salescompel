@@ -87,11 +87,44 @@ GRANT salescompel_identity TO your_identity_login;
 
 Set LOGIN passwords privately through your database administration mechanism.
 Do not grant owner membership, ownership, superuser, BYPASSRLS, CREATEROLE,
-CREATEDB or replication to either runtime login. The operator needs CREATE on the
-database/public schema for a fresh install and must own, or be able to alter,
-legacy application tables during adoption. Tables transfer to the owner group
-in migration 3. Runtime roles receive only the documented grants; extra direct
-credential-table grants or disabled business/catalog RLS refuse server startup.
+CREATEDB or replication to either runtime login. Runtime roles receive only the
+documented grants; extra direct credential-table grants or disabled
+business/catalog RLS refuse server startup.
+
+For a fresh, dedicated database, a DBA runs the following in that database,
+substituting its name. The owner group needs database CREATE while migrations
+create schemas; public schema CREATE remains necessary for later schema work.
+
+```sql
+GRANT CREATE ON DATABASE your_database TO salescompel_owner;
+REVOKE CREATE ON SCHEMA public FROM PUBLIC;
+GRANT USAGE, CREATE ON SCHEMA public TO salescompel_owner;
+GRANT USAGE ON SCHEMA public TO salescompel_records, salescompel_identity;
+```
+
+For the fresh migration connection, use the operator login but set its initial
+role to `salescompel_owner`. For a PostgreSQL URI, add the query parameter
+`options=-c%20role%3Dsalescompel_owner` (use `&` if it already has parameters).
+Keep the login and password private. This makes the new schemas and tables belong
+to the owner group from creation, including the migration history. Do not apply
+this connection option to either runtime URL. Once migration finishes, the DBA
+may revoke database CREATE from the owner group until another migration needs it.
+
+For a legacy adoption, the operator must own, or be able to alter, the existing
+application tables; do not switch its connection to the owner role before those
+tables are transferred. Grant the operator CREATE on the database and `public`,
+and apply the `public` grants above. Migration 3 can fail because migrations 1
+and 2 created `sc_control`, `sc_catalog` and `sc_records` as the operator. If
+it does, a DBA (or the owner of those schemas) must grant CREATE on all three to
+`salescompel_owner`, then rerun `migrate up` using the same operator login:
+
+```sql
+GRANT CREATE ON SCHEMA sc_control, sc_catalog, sc_records TO salescompel_owner;
+```
+
+This also recovers a fresh install already stopped at migration 3. Do not create
+the schemas in advance: migrations 1 and 2 create them. Migration 3 transfers
+their ownership and the application tables to the owner group.
 
 Use three private environment values:
 
