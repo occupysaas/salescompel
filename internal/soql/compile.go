@@ -6,6 +6,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"salescompel/internal/contract"
+	"salescompel/internal/fieldtype"
 	"salescompel/internal/metadata"
 )
 
@@ -48,9 +49,6 @@ func Compile(b *Bound) (*Plan, error) {
 	if b == nil {
 		return nil, malformed("empty bound query")
 	}
-	if b.Aggregate {
-		return nil, tooComplicated("aggregate queries are not yet supported")
-	}
 	c := &compiler{joinMap: map[string]string{}}
 	return c.compile(b)
 }
@@ -68,9 +66,20 @@ func (c *compiler) compile(b *Bound) (*Plan, error) {
 		}
 		where += " AND (" + w + ")"
 	}
-	order, err := c.compileOrder(b.Order, root, b.Object)
+	order, err := c.compileOrder(b.Order, root, b.Object, b.GroupBy, b.Aggregate)
 	if err != nil {
 		return nil, err
+	}
+	group, err := c.compileGroupBy(b.GroupBy, root)
+	if err != nil {
+		return nil, err
+	}
+	having := ""
+	if b.Having != nil {
+		having, err = c.compileExpr(b.Having, root, b.Object)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	selParts, compound, joinIDs, err := c.compileSelection(b, root)
@@ -90,13 +99,22 @@ func (c *compiler) compile(b *Bound) (*Plan, error) {
 	}
 
 	sql := "SELECT " + strings.Join(selParts, ",") + " FROM " + from + " WHERE " + where
+	if group != "" {
+		sql += " GROUP BY " + group
+	}
+	if having != "" {
+		sql += " HAVING " + having
+	}
 	if order != "" {
 		sql += " ORDER BY " + order
-	} else {
+	} else if !b.Aggregate {
 		sql += " ORDER BY " + root + ".id"
 	}
 
 	limit := 2000
+	if b.Aggregate {
+		limit = maxAggregateGroups
+	}
 	if b.Limit != nil {
 		limit = *b.Limit
 	}
@@ -144,11 +162,16 @@ func (c *compiler) compileSelection(b *Bound, root string) ([]string, map[int][]
 			parts = append(parts, exprs...)
 			continue
 		}
-		parts = append(parts, c.fieldExpr(owner, BoundValue{
+		parts = append(parts, c.selectFieldExpr(owner, BoundValue{
 			Path: col.Path, Field: col.Field, Agg: col.Agg, Func: col.Func, Label: col.Label,
 		}))
 	}
 	joinIDs := map[string]int{}
+	// Aggregate queries never select hidden join ids: they would have to be
+	// grouped, and aggregate rows do not carry parent paths for nesting.
+	if b.Aggregate {
+		return parts, compound, joinIDs, nil
+	}
 	base := len(parts)
 	for i, js := range c.joins {
 		parts = append(parts, js.alias+".id")
@@ -202,7 +225,7 @@ func compileChildPlan(child BoundChild, parentIDs []string) (*childPlan, error) 
 		}
 		where += " AND (" + w + ")"
 	}
-	order, err := c.compileOrder(b.Order, root, b.Object)
+	order, err := c.compileOrder(b.Order, root, b.Object, nil, false)
 	if err != nil {
 		return nil, err
 	}
@@ -255,12 +278,31 @@ func (c *compiler) compoundExprs(owner string, obj metadata.Object, f metadata.F
 	return comps, exprs, nil
 }
 
+// fieldExpr renders a value for predicates and ORDER BY: raw SQL types so
+// typed comparisons and grouping stay exact.
 func (c *compiler) fieldExpr(owner string, v BoundValue) string {
 	if v.Agg != "" {
 		return aggExpr(owner, v)
 	}
 	if v.Func != "" {
-		return funcExpr(owner, v)
+		return c.funcExpr(owner, v)
+	}
+	return SelectExpression(owner, v.Field)
+}
+
+// selectFieldExpr renders a SELECT-list value. Numeric aggregates are cast to
+// text so WireValue can encode them exactly with DecimalJSON; predicates keep
+// the raw numeric expression. spec: soql-05
+func (c *compiler) selectFieldExpr(owner string, v BoundValue) string {
+	if v.Agg != "" {
+		expr := aggExpr(owner, v)
+		if numericAggregate(v) {
+			return "(" + expr + ")::text"
+		}
+		return expr
+	}
+	if v.Func != "" {
+		return c.funcExpr(owner, v)
 	}
 	return SelectExpression(owner, v.Field)
 }
@@ -280,33 +322,64 @@ func aggExpr(owner string, v BoundValue) string {
 	}
 }
 
-func funcExpr(owner string, v BoundValue) string {
+// funcExpr renders a toLabel or date-function result. spec: soql-02, soql-05
+func (c *compiler) funcExpr(owner string, v BoundValue) string {
 	col := owner + "." + pgx.Identifier{v.Field.Column}.Sanitize()
 	if v.Label {
+		return c.labelExpr(col, v.Field)
+	}
+	return dateFuncSQL(v.Func, col)
+}
+
+// labelExpr maps picklist API values to their tenant labels. Values and labels
+// are metadata, not query text, but stay parameters so no literal is inlined.
+func (c *compiler) labelExpr(col string, f metadata.Field) string {
+	if len(f.PicklistValues) == 0 {
 		return col
 	}
-	switch v.Func {
-	case "DAY_ONLY":
-		return "to_char(" + col + ` AT TIME ZONE 'UTC','YYYY-MM-DD')`
-	case "CALENDAR_YEAR":
-		return "EXTRACT(YEAR FROM " + col + ` AT TIME ZONE 'UTC')::int`
-	case "CALENDAR_MONTH":
-		return "EXTRACT(MONTH FROM " + col + ` AT TIME ZONE 'UTC')::int`
-	case "CALENDAR_QUARTER":
-		return "EXTRACT(QUARTER FROM " + col + ` AT TIME ZONE 'UTC')::int`
-	case "DAY_IN_MONTH":
-		return "EXTRACT(DAY FROM " + col + ` AT TIME ZONE 'UTC')::int`
-	case "DAY_IN_WEEK":
-		return "EXTRACT(DOW FROM " + col + ` AT TIME ZONE 'UTC')::int`
-	case "DAY_IN_YEAR":
-		return "EXTRACT(DOY FROM " + col + ` AT TIME ZONE 'UTC')::int`
-	case "HOUR_IN_DAY":
-		return "EXTRACT(HOUR FROM " + col + ` AT TIME ZONE 'UTC')::int`
-	case "WEEK_IN_MONTH", "WEEK_IN_YEAR":
-		return "EXTRACT(WEEK FROM " + col + ` AT TIME ZONE 'UTC')::int`
-	default:
-		return col
+	if f.Kind() == fieldtype.MultiselectPicklist {
+		return c.multiLabelExpr(col, f)
 	}
+	var b strings.Builder
+	b.WriteString("CASE ")
+	b.WriteString(col)
+	for _, pv := range f.PicklistValues {
+		label := pv.Label
+		if label == "" {
+			label = pv.Value
+		}
+		b.WriteString(" WHEN $")
+		b.WriteString(itoa(c.addArg(pv.Value)))
+		b.WriteString(" THEN $")
+		b.WriteString(itoa(c.addArg(label)))
+	}
+	b.WriteString(" ELSE ")
+	b.WriteString(col)
+	b.WriteString(" END")
+	return b.String()
+}
+
+// multiLabelExpr maps every element of a semicolon-joined multi-select value,
+// preserving order and falling back to the API value for unlisted elements.
+func (c *compiler) multiLabelExpr(col string, f metadata.Field) string {
+	var values strings.Builder
+	for i, pv := range f.PicklistValues {
+		label := pv.Label
+		if label == "" {
+			label = pv.Value
+		}
+		if i > 0 {
+			values.WriteString(",")
+		}
+		values.WriteString("($")
+		values.WriteString(itoa(c.addArg(pv.Value)))
+		values.WriteString("::text,$")
+		values.WriteString(itoa(c.addArg(label)))
+		values.WriteString("::text)")
+	}
+	return "(SELECT string_agg(COALESCE(m.label,u.e),';' ORDER BY u.ord) FROM unnest(string_to_array(" +
+		col + ",';')) WITH ORDINALITY AS u(e,ord) LEFT JOIN (VALUES " + values.String() +
+		") AS m(value,label) ON m.value=u.e)"
 }
 
 func (c *compiler) ensureJoin(root string, path []PathStep) (string, error) {
@@ -340,10 +413,7 @@ func (c *compiler) addArg(v any) int {
 	return len(c.args)
 }
 
-func (c *compiler) compileOrder(order []BoundOrder, root string, obj metadata.Object) (string, error) {
-	if len(order) == 0 {
-		return "", nil
-	}
+func (c *compiler) compileOrder(order []BoundOrder, root string, obj metadata.Object, group []BoundValue, aggregate bool) (string, error) {
 	parts := make([]string, 0, len(order)+1)
 	for _, o := range order {
 		owner := root
@@ -372,6 +442,48 @@ func (c *compiler) compileOrder(order []BoundOrder, root string, obj metadata.Ob
 		}
 		parts = append(parts, part)
 	}
-	parts = append(parts, root+".id")
+	if aggregate {
+		// Aggregate queries tie-break on the group keys, not Id: Id is not
+		// grouped and would make the statement invalid. spec: soql-05, soql-06
+		for _, g := range group {
+			owner := root
+			if len(g.Path) > 0 {
+				alias, err := c.ensureJoin(root, g.Path)
+				if err != nil {
+					return "", err
+				}
+				owner = alias
+			}
+			parts = append(parts, c.fieldExpr(owner, g))
+		}
+	} else {
+		parts = append(parts, root+".id")
+	}
+	return strings.Join(parts, ","), nil
+}
+
+// compileGroupBy renders GROUP BY expressions. Group keys use raw SQL types
+// (not the SELECT projections' text casts) so date functions and fields group
+// exactly; projections may re-express the same grouped column. spec: soql-05
+func (c *compiler) compileGroupBy(group []BoundValue, root string) (string, error) {
+	parts := make([]string, 0, len(group))
+	for _, g := range group {
+		if g.Agg != "" {
+			return "", malformed("aggregate functions are not groupable")
+		}
+		owner := root
+		if len(g.Path) > 0 {
+			alias, err := c.ensureJoin(root, g.Path)
+			if err != nil {
+				return "", err
+			}
+			owner = alias
+		}
+		if g.Func != "" {
+			parts = append(parts, c.funcExpr(owner, g))
+			continue
+		}
+		parts = append(parts, owner+"."+pgx.Identifier{g.Field.Column}.Sanitize())
+	}
 	return strings.Join(parts, ","), nil
 }

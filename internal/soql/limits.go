@@ -15,6 +15,9 @@ const (
 	maxOffset       = 2_000
 	maxFieldsLimit  = 200
 	maxChildRows    = 2_000
+	// maxAggregateGroups caps aggregate result groups; aggregate queries are
+	// not paged, so overflow fails instead of issuing a locator. spec: soql-05
+	maxAggregateGroups = 2_000
 )
 
 func tooComplicated(msg string) error {

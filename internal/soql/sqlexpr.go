@@ -107,7 +107,7 @@ func (c *compiler) valueSQL(v BoundValue, root string) (string, error) {
 		return aggExpr(owner, v), nil
 	}
 	if v.Func != "" {
-		return funcExpr(owner, v), nil
+		return c.funcExpr(owner, v), nil
 	}
 	return owner + "." + pgx.Identifier{v.Field.Column}.Sanitize(), nil
 }

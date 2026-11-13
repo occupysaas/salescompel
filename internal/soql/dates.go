@@ -46,6 +46,33 @@ func yearStart(t time.Time) time.Time {
 
 func addYears(t time.Time, n int) time.Time { return addMonths(t, 12*n) }
 
+// dateFuncSQL renders a documented date function in UTC. Fiscal periods are
+// calendar periods until Plan 33. spec: soql-04, soql-05
+func dateFuncSQL(fn, col string) string {
+	at := col + ` AT TIME ZONE 'UTC'`
+	switch fn {
+	case "DAY_ONLY":
+		return "(" + at + ")::date"
+	case "CALENDAR_YEAR", "FISCAL_YEAR":
+		return "EXTRACT(YEAR FROM " + at + ")::int"
+	case "CALENDAR_QUARTER", "FISCAL_QUARTER":
+		return "EXTRACT(QUARTER FROM " + at + ")::int"
+	case "CALENDAR_MONTH", "FISCAL_MONTH":
+		return "EXTRACT(MONTH FROM " + at + ")::int"
+	case "DAY_IN_MONTH":
+		return "EXTRACT(DAY FROM " + at + ")::int"
+	case "DAY_IN_WEEK":
+		return "EXTRACT(DOW FROM " + at + ")::int"
+	case "DAY_IN_YEAR":
+		return "EXTRACT(DOY FROM " + at + ")::int"
+	case "HOUR_IN_DAY":
+		return "EXTRACT(HOUR FROM " + at + ")::int"
+	case "WEEK_IN_MONTH", "WEEK_IN_YEAR":
+		return "EXTRACT(WEEK FROM " + at + ")::int"
+	}
+	return col
+}
+
 // DateLiteralRange returns the UTC half-open range a date literal covers at
 // now. Weeks start on Sunday; fiscal periods equal calendar periods.
 // Relative N is 1–1000 for every unit. spec: soql-04

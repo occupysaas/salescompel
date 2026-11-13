@@ -385,6 +385,9 @@ func (b *binder) bindGroupBy(q *Query, obj metadata.Object, ctx *bindCtx) ([]Bou
 		if err != nil {
 			return nil, err
 		}
+		if v.Agg != "" {
+			return nil, malformed("aggregate functions are not groupable")
+		}
 		if v.Func == "" && !v.Field.Groupable {
 			return nil, malformed("field cannot be grouped")
 		}
@@ -431,10 +434,13 @@ func (b *binder) finishAggregates(q *Query, out *Bound, child bool) error {
 	if child && hasAgg {
 		return malformed("aggregates are not supported in subqueries")
 	}
+	if hasAgg && len(out.Children) > 0 {
+		return malformed("aggregates cannot be combined with subqueries")
+	}
 	if hasAgg || len(out.GroupBy) > 0 {
 		out.Aggregate = true
 	}
-	out.CountOnly = countOnly && hasAgg && len(out.Columns) == 1
+	out.CountOnly = countOnly && hasAgg && len(out.Columns) == 1 && len(out.GroupBy) == 0
 	if hasAgg && len(out.GroupBy) == 0 && plain {
 		return malformed("aggregates cannot be mixed with plain fields without GROUP BY")
 	}

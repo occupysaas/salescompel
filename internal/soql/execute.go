@@ -71,8 +71,14 @@ func executePlan(ctx context.Context, tx pgx.Tx, bound *Bound, plan *Plan, opt O
 
 	// Fetch one extra row past the page cap so overflow is detectable.
 	// When the user LIMIT already fits in one batch, use it directly.
+	// Aggregate queries are never paged: fetch past the group cap instead.
 	fetchLimit := batch + 1
-	if bound.Limit != nil && *bound.Limit <= batch {
+	if bound.Aggregate {
+		fetchLimit = maxAggregateGroups + 1
+		if bound.Limit != nil && *bound.Limit <= maxAggregateGroups {
+			fetchLimit = *bound.Limit
+		}
+	} else if bound.Limit != nil && *bound.Limit <= batch {
 		fetchLimit = *bound.Limit
 	}
 	plan.Stmt.Args[plan.LimitArg] = fetchLimit
@@ -82,6 +88,10 @@ func executePlan(ctx context.Context, tx pgx.Tx, bound *Bound, plan *Plan, opt O
 		return Result{}, dbErr(err)
 	}
 	defer rows.Close()
+
+	if bound.CountOnly {
+		return countOnlyResult(rows)
+	}
 
 	records := make([]map[string]any, 0, 16)
 	var parentIDs []string
@@ -104,20 +114,52 @@ func executePlan(ctx context.Context, tx pgx.Tx, bound *Bound, plan *Plan, opt O
 	}
 
 	total := len(records)
-	// Done true only when the full result fits in one page.
-	if bound.Limit == nil || *bound.Limit > batch {
-		if total > batch {
+	if bound.Aggregate {
+		// Aggregate queries are not paged; more groups than the cap fail.
+		if total > maxAggregateGroups {
+			return Result{}, tooComplicated("aggregate query exceeds the group limit; narrow the query")
+		}
+	} else {
+		// Done true only when the full result fits in one page.
+		if bound.Limit == nil || *bound.Limit > batch {
+			if total > batch {
+				return Result{}, tooComplicated("result exceeds one page; add LIMIT or a narrower filter")
+			}
+		}
+		if bound.Limit != nil && total > *bound.Limit {
 			return Result{}, tooComplicated("result exceeds one page; add LIMIT or a narrower filter")
 		}
-	}
-	if bound.Limit != nil && total > *bound.Limit {
-		return Result{}, tooComplicated("result exceeds one page; add LIMIT or a narrower filter")
 	}
 	rows.Close()
 	if err = executeChildren(ctx, tx, bound.Children, records, parentIDs); err != nil {
 		return Result{}, err
 	}
 	return Result{TotalSize: total, Done: true, Records: records}, nil
+}
+
+// countOnlyResult consumes the single COUNT() row and returns the count on
+// the response envelope with no records. spec: soql-02
+func countOnlyResult(rows pgx.Rows) (Result, error) {
+	if !rows.Next() {
+		if err := rows.Err(); err != nil {
+			return Result{}, dbErr(err)
+		}
+		// LIMIT 0 on a COUNT() query yields no row; the count is zero.
+		return Result{TotalSize: 0, Done: true, Records: []map[string]any{}}, nil
+	}
+	vals, err := rows.Values()
+	if err != nil {
+		return Result{}, dbErr(err)
+	}
+	n, ok := vals[0].(int64)
+	if !ok {
+		return Result{}, malformed("count result is unavailable")
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return Result{}, dbErr(err)
+	}
+	return Result{TotalSize: int(n), Done: true, Records: []map[string]any{}}, nil
 }
 
 // executeChildren runs one statement per relationship for the whole parent
@@ -183,9 +225,11 @@ func executeChildren(ctx context.Context, tx pgx.Tx, children []BoundChild, reco
 
 // shapeRow builds one REST JSON record from a result row.
 func shapeRow(bound *Bound, plan *Plan, vals []any) map[string]any {
-	rec := map[string]any{
-		"attributes": map[string]any{"type": bound.Object.Name},
+	attrs := map[string]any{"type": bound.Object.Name}
+	if bound.Aggregate {
+		attrs["type"] = "AggregateResult"
 	}
+	rec := map[string]any{"attributes": attrs}
 	colIdx := 0
 	for i, col := range bound.Columns {
 		if comps, ok := plan.Compound[i]; ok {
@@ -196,7 +240,7 @@ func shapeRow(bound *Bound, plan *Plan, vals []any) map[string]any {
 		}
 		v := vals[colIdx]
 		colIdx++
-		rec[col.Key] = WireValue(col.Field, v)
+		rec[col.Key] = wireColumnValue(col, v)
 	}
 
 	// Detect null parent levels from hidden join id columns.
@@ -223,8 +267,10 @@ func shapeRow(bound *Bound, plan *Plan, vals []any) map[string]any {
 		nestPath(rec, op.col, op.raw, joinNull, plan)
 	}
 
-	if id, ok := rec["Id"].(string); ok {
-		rec["attributes"].(map[string]any)["url"] = "/services/data/v65.0/sobjects/" + bound.Object.Name + "/" + id
+	if !bound.Aggregate {
+		if id, ok := rec["Id"].(string); ok {
+			rec["attributes"].(map[string]any)["url"] = "/services/data/v65.0/sobjects/" + bound.Object.Name + "/" + id
+		}
 	}
 	return rec
 }
