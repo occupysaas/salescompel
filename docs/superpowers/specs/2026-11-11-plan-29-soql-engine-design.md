@@ -119,7 +119,7 @@ A new package, `internal/soql`, replaces the bounded `internal/query` grammar. `
 
 ## 2. SELECT
 
-**Fields** follow today's rules: canonical names and field policy. Compound Address fields return the Plan 28 object. Duplicate fields in one SELECT are rejected with `MALFORMED_QUERY` ("duplicate field selected"). This is documented behavior and is today's observed `malformed-duplicate` case.
+**Fields** follow today's rules: canonical names and field policy. Compound Address fields return the Plan 28 object. Exact same-path duplicate fields are accepted: `SELECT Name, Id, Name FROM Account` returns one `Name` key in the record while `columnMetadata` keeps each selected entry (`Name`, `Id`, `Name`). Distinct paths that share a leaf, such as `Name` and `Account.Name`, are accepted and shape to distinct JSON keys. A result-key collision with an alias, a generated `exprN`, a child key or a `FIELDS()` key is `MALFORMED_QUERY` ("duplicate field selected"); `SELECT SUM(Amount__c) expr0, COUNT(Id) expr0` and two child subqueries with the same relationship key are examples. The observed fixture named `malformed-duplicate` is a `columns` parameter-encoding error, not a duplicate-field case.
 
 **Parent relationships** use the relationship name: `Account` for standard `AccountId`, `Parent__r` for custom `Parent__c`. Paths are up to 5 levels (documented limit). The JSON nests each level, with its own `attributes`. A null reference gives `"Account": null`. A field that is not a reference, or an unknown relationship name, gives `INVALID_FIELD` with the documented "Didn't understand relationship" wording (*candidate* message). `Id` is not implicitly added to parent objects unless selected, matching documented REST output.
 
@@ -128,7 +128,7 @@ A new package, `internal/soql`, replaces the bounded `internal/query` grammar. `
 - The inner query supports fields, parent paths, WHERE, ORDER BY and LIMIT. It does not support aggregates, GROUP BY, OFFSET or nested subqueries (documented: one level).
 - At most 20 subqueries per query (documented).
 - Each parent row gets `{ "totalSize", "done": true, "records" }`, or `null` when there are no child rows (documented REST shape).
-- More than 2,000 child rows for one parent fails with `QUERY_TOO_COMPLICATED` ("child relationship exceeds candidate limit; add a LIMIT to the subquery") (*candidate*). Nothing is truncated. Salesforce instead pages large child sets; that is recorded as a gap.
+- Child subquery results have no independent `nextRecordsUrl` paging; only the outer result pages. Without a `LIMIT`, a parent with more than 2,000 matching child rows fails closed with `QUERY_TOO_COMPLICATED` ("child relationship exceeds candidate limit; add a LIMIT to the subquery") (*candidate*). Nothing is truncated. An explicit `LIMIT` of 2,000 or less returns that bounded set, including exactly `LIMIT 2000`; `LIMIT 2001` does not raise the cap and refuses when the child set reaches 2,001. Salesforce instead pages large child sets; that is recorded as a gap.
 
 **Aggregates:**
 - `COUNT()` with no other select items returns `totalSize` = the count and `records: []` (documented).
@@ -363,7 +363,7 @@ Not fetched during drafting (Salesforce documentation pages refused automated fe
 These are the author's calls, not maintainer decisions:
 
 1. A hand-written lexer and parser in a new `internal/soql` package, with no parser generator or new dependency.
-2. Child subqueries capped at 2,000 rows per parent per page instead of nested paging (recorded gap).
+2. Child subqueries cap each parent at 2,000 child rows and fail closed above that instead of nested paging (recorded gap). Without a `LIMIT`, more than 2,000 matching child rows for one parent returns `QUERY_TOO_COMPLICATED`; an explicit `LIMIT` of 2,000 or less returns that bounded set, including exactly 2,000; `LIMIT 2001` does not raise the cap and refuses when the child set reaches 2,001. Nothing is truncated, and child results have no independent `nextRecordsUrl`.
 3. Locators store the ordered result IDs, at most 50,000 per locator (recorded gap), with the bound plan re-validated per page.
 4. Batch sizes outside 200–2,000 are clamped, not rejected.
 5. Date literals and date functions use UTC with Sunday-start weeks until user time zones and locales arrive (Plan 33). Fiscal periods are calendar.

@@ -50,8 +50,13 @@ kind. A mismatch SHALL be `MALFORMED_QUERY`. `COUNT()` alone
 SHALL return `totalSize` equal to the count and `records: []`. Mixing
 aggregates with plain fields without GROUP BY SHALL be `MALFORMED_QUERY`.
 `FIELDS(ALL|CUSTOM)` SHALL require `LIMIT` ≤ 200 and SHALL silently omit
-fields the principal cannot read. Duplicate fields in one SELECT SHALL be
-`MALFORMED_QUERY`. Functions outside the documented set SHALL be
+fields the principal cannot read. Exact same-path duplicate fields in one
+SELECT SHALL be accepted; the record SHALL carry one JSON key for that path
+while `columnMetadata` keeps each selected entry. Distinct paths that share a
+leaf (for example `Name` and `Account.Name`) SHALL be accepted and shape to
+distinct JSON keys. A result-key collision with an alias, a generated `exprN`,
+a child key or a `FIELDS()` key SHALL be `MALFORMED_QUERY` with the message
+"duplicate field selected". Functions outside the documented set SHALL be
 `MALFORMED_QUERY` naming the function.
 
 #### Scenario: null parent at level three
@@ -172,8 +177,14 @@ The engine SHALL refuse queries longer than 100,000 characters, WHERE clauses
 longer than 4,000 characters, relationship paths deeper than five levels,
 more than 20 child subqueries, more than two semi- or anti-joins, more than 35
 joined objects, IN lists longer than 1,000 elements, more than 2,000 child
-rows for one parent, more than 2,000 result groups and locator result sets
-larger than 50,000 IDs. Over-limit refusals SHALL use `QUERY_TOO_COMPLICATED`
+rows for one parent in a child subquery without a LIMIT, more than 2,000 result
+groups and locator result sets larger than 50,000 IDs. An explicit child
+subquery `LIMIT` of 2,000 or less SHALL return that bounded set, including
+exactly `LIMIT 2000`; a `LIMIT` above 2,000 SHALL NOT raise the cap and SHALL
+fail with `QUERY_TOO_COMPLICATED` when the child set reaches 2,001. Child
+subquery results SHALL NOT have an independent `nextRecordsUrl`; only the
+outer result pages. Child overflow SHALL fail closed without truncation.
+Over-limit refusals SHALL use `QUERY_TOO_COMPLICATED`
 except where the plan documents `MALFORMED_QUERY` (FIELDS without LIMIT,
 OFFSET 2001, out-of-range date N). The only query error codes SHALL be
 `MALFORMED_QUERY`, `INVALID_FIELD`, `INVALID_TYPE`,
@@ -189,6 +200,14 @@ relationship SHALL be `INVALID_FIELD`.
 
 #### Scenario: child overflow is fail-closed
 - **WHEN** one parent has 2,001 child rows in a subquery without LIMIT
+- **THEN** the query fails with `QUERY_TOO_COMPLICATED` and no truncated child set is returned
+
+#### Scenario: child LIMIT at the cap
+- **WHEN** one parent has 2,001 child rows and the subquery uses `LIMIT 2000`
+- **THEN** the result carries exactly 2,000 child rows with `done: true`, and the child result has no independent `nextRecordsUrl`
+
+#### Scenario: child LIMIT above the cap
+- **WHEN** one parent has 2,001 child rows and the subquery uses `LIMIT 2001`
 - **THEN** the query fails with `QUERY_TOO_COMPLICATED` and no truncated child set is returned
 
 ### Requirement: Field policy and tenant isolation hold in every clause

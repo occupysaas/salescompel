@@ -28,7 +28,9 @@ bind to. Superpowers plan tasks 1–10 are the implementation order.
 **Non-Goals:**
 
 - TYPEOF binding, USING SCOPE, FOR, ROLLUP/CUBE, FORMAT/convertCurrency,
-  geolocation, nested child subqueries, child paging beyond 2,000 rows/parent,
+  geolocation, nested child subqueries, independent paging of child results
+  (over-2,000 child sets fail closed unless bounded by a subquery `LIMIT` of
+  2,000 or less; child results have no `nextRecordsUrl`),
   user time zones / fiscal calendars other than calendar, multi-currency,
   Composite query subrequests (Plan 31), Bulk query (Plan 32).
 

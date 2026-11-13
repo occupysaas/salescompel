@@ -73,7 +73,7 @@ instead. Neither status is a compatibility certification.
 | Item | Candidate rule | Status | Source / note |
 | --- | --- | --- | --- |
 | 1. Hand-written parser | New `internal/soql` lexer and parser; no parser generator or new dependency | gap | Spec default and a local implementation choice; no Salesforce source applies. |
-| 2. Child subquery cap | Child subqueries capped at 2,000 rows per parent per page instead of nested paging | gap | Salesforce returns up to 2,000 results per request, including results from child objects, and pages larger sets with `nextRecordsUrl` and `queryMore()` ([limits cheatsheet][c1], [REST execute][c2], [queryMore][c3]). The per-parent cap and `QUERY_TOO_COMPLICATED` are recorded deviations. |
+| 2. Child subquery cap | Child subquery results have no independent paging. Without a `LIMIT`, a parent with more than 2,000 matching child rows fails with `QUERY_TOO_COMPLICATED`; nothing is truncated. An explicit `LIMIT` of 2,000 or less returns that bounded set, including exactly 2,000. A `LIMIT` above 2,000 does not raise the cap. | gap | Salesforce returns up to 2,000 results per request, including results from child objects, and pages larger sets with `nextRecordsUrl` and `queryMore()` ([limits cheatsheet][c1], [REST execute][c2], [queryMore][c3]). The fail-closed per-parent cap and the absence of child-result paging are recorded deviations. |
 | 3. Locators | Locators store ordered result IDs, at most 50,000 per locator, with the bound plan re-validated per page | gap | The REST example documents the locator shape `01g...-2000` in `nextRecordsUrl` ([REST execute][c2]); query results are available for 2 days, including nested results ([limits cheatsheet][c1]). The 50,000-ID cap, ID-array storage, per-page re-validation and oldest-first eviction are spec defaults; Salesforce documents no 50,000-ID cap. |
 | 4. Batch clamp | Batch sizes outside 200-2,000 are clamped, not rejected | gap | Default and maximum are 2,000 and the minimum is 200; the requested size is a hint and can change to maximize performance ([Query Options Header][c4], [Change the Batch Size][c5]). Clamping out-of-range values, rather than rejecting them, is a spec default. |
 | 5. Date time base | Date literals and date functions use UTC with Sunday-start weeks until Plan 33; fiscal periods are calendar | gap | Date-literal ranges depend on the literal and the user's locale, or the org locale when the user has none ([Date Formats and Date Literals][c6]). Client queries return date-time field values in UTC ([Date Functions][c7]), and `DAY_IN_WEEK()` is 1 for Sunday and 7 for Saturday. The UTC, Sunday-start and calendar-fiscal choices are recorded deviations until Plan 33. |
@@ -123,9 +123,11 @@ should reconcile these before or during the named task.
   returns `MALFORMED_QUERY` above the cap. The reference pages do not specify
   an error code for an over-cap ORDER BY, so `MALFORMED_QUERY` is a local
   choice.
-- **`FIELDS()` duplicate-field error.** The reference says a duplicate in the
-  SELECT list is an error, but the exact message is not shown ([SELECT
-  fields][c13]).
+- **`FIELDS()` duplicate-field error.** Salesforce's reference says a duplicate
+  field in the SELECT list is an error, but the exact message is not shown
+  ([SELECT fields][c13]). The candidate accepts exact same-path duplicates in a
+  plain SELECT as described above; a collision with an expanded `FIELDS()` key
+  is `MALFORMED_QUERY` with "duplicate field selected".
 - **Winter '27 SOQL additions outside scope.** `FORMULA()` in WHERE (Beta, API
   68.0, not in production) and `SET OPTIONS` ([Winter '27 developer
   guide][c23]).
@@ -142,11 +144,17 @@ should reconcile these before or during the named task.
   `{columnName: key, aggregate: true}` for aggregates. Every entry nested under
   `joinColumns`, including a leaf, carries an explicit `joinColumns` array
   (empty at a leaf). The pinned `sf data query` reads that array while walking
-  the chain. Distinct parent paths that share a leaf name, such as
+  the chain. Same-path duplicate fields collapse in the record: for example,
+  `SELECT Name, Id, Name FROM Account` returns one `Name` key and one `Id`
+  key, while `columnMetadata` keeps each selected entry (`Name`, `Id`, `Name`).
+  Distinct parent paths that share a leaf name, such as
   `SELECT Name, Account.Name FROM Contact`, are supported and shape to
-  distinct JSON keys; exact duplicate fields are still `MALFORMED_QUERY`. The
-  richer CLI metadata (`apexType`, `displayName`, `entityName`, `length` and so
-  on) remains a gap.
+  distinct JSON keys. A result-key collision with an alias, a generated
+  `exprN`, a child key or a `FIELDS()` key is `MALFORMED_QUERY` with the
+  message "duplicate field selected"; for example,
+  `SELECT SUM(Amount__c) expr0, COUNT(Id) expr0` and two child subqueries with
+  the same relationship key. The richer CLI metadata (`apexType`,
+  `displayName`, `entityName`, `length` and so on) remains a gap.
 
 ## Gaps carried by this plan
 
@@ -157,9 +165,14 @@ not every Salesforce feature. A gap means the candidate refuses the construct
 or uses the stated candidate limit; it never means the construct is silently
 ignored.
 
-- **Child paging beyond 2,000.** A child subquery returns at most 2,000 rows per
-  parent per page. Salesforce pages larger child sets with nested
-  `nextRecordsUrl` and `queryMore()`; the candidate caps them.
+- **Child paging beyond 2,000.** Child subquery results have no independent
+  `nextRecordsUrl` paging; only the outer result pages. Without a `LIMIT`, a
+  parent with more than 2,000 matching child rows fails closed with
+  `QUERY_TOO_COMPLICATED`; nothing is truncated. An explicit `LIMIT` of 2,000
+  or less returns the requested bounded set, including exactly `LIMIT 2000`.
+  A `LIMIT` above 2,000 does not raise the cap and fails the same way when the
+  child set reaches 2,001. Salesforce pages larger child sets with nested
+  `nextRecordsUrl` and `queryMore()`; the fail-closed cap is the recorded gap.
 - **50,000-ID locator cap.** A result whose membership exceeds 50,000 rows gives
   `QUERY_TOO_COMPLICATED` instead of paging. The cap is a candidate default;
   Salesforce publishes no such limit.
@@ -234,9 +247,15 @@ differences.
 - **Membership is fixed on page one:** later pages read current field values,
   rows deleted after page one are skipped, and `totalSize` keeps its first
   value. Child subqueries and parent paths are evaluated again for each page.
-- **Child subqueries:** at most 2,000 child rows per parent per page. A parent
-  with 2,500 children returns 2,000 and does not page that child result
-  further. This is the child-paging gap, not Salesforce's nested pagination.
+- **Child subqueries:** child results have no independent `nextRecordsUrl`
+  paging; only the outer result pages. Without a `LIMIT`, a parent with 2,001
+  or more matching child rows returns `QUERY_TOO_COMPLICATED` with the message
+  "child relationship exceeds candidate limit; add a LIMIT to the subquery";
+  nothing is truncated. `LIMIT 2000` returns exactly 2,000 rows with
+  `done: true`; `LIMIT 1999` returns 1,999. A `LIMIT` above 2,000 does not
+  raise the cap and returns `QUERY_TOO_COMPLICATED` when the child set reaches
+  2,001. This fail-closed behavior is the child-paging gap, not Salesforce's
+  nested pagination.
 - **Locators:** the candidate stores at most 50,000 ordered IDs per locator for
   two days, bound to the tenant and user. At most 10 open locators per user are
   kept; opening an eleventh evicts the oldest. Expired, unknown, cross-user and
@@ -255,10 +274,16 @@ differences.
 - **Fiscal periods:** `FISCAL_*` literals and functions equal their calendar
   equivalents until fiscal-year settings exist. This is a candidate choice, not
   parity with a configured fiscal year.
-- **Distinct paths:** `SELECT Name, Account.Name FROM Contact` is valid and
-  returns the contact `Name` plus `{Account: {Name: ...}}`. `SELECT Name, Name`
-  returns `MALFORMED_QUERY`. Exact duplicate fields are rejected; distinct
-  paths that share a leaf are not.
+- **Duplicate fields and result keys:** `SELECT Name, Id, Name FROM Account`
+  is accepted. The record carries one `Name` key and one `Id` key;
+  `columnMetadata` keeps each selected entry (`Name`, `Id`, `Name`).
+  `SELECT Name, Name FROM Account` is also accepted and returns one `Name`
+  key. `SELECT Name, Account.Name FROM Contact` is accepted and returns the
+  contact `Name` plus `{Account: {Name: ...}}`. A result-key collision with an
+  alias, a generated `exprN`, a child key or a `FIELDS()` key is
+  `MALFORMED_QUERY` with "duplicate field selected"; examples include
+  `SELECT SUM(Amount__c) expr0, COUNT(Id) expr0` and two child subqueries with
+  the same relationship key.
 - **Column metadata:** with `columns=true`, parent paths and child subqueries
   return nested `joinColumns`. Every nested entry, including a leaf, includes a
   `joinColumns` array; it is empty at a leaf. For example,
@@ -337,8 +362,10 @@ compat/clients/node run check` exit 0 (474 tests: 468 passed, 0 failed, 6
 skipped); `npm --prefix web test` exit 0 (10 passed); `npm --prefix web run
 build` exit 0; `openspec validate --all --strict` green.
 
-Residual gaps not implemented by Plan 29: child subquery paging beyond 2,000
-rows per parent per page; result membership above 50,000 IDs in one locator;
+Residual gaps not implemented by Plan 29: independent child-subquery paging
+(child results have no `nextRecordsUrl`; over-2,000 child sets fail closed
+unless bounded by a `LIMIT` of 2,000 or less); result membership above 50,000
+IDs in one locator;
 UTC date literals and Sunday-start weeks with calendar fiscal periods (Plan 33);
 `TYPEOF`; `USING SCOPE` (Plan 34); `FOR VIEW`, `FOR REFERENCE` and `FOR UPDATE`;
 `GROUP BY ROLLUP`/`CUBE` and `GROUPING()`; `FORMAT()` and `convertCurrency()`;

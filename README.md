@@ -75,8 +75,11 @@ simple-salesforce `query_all` pass full candidate acceptance.
 Plan 29 does not yet support `TYPEOF`, `USING SCOPE`, `FOR VIEW`/`FOR
 REFERENCE`/`FOR UPDATE`, `GROUP BY ROLLUP`/`CUBE`/`GROUPING()`, `FORMAT()` or
 `convertCurrency()`, configured fiscal periods, user time zones and locales,
-child subquery paging beyond 2,000 rows per parent, or results above 50,000 IDs
-in one locator. SOSL is Plan 42; Bulk query is Plan 32; Composite query
+independent paging of child subquery results (a parent with more than 2,000
+matching child rows fails closed with `QUERY_TOO_COMPLICATED` unless the
+subquery carries a `LIMIT` of 2,000 or less; child results never carry their
+own `nextRecordsUrl`), or results above 50,000 IDs in one locator. SOSL is
+Plan 42; Bulk query is Plan 32; Composite query
 subrequests are Plan 31. See the
 [SOQL engine record, operator limits and verification](docs/compat/plan-29-soql-engine.md).
 The next priority is Plan 30: record lifecycle. [Plan 25 foundation decisions](docs/compat/plan-25-foundation-decisions.md)
