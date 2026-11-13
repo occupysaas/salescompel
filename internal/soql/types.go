@@ -91,6 +91,13 @@ type Bound struct {
 	Offset    *int
 	Aggregate bool
 	CountOnly bool
+	// Source is the canonical re-serialized query text stored with a locator
+	// and re-parsed per page. Revision is the catalog revision at bind time.
+	Source   string
+	Revision int64
+	// PageIDs restricts execution to one stored locator page, in stored order.
+	// It is a server-side constraint, never derived from user text.
+	PageIDs []string
 }
 
 // BoundExpr is the typed boolean tree of a WHERE or HAVING clause.

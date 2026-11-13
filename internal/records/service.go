@@ -73,8 +73,20 @@ func (t *Tx) QueryColumns(ctx context.Context, text string, opt soql.Options) (s
 		return soql.Result{}, nil, err
 	}
 	md := soql.ColumnMetadata(bound.Columns)
+	if opt.User == "" {
+		opt.User = t.execution.Principal.User
+	}
 	res, err := soql.RunBound(ctx, t.db, bound, opt)
 	return res, md, err
+}
+
+// QueryMore serves one page of a stored query locator.
+func (t *Tx) QueryMore(ctx context.Context, locatorPath string, batch int) (soql.Result, error) {
+	locator, offset, err := soql.ParseLocatorPath(locatorPath)
+	if err != nil {
+		return soql.Result{}, err
+	}
+	return soql.NextPage(ctx, t.db, t.execution, t.catalog, locator, offset, batch)
 }
 func DBError(err error) error { return dbError(err) }
 func CanonicalFields(p Principal, object string, data map[string]any) (map[string]any, error) {

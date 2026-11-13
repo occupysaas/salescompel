@@ -58,6 +58,17 @@ func (s *Store) QueryColumns(ctx context.Context, p Principal, text string, batc
 	})
 	return out, md, e
 }
+
+// QueryMore serves one page of a stored query locator.
+func (s *Store) QueryMore(ctx context.Context, p Principal, locatorPath string, batch int) (soqleng.Result, error) {
+	var out soqleng.Result
+	e := s.within(ctx, p, func(s *Store, p Principal) error {
+		var e error
+		out, e = s.recordTx(p).QueryMore(ctx, locatorPath, batch)
+		return e
+	})
+	return out, e
+}
 func (s *Store) Upsert(ctx context.Context, p Principal, key string, data map[string]any) (string, bool, error) {
 	for name, v := range data {
 		if strings.EqualFold(name, "Compat_Key__c") && v != nil {

@@ -56,6 +56,7 @@ func Compile(b *Bound) (*Plan, error) {
 func (c *compiler) compile(b *Bound) (*Plan, error) {
 	root := "r"
 	tenantArg := c.addArg(b.Object.Tenant)
+	pageArg := c.pageArg(b)
 
 	// Compile WHERE and ORDER BY first so ensureJoin runs before FROM is built.
 	where := fmt.Sprintf("%s.tenant_id=$%d", root, tenantArg)
@@ -66,9 +67,15 @@ func (c *compiler) compile(b *Bound) (*Plan, error) {
 		}
 		where += " AND (" + w + ")"
 	}
+	if b.PageIDs != nil {
+		where += fmt.Sprintf(" AND %s.id = ANY($%d::text[])", root, pageArg)
+	}
 	order, err := c.compileOrder(b.Order, root, b.Object, b.GroupBy, b.Aggregate)
 	if err != nil {
 		return nil, err
+	}
+	if b.PageIDs != nil {
+		order = fmt.Sprintf("array_position($%d::text[], %s.id::text)", pageArg, root)
 	}
 	group, err := c.compileGroupBy(b.GroupBy, root)
 	if err != nil {

@@ -14,7 +14,7 @@ func runtimeTablesSafe(ctx context.Context, p *pgxpool.Pool, group string) (bool
  ARRAY(SELECT a.attname::text FROM pg_attribute a WHERE a.attrelid=c.oid AND a.attnum>0 AND NOT a.attisdropped AND has_column_privilege(current_user,c.oid,a.attnum,'UPDATE') ORDER BY a.attnum),
  ARRAY[has_any_column_privilege(current_user,c.oid,'SELECT'),has_any_column_privilege(current_user,c.oid,'INSERT'),has_any_column_privilege(current_user,c.oid,'UPDATE'),has_any_column_privilege(current_user,c.oid,'REFERENCES')],
  ARRAY[has_table_privilege(current_user,c.oid,'SELECT'),has_table_privilege(current_user,c.oid,'INSERT'),has_table_privilege(current_user,c.oid,'UPDATE'),has_table_privilege(current_user,c.oid,'DELETE'),has_table_privilege(current_user,c.oid,'TRUNCATE'),has_table_privilege(current_user,c.oid,'REFERENCES'),has_table_privilege(current_user,c.oid,'TRIGGER'),has_table_privilege(current_user,c.oid,'MAINTAIN')]
- FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname IN ('public','sc_catalog','sc_records','sc_control') AND c.relkind IN ('r','p','v','m')`, "(tenant_id = NULLIF(current_setting('salescompel.tenant_id'::text, true), ''::text))")
+ FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname IN ('public','sc_catalog','sc_records','sc_query','sc_control') AND c.relkind IN ('r','p','v','m')`, "(tenant_id = NULLIF(current_setting('salescompel.tenant_id'::text, true), ''::text))")
 	if e != nil {
 		return false, e
 	}
@@ -33,7 +33,8 @@ func runtimeTablesSafe(ctx context.Context, p *pgxpool.Pool, group string) (bool
 		want := make([]bool, 8)
 		record := (schema == "public" && (table == "accounts" || table == "contacts")) || (schema == "sc_records" && regexp.MustCompile(`^o_[a-f0-9]{32}$`).MatchString(table))
 		meta := schema == "sc_catalog" && catalog[table]
-		if (record || meta) && (!rls || !force || !closed) {
+		locator := schema == "sc_query" && table == "locators"
+		if (record || meta || locator) && (!rls || !force || !closed) {
 			return false, nil
 		}
 		if schema == "sc_control" && table == "schema_migrations" {
@@ -48,6 +49,9 @@ func runtimeTablesSafe(ctx context.Context, p *pgxpool.Pool, group string) (bool
 				want[0] = true
 				// Auto-number counters advance inside record transactions.
 				want[2] = table == "auto_numbers"
+			} else if locator {
+				// Locators are append-only from the runtime: SELECT, INSERT, DELETE.
+				want[0], want[1], want[3] = true, true, true
 			}
 		} else if schema == "public" {
 			if identityRead[table] {

@@ -290,22 +290,49 @@ func NewHandlerWithOptions(s *Store, assetDir string, o Options) http.Handler {
 				writeError(w, e)
 				return
 			}
+			batch := queryBatchSize(r)
 			if columns {
-				res, md, e := s.QueryColumns(ctx, p, qtext, 2000)
+				res, md, e := s.QueryColumns(ctx, p, qtext, batch)
 				if e != nil {
 					writeError(w, e)
 					return
 				}
 				result := map[string]any{"totalSize": res.TotalSize, "done": res.Done, "records": res.Records, "columnMetadata": md}
+				if res.NextLocator != "" {
+					result["nextRecordsUrl"] = apiBase + "query/" + res.NextLocator
+				}
 				writeJSON(w, 200, result)
 				return
 			}
-			res, e := s.Query(ctx, p, qtext, 2000)
+			res, e := s.Query(ctx, p, qtext, batch)
 			if e != nil {
 				writeError(w, e)
 				return
 			}
 			result := map[string]any{"totalSize": res.TotalSize, "done": res.Done, "records": res.Records}
+			if res.NextLocator != "" {
+				result["nextRecordsUrl"] = apiBase + "query/" + res.NextLocator
+			}
+			writeJSON(w, 200, result)
+			return
+		}
+		if parts[0] == "query" {
+			if len(parts) != 2 {
+				writeError(w, invalid("INVALID_QUERY_LOCATOR", "Query locator is invalid"))
+				return
+			}
+			if !method(w, r, "GET") {
+				return
+			}
+			res, e := s.QueryMore(ctx, p, parts[1], queryBatchSize(r))
+			if e != nil {
+				writeError(w, e)
+				return
+			}
+			result := map[string]any{"totalSize": res.TotalSize, "done": res.Done, "records": res.Records}
+			if res.NextLocator != "" {
+				result["nextRecordsUrl"] = apiBase + "query/" + res.NextLocator
+			}
 			writeJSON(w, 200, result)
 			return
 		}

@@ -22,6 +22,8 @@ type Result struct {
 type Options struct {
 	BatchSize int
 	Now       Clock
+	// User owns any locator the first page stores.
+	User string
 }
 
 // Run parses, binds, compiles and executes a SOQL query.
@@ -41,6 +43,9 @@ func RunAST(ctx context.Context, tx pgx.Tx, exec policy.ExecutionContext, snap m
 	if now == nil {
 		now = time.Now
 	}
+	if opt.User == "" {
+		opt.User = exec.Principal.User
+	}
 	bound, err := Bind(q, snap, exec.Principal, now)
 	if err != nil {
 		return Result{}, err
@@ -58,83 +63,88 @@ func RunBound(ctx context.Context, tx pgx.Tx, bound *Bound, opt Options) (Result
 }
 
 func executePlan(ctx context.Context, tx pgx.Tx, bound *Bound, plan *Plan, opt Options) (Result, error) {
-	batch := opt.BatchSize
-	if batch <= 0 {
-		batch = 2000
-	}
-	if batch < 200 {
-		batch = 200
-	}
-	if batch > 2000 {
-		batch = 2000
-	}
-
-	// Fetch one extra row past the page cap so overflow is detectable.
-	// When the user LIMIT already fits in one batch, use it directly.
-	// Aggregate queries are never paged: fetch past the group cap instead.
-	fetchLimit := batch + 1
-	if bound.Aggregate {
-		fetchLimit = maxAggregateGroups + 1
-		if bound.Limit != nil && *bound.Limit <= maxAggregateGroups {
-			fetchLimit = *bound.Limit
-		}
-	} else if bound.Limit != nil && *bound.Limit <= batch {
-		fetchLimit = *bound.Limit
-	}
-	plan.Stmt.Args[plan.LimitArg] = fetchLimit
-
-	rows, err := tx.Query(ctx, plan.Stmt.SQL, plan.Stmt.Args...)
-	if err != nil {
-		return Result{}, dbErr(err)
-	}
-	defer rows.Close()
-
+	batch := clampBatch(opt.BatchSize)
 	if bound.CountOnly {
+		rows, err := tx.Query(ctx, plan.Stmt.SQL, plan.Stmt.Args...)
+		if err != nil {
+			return Result{}, dbErr(err)
+		}
 		return countOnlyResult(rows)
 	}
+	if bound.Aggregate {
+		return executeAggregate(ctx, tx, bound, plan)
+	}
+	if bound.Offset != nil {
+		// OFFSET queries are not paged: one capped page, no locator.
+		limit := batch
+		if bound.Limit != nil && *bound.Limit < limit {
+			limit = *bound.Limit
+		}
+		plan.Stmt.Args[plan.LimitArg] = limit
+		records, err := runRows(ctx, tx, bound, plan)
+		if err != nil {
+			return Result{}, err
+		}
+		return Result{TotalSize: len(records), Done: true, Records: records}, nil
+	}
+	return executePaged(ctx, tx, bound, plan, batch, opt.User)
+}
 
+// clampBatch applies the documented 200–2,000 batch bounds; zero means the
+// 2,000 default.
+func clampBatch(batch int) int {
+	if batch <= 0 {
+		return 2000
+	}
+	if batch < 200 {
+		return 200
+	}
+	if batch > 2000 {
+		return 2000
+	}
+	return batch
+}
+
+// collectRows shapes one result set. It returns the hidden root IDs needed to
+// group child subquery rows back to their parents.
+func collectRows(ctx context.Context, tx pgx.Tx, bound *Bound, plan *Plan) ([]map[string]any, []string, error) {
+	rows, err := tx.Query(ctx, plan.Stmt.SQL, plan.Stmt.Args...)
+	if err != nil {
+		return nil, nil, dbErr(err)
+	}
+	defer rows.Close()
 	records := make([]map[string]any, 0, 16)
 	var parentIDs []string
 	for rows.Next() {
 		vals, e := rows.Values()
 		if e != nil {
-			return Result{}, dbErr(e)
+			return nil, nil, dbErr(e)
 		}
 		records = append(records, shapeRow(bound, plan, vals))
 		if plan.RootID != nil {
 			id, ok := vals[*plan.RootID].(string)
 			if !ok {
-				return Result{}, malformed("parent id is unavailable for child query")
+				return nil, nil, malformed("parent id is unavailable for child query")
 			}
 			parentIDs = append(parentIDs, id)
 		}
 	}
 	if err = rows.Err(); err != nil {
-		return Result{}, dbErr(err)
+		return nil, nil, dbErr(err)
 	}
+	return records, parentIDs, nil
+}
 
-	total := len(records)
-	if bound.Aggregate {
-		// Aggregate queries are not paged; more groups than the cap fail.
-		if total > maxAggregateGroups {
-			return Result{}, tooComplicated("aggregate query exceeds the group limit; narrow the query")
-		}
-	} else {
-		// Done true only when the full result fits in one page.
-		if bound.Limit == nil || *bound.Limit > batch {
-			if total > batch {
-				return Result{}, tooComplicated("result exceeds one page; add LIMIT or a narrower filter")
-			}
-		}
-		if bound.Limit != nil && total > *bound.Limit {
-			return Result{}, tooComplicated("result exceeds one page; add LIMIT or a narrower filter")
-		}
+// runRows collects a page and fills its child relationships.
+func runRows(ctx context.Context, tx pgx.Tx, bound *Bound, plan *Plan) ([]map[string]any, error) {
+	records, parentIDs, err := collectRows(ctx, tx, bound, plan)
+	if err != nil {
+		return nil, err
 	}
-	rows.Close()
 	if err = executeChildren(ctx, tx, bound.Children, records, parentIDs); err != nil {
-		return Result{}, err
+		return nil, err
 	}
-	return Result{TotalSize: total, Done: true, Records: records}, nil
+	return records, nil
 }
 
 // countOnlyResult consumes the single COUNT() row and returns the count on

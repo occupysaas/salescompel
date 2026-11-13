@@ -74,6 +74,12 @@ func manifest() []change {
 	}
 	sum5 := sha256.Sum256(sql5)
 	m = append(m, change{Entry{5, "child relationships", hex.EncodeToString(sum5[:]), false}, func(ctx context.Context, tx pgx.Tx) error { _, e := tx.Exec(ctx, string(sql5)); return e }})
+	sql6, s6Err := sources.ReadFile("migrations/0006_query_locators.sql")
+	if s6Err != nil {
+		panic("migration: embedded 0006_query_locators.sql unreadable")
+	}
+	sum6 := sha256.Sum256(sql6)
+	m = append(m, change{Entry{6, "query locators", hex.EncodeToString(sum6[:]), false}, func(ctx context.Context, tx pgx.Tx) error { _, e := tx.Exec(ctx, string(sql6)); return e }})
 	return m
 
 }
