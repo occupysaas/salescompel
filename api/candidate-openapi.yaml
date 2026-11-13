@@ -2019,6 +2019,7 @@ components:
         ^[A-Za-z][A-Za-z0-9_]*__r$:
           anyOf:
             - type: "null"
+            - $ref: "#/components/schemas/ParentObject1"
             - $ref: "#/components/schemas/ChildResult"
     ContactProjection:
       type: object
@@ -2126,6 +2127,7 @@ components:
         ^[A-Za-z][A-Za-z0-9_]*__r$:
           anyOf:
             - type: "null"
+            - $ref: "#/components/schemas/ParentObject1"
             - $ref: "#/components/schemas/ChildResult"
     Column:
       type: object
@@ -2314,7 +2316,7 @@ components:
         records:
           type: array
           items:
-            $ref: "#/components/schemas/ParentObject5"
+            $ref: "#/components/schemas/ChildResultRecord"
       description: One child subquery result nested under its relationship name; null when the parent has no children.
     RelatedAttributes:
       type: object
@@ -2339,6 +2341,7 @@ components:
         ^(?!attributes$)[A-Za-z][A-Za-z0-9_]*$:
           anyOf:
             - $ref: "#/components/schemas/FieldValue"
+            - $ref: "#/components/schemas/AddressValue"
             - type: "null"
             - $ref: "#/components/schemas/ParentObject2"
             - $ref: "#/components/schemas/ChildResult"
@@ -2355,6 +2358,7 @@ components:
         ^(?!attributes$)[A-Za-z][A-Za-z0-9_]*$:
           anyOf:
             - $ref: "#/components/schemas/FieldValue"
+            - $ref: "#/components/schemas/AddressValue"
             - type: "null"
             - $ref: "#/components/schemas/ParentObject3"
             - $ref: "#/components/schemas/ChildResult"
@@ -2370,6 +2374,7 @@ components:
         ^(?!attributes$)[A-Za-z][A-Za-z0-9_]*$:
           anyOf:
             - $ref: "#/components/schemas/FieldValue"
+            - $ref: "#/components/schemas/AddressValue"
             - type: "null"
             - $ref: "#/components/schemas/ParentObject4"
             - $ref: "#/components/schemas/ChildResult"
@@ -2385,6 +2390,7 @@ components:
         ^(?!attributes$)[A-Za-z][A-Za-z0-9_]*$:
           anyOf:
             - $ref: "#/components/schemas/FieldValue"
+            - $ref: "#/components/schemas/AddressValue"
             - type: "null"
             - $ref: "#/components/schemas/ParentObject5"
             - $ref: "#/components/schemas/ChildResult"
@@ -2398,8 +2404,94 @@ components:
           $ref: "#/components/schemas/RelatedAttributes"
       patternProperties:
         ^(?!attributes$)[A-Za-z][A-Za-z0-9_]*$:
-          $ref: "#/components/schemas/FieldValue"
-      description: The deepest related object (five relationship hops). It also serves as a child-subquery row schema.
+          anyOf:
+            - $ref: "#/components/schemas/FieldValue"
+            - $ref: "#/components/schemas/AddressValue"
+      description: The deepest related object (five relationship hops); compound address values are allowed.
+    ChildResultRecord:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+      properties:
+        attributes:
+          $ref: "#/components/schemas/RelatedAttributes"
+      patternProperties:
+        ^(?!attributes$)[A-Za-z][A-Za-z0-9_]*$:
+          anyOf:
+            - $ref: "#/components/schemas/FieldValue"
+            - $ref: "#/components/schemas/AddressValue"
+            - $ref: "#/components/schemas/ChildParentObject1"
+      description: One child-subquery row. Child queries may project parent paths and compound values.
+    ChildParentObject1:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+      properties:
+        attributes:
+          $ref: "#/components/schemas/RelatedAttributes"
+      patternProperties:
+        ^(?!attributes$)[A-Za-z][A-Za-z0-9_]*$:
+          anyOf:
+            - $ref: "#/components/schemas/FieldValue"
+            - $ref: "#/components/schemas/AddressValue"
+            - $ref: "#/components/schemas/ChildParentObject2"
+    ChildParentObject2:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+      properties:
+        attributes:
+          $ref: "#/components/schemas/RelatedAttributes"
+      patternProperties:
+        ^(?!attributes$)[A-Za-z][A-Za-z0-9_]*$:
+          anyOf:
+            - $ref: "#/components/schemas/FieldValue"
+            - $ref: "#/components/schemas/AddressValue"
+            - $ref: "#/components/schemas/ChildParentObject3"
+    ChildParentObject3:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+      properties:
+        attributes:
+          $ref: "#/components/schemas/RelatedAttributes"
+      patternProperties:
+        ^(?!attributes$)[A-Za-z][A-Za-z0-9_]*$:
+          anyOf:
+            - $ref: "#/components/schemas/FieldValue"
+            - $ref: "#/components/schemas/AddressValue"
+            - $ref: "#/components/schemas/ChildParentObject4"
+    ChildParentObject4:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+      properties:
+        attributes:
+          $ref: "#/components/schemas/RelatedAttributes"
+      patternProperties:
+        ^(?!attributes$)[A-Za-z][A-Za-z0-9_]*$:
+          anyOf:
+            - $ref: "#/components/schemas/FieldValue"
+            - $ref: "#/components/schemas/AddressValue"
+            - $ref: "#/components/schemas/ChildParentObject5"
+    ChildParentObject5:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+      properties:
+        attributes:
+          $ref: "#/components/schemas/RelatedAttributes"
+      patternProperties:
+        ^(?!attributes$)[A-Za-z][A-Za-z0-9_]*$:
+          anyOf:
+            - $ref: "#/components/schemas/FieldValue"
+            - $ref: "#/components/schemas/AddressValue"
     Field:
       type: object
       additionalProperties: false

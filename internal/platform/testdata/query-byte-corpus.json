@@ -1,0 +1,113 @@
+{
+ "schemaVersion": 1,
+ "expected": {
+  "bad-id-filter": {
+   "status": 400,
+   "body": "[{\"errorCode\":\"INVALID_QUERY_FILTER_OPERATOR\",\"message\":\"Invalid ID filter\",\"fields\":[\"Id\"]}]\n"
+  },
+  "bool-equality": {
+   "status": 200,
+   "body": "{\"done\":true,\"records\":[{\"Txt__c\":\"Alpha\",\"attributes\":{\"type\":\"Item__c\"}},{\"Txt__c\":null,\"attributes\":{\"type\":\"Item__c\"}}],\"totalSize\":2}\n"
+  },
+  "compound-address": {
+   "status": 200,
+   "body": "{\"done\":true,\"records\":[{\"MailingAddress\":{\"city\":\"Portland\",\"country\":\"US\",\"postalCode\":\"97201\",\"state\":\"OR\",\"street\":\"9 Oak\"},\"attributes\":{\"type\":\"Contact\"}}],\"totalSize\":1}\n"
+  },
+  "compound-person-name": {
+   "status": 200,
+   "body": "{\"done\":true,\"records\":[{\"Name\":\"John Smith\",\"attributes\":{\"type\":\"Contact\"}}],\"totalSize\":1}\n"
+  },
+  "date-equality": {
+   "status": 200,
+   "body": "{\"done\":true,\"records\":[{\"Txt__c\":\"Alpha\",\"attributes\":{\"type\":\"Item__c\"}}],\"totalSize\":1}\n"
+  },
+  "datetime-gte": {
+   "status": 200,
+   "body": "{\"done\":true,\"records\":[{\"Txt__c\":\"Alpha\",\"attributes\":{\"type\":\"Item__c\"}},{\"Txt__c\":\"Beta\",\"attributes\":{\"type\":\"Item__c\"}}],\"totalSize\":2}\n"
+  },
+  "equals-null": {
+   "status": 200,
+   "body": "{\"done\":true,\"records\":[{\"Txt__c\":null,\"attributes\":{\"type\":\"Item__c\"}}],\"totalSize\":1}\n"
+  },
+  "excludes": {
+   "status": 200,
+   "body": "{\"done\":true,\"records\":[{\"Txt__c\":\"Beta\",\"attributes\":{\"type\":\"Item__c\"}},{\"Txt__c\":null,\"attributes\":{\"type\":\"Item__c\"}}],\"totalSize\":2}\n"
+  },
+  "fixed-clock-today": {
+   "status": 200,
+   "body": "{\"done\":true,\"records\":[{\"Txt__c\":\"Alpha\",\"attributes\":{\"type\":\"Item__c\"}}],\"totalSize\":1}\n"
+  },
+  "id-and-url": {
+   "status": 200,
+   "body": "{\"done\":true,\"records\":[{\"Id\":\"$item1\",\"Txt__c\":\"Alpha\",\"attributes\":{\"type\":\"Item__c\",\"url\":\"/services/data/v65.0/sobjects/Item__c/$item1\"}}],\"totalSize\":1}\n"
+  },
+  "in-list": {
+   "status": 200,
+   "body": "{\"done\":true,\"records\":[{\"Txt__c\":\"Alpha\",\"attributes\":{\"type\":\"Item__c\"}},{\"Txt__c\":\"Beta\",\"attributes\":{\"type\":\"Item__c\"}}],\"totalSize\":2}\n"
+  },
+  "includes": {
+   "status": 200,
+   "body": "{\"done\":true,\"records\":[{\"Txt__c\":\"Alpha\",\"attributes\":{\"type\":\"Item__c\"}}],\"totalSize\":1}\n"
+  },
+  "like-escaped-percent": {
+   "status": 200,
+   "body": "{\"done\":true,\"records\":[],\"totalSize\":0}\n"
+  },
+  "like-prefix": {
+   "status": 200,
+   "body": "{\"done\":true,\"records\":[{\"Txt__c\":\"Alpha\",\"attributes\":{\"type\":\"Item__c\"}}],\"totalSize\":1}\n"
+  },
+  "malformed": {
+   "status": 400,
+   "body": "[{\"errorCode\":\"MALFORMED_QUERY\",\"message\":\"expected select item\"}]\n"
+  },
+  "not-equals-null": {
+   "status": 200,
+   "body": "{\"done\":true,\"records\":[{\"Txt__c\":\"Alpha\",\"attributes\":{\"type\":\"Item__c\"}},{\"Txt__c\":\"Beta\",\"attributes\":{\"type\":\"Item__c\"}}],\"totalSize\":2}\n"
+  },
+  "not-in-null-row": {
+   "status": 200,
+   "body": "{\"done\":true,\"records\":[{\"Txt__c\":\"Beta\",\"attributes\":{\"type\":\"Item__c\"}},{\"Txt__c\":null,\"attributes\":{\"type\":\"Item__c\"}}],\"totalSize\":2}\n"
+  },
+  "num-gte": {
+   "status": 200,
+   "body": "{\"done\":true,\"records\":[{\"Txt__c\":\"Alpha\",\"attributes\":{\"type\":\"Item__c\"}},{\"Txt__c\":\"Beta\",\"attributes\":{\"type\":\"Item__c\"}}],\"totalSize\":2}\n"
+  },
+  "operator-precedence": {
+   "status": 200,
+   "body": "{\"done\":true,\"records\":[{\"Txt__c\":\"Beta\",\"attributes\":{\"type\":\"Item__c\"}}],\"totalSize\":1}\n"
+  },
+  "order-asc-nulls-last": {
+   "status": 200,
+   "body": "{\"done\":true,\"records\":[{\"Txt__c\":\"Alpha\",\"attributes\":{\"type\":\"Item__c\"}},{\"Txt__c\":\"Beta\",\"attributes\":{\"type\":\"Item__c\"}},{\"Txt__c\":null,\"attributes\":{\"type\":\"Item__c\"}}],\"totalSize\":3}\n"
+  },
+  "order-desc": {
+   "status": 200,
+   "body": "{\"done\":true,\"records\":[{\"Txt__c\":null,\"attributes\":{\"type\":\"Item__c\"}},{\"Txt__c\":\"Beta\",\"attributes\":{\"type\":\"Item__c\"}},{\"Txt__c\":\"Alpha\",\"attributes\":{\"type\":\"Item__c\"}}],\"totalSize\":3}\n"
+  },
+  "parent-path": {
+   "status": 200,
+   "body": "{\"done\":true,\"records\":[{\"Parent__r\":{\"Name\":\"P\",\"attributes\":{\"type\":\"Parent__c\"}},\"Txt__c\":\"Alpha\",\"attributes\":{\"type\":\"Item__c\"}}],\"totalSize\":1}\n"
+  },
+  "standard-parent-path": {
+   "status": 200,
+   "body": "{\"done\":true,\"records\":[{\"Account\":{\"Name\":\"Acme\",\"attributes\":{\"type\":\"Account\"}},\"LastName\":\"Smith\",\"attributes\":{\"type\":\"Contact\"}}],\"totalSize\":1}\n"
+  },
+  "txt-case-insensitive": {
+   "status": 200,
+   "body": "{\"done\":true,\"records\":[{\"Txt__c\":\"Alpha\",\"attributes\":{\"type\":\"Item__c\"}}],\"totalSize\":1}\n"
+  },
+  "txt-equality": {
+   "status": 200,
+   "body": "{\"done\":true,\"records\":[{\"Txt__c\":\"Alpha\",\"attributes\":{\"type\":\"Item__c\"}}],\"totalSize\":1}\n"
+  },
+  "unknown-field": {
+   "status": 400,
+   "body": "[{\"errorCode\":\"INVALID_FIELD\",\"message\":\"Field is unavailable\",\"fields\":[\"Missing\"]}]\n"
+  },
+  "unknown-object": {
+   "status": 400,
+   "body": "[{\"errorCode\":\"INVALID_TYPE\",\"message\":\"Unsupported object\"}]\n"
+  }
+ }
+}

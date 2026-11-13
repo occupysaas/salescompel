@@ -139,7 +139,7 @@ func TestQueryTypedProjection(t *testing.T) {
 			t.Errorf("%s: %v", clause, e)
 		}
 	}
-	// spec soql-05: "=" on a multi-select compares the whole canonical value.
+	// spec soql-03: "=" on a multi-select compares the whole canonical value.
 	if _, e := soql(t, f, "SELECT Id FROM Item__c WHERE Multi__c = 'A' LIMIT 10"); e != nil {
 		t.Errorf("multi-select equality: %v", e)
 	}
@@ -147,6 +147,24 @@ func TestQueryTypedProjection(t *testing.T) {
 	if e != nil || read["Amount__c"] != json.Number("12.5") || read["At__c"] != "2026-03-09T04:30:00.000+0000" {
 		t.Fatalf("Read %v %#v", e, read)
 	}
+
+	// Numeric ORDER BY must compare stored numbers, not their text projection:
+	// text order puts "9" above "10" on DESC.
+	t.Run("numeric order is numeric not textual", func(t *testing.T) {
+		nf := newTypedFixture(t)
+		for _, n := range []json.Number{"9", "10"} {
+			if _, err := nf.s.Create(ctx, nf.p, "Item__c", map[string]any{"Num__c": n, "Txt__c": "n" + n.String()}); err != nil {
+				t.Fatal(err)
+			}
+		}
+		res, err := nf.s.Query(ctx, nf.p, "SELECT Txt__c FROM Item__c ORDER BY Num__c DESC", 2000)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(res.Records) != 2 || res.Records[0]["Txt__c"] != "n10" || res.Records[1]["Txt__c"] != "n9" {
+			t.Fatalf("numeric DESC order = %#v", res.Records)
+		}
+	})
 }
 
 func TestAddressRead(t *testing.T) {

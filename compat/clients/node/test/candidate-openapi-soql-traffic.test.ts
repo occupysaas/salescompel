@@ -104,6 +104,102 @@ const childRelationship = () =>
     },
   );
 
+const childParentPath = () =>
+  exchange(
+    "GET",
+    query(
+      "SELECT Name, (SELECT Account.Name, MailingAddress FROM Contacts) FROM Account",
+    ),
+    200,
+    {
+      done: true,
+      totalSize: 1,
+      records: [
+        {
+          attributes: { type: "Account" },
+          Name: "Acme",
+          Contacts: {
+            totalSize: 1,
+            done: true,
+            records: [
+              {
+                attributes: { type: "Contact" },
+                Account: { attributes: { type: "Account" }, Name: "Acme" },
+                MailingAddress: {
+                  street: "9 Oak",
+                  city: "Portland",
+                  state: "OR",
+                  postalCode: "97201",
+                  country: "US",
+                },
+              },
+            ],
+          },
+        },
+      ],
+      columnMetadata: [
+        { columnName: "Name" },
+        {
+          columnName: "Contacts",
+          joinColumns: [
+            { columnName: "Account", joinColumns: [{ columnName: "Name" }] },
+            { columnName: "MailingAddress" },
+          ],
+        },
+      ],
+    },
+  );
+
+const customParentAccount = () =>
+  exchange(
+    "GET",
+    query("SELECT Name, CustomLookup__r.Name FROM Account"),
+    200,
+    {
+      done: true,
+      totalSize: 1,
+      records: [
+        {
+          attributes: { type: "Account" },
+          Name: "Acme",
+          CustomLookup__r: {
+            attributes: { type: "Contact" },
+            Name: "Linked",
+          },
+        },
+      ],
+      columnMetadata: [
+        { columnName: "Name" },
+        {
+          columnName: "CustomLookup__r",
+          joinColumns: [{ columnName: "Name" }],
+        },
+      ],
+    },
+  );
+
+const customParentContact = () =>
+  exchange(
+    "GET",
+    query("SELECT LastName, Other__r.Name FROM Contact"),
+    200,
+    {
+      done: true,
+      totalSize: 1,
+      records: [
+        {
+          attributes: { type: "Contact" },
+          LastName: "Child",
+          Other__r: { attributes: { type: "Account" }, Name: "Linked" },
+        },
+      ],
+      columnMetadata: [
+        { columnName: "LastName" },
+        { columnName: "Other__r", joinColumns: [{ columnName: "Name" }] },
+      ],
+    },
+  );
+
 const aggregate = () =>
   exchange(
     "GET",
@@ -173,6 +269,9 @@ test("accepts SOQL contract additions", async () => {
     parentPath(),
     nestedParentPath(),
     childRelationship(),
+    childParentPath(),
+    customParentAccount(),
+    customParentContact(),
     aggregate(),
     countOnly(),
     firstPage(),
@@ -243,6 +342,68 @@ test("rejects malformed SOQL contract exchanges", async () => {
     ],
   });
   assert.deepEqual(v.validate(badChild).responseIssues, ["response-schema"]);
+
+  const badChildParent = childParentPath();
+  badChildParent.response.body = bytes({
+    ...JSON.parse(Buffer.from(badChildParent.response.body).toString("utf8")),
+    records: [
+      {
+        attributes: { type: "Account" },
+        Name: "Acme",
+        Contacts: {
+          totalSize: 1,
+          done: true,
+          records: [
+            {
+              attributes: { type: "Contact" },
+              Account: { unknown: true },
+              MailingAddress: { unknown: true },
+            },
+          ],
+        },
+      },
+    ],
+  });
+  assert.deepEqual(
+    v.validate(badChildParent).responseIssues,
+    ["response-schema"],
+  );
+
+  const badCustomParentAccount = customParentAccount();
+  badCustomParentAccount.response.body = bytes({
+    ...JSON.parse(
+      Buffer.from(badCustomParentAccount.response.body).toString("utf8"),
+    ),
+    records: [
+      {
+        attributes: { type: "Account" },
+        Name: "Acme",
+        CustomLookup__r: "not-an-object",
+      },
+    ],
+  });
+  assert.deepEqual(
+    v.validate(badCustomParentAccount).responseIssues,
+    ["response-schema"],
+  );
+
+  const badCustomParentContact = customParentContact();
+  badCustomParentContact.response.body = bytes({
+    ...JSON.parse(
+      Buffer.from(badCustomParentContact.response.body).toString("utf8"),
+    ),
+    records: [
+      {
+        attributes: { type: "Contact" },
+        LastName: "Child",
+        Other__r: "not-an-object",
+      },
+    ],
+  });
+  assert.deepEqual(
+    v.validate(badCustomParentContact).responseIssues,
+    ["response-schema"],
+  );
 
   const badAggregate = aggregate();
   badAggregate.response.body = bytes({
