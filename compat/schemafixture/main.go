@@ -97,7 +97,7 @@ func run(ctx context.Context) error {
 			return e
 		}
 		owned := func(name string) bool {
-			return strings.HasPrefix(name, "P27_"+id[:12]) || strings.HasPrefix(name, "P28_"+id[:12])
+			return strings.HasPrefix(name, "P27_"+id[:12]) || strings.HasPrefix(name, "P28_"+id[:12]) || strings.HasPrefix(name, "P29_"+id[:12])
 		}
 		for i := len(ops) - 1; i >= 0; i-- {
 			op := ops[i]

@@ -135,11 +135,84 @@ should reconcile these before or during the named task.
   `{columnName: key, aggregate: true}` for aggregates. The richer CLI metadata
   (`apexType`, `displayName` and so on) remains a gap.
 
-## Items reserved for Task 10
+## Gaps carried by this plan
 
-Task 10 completes the gaps list, the error-code table, the operator notes for
-query limits and paging, and the acceptance evidence table. This document
-records only the reference review and the candidate status table.
+These are known differences from Salesforce that the engine records and does
+not implement. The candidate table above covers the behavioral choices; this
+list covers the missing constructs and limits.
+
+- **Child paging beyond 2,000.** A child subquery returns at most 2,000 rows per
+  parent per page. Salesforce pages larger child sets with nested
+  `nextRecordsUrl` and `queryMore()`; the candidate caps them.
+- **50,000-ID locator cap.** A result whose membership exceeds 50,000 rows gives
+  `QUERY_TOO_COMPLICATED` instead of paging. The cap is a candidate default;
+  Salesforce publishes no such limit.
+- **UTC date literals.** Date literals and date functions use UTC with
+  Sunday-start weeks. Salesforce evaluates them in the running user's time zone
+  or the org time zone; user time zones and locales arrive in Plan 33.
+- **Calendar fiscal periods.** `FISCAL_*` literals and functions equal their
+  calendar equivalents until fiscal-year settings exist (Plan 33).
+- **`TYPEOF`.** The AST carries the node, and the binder refuses it with
+  `MALFORMED_QUERY`; no polymorphic field exists until Plans 30 and 40.
+- **`USING SCOPE`.** Needs ownership and sharing (Plan 34).
+- **`FOR VIEW`, `FOR REFERENCE`, `FOR UPDATE`.** Refused; no lock or view
+  tracking semantics yet.
+- **`GROUP BY ROLLUP`/`CUBE` and `GROUPING()`.** Refused; grouped rows are plain
+  groups.
+- **`FORMAT()` and `convertCurrency()`.** Refused; the candidate has one display
+  currency per tenant.
+- **Richer column metadata.** `columns=true` reports `columnName`,
+  `joinColumns` and `aggregate: true`. Salesforce CLI metadata such as
+  `apexType`, `displayName`, `entityName` and `length` remains a gap.
+- **Winter '27 additions outside scope.** `FORMULA()` in WHERE (Beta, API 68.0)
+  and the `SET OPTIONS` clause are not parsed.
+
+## Operator notes: query limits and paging
+
+The engine serves `GET /services/data/v65.0/query?q=...` and
+`GET /services/data/v65.0/query/{locator}-{offset}`. Operators should expect:
+
+- **Query text** is limited to 100,000 characters and a WHERE clause to 4,000
+  characters. Longer input returns `QUERY_TOO_COMPLICATED`.
+- **Relationship limits:** at most 5 relationship levels, 20 child subqueries,
+  2 semi- or anti-joins and 35 joined objects. Over-limit queries return
+  `QUERY_TOO_COMPLICATED`.
+- **`IN` lists** are capped at 1,000 elements; `OFFSET` is capped at 2,000.
+  Both caps return `QUERY_TOO_COMPLICATED`; `OFFSET` queries return one page.
+- **Batch size:** `Sforce-Query-Options: batchSize=n` is honored between 200 and
+  2,000. Values outside that range are clamped to the nearest bound, and no
+  header means 2,000 rows per page. `totalSize` counts the full membership after
+  the query's own `LIMIT`/`OFFSET` and stays constant across pages.
+- **Paging:** while rows remain, the response carries
+  `nextRecordsUrl: /services/data/v65.0/query/{locator}-{offset}` and
+  `done: false`; GET that path to continue. Membership is fixed on the first
+  page: later pages read current field values, deleted rows are skipped, and
+  `totalSize` keeps its first value. Child subqueries and parent paths are
+  evaluated per page.
+- **Locators:** the server stores at most 50,000 ordered IDs per locator for two
+  days, bound to the tenant and user. At most 10 open locators per user are
+  kept; opening an eleventh evicts the oldest. Expired, unknown, cross-user and
+  cross-tenant locators return `INVALID_QUERY_LOCATOR`. Each page re-validates
+  the bound plan against the current catalog, so a field removed or denied after
+  page one also returns `INVALID_QUERY_LOCATOR`.
+- **Aggregates, `COUNT()` and `OFFSET`** never create locators. Aggregate
+  queries return at most 2,000 grouped rows (`QUERY_TOO_COMPLICATED` above the
+  cap) and are never paged.
+- **Errors** stay in the locked vocabulary: `MALFORMED_QUERY`, `INVALID_FIELD`,
+  `INVALID_TYPE`, `INVALID_QUERY_FILTER_OPERATOR`, `QUERY_TOO_COMPLICATED` and
+  `INVALID_QUERY_LOCATOR`. Messages name fields and constructs but never echo
+  query values.
+
+## Acceptance evidence
+
+Task 10 adds `schema/soql-relationships`, `schema/soql-children`,
+`schema/soql-filters`, `schema/soql-aggregates`, `schema/soql-paging` and
+`schema/soql-python` to the `schema` gate, and `cli/query-relationship` and
+`cli/query-children` to the CLI gate. The schema client creates 4,500 records in
+a `P29_<run>__c` object through Composite batches of 25 and creates twelve
+Accounts with one Contact each. The P29 records are removed with their journaled
+table, following the Plan 28 ruling; the standard Accounts and Contacts are
+journaled and deleted individually.
 
 ## Sources retrieved
 

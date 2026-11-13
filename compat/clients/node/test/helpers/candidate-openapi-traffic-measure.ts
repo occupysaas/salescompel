@@ -32,7 +32,12 @@ export function createMeasure(url: URL) {
   return async function measure(
     method: string,
     path: string,
-    options: { role?: Role; body?: unknown; rawBody?: string } = {},
+    options: {
+      role?: Role;
+      body?: unknown;
+      rawBody?: string;
+      headers?: Record<string, string>;
+    } = {},
   ): Promise<Measured> {
     const target = new URL(path, url);
     assert.ok(
@@ -47,7 +52,7 @@ export function createMeasure(url: URL) {
           : undefined;
     const contentType = input ? "application/json" : null;
     return new Promise((resolve, reject) => {
-      const headers: Record<string, string> = {};
+      const headers: Record<string, string> = { ...options.headers };
       const token = tokens[options.role ?? "admin"];
       if (token) headers.Authorization = "Bearer " + token;
       if (contentType) headers["Content-Type"] = contentType;

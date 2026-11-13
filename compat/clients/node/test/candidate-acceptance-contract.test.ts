@@ -167,6 +167,53 @@ test("coverage requires query metadata regressions", () => {
   }
 });
 
+test("coverage requires the SOQL engine IDs and the restart list is unchanged", () => {
+  const soql = [
+    ["schema", "schema/soql-relationships"],
+    ["schema", "schema/soql-children"],
+    ["schema", "schema/soql-filters"],
+    ["schema", "schema/soql-aggregates"],
+    ["schema", "schema/soql-paging"],
+    ["schema", "schema/soql-python"],
+    ["cli", "cli/query-relationship"],
+    ["cli", "cli/query-children"],
+  ] as const;
+  for (const [suite, id] of soql) {
+    const tests = requiredCoverage[suite].map((name) => ({
+      id: name,
+      outcome: "passed" as const,
+    }));
+    const result = {
+      schemaVersion: 1 as const,
+      runId: "a".repeat(24),
+      suite,
+      complete: true,
+      exitCode: 0,
+      tests,
+    };
+    assert.ok(requiredCoverage[suite].includes(id), `${suite} missing ${id}`);
+    assert.equal(assessCoverage(suite, result).outcome, "passed", id);
+    for (const outcome of ["omitted", "failed", "skipped"] as const) {
+      const changed = tests.flatMap<ParsedResult["tests"][number]>((t) =>
+        t.id !== id ? [t] : outcome === "omitted" ? [] : [{ id, outcome }],
+      );
+      assert.equal(
+        assessCoverage(suite, { ...result, tests: changed }).outcome,
+        "failed",
+        `${suite}/${id}/${outcome}`,
+      );
+    }
+  }
+  assert.deepEqual(requiredCoverage.restart, [
+    "restart/schema",
+    "restart/field-types",
+    "restart/identity",
+    "restart/values",
+    "restart/policy",
+    "restart/oauth-refresh",
+  ]);
+});
+
 test("acceptance publication permits the exact new offline Composite skip", async (t) => {
   const dir = await mkdtemp(join(tmpdir(), "p23-report-"));
   t.after(() => rm(dir, { recursive: true, force: true }));

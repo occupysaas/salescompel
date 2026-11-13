@@ -284,6 +284,55 @@ export async function runNativeCLI(c: GateContext): Promise<ParsedResult> {
     assert.equal(q.totalSize, 0);
     assert.deepEqual(q.records, []);
   });
+  await checkQuery("cli/query-relationship", async () => {
+    const parentName = name + "-relationship-parent";
+    const parent = await createFixture(
+      c,
+      "cli-query-relationship-parent",
+      "Account",
+      { Name: parentName },
+      [parentName],
+    );
+    const childName = name + "-relationship-contact";
+    const child = await createFixture(
+      c,
+      "cli-query-relationship-contact",
+      "Contact",
+      { LastName: childName, AccountId: parent },
+      [childName],
+    );
+    const q = await query(
+      `SELECT Name, Account.Name FROM Contact WHERE Id = '${child}'`,
+    );
+    assert.equal(q.records.length, 1);
+    assert.equal(q.records[0].Name, childName);
+    assert.equal(q.records[0].Account.Name, parentName);
+  });
+  await checkQuery("cli/query-children", async () => {
+    const parentName = name + "-children-parent";
+    const parent = await createFixture(
+      c,
+      "cli-query-children-parent",
+      "Account",
+      { Name: parentName },
+      [parentName],
+    );
+    const childName = name + "-children-contact";
+    await createFixture(
+      c,
+      "cli-query-children-contact",
+      "Contact",
+      { LastName: childName, AccountId: parent },
+      [childName],
+    );
+    const q = await query(
+      `SELECT Name, (SELECT LastName FROM Contacts) FROM Account WHERE Id = '${parent}'`,
+    );
+    assert.equal(q.records.length, 1);
+    assert.equal(q.records[0].Name, parentName);
+    assert.equal(q.records[0].Contacts.totalSize, 1);
+    assert.equal(q.records[0].Contacts.records[0].LastName, childName);
+  });
   await cli(["data", "delete", "record", ...common, "--record-id", id]);
   steps.push("cli/delete");
   assert.equal(

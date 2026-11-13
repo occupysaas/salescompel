@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import { readdirSync } from "node:fs";
+import { availableParallelism } from "node:os";
 import { fileURLToPath } from "node:url";
 const files = readdirSync("test")
   .filter((f) => f.endsWith(".test.ts"))
@@ -10,6 +11,10 @@ const argv = [
   "--import",
   "tsx",
   "--test",
+  // Node serializes every file by default on a two-CPU runner, so the suite
+  // cannot meet the documented 20-minute acceptance deadline there. Use the
+  // available CPUs, capped to bound memory and fixed-port pressure.
+  "--test-concurrency=" + Math.min(4, Math.max(1, availableParallelism())),
   ...(report
     ? [
         "--test-reporter=" +
