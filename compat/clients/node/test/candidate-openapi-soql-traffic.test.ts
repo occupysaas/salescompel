@@ -195,6 +195,79 @@ const customParentContact = () =>
     ],
   });
 
+const childDeepParentPath = () =>
+  exchange(
+    "GET",
+    query(
+      "SELECT Name, (SELECT A__r.B__r.C__r.D__r.E__r.Name FROM Children__r) FROM Root__c",
+    ),
+    200,
+    {
+      done: true,
+      totalSize: 1,
+      records: [
+        {
+          attributes: { type: "Root__c" },
+          Name: "Root",
+          Children__r: {
+            totalSize: 1,
+            done: true,
+            records: [
+              {
+                attributes: { type: "Child__c" },
+                A__r: {
+                  attributes: { type: "A__c" },
+                  B__r: {
+                    attributes: { type: "B__c" },
+                    C__r: {
+                      attributes: { type: "C__c" },
+                      D__r: {
+                        attributes: { type: "D__c" },
+                        E__r: { attributes: { type: "E__c" }, Name: "E" },
+                      },
+                    },
+                  },
+                },
+              },
+            ],
+          },
+        },
+      ],
+      columnMetadata: [
+        { columnName: "Name" },
+        {
+          columnName: "Children__r",
+          joinColumns: [
+            {
+              columnName: "A__r",
+              joinColumns: [
+                {
+                  columnName: "B__r",
+                  joinColumns: [
+                    {
+                      columnName: "C__r",
+                      joinColumns: [
+                        {
+                          columnName: "D__r",
+                          joinColumns: [
+                            {
+                              columnName: "E__r",
+                              joinColumns: [{ columnName: "Name" }],
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  );
+
 const aggregate = () =>
   exchange(
     "GET",
@@ -265,6 +338,7 @@ test("accepts SOQL contract additions", async () => {
     nestedParentPath(),
     childRelationship(),
     childParentPath(),
+    childDeepParentPath(),
     customParentAccount(),
     customParentContact(),
     aggregate(),
@@ -360,6 +434,20 @@ test("rejects malformed SOQL contract exchanges", async () => {
     ],
   });
   assert.deepEqual(v.validate(badChildParent).responseIssues, [
+    "response-schema",
+  ]);
+
+  const tooDeepChildColumn = childDeepParentPath();
+  const deepBody = JSON.parse(
+    Buffer.from(tooDeepChildColumn.response.body).toString("utf8"),
+  );
+  let pointer = deepBody.columnMetadata[1].joinColumns[0];
+  while (pointer.joinColumns[0].joinColumns) pointer = pointer.joinColumns[0];
+  pointer.joinColumns = [
+    { columnName: "F__r", joinColumns: [{ columnName: "Name" }] },
+  ];
+  tooDeepChildColumn.response.body = bytes(deepBody);
+  assert.deepEqual(v.validate(tooDeepChildColumn).responseIssues, [
     "response-schema",
   ]);
 

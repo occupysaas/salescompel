@@ -2207,9 +2207,26 @@ components:
           type: array
           minItems: 1
           items:
+            $ref: "#/components/schemas/ColumnJoin6"
+        aggregate:
+          type: boolean
+    ColumnJoin6:
+      type: object
+      additionalProperties: false
+      required:
+        - columnName
+      properties:
+        columnName:
+          type: string
+          minLength: 1
+        joinColumns:
+          type: array
+          minItems: 1
+          items:
             $ref: "#/components/schemas/ColumnLeaf"
         aggregate:
           type: boolean
+      description: Extra level so a five-hop parent path inside a child subquery column resolves as deeply as a root path.
     ColumnLeaf:
       type: object
       additionalProperties: false

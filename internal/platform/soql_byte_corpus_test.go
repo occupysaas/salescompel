@@ -130,12 +130,12 @@ func TestSOQLByteCorpus(t *testing.T) {
 	}
 
 	cases := byteCorpusCases()
-	got := map[string]byteGolden{}
-	for _, c := range cases {
-		status, body := wire(c)
-		got[c.ID] = byteGolden{Status: status, Body: toGolden.Replace(body)}
-	}
 	if os.Getenv("UPDATE_GOLDEN") != "" {
+		got := map[string]byteGolden{}
+		for _, c := range cases {
+			status, body := wire(c)
+			got[c.ID] = byteGolden{Status: status, Body: toGolden.Replace(body)}
+		}
 		raw, err := json.MarshalIndent(byteFixture{SchemaVersion: 1, Expected: got}, "", " ")
 		if err != nil {
 			t.Fatal(err)

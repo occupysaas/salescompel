@@ -29,7 +29,8 @@ func soqlErr(t *testing.T, s *Store, p Principal, text string) error {
 
 // queryBehavior executes one query through the engine and reports the closed
 // error code when it fails. The old differential oracle was retired with the
-// bounded grammar in Task 9; the 35-case fixture pins byte-identical JSON.
+// bounded grammar in Task 9; TestSOQLByteCorpus pins the wire bytes, while the
+// 35-case fixture pins the observed JSON shape.
 func queryBehavior(t *testing.T, s *Store, p Principal, text string) (string, []byte) {
 	t.Helper()
 	res, err := s.Query(context.Background(), p, text, 2000)
