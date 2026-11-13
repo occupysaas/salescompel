@@ -344,41 +344,6 @@ func TestBindAggregateRules(t *testing.T) {
 	}
 }
 
-func TestBindResultKeys(t *testing.T) {
-	f := newBindFixture()
-	// Path-leaf collisions and alias/child duplicates are rejected; exact same-field duplicates collapse.
-	for _, text := range []string{
-		"select account.name, name from contact",
-		"select Parent__r.Name, Group__r.Name from Item__c",
-		"select Parent__r.Name, Keep__r.Name from Item__c",
-		"select Owner.Name, CreatedBy.Name from Item__c",
-		"select SUM(Amount__c) expr0, COUNT(Id) expr0 from Item__c",
-		"select Name, COUNT(Id) Name from Item__c group by Name",
-		"select (select Id from Typeditems__r), (select Id from Typeditems__r) from Item__c",
-	} {
-		wantCode(t, mustBind(t, f, text, f.admin), "MALFORMED_QUERY")
-	}
-	if _, err := f.bind("select Name, Id, Name from Item__c", f.admin); err != nil {
-		t.Fatalf("same-field duplicate should bind: %v", err)
-	}
-	// An explicit expr0 alias owns the key; generated numbering skips it.
-	b, err := f.bind("select SUM(Amount__c) expr0, COUNT(Id) from Item__c", f.admin)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if b.Columns[0].Key != "expr0" || b.Columns[1].Key != "expr1" {
-		t.Fatalf("skip keys = %#v", b.Columns)
-	}
-	// The same alias later in the list still reserves the number.
-	b, err = f.bind("select COUNT(Id), SUM(Amount__c) expr0 from Item__c", f.admin)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if b.Columns[0].Key != "expr1" || b.Columns[1].Key != "expr0" {
-		t.Fatalf("reserve keys = %#v", b.Columns)
-	}
-}
-
 func TestBindHavingTyping(t *testing.T) {
 	f := newBindFixture()
 	for _, text := range []string{

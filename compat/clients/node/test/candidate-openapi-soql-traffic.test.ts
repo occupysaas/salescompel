@@ -47,7 +47,10 @@ const parentPath = () =>
         },
       ],
       columnMetadata: [
-        { columnName: "Account", joinColumns: [{ columnName: "Name" }] },
+        {
+          columnName: "Account",
+          joinColumns: [{ columnName: "Name", joinColumns: [] }],
+        },
       ],
     },
   );
@@ -71,7 +74,7 @@ const nestedParentPath = () =>
         joinColumns: [
           {
             columnName: "Parent__r",
-            joinColumns: [{ columnName: "Name" }],
+            joinColumns: [{ columnName: "Name", joinColumns: [] }],
           },
         ],
       },
@@ -99,7 +102,53 @@ const childRelationship = () =>
       ],
       columnMetadata: [
         { columnName: "Name" },
-        { columnName: "Contacts", joinColumns: [{ columnName: "LastName" }] },
+        {
+          columnName: "Contacts",
+          joinColumns: [{ columnName: "LastName", joinColumns: [] }],
+        },
+      ],
+    },
+  );
+
+const childPlainAndParentLeaf = () =>
+  exchange(
+    "GET",
+    query(
+      "SELECT Name, (SELECT Name, Account.Name FROM Contacts) FROM Account",
+    ),
+    200,
+    {
+      done: true,
+      totalSize: 1,
+      records: [
+        {
+          attributes: { type: "Account" },
+          Name: "Acme",
+          Contacts: {
+            totalSize: 1,
+            done: true,
+            records: [
+              {
+                attributes: { type: "Contact" },
+                Name: "Jane Doe",
+                Account: { attributes: { type: "Account" }, Name: "Acme" },
+              },
+            ],
+          },
+        },
+      ],
+      columnMetadata: [
+        { columnName: "Name" },
+        {
+          columnName: "Contacts",
+          joinColumns: [
+            { columnName: "Name", joinColumns: [] },
+            {
+              columnName: "Account",
+              joinColumns: [{ columnName: "Name", joinColumns: [] }],
+            },
+          ],
+        },
       ],
     },
   );
@@ -142,8 +191,11 @@ const childParentPath = () =>
         {
           columnName: "Contacts",
           joinColumns: [
-            { columnName: "Account", joinColumns: [{ columnName: "Name" }] },
-            { columnName: "MailingAddress" },
+            {
+              columnName: "Account",
+              joinColumns: [{ columnName: "Name", joinColumns: [] }],
+            },
+            { columnName: "MailingAddress", joinColumns: [] },
           ],
         },
       ],
@@ -172,7 +224,7 @@ const customParentAccount = () =>
         { columnName: "Name" },
         {
           columnName: "CustomLookup__r",
-          joinColumns: [{ columnName: "Name" }],
+          joinColumns: [{ columnName: "Name", joinColumns: [] }],
         },
       ],
     },
@@ -191,7 +243,10 @@ const customParentContact = () =>
     ],
     columnMetadata: [
       { columnName: "LastName" },
-      { columnName: "Other__r", joinColumns: [{ columnName: "Name" }] },
+      {
+        columnName: "Other__r",
+        joinColumns: [{ columnName: "Name", joinColumns: [] }],
+      },
     ],
   });
 
@@ -252,7 +307,9 @@ const childDeepParentPath = () =>
                           joinColumns: [
                             {
                               columnName: "E__r",
-                              joinColumns: [{ columnName: "Name" }],
+                              joinColumns: [
+                                { columnName: "Name", joinColumns: [] },
+                              ],
                             },
                           ],
                         },
@@ -331,12 +388,38 @@ const describe = (object = "Account", childSObject = "Contact") =>
     queryable: true,
   });
 
+// Mirrors @salesforce/plugin-data 5.1.16 searchSubColumnsRecursively: every
+// entry reached through joinColumns must expose joinColumns as an array, or
+// the CLI reads .length of undefined. Leaf entries carry an explicit [].
+const cliSearchSubColumns = (parent: unknown): string[] => {
+  const column = parent as { columnName?: unknown; joinColumns?: unknown };
+  const name = String(column.columnName);
+  if (!Array.isArray(column.joinColumns))
+    throw new Error(`joinColumns must be an array for ${name}`);
+  return column.joinColumns.length
+    ? column.joinColumns.flatMap((child) =>
+        cliSearchSubColumns(child).map((sub) => `${name}.${sub}`),
+      )
+    : [name];
+};
+
+const cliColumnNames = (metadata: unknown[]) => {
+  const names: string[] = [];
+  for (const raw of metadata) {
+    const column = raw as { columnName: string; joinColumns?: unknown[] };
+    if (Array.isArray(column.joinColumns) && column.joinColumns.length)
+      names.push(...cliSearchSubColumns(column));
+  }
+  return names;
+};
+
 test("accepts SOQL contract additions", async () => {
   const v = await validator();
   const samples = [
     parentPath(),
     nestedParentPath(),
     childRelationship(),
+    childPlainAndParentLeaf(),
     childParentPath(),
     childDeepParentPath(),
     customParentAccount(),
@@ -352,6 +435,26 @@ test("accepts SOQL contract additions", async () => {
   assert.equal(v.validate(parentPath()).operationId, "candidateQuery");
   assert.equal(v.validate(secondPage()).operationId, "candidateQueryMore");
   assert.equal(v.validate(describe()).operationId, "candidateDescribeAccount");
+});
+
+test("accepts the pinned CLI recursive column traversal", async () => {
+  const v = await validator();
+  for (const sample of [
+    parentPath(),
+    nestedParentPath(),
+    childRelationship(),
+    childPlainAndParentLeaf(),
+    childParentPath(),
+    childDeepParentPath(),
+    customParentAccount(),
+    customParentContact(),
+  ]) {
+    valid(v.validate(sample));
+    const body = JSON.parse(
+      Buffer.from(sample.response.body).toString("utf8"),
+    ) as { columnMetadata: unknown[] };
+    assert.ok(cliColumnNames(body.columnMetadata).length > 0);
+  }
 });
 
 test("accepts every locked query error code", async () => {
@@ -442,7 +545,8 @@ test("rejects malformed SOQL contract exchanges", async () => {
     Buffer.from(tooDeepChildColumn.response.body).toString("utf8"),
   );
   let pointer = deepBody.columnMetadata[1].joinColumns[0];
-  while (pointer.joinColumns[0].joinColumns) pointer = pointer.joinColumns[0];
+  while (pointer.joinColumns[0]?.joinColumns?.length)
+    pointer = pointer.joinColumns[0];
   pointer.joinColumns = [
     { columnName: "F__r", joinColumns: [{ columnName: "Name" }] },
   ];

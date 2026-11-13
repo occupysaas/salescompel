@@ -2151,13 +2151,14 @@ components:
       additionalProperties: false
       required:
         - columnName
+        - joinColumns
       properties:
         columnName:
           type: string
           minLength: 1
         joinColumns:
           type: array
-          minItems: 1
+          minItems: 0
           items:
             $ref: "#/components/schemas/ColumnJoin3"
         aggregate:
@@ -2167,13 +2168,14 @@ components:
       additionalProperties: false
       required:
         - columnName
+        - joinColumns
       properties:
         columnName:
           type: string
           minLength: 1
         joinColumns:
           type: array
-          minItems: 1
+          minItems: 0
           items:
             $ref: "#/components/schemas/ColumnJoin4"
         aggregate:
@@ -2183,13 +2185,14 @@ components:
       additionalProperties: false
       required:
         - columnName
+        - joinColumns
       properties:
         columnName:
           type: string
           minLength: 1
         joinColumns:
           type: array
-          minItems: 1
+          minItems: 0
           items:
             $ref: "#/components/schemas/ColumnJoin5"
         aggregate:
@@ -2199,13 +2202,14 @@ components:
       additionalProperties: false
       required:
         - columnName
+        - joinColumns
       properties:
         columnName:
           type: string
           minLength: 1
         joinColumns:
           type: array
-          minItems: 1
+          minItems: 0
           items:
             $ref: "#/components/schemas/ColumnJoin6"
         aggregate:
@@ -2215,13 +2219,14 @@ components:
       additionalProperties: false
       required:
         - columnName
+        - joinColumns
       properties:
         columnName:
           type: string
           minLength: 1
         joinColumns:
           type: array
-          minItems: 1
+          minItems: 0
           items:
             $ref: "#/components/schemas/ColumnLeaf"
         aggregate:
@@ -2232,12 +2237,17 @@ components:
       additionalProperties: false
       required:
         - columnName
+        - joinColumns
       properties:
         columnName:
           type: string
           minLength: 1
+        joinColumns:
+          type: array
+          maxItems: 0
         aggregate:
           type: boolean
+      description: Leaf nested inside joinColumns. The pinned CLI reads joinColumns as an array on every nested entry, so leaves carry an explicit empty array; a sixth hop is refused.
     QueryResult:
       type: object
       additionalProperties: false

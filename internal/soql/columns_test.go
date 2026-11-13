@@ -30,17 +30,27 @@ func TestColumnMetadataShapes(t *testing.T) {
 		{
 			name:  "parent path",
 			query: "select parent__r.name from item__c",
-			want:  `[{"columnName":"Parent__r","joinColumns":[{"columnName":"Name"}]}]`,
+			want:  `[{"columnName":"Parent__r","joinColumns":[{"columnName":"Name","joinColumns":[]}]}]`,
 		},
 		{
 			name:  "nested parent path",
 			query: "select self__r.self__r.name from loop__c",
-			want:  `[{"columnName":"Self__r","joinColumns":[{"columnName":"Self__r","joinColumns":[{"columnName":"Name"}]}]}]`,
+			want:  `[{"columnName":"Self__r","joinColumns":[{"columnName":"Self__r","joinColumns":[{"columnName":"Name","joinColumns":[]}]}]}]`,
 		},
 		{
 			name:  "child subquery",
 			query: "select name, (select name from typeditems__r) from item__c",
-			want:  `[{"columnName":"Name"},{"columnName":"Typeditems__r","joinColumns":[{"columnName":"Name"}]}]`,
+			want:  `[{"columnName":"Name"},{"columnName":"Typeditems__r","joinColumns":[{"columnName":"Name","joinColumns":[]}]}]`,
+		},
+		{
+			name:  "child plain and parent leaf sharing a name",
+			query: "select name, (select name, item__r.name from typeditems__r) from item__c",
+			want:  `[{"columnName":"Name"},{"columnName":"Typeditems__r","joinColumns":[{"columnName":"Name","joinColumns":[]},{"columnName":"Item__r","joinColumns":[{"columnName":"Name","joinColumns":[]}]}]}]`,
+		},
+		{
+			name:  "distinct parent paths sharing a leaf",
+			query: "select parent__r.name, group__r.name from item__c",
+			want:  `[{"columnName":"Parent__r","joinColumns":[{"columnName":"Name","joinColumns":[]}]},{"columnName":"Group__r","joinColumns":[{"columnName":"Name","joinColumns":[]}]}]`,
 		},
 		{
 			name:  "aggregate keys",

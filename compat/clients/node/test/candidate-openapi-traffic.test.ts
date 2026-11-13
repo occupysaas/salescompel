@@ -50,7 +50,10 @@ test("validatesCandidateExchanges", async () => {
         totalSize: 1,
         records: [{ attributes: { type: "Contact" }, Account: null }],
         columnMetadata: [
-          { columnName: "Account", joinColumns: [{ columnName: "Name" }] },
+          {
+            columnName: "Account",
+            joinColumns: [{ columnName: "Name", joinColumns: [] }],
+          },
         ],
       },
     ),

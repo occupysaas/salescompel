@@ -300,7 +300,10 @@ test(
       );
       assert.deepEqual(json(relationship).columnMetadata, [
         { columnName: "Id" },
-        { columnName: "Account", joinColumns: [{ columnName: "Name" }] },
+        {
+          columnName: "Account",
+          joinColumns: [{ columnName: "Name", joinColumns: [] }],
+        },
       ]);
       const nullRelationship = checked(
         await query(

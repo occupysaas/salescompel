@@ -61,6 +61,61 @@ func TestQueryColumnsOptions(t *testing.T) {
 		})
 	}
 }
+
+// TestHTTPDistinctLeafPaths pins SELECT Name, Account.Name: both projections
+// share the leaf name but shape to distinct JSON keys. The root value must
+// survive parent nesting, and the nested metadata leaf must carry joinColumns
+// so the pinned CLI's recursive traversal never reads an undefined length.
+func TestHTTPDistinctLeafPaths(t *testing.T) {
+	s := testStore(t)
+	a, _ := principals(t, s)
+	ctx := context.Background()
+	account, err := s.Create(ctx, a, "Account", map[string]any{"Name": "Acme"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	contact, err := s.Create(ctx, a, "Contact", map[string]any{
+		"FirstName": "Jane", "LastName": "Doe", "AccountId": account,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	h := NewHandler(s, "")
+	query := "SELECT Name, Account.Name FROM Contact WHERE Id = '" + contact + "'"
+	want := map[string]any{
+		"totalSize": float64(1),
+		"done":      true,
+		"records": []any{map[string]any{
+			"attributes": map[string]any{"type": "Contact"},
+			"Name":       "Jane Doe",
+			"Account": map[string]any{
+				"attributes": map[string]any{"type": "Account"},
+				"Name":       "Acme",
+			},
+		}},
+		"columnMetadata": []any{
+			map[string]any{"columnName": "Name"},
+			map[string]any{
+				"columnName": "Account",
+				"joinColumns": []any{
+					map[string]any{"columnName": "Name", "joinColumns": []any{}},
+				},
+			},
+		},
+	}
+	r := httptest.NewRequest("GET", "/services/data/v65.0/query?q="+url.QueryEscape(query)+"&columns=true", nil)
+	r.Header.Set("Authorization", "Bearer token-"+a.Tenant)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+	var got any
+	if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil {
+		t.Fatal(err)
+	}
+	if w.Code != 200 || !reflect.DeepEqual(got, want) {
+		t.Fatalf("status %d want 200\nbody %s\nwant %v", w.Code, w.Body.String(), want)
+	}
+}
+
 func TestHTTPQueryColumns(t *testing.T)       { runColumnsContract(t, false) }
 func TestHTTPQueryColumnsPolicy(t *testing.T) { runColumnsContract(t, true) }
 func runColumnsContract(t *testing.T, policy bool) {

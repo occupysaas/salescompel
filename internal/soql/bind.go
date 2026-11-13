@@ -67,15 +67,21 @@ func (c *bindCtx) takeKey(key string) error {
 	return nil
 }
 
-// recordKey records a FieldRef result key. Exact same-field duplicates
-// (same key, same path) collapse; distinct paths sharing a leaf name reject.
+// recordKey records a FieldRef result key. Exact same-field duplicates (same
+// key, same path) collapse. Distinct paths sharing a leaf keep their path
+// identity and shape to distinct JSON keys (root Name versus Account.Name), so
+// they bind. A key already taken by an alias, generated expr, child or
+// expanded FIELDS() entry still rejects.
 func (c *bindCtx) recordKey(key, pkey string) error {
 	lower := strings.ToLower(key)
 	if existing, ok := c.keyPaths[lower]; ok {
-		if existing != pkey {
-			return malformed("duplicate field selected")
+		if existing == pkey {
+			return nil // same field, same path: collapse
 		}
-		return nil // same field, same path: collapse
+		return nil // distinct path: separate shaped key
+	}
+	if c.keys[lower] {
+		return malformed("duplicate field selected")
 	}
 	c.keys[lower] = true
 	c.keyPaths[lower] = pkey

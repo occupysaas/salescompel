@@ -240,17 +240,30 @@ func shapeRow(bound *Bound, plan *Plan, vals []any) map[string]any {
 		attrs["type"] = "AggregateResult"
 	}
 	rec := map[string]any{"attributes": attrs}
+	type nestOp struct {
+		col BoundColumn
+		raw any
+	}
+	// Parent-path values nest into relationship objects. They never occupy the
+	// flat result key, so a root leaf and a parent leaf with the same name
+	// (Name and Account.Name) cannot overwrite or delete each other.
+	var pathCols []nestOp
 	colIdx := 0
 	for i, col := range bound.Columns {
+		var value any
 		if comps, ok := plan.Compound[i]; ok {
 			raw := vals[colIdx : colIdx+len(comps)]
 			colIdx += len(comps)
-			rec[col.Key] = AddressValue(col.Field, comps, raw)
+			value = AddressValue(col.Field, comps, raw)
+		} else {
+			value = wireColumnValue(col, vals[colIdx])
+			colIdx++
+		}
+		if len(col.Path) > 0 {
+			pathCols = append(pathCols, nestOp{col: col, raw: value})
 			continue
 		}
-		v := vals[colIdx]
-		colIdx++
-		rec[col.Key] = wireColumnValue(col, v)
+		rec[col.Key] = value
 	}
 
 	// Detect null parent levels from hidden join id columns.
@@ -260,19 +273,6 @@ func shapeRow(bound *Bound, plan *Plan, vals []any) map[string]any {
 	}
 
 	// Nest parent-path columns into their relationship objects.
-	type nestOp struct {
-		col BoundColumn
-		raw any
-	}
-	var pathCols []nestOp
-	for _, col := range bound.Columns {
-		if len(col.Path) == 0 {
-			continue
-		}
-		raw := rec[col.Key]
-		delete(rec, col.Key)
-		pathCols = append(pathCols, nestOp{col: col, raw: raw})
-	}
 	for _, op := range pathCols {
 		nestPath(rec, op.col, op.raw, joinNull, plan)
 	}
