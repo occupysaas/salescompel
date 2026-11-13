@@ -312,11 +312,12 @@ runs a child subquery and `COUNT()`.
 Verification scope and result:
 
 - **Scope:** full candidate acceptance (`scope: full`), all 13 gates.
-- **Source revision:** `3c974dd1da376e449909f0e15f6c5883a3b1d798`.
-  The later documentation-only closeout commit does not change the source
-  bindings.
-- **Report:** `/home/user001/plan29-acceptance/plan29-task10-accepted.json`,
-  SHA-256 `bae1110db100432b520f26ea58093ccbc1a23b04329c8ca733332eff6257f13c`,
+- **Source revision:** `9d506f789ee3751b09e5b9022b9fbb403ae1d23a`.
+  This quality-review commit splits the oversized CLI traffic test and tightens
+  the acceptance checks. The later documentation-only closeout commit does not
+  change the source bindings.
+- **Report:** `/home/user001/plan29-acceptance/plan29-quality-9d506f7-r4.json`,
+  SHA-256 `4dc72acd172fa226e8b4ae4a077e08a4f0559b74f5f86fb1f26f5b90d05b08c1`,
   outcome `passed`, `acceptanceEligible: true`, tree clean at the run.
 - **Required skips:** 0. **Total skips:** 6, all in the lab gate and all the
   allowed offline parents: `candidate/composite/atomic`,
@@ -334,8 +335,8 @@ Verification scope and result:
   `--test-concurrency=min(4, availableParallelism())` (1–4 workers). A
   two-CPU acceptance host otherwise serializes every test file and misses the
   documented 20-minute deadline; the cap bounds memory and fixed-port pressure.
-- **Run time:** 2026-11-13T06:42:55.277Z to 2026-11-13T06:57:06.036Z
-  (14 minutes 11 seconds, inside the documented 20-minute deadline).
+- **Run time:** 2026-11-13T07:55:37.973Z to 2026-11-13T08:09:41.207Z
+  (14 minutes 3 seconds, inside the documented 20-minute deadline).
 
 | Gate | Passed | Failed | Skipped |
 | --- | ---: | ---: | ---: |
@@ -358,13 +359,16 @@ events; the Node test command itself reported 474 top-level tests: 468 passed,
 0 failed and 6 skipped. The six skips are the allowed offline parents listed
 above; required skips are 0.
 
-Standalone checks at the same source revision also passed: `go vet ./...` exit
-0; `go test -race ./... -count=1` with a fresh disposable owner URL and fresh
-restricted `TEST_RECORDS_URL`/`TEST_IDENTITY_URL` exit 0; `FuzzParse` for 120
-seconds exit 0 (2,347,252 executions, no crashers); `npm --prefix
-compat/clients/node run check` exit 0 (474 tests: 468 passed, 0 failed, 6
-skipped); `npm --prefix web test` exit 0 (10 passed); `npm --prefix web run
-build` exit 0; `openspec validate --all --strict` green.
+Acceptance at the new source revision also ran `go test -race ./... -count=1`,
+`go vet ./...`, the Node check (474 tests: 468 passed, 0 failed, 6 skipped),
+the web unit tests (10 passed) and the web build. A standalone
+`npm --prefix compat/clients/node run check` at the same revision exited 0 with
+the same Node counts, and `openspec validate --all --strict` was green. The
+120-second `FuzzParse` run (2,347,252 executions, no crashers) remains from the
+prior accepted source `3c974dd1da376e449909f0e15f6c5883a3b1d798`; this
+quality-review change touched only TypeScript acceptance tests/checks and docs,
+not the Go parser. The web gate's 11 passes are the 10 unit tests plus the build
+step.
 
 Residual gaps not implemented by Plan 29: independent child-subquery paging
 (child results have no `nextRecordsUrl`; over-2,000 child sets fail closed
