@@ -321,13 +321,19 @@ runs a child subquery and `COUNT()`.
 Verification scope and result:
 
 - **Scope:** full candidate acceptance (`scope: full`), all 13 gates.
-- **Source revision:** `9d506f789ee3751b09e5b9022b9fbb403ae1d23a`.
-  This quality-review commit splits the oversized CLI traffic test and tightens
-  the acceptance checks. The later documentation-only closeout commit does not
-  change the source bindings.
-- **Report:** `/home/user001/plan29-acceptance/plan29-quality-9d506f7-r4.json`,
-  SHA-256 `4dc72acd172fa226e8b4ae4a077e08a4f0559b74f5f86fb1f26f5b90d05b08c1`,
-  outcome `passed`, `acceptanceEligible: true`, tree clean at the run.
+- **Source revision:** `e8130a5a77b8f1514e3c23bde0ea1bf42ab8586a`.
+  This final cross-task fix commit corrects locator membership under changed
+  filters, aggregate binder allowlists, aggregate relationship
+  OpenAPI/metadata, LIKE escaping, timezone independence, child FK policy, and
+  exact OFFSET totals/no-locator gap. The later documentation-only closeout
+  commit does not change the source bindings.
+- **Report:** `/home/user001/plan29-acceptance/plan29-final-e8130a5-r1.json`,
+  SHA-256 `3633b3914d7f91a5789a8407f258175777704879177fa7e9b14b79f2a86e5dbe`,
+  outcome `passed`, `acceptanceEligible: true`, tree clean at the run. This
+  supersedes the earlier `9d506f7` report
+  (`/home/user001/plan29-acceptance/plan29-quality-9d506f7-r4.json`, SHA-256
+  `4dc72acd172fa226e8b4ae4a077e08a4f0559b74f5f86fb1f26f5b90d05b08c1`), which
+  is retained rather than rewritten.
 - **Required skips:** 0. **Total skips:** 6, all in the lab gate and all the
   allowed offline parents: `candidate/composite/atomic`,
   `candidate/foundation/decisions`, `candidate/openapi/traffic`,
@@ -337,20 +343,21 @@ Verification scope and result:
 - **Cleanup:** verified; 455 journaled records removed, 0 unknown intents, and
   all owned processes stopped. The disposable database and temporary restricted
   roles were dropped after the run.
-- **Tools:** PostgreSQL 17; Go 1.25.14 with `GOTOOLCHAIN=go1.25.0`; Node 22.23.2;
-  JSforce 3.11.0; Salesforce CLI 2.156.0; plugin-data 5.1.16; simple-salesforce
-  1.12.9; Python 3.12.13; OpenSSL 3.5.5; Chrome for Testing 153.0.8010.
+- **Tools:** PostgreSQL 17.12; Go 1.25.14 with `GOTOOLCHAIN=go1.25.0`; Node
+  22.23.2; JSforce 3.11.0; Salesforce CLI 2.156.0; plugin-data 5.1.16;
+  simple-salesforce 1.12.9; Python 3.12.13; OpenSSL 3.5.5; Chrome for Testing
+  153.0.8010.
 - **Node concurrency:** the candidate Node test command runs with
   `--test-concurrency=min(4, availableParallelism())` (1–4 workers). A
   two-CPU acceptance host otherwise serializes every test file and misses the
   documented 20-minute deadline; the cap bounds memory and fixed-port pressure.
-- **Run time:** 2026-11-13T07:55:37.973Z to 2026-11-13T08:09:41.207Z
-  (14 minutes 3 seconds, inside the documented 20-minute deadline).
+- **Run time:** 2026-11-13T09:51:26.384Z to 2026-11-13T10:07:33.470Z
+  (16 minutes 7 seconds, inside the documented 20-minute deadline).
 
 | Gate | Passed | Failed | Skipped |
 | --- | ---: | ---: | ---: |
 | bindings | 3 | 0 | 0 |
-| database | 808 | 0 | 0 |
+| database | 829 | 0 | 0 |
 | lab | 474 | 0 | 6 |
 | web | 11 | 0 | 0 |
 | jsforce | 6 | 0 | 0 |
@@ -368,16 +375,15 @@ events; the Node test command itself reported 474 top-level tests: 468 passed,
 0 failed and 6 skipped. The six skips are the allowed offline parents listed
 above; required skips are 0.
 
-Acceptance at the new source revision also ran `go test -race ./... -count=1`,
-`go vet ./...`, the Node check (474 tests: 468 passed, 0 failed, 6 skipped),
-the web unit tests (10 passed) and the web build. A standalone
-`npm --prefix compat/clients/node run check` at the same revision exited 0 with
-the same Node counts, and `openspec validate --all --strict` was green. The
-120-second `FuzzParse` run (2,347,252 executions, no crashers) remains from the
-prior accepted source `3c974dd1da376e449909f0e15f6c5883a3b1d798`; this
-quality-review change touched only TypeScript acceptance tests/checks and docs,
-not the Go parser. The web gate's 11 passes are the 10 unit tests plus the build
-step.
+Acceptance at the new source revision also ran `go test -race ./... -count=1`
+(12 packages, exit 0), `go vet ./...` (exit 0), the Node check (474 tests: 468
+passed, 0 failed, 6 skipped), the web unit tests (10 passed) and the web build.
+A standalone `npm --prefix compat/clients/node run check` at the same revision
+exited 0 with the same Node counts, and `openspec validate --all --strict`
+passed its one item. A 120-second `FuzzParse` run at `e8130a5` completed
+1,500,967 executions with no crashers and exited 0. The web gate's 11 passes
+are the 10 unit tests plus the build step. This closeout records verification
+of the existing Plan 29 implementation; it adds no new feature.
 
 Residual gaps not implemented by Plan 29: independent child-subquery paging
 (child results have no `nextRecordsUrl`; over-2,000 child sets fail closed
