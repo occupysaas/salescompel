@@ -179,26 +179,21 @@ const customParentAccount = () =>
   );
 
 const customParentContact = () =>
-  exchange(
-    "GET",
-    query("SELECT LastName, Other__r.Name FROM Contact"),
-    200,
-    {
-      done: true,
-      totalSize: 1,
-      records: [
-        {
-          attributes: { type: "Contact" },
-          LastName: "Child",
-          Other__r: { attributes: { type: "Account" }, Name: "Linked" },
-        },
-      ],
-      columnMetadata: [
-        { columnName: "LastName" },
-        { columnName: "Other__r", joinColumns: [{ columnName: "Name" }] },
-      ],
-    },
-  );
+  exchange("GET", query("SELECT LastName, Other__r.Name FROM Contact"), 200, {
+    done: true,
+    totalSize: 1,
+    records: [
+      {
+        attributes: { type: "Contact" },
+        LastName: "Child",
+        Other__r: { attributes: { type: "Account" }, Name: "Linked" },
+      },
+    ],
+    columnMetadata: [
+      { columnName: "LastName" },
+      { columnName: "Other__r", joinColumns: [{ columnName: "Name" }] },
+    ],
+  });
 
 const aggregate = () =>
   exchange(
@@ -364,10 +359,9 @@ test("rejects malformed SOQL contract exchanges", async () => {
       },
     ],
   });
-  assert.deepEqual(
-    v.validate(badChildParent).responseIssues,
-    ["response-schema"],
-  );
+  assert.deepEqual(v.validate(badChildParent).responseIssues, [
+    "response-schema",
+  ]);
 
   const badCustomParentAccount = customParentAccount();
   badCustomParentAccount.response.body = bytes({
@@ -382,10 +376,9 @@ test("rejects malformed SOQL contract exchanges", async () => {
       },
     ],
   });
-  assert.deepEqual(
-    v.validate(badCustomParentAccount).responseIssues,
-    ["response-schema"],
-  );
+  assert.deepEqual(v.validate(badCustomParentAccount).responseIssues, [
+    "response-schema",
+  ]);
 
   const badCustomParentContact = customParentContact();
   badCustomParentContact.response.body = bytes({
@@ -400,10 +393,9 @@ test("rejects malformed SOQL contract exchanges", async () => {
       },
     ],
   });
-  assert.deepEqual(
-    v.validate(badCustomParentContact).responseIssues,
-    ["response-schema"],
-  );
+  assert.deepEqual(v.validate(badCustomParentContact).responseIssues, [
+    "response-schema",
+  ]);
 
   const badAggregate = aggregate();
   badAggregate.response.body = bytes({
