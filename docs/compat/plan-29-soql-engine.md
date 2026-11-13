@@ -330,6 +330,10 @@ Verification scope and result:
 - **Tools:** PostgreSQL 17; Go 1.25.14 with `GOTOOLCHAIN=go1.25.0`; Node 22.23.2;
   JSforce 3.11.0; Salesforce CLI 2.156.0; plugin-data 5.1.16; simple-salesforce
   1.12.9; Python 3.12.13; OpenSSL 3.5.5; Chrome for Testing 153.0.8010.
+- **Node concurrency:** the candidate Node test command runs with
+  `--test-concurrency=min(4, availableParallelism())` (1–4 workers). A
+  two-CPU acceptance host otherwise serializes every test file and misses the
+  documented 20-minute deadline; the cap bounds memory and fixed-port pressure.
 - **Run time:** 2026-11-13T06:42:55.277Z to 2026-11-13T06:57:06.036Z
   (14 minutes 11 seconds, inside the documented 20-minute deadline).
 

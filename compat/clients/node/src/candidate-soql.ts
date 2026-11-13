@@ -188,6 +188,8 @@ async function createRecordBatches(
       assert.equal(entry.body?.success, true);
       assert.equal(typeof entry.body?.id, "string");
     }
+    // One sentinel per 25-name batch: table-drop cleanup owns every P29 object
+    // row, so the journal records all batch names plus the first returned id.
     await recordFixtureEvent(c.fixtureJournal, {
       ...e,
       kind: "known",
@@ -242,6 +244,10 @@ export async function soqlClientChecks(
     ),
   );
   assert.equal(contacts.length, accountCount);
+  assert.deepEqual(
+    new Set(contacts.map((contact) => contact.LastName)),
+    new Set(Array.from({ length: accountCount }, (_, i) => n.contact(i))),
+  );
   const contactAccounts = new Map(
     Array.from({ length: accountCount }, (_, i) => [
       n.contact(i),

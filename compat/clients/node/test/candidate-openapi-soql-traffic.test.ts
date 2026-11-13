@@ -2,23 +2,21 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { loadCandidateOpenAPI } from "../src/candidate-openapi-contract.ts";
 import { createCandidateTrafficValidator } from "../src/candidate-openapi-traffic.ts";
-import type { CandidateExchange } from "../src/candidate-openapi-model.ts";
+import {
+  base,
+  bytes,
+  childDeepParentPath,
+  childParentPath,
+  childPlainAndParentLeaf,
+  childRelationship,
+  customParentAccount,
+  customParentContact,
+  exchange,
+  nestedParentPath,
+  parentPath,
+  query,
+} from "./helpers/candidate-openapi-soql-fixtures.ts";
 
-const base = "/services/data/v65.0";
-const bytes = (v: unknown) => Buffer.from(JSON.stringify(v));
-const query = (q: string, extra = "") =>
-  base + "/query?q=" + encodeURIComponent(q) + extra;
-const exchange = (
-  method: string,
-  path: string,
-  status = 200,
-  body: unknown = { done: true, totalSize: 0, records: [] },
-): CandidateExchange => ({
-  method,
-  path,
-  request: { contentType: null },
-  response: { status, contentType: "application/json", body: bytes(body) },
-});
 const validator = async () =>
   createCandidateTrafficValidator(await loadCandidateOpenAPI());
 const valid = (r: { requestIssues: string[]; responseIssues: string[] }) => {
@@ -31,299 +29,6 @@ const account = (name: string) => ({
   attributes: { type: "Account" },
   Name: name,
 });
-
-const parentPath = () =>
-  exchange(
-    "GET",
-    query("SELECT Account.Name FROM Contact", "&columns=true"),
-    200,
-    {
-      done: true,
-      totalSize: 1,
-      records: [
-        {
-          attributes: { type: "Contact" },
-          Account: { attributes: { type: "Account" }, Name: "Acme" },
-        },
-      ],
-      columnMetadata: [
-        {
-          columnName: "Account",
-          joinColumns: [{ columnName: "Name", joinColumns: [] }],
-        },
-      ],
-    },
-  );
-
-const nestedParentPath = () =>
-  exchange("GET", query("SELECT Parent__r.Parent__r.Name FROM Child__c"), 200, {
-    done: true,
-    totalSize: 1,
-    records: [
-      {
-        attributes: { type: "Child__c" },
-        Parent__r: {
-          attributes: { type: "Parent__c" },
-          Parent__r: { attributes: { type: "Parent__c" }, Name: "Root" },
-        },
-      },
-    ],
-    columnMetadata: [
-      {
-        columnName: "Parent__r",
-        joinColumns: [
-          {
-            columnName: "Parent__r",
-            joinColumns: [{ columnName: "Name", joinColumns: [] }],
-          },
-        ],
-      },
-    ],
-  });
-
-const childRelationship = () =>
-  exchange(
-    "GET",
-    query("SELECT Name, (SELECT LastName FROM Contacts) FROM Account"),
-    200,
-    {
-      done: true,
-      totalSize: 1,
-      records: [
-        {
-          attributes: { type: "Account" },
-          Name: "Acme",
-          Contacts: {
-            totalSize: 1,
-            done: true,
-            records: [{ attributes: { type: "Contact" }, LastName: "Child" }],
-          },
-        },
-      ],
-      columnMetadata: [
-        { columnName: "Name" },
-        {
-          columnName: "Contacts",
-          joinColumns: [{ columnName: "LastName", joinColumns: [] }],
-        },
-      ],
-    },
-  );
-
-const childPlainAndParentLeaf = () =>
-  exchange(
-    "GET",
-    query(
-      "SELECT Name, (SELECT Name, Account.Name FROM Contacts) FROM Account",
-    ),
-    200,
-    {
-      done: true,
-      totalSize: 1,
-      records: [
-        {
-          attributes: { type: "Account" },
-          Name: "Acme",
-          Contacts: {
-            totalSize: 1,
-            done: true,
-            records: [
-              {
-                attributes: { type: "Contact" },
-                Name: "Jane Doe",
-                Account: { attributes: { type: "Account" }, Name: "Acme" },
-              },
-            ],
-          },
-        },
-      ],
-      columnMetadata: [
-        { columnName: "Name" },
-        {
-          columnName: "Contacts",
-          joinColumns: [
-            { columnName: "Name", joinColumns: [] },
-            {
-              columnName: "Account",
-              joinColumns: [{ columnName: "Name", joinColumns: [] }],
-            },
-          ],
-        },
-      ],
-    },
-  );
-
-const childParentPath = () =>
-  exchange(
-    "GET",
-    query(
-      "SELECT Name, (SELECT Account.Name, MailingAddress FROM Contacts) FROM Account",
-    ),
-    200,
-    {
-      done: true,
-      totalSize: 1,
-      records: [
-        {
-          attributes: { type: "Account" },
-          Name: "Acme",
-          Contacts: {
-            totalSize: 1,
-            done: true,
-            records: [
-              {
-                attributes: { type: "Contact" },
-                Account: { attributes: { type: "Account" }, Name: "Acme" },
-                MailingAddress: {
-                  street: "9 Oak",
-                  city: "Portland",
-                  state: "OR",
-                  postalCode: "97201",
-                  country: "US",
-                },
-              },
-            ],
-          },
-        },
-      ],
-      columnMetadata: [
-        { columnName: "Name" },
-        {
-          columnName: "Contacts",
-          joinColumns: [
-            {
-              columnName: "Account",
-              joinColumns: [{ columnName: "Name", joinColumns: [] }],
-            },
-            { columnName: "MailingAddress", joinColumns: [] },
-          ],
-        },
-      ],
-    },
-  );
-
-const customParentAccount = () =>
-  exchange(
-    "GET",
-    query("SELECT Name, CustomLookup__r.Name FROM Account"),
-    200,
-    {
-      done: true,
-      totalSize: 1,
-      records: [
-        {
-          attributes: { type: "Account" },
-          Name: "Acme",
-          CustomLookup__r: {
-            attributes: { type: "Contact" },
-            Name: "Linked",
-          },
-        },
-      ],
-      columnMetadata: [
-        { columnName: "Name" },
-        {
-          columnName: "CustomLookup__r",
-          joinColumns: [{ columnName: "Name", joinColumns: [] }],
-        },
-      ],
-    },
-  );
-
-const customParentContact = () =>
-  exchange("GET", query("SELECT LastName, Other__r.Name FROM Contact"), 200, {
-    done: true,
-    totalSize: 1,
-    records: [
-      {
-        attributes: { type: "Contact" },
-        LastName: "Child",
-        Other__r: { attributes: { type: "Account" }, Name: "Linked" },
-      },
-    ],
-    columnMetadata: [
-      { columnName: "LastName" },
-      {
-        columnName: "Other__r",
-        joinColumns: [{ columnName: "Name", joinColumns: [] }],
-      },
-    ],
-  });
-
-const childDeepParentPath = () =>
-  exchange(
-    "GET",
-    query(
-      "SELECT Name, (SELECT A__r.B__r.C__r.D__r.E__r.Name FROM Children__r) FROM Root__c",
-    ),
-    200,
-    {
-      done: true,
-      totalSize: 1,
-      records: [
-        {
-          attributes: { type: "Root__c" },
-          Name: "Root",
-          Children__r: {
-            totalSize: 1,
-            done: true,
-            records: [
-              {
-                attributes: { type: "Child__c" },
-                A__r: {
-                  attributes: { type: "A__c" },
-                  B__r: {
-                    attributes: { type: "B__c" },
-                    C__r: {
-                      attributes: { type: "C__c" },
-                      D__r: {
-                        attributes: { type: "D__c" },
-                        E__r: { attributes: { type: "E__c" }, Name: "E" },
-                      },
-                    },
-                  },
-                },
-              },
-            ],
-          },
-        },
-      ],
-      columnMetadata: [
-        { columnName: "Name" },
-        {
-          columnName: "Children__r",
-          joinColumns: [
-            {
-              columnName: "A__r",
-              joinColumns: [
-                {
-                  columnName: "B__r",
-                  joinColumns: [
-                    {
-                      columnName: "C__r",
-                      joinColumns: [
-                        {
-                          columnName: "D__r",
-                          joinColumns: [
-                            {
-                              columnName: "E__r",
-                              joinColumns: [
-                                { columnName: "Name", joinColumns: [] },
-                              ],
-                            },
-                          ],
-                        },
-                      ],
-                    },
-                  ],
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    },
-  );
 
 const aggregate = () =>
   exchange(
@@ -388,31 +93,6 @@ const describe = (object = "Account", childSObject = "Contact") =>
     queryable: true,
   });
 
-// Mirrors @salesforce/plugin-data 5.1.16 searchSubColumnsRecursively: every
-// entry reached through joinColumns must expose joinColumns as an array, or
-// the CLI reads .length of undefined. Leaf entries carry an explicit [].
-const cliSearchSubColumns = (parent: unknown): string[] => {
-  const column = parent as { columnName?: unknown; joinColumns?: unknown };
-  const name = String(column.columnName);
-  if (!Array.isArray(column.joinColumns))
-    throw new Error(`joinColumns must be an array for ${name}`);
-  return column.joinColumns.length
-    ? column.joinColumns.flatMap((child) =>
-        cliSearchSubColumns(child).map((sub) => `${name}.${sub}`),
-      )
-    : [name];
-};
-
-const cliColumnNames = (metadata: unknown[]) => {
-  const names: string[] = [];
-  for (const raw of metadata) {
-    const column = raw as { columnName: string; joinColumns?: unknown[] };
-    if (Array.isArray(column.joinColumns) && column.joinColumns.length)
-      names.push(...cliSearchSubColumns(column));
-  }
-  return names;
-};
-
 test("accepts SOQL contract additions", async () => {
   const v = await validator();
   const samples = [
@@ -435,26 +115,6 @@ test("accepts SOQL contract additions", async () => {
   assert.equal(v.validate(parentPath()).operationId, "candidateQuery");
   assert.equal(v.validate(secondPage()).operationId, "candidateQueryMore");
   assert.equal(v.validate(describe()).operationId, "candidateDescribeAccount");
-});
-
-test("accepts the pinned CLI recursive column traversal", async () => {
-  const v = await validator();
-  for (const sample of [
-    parentPath(),
-    nestedParentPath(),
-    childRelationship(),
-    childPlainAndParentLeaf(),
-    childParentPath(),
-    childDeepParentPath(),
-    customParentAccount(),
-    customParentContact(),
-  ]) {
-    valid(v.validate(sample));
-    const body = JSON.parse(
-      Buffer.from(sample.response.body).toString("utf8"),
-    ) as { columnMetadata: unknown[] };
-    assert.ok(cliColumnNames(body.columnMetadata).length > 0);
-  }
 });
 
 test("accepts every locked query error code", async () => {

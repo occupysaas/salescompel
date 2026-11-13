@@ -11,8 +11,4 @@ export {
   type SchemaClientContext,
 } from "./candidate-schema-client-checks.ts";
 export { verifySchemaRestart } from "./candidate-schema-restart.ts";
-export {
-  createSoqlSchemaFixtures,
-  runSoqlPython,
-  soqlNames,
-} from "./candidate-soql.ts";
+export { createSoqlSchemaFixtures, runSoqlPython } from "./candidate-soql.ts";
