@@ -15,7 +15,10 @@ test("bounded subprocess captures private logs, exit status and terminates a han
   const r = await runCommand(
     {
       executable: process.execPath,
-      argv: ["-e", 'console.log("secret-canary");process.exitCode=3'],
+      argv: [
+        "-e",
+        'process.stdout.write("secret-canary\\n");process.exitCode=3',
+      ],
       cwd: dir,
       env: {},
     },
@@ -48,7 +51,13 @@ test("shutdown owns grandchildren after the leader exits and escalates resistant
       executable: process.execPath,
       argv: [
         "-e",
-        `const {spawn}=require('node:child_process');const c=spawn(process.execPath,['-e', 'process.on("SIGTERM",()=>{});console.log("ready");setInterval(()=>{},1000)'],{stdio:['ignore','pipe','ignore']});c.stdout.once('data',()=>{console.log(c.pid);c.stdout.destroy();c.unref()})`,
+        // The inner `-e` source is escaped twice (template literal → leader
+        // source → eval), so its newline must stay an escape through both
+        // layers; `\\\\n` here is `\n` in the leader's string literal. A
+        // literal newline there is a SyntaxError, which made the grandchild
+        // exit 1 and left the capture empty — the pid of a group must never
+        // come from an empty parse.
+        `const {spawn}=require('node:child_process');const {writeSync}=require('node:fs');const c=spawn(process.execPath,['-e', 'process.on("SIGTERM",()=>{});process.stdout.write("ready\\\\n");setInterval(()=>{},1000)'],{stdio:['ignore','pipe','ignore']});c.stdout.once('data',()=>{writeSync(1,String(c.pid)+"\\n");c.stdout.destroy();c.unref()})`,
       ],
       cwd: dir,
       env: {},
@@ -57,6 +66,10 @@ test("shutdown owns grandchildren after the leader exits and escalates resistant
     "lab",
   );
   const pid = Number((await readFile(result.resultPath, "utf8")).trim());
+  assert.ok(
+    Number.isInteger(pid) && pid > 0,
+    `cleanup must never signal a group: result capture yielded pid ${pid}`,
+  );
   t.after(() => {
     try {
       process.kill(pid, "SIGKILL");
@@ -88,7 +101,7 @@ test("OAuth subprocess output is captured in memory before any evidence is writt
       privateOutput: (stdout: string, stderr: string) => {
         captured = { stdout, stderr };
       },
-    } as any,
+    },
     context,
     "oauth",
   );

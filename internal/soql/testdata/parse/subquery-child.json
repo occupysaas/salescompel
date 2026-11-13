@@ -1,0 +1,48 @@
+{
+ "select": [
+  {
+   "kind": "field",
+   "path": [
+    "Name"
+   ]
+  },
+  {
+   "kind": "subquery",
+   "query": {
+    "select": [
+     {
+      "kind": "field",
+      "path": [
+       "LastName"
+      ]
+     }
+    ],
+    "from": "Contacts",
+    "where": null,
+    "groupBy": null,
+    "having": null,
+    "orderBy": [
+     {
+      "value": {
+       "kind": "field",
+       "path": [
+        "LastName"
+       ]
+      },
+      "desc": false,
+      "nulls": "default"
+     }
+    ],
+    "limit": 2,
+    "offset": null
+   }
+  }
+ ],
+ "from": "Account",
+ "where": null,
+ "groupBy": null,
+ "having": null,
+ "orderBy": null,
+ "limit": null,
+ "offset": null
+}

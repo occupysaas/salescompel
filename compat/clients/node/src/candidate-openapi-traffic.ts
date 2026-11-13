@@ -68,35 +68,38 @@ export async function createCandidateTrafficValidator(
   document: unknown,
 ): Promise<CandidateTrafficValidator> {
   try {
-    await validateOpenApi(document);
-    const d = structuredClone(document) as any;
-    const lookup = (ref: string): any => {
+    await validateOpenApi(document as Record<string, any>);
+    const d = structuredClone(document) as Record<string, any>;
+    const lookup = (ref: string): unknown => {
       if (
         !/^#\/components\/(schemas|responses|requestBodies|parameters)\/[A-Za-z][A-Za-z0-9_]*$/.test(
           ref,
         )
       )
         return fail();
-      let value = d;
+      let value: unknown = d;
       for (const key of ref.slice(2).split("/")) {
-        if (!value || !Object.hasOwn(value, key)) return fail();
-        value = value[key];
+        if (!value || !Object.hasOwn(value as object, key)) return fail();
+        value = (value as Record<string, any>)[key];
       }
       return value;
     };
-    const resolve = (value: any): any => {
+    const resolve = (value: unknown): unknown => {
       const visited = new Set<string>();
-      while (value?.$ref) {
-        if (Object.keys(value).length !== 1 || visited.has(value.$ref))
-          return fail();
-        visited.add(value.$ref);
-        value = lookup(value.$ref);
+      let current: unknown = value;
+      for (;;) {
+        const node = current as { $ref?: unknown } | null | undefined;
+        if (!node?.$ref) return current;
+        const ref = node.$ref as string;
+        if (Object.keys(node).length !== 1 || visited.has(ref)) return fail();
+        visited.add(ref);
+        current = lookup(ref);
       }
-      return value;
     };
     // Ref cycles and unsupported schema annotations cannot hide behind lazy use.
-    function schemaWalk(s: any, active: Set<string>): void {
+    function schemaWalk(s: unknown, active: Set<string>): void {
       if (!s || typeof s !== "object" || Array.isArray(s)) return fail();
+      const node = s as Record<string, any>;
       const allowed = new Set([
         "$ref",
         "type",
@@ -121,30 +124,39 @@ export async function createCandidateTrafficValidator(
         "description",
         "title",
       ]);
-      for (const key of Object.keys(s)) if (!allowed.has(key)) return fail();
+      for (const key of Object.keys(node)) if (!allowed.has(key)) return fail();
       if (
-        Object.hasOwn(s, "additionalProperties") &&
-        s.additionalProperties !== false
+        Object.hasOwn(node, "additionalProperties") &&
+        node.additionalProperties !== false
       )
         return fail();
-      if (s.$ref) {
-        if (active.has(s.$ref) || !s.$ref.startsWith("#/components/schemas/"))
+      if (node.$ref) {
+        const ref = node.$ref as string;
+        if (active.has(ref) || !ref.startsWith("#/components/schemas/"))
           return fail();
         const next = new Set(active);
-        next.add(s.$ref);
-        schemaWalk(lookup(s.$ref), next);
+        next.add(ref);
+        schemaWalk(lookup(ref), next);
       }
-      for (const child of Object.values(s.properties ?? {}))
+      for (const child of Object.values(
+        (node.properties as Record<string, any>) ?? {},
+      ))
         schemaWalk(child, active);
-      for (const child of Object.values(s.patternProperties ?? {}))
+      for (const child of Object.values(
+        (node.patternProperties as Record<string, any>) ?? {},
+      ))
         schemaWalk(child, active);
-      if (s.items) schemaWalk(s.items, active);
+      if (node.items) schemaWalk(node.items, active);
       for (const key of ["oneOf", "anyOf", "allOf"])
-        for (const child of s[key] ?? []) schemaWalk(child, active);
+        for (const child of (node[key] as unknown[]) ?? [])
+          schemaWalk(child, active);
     }
-    for (const schema of Object.values(d.components?.schemas ?? {}))
+    for (const schema of Object.values(
+      (d.components as Record<string, Record<string, any>> | undefined)
+        ?.schemas ?? {},
+    ))
       schemaWalk(schema, new Set());
-    function rewrite(value: any): any {
+    function rewrite(value: unknown): unknown {
       if (Array.isArray(value)) return value.map(rewrite);
       if (!value || typeof value !== "object") return value;
       return Object.fromEntries(
@@ -167,18 +179,26 @@ export async function createCandidateTrafficValidator(
     });
     ajv.addSchema({
       $id: "urn:salescompel:candidate",
-      $defs: rewrite(d.components?.schemas ?? {}),
+      $defs: rewrite(
+        (d.components as Record<string, Record<string, any>> | undefined)
+          ?.schemas ?? {},
+      ) as Record<string, any>,
     });
     const cache = new Map<string, ValidateFunction>();
-    const compile = (schema: any): ValidateFunction => {
+    const compile = (schema: unknown): ValidateFunction => {
       schemaWalk(schema, new Set());
       const key = JSON.stringify(schema);
-      if (!cache.has(key)) cache.set(key, ajv.compile(rewrite(schema)));
+      if (!cache.has(key))
+        cache.set(
+          key,
+          ajv.compile(rewrite(schema) as Parameters<Ajv2020["compile"]>[0]),
+        );
       return cache.get(key)!;
     };
-    const content = (c: any, request = false): Media[] | undefined => {
+    const content = (c: unknown, request = false): Media[] | undefined => {
       if (c === undefined) return undefined;
-      const names = Object.keys(c);
+      const map = c as Record<string, Record<string, any>>;
+      const names = Object.keys(map);
       if (!names.length || (request && names.length !== 1)) return fail();
       return names.map((name) => {
         if (
@@ -189,17 +209,19 @@ export async function createCandidateTrafficValidator(
           ).includes(name)
         )
           return fail();
-        if (Object.keys(c[name]).some((k) => k !== "schema")) return fail();
-        if (name === "text/html" && resolve(c[name].schema).type !== "string")
+        if (Object.keys(map[name]).some((k) => k !== "schema")) return fail();
+        if (
+          name === "text/html" &&
+          (resolve(map[name].schema) as { type?: unknown }).type !== "string"
+        )
           return fail();
-        return { name, check: compile(c[name].schema) };
+        return { name, check: compile(map[name].schema) };
       });
     };
     const routes: Route[] = [];
-    for (const [path, item] of Object.entries(d.paths ?? {}) as [
-      string,
-      any,
-    ][]) {
+    for (const [path, item] of Object.entries(
+      (d.paths ?? {}) as Record<string, Record<string, any>>,
+    )) {
       if (!path.startsWith("/") || path.includes("?") || path.includes("#"))
         return fail();
       const segments = path.slice(1).split("/");
@@ -215,7 +237,8 @@ export async function createCandidateTrafficValidator(
         operations: new Map(),
         literalCount: segments.filter((s) => !s.startsWith("{")).length,
       };
-      for (const [method, raw] of Object.entries(item) as [string, any][]) {
+      for (const [method, rawValue] of Object.entries(item)) {
+        const raw = rawValue as Record<string, any>;
         if (!["get", "post", "patch", "delete"].includes(method)) return fail();
         if (
           Object.keys(raw).some(
@@ -236,8 +259,8 @@ export async function createCandidateTrafficValidator(
         if (raw.security !== undefined && JSON.stringify(raw.security) !== "[]")
           return fail();
         const parameters: Parameter[] = [];
-        for (const p0 of raw.parameters ?? []) {
-          const p = resolve(p0);
+        for (const p0 of (raw.parameters as unknown[]) ?? []) {
+          const p = resolve(p0) as Record<string, any>;
           if (
             Object.keys(p).some(
               (k) =>
@@ -251,8 +274,8 @@ export async function createCandidateTrafficValidator(
                   "description",
                 ].includes(k),
             ) ||
-            !["path", "query"].includes(p.in) ||
-            p.schema?.type !== "string"
+            !["path", "query"].includes(p.in as string) ||
+            (p.schema as { type?: unknown } | undefined)?.type !== "string"
           )
             return fail();
           const style = p.style ?? (p.in === "path" ? "simple" : "form");
@@ -263,8 +286,8 @@ export async function createCandidateTrafficValidator(
           )
             return fail();
           parameters.push({
-            name: p.name,
-            in: p.in,
+            name: p.name as string,
+            in: p.in as "path" | "query",
             required: p.required === true,
             check: compile(p.schema),
           });
@@ -285,7 +308,7 @@ export async function createCandidateTrafficValidator(
         let request: Media | undefined;
         let requestRequired = false;
         if (raw.requestBody) {
-          const rb = resolve(raw.requestBody);
+          const rb = resolve(raw.requestBody) as Record<string, any>;
           if (
             Object.keys(rb).some(
               (k) => !["required", "description", "content"].includes(k),
@@ -297,9 +320,11 @@ export async function createCandidateTrafficValidator(
           requestRequired = rb.required === true;
         }
         const responses = new Map<number, Media[] | undefined>();
-        for (const [status, r0] of Object.entries(raw.responses)) {
+        for (const [status, r0] of Object.entries(
+          raw.responses as Record<string, any>,
+        )) {
           if (!/^[1-5][0-9]{2}$/.test(status)) return fail();
-          const r = resolve(r0);
+          const r = resolve(r0) as Record<string, any>;
           if (
             Object.keys(r).some(
               (k) => !["description", "content", "headers"].includes(k),
@@ -307,9 +332,9 @@ export async function createCandidateTrafficValidator(
           )
             return fail();
           if (r.headers) {
-            if (Object.keys(r.headers).some((k) => k !== "Allow"))
-              return fail();
-            compile(r.headers.Allow.schema);
+            const headers = r.headers as Record<string, Record<string, any>>;
+            if (Object.keys(headers).some((k) => k !== "Allow")) return fail();
+            compile(headers.Allow.schema);
           }
           const m = content(r.content);
           if (status === "204" && m) return fail();

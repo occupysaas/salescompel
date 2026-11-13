@@ -1,0 +1,1 @@
+SELECT FISCAL_MONTH(CreatedDate) fm, FISCAL_QUARTER(CreatedDate) fq, FISCAL_YEAR(CreatedDate) fy FROM Item__c

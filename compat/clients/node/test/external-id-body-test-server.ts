@@ -19,7 +19,7 @@ export async function bodyFixture(t: TestContext) {
   const dir = await mkdtemp(join(tmpdir(), "p11-body-"));
   t.after(() => rm(dir, { recursive: true, force: true }));
   const rows = new Map<string, RecordState>(),
-    calls: { path: string; method: string; body: any }[] = [];
+    calls: { path: string; method: string; body: unknown }[] = [];
   const flags = {
     originalHypothesis: false,
     missingId: false,

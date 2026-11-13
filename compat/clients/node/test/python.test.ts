@@ -13,7 +13,7 @@ function context(dir: string, destroy: (id: string) => Promise<unknown>) {
     conn: {
       instanceUrl: "https://example.invalid",
       sobject: () => ({ destroy }),
-    } as any,
+    } as unknown as Context["conn"],
     env: {},
     prefix: "SYNTHETIC",
     runId: "test-run",
@@ -75,7 +75,7 @@ test("python fixtures: a crashed probe's journaled IDs are adopted for cleanup",
     const deleted: string[] = [];
     const c = context(dir, async (id) => {
       deleted.push(id);
-      const e: any = new Error("gone");
+      const e = new Error("gone") as Error & { errorCode: string };
       e.errorCode = "ENTITY_IS_DELETED";
       throw e;
     });

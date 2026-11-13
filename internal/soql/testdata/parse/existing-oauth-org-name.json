@@ -1,0 +1,17 @@
+{
+ "select": [
+  {
+   "kind": "field",
+   "path": [
+    "Name"
+   ]
+  }
+ ],
+ "from": "Organization",
+ "where": null,
+ "groupBy": null,
+ "having": null,
+ "orderBy": null,
+ "limit": null,
+ "offset": null
+}

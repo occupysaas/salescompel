@@ -1,9 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {
-  foundationScenarios,
-  recordWireObservation,
-} from "../src/foundation.ts";
+import { foundationScenarios } from "../src/foundation.ts";
+import { recordWireObservation } from "../src/foundation-helpers.ts";
 import { normalize } from "../src/core.ts";
 import type { Context } from "../src/scenarios.ts";
 
@@ -34,7 +32,10 @@ test("wire observations retain status, field presence, ordering and locator rout
   assert.ok(!out.includes("private reference prose"));
   assert.match(out, /INVALID_FIELD/);
   assert.match(out, /messageType/);
-  const normalized: any = normalize(c.result.observations, c.result.identities);
+  const normalized = normalize(
+    c.result.observations,
+    c.result.identities,
+  ) as Record<string, Record<string, any>>;
   assert.deepEqual(normalized.page.body.records, [{ Id: "a" }, { Id: "b" }]);
   assert.equal(normalized.page.status, 200);
   assert.equal(
@@ -110,7 +111,7 @@ test("a failed second fixture create leaves the first journaled and cleanable", 
   });
   await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
   t.after(() => server.close());
-  const instanceUrl = `http://127.0.0.1:${(server.address() as any).port}`;
+  const instanceUrl = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
   const tracker = new FixtureTracker(join(dir, "journal.jsonl"));
   const c = {
     conn: new Connection({
@@ -176,7 +177,7 @@ test("text equality probe produces a valid identity map even when case and norma
   });
   await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
   t.after(() => server.close());
-  const url = `http://127.0.0.1:${(server.address() as any).port}`;
+  const url = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
   const c = {
     conn: new Connection({
       instanceUrl: url,
@@ -238,7 +239,7 @@ test("name probe records state after each potentially overwriting PATCH", async 
   const { join } = await import("node:path");
   const dir = await mkdtemp(join(tmpdir(), "names-state-"));
   t.after(() => rm(dir, { recursive: true, force: true }));
-  let value: any = null;
+  let value: unknown = null;
   const id = "001000000000001AAA";
   const server = createServer(async (req, res) => {
     res.setHeader("content-type", "application/json");
@@ -284,7 +285,7 @@ test("name probe records state after each potentially overwriting PATCH", async 
   });
   await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
   t.after(() => server.close());
-  const url = `http://127.0.0.1:${(server.address() as any).port}`;
+  const url = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
   const c = {
     conn: new Connection({
       instanceUrl: url,
@@ -311,10 +312,13 @@ test("name probe records state after each potentially overwriting PATCH", async 
     cleanup: [],
   } as Context;
   await foundationScenarios["foundation-names"](c);
-  const o = c.result.observations as any;
-  assert.equal(o["after-lower-json"]?.body.Compat_Text__c, "lower");
-  assert.equal(o["after-duplicate-alias"]?.body.Compat_Text__c, "second");
-  assert.equal(o["after-duplicate-raw"]?.body.Compat_Text__c, "second");
+  const o = c.result.observations as Record<
+    string,
+    { body?: Record<string, any> }
+  >;
+  assert.equal(o["after-lower-json"]?.body?.Compat_Text__c, "lower");
+  assert.equal(o["after-duplicate-alias"]?.body?.Compat_Text__c, "second");
+  assert.equal(o["after-duplicate-raw"]?.body?.Compat_Text__c, "second");
 });
 
 test("projection and name-equality probes request deterministic fixture ordering", async (t) => {
@@ -359,7 +363,7 @@ test("projection and name-equality probes request deterministic fixture ordering
       tracker: { intent: async () => {}, add: async () => {} },
       env: {
         COMPAT_API_VERSION: "65.0",
-        COMPAT_CANDIDATE_URL: `http://127.0.0.1:${(server.address() as any).port}`,
+        COMPAT_CANDIDATE_URL: `http://127.0.0.1:${(server.address() as { port: number }).port}`,
         COMPAT_CANDIDATE_TOKEN: "synthetic",
       },
       prefix: "COMPAT_CANDIDATE",

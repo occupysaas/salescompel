@@ -1,0 +1,63 @@
+{
+ "select": [
+  {
+   "kind": "call",
+   "func": "CALENDAR_QUARTER",
+   "args": [
+    {
+     "kind": "field",
+     "path": [
+      "CreatedDate"
+     ]
+    }
+   ],
+   "alias": "cq"
+  },
+  {
+   "kind": "call",
+   "func": "CALENDAR_MONTH",
+   "args": [
+    {
+     "kind": "field",
+     "path": [
+      "CreatedDate"
+     ]
+    }
+   ],
+   "alias": "cm"
+  },
+  {
+   "kind": "call",
+   "func": "DAY_IN_MONTH",
+   "args": [
+    {
+     "kind": "field",
+     "path": [
+      "CreatedDate"
+     ]
+    }
+   ],
+   "alias": "dim"
+  },
+  {
+   "kind": "call",
+   "func": "DAY_IN_WEEK",
+   "args": [
+    {
+     "kind": "field",
+     "path": [
+      "CreatedDate"
+     ]
+    }
+   ],
+   "alias": "diw"
+  }
+ ],
+ "from": "Item__c",
+ "where": null,
+ "groupBy": null,
+ "having": null,
+ "orderBy": null,
+ "limit": null,
+ "offset": null
+}

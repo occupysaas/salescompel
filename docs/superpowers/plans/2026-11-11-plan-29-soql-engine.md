@@ -60,7 +60,7 @@ Execute Tasks 1–10 in order. Migrations 0005 and 0006 are separate files and l
 **Interfaces:** Produces a status table with one row per spec *candidate* (calls 1–11, and the `NOT IN` null rule, `INCLUDES` case and wrong-type error), each marked `observed`, `documented` or `gap`, with its source. Task 10 completes it.
 
 - [ ] **Step 1: Review release notes since 2026-11-11** for SOQL and REST query changes. Attempt each spec Sources URL, and use search results when direct fetch is refused, as in Plan 28. Record pages that cannot be retrieved.
-- [ ] **Step 2: If an authorized trial-org session exists,** observe each item listed in spec §10 Task 1. Otherwise record "no session". This step never blocks.
+- [ ] **Step 2: If an authorized trial-org session exists,** observe each item listed in spec Sec. 10 Task 1. Otherwise record "no session". This step never blocks.
 - [ ] **Step 3: If an observation contradicts a candidate,** update the spec and this plan before Task 2.
 - [ ] **Step 4: Commit** with `docs: record Plan 29 reference review`.
 
@@ -70,7 +70,7 @@ Execute Tasks 1–10 in order. Migrations 0005 and 0006 are separate files and l
 
 **Interfaces (produces):**
 - `type Pos struct{ Offset int }`. `type Token struct{ Kind TokenKind; Text string; Pos Pos }`. Kinds: `Ident`, `String`, `Number`, `Date`, `DateTime`, `DateLiteral` (with optional `:n`), `Op`, `LParen`, `RParen`, `Comma`, `Keyword`, `EOF`.
-- `func Lex(text string) ([]Token, error)`. Rejects invalid UTF-8, NUL, unclosed strings and unknown escapes with `MALFORMED_QUERY`. Decodes the escapes in spec §1. Inside strings it keeps `\%` and `\_` as escaped wildcards (`Token.Text` stores them as `\%`/`\_` for LIKE).
+- `func Lex(text string) ([]Token, error)`. Rejects invalid UTF-8, NUL, unclosed strings and unknown escapes with `MALFORMED_QUERY`. Decodes the escapes in spec Sec. 1. Inside strings it keeps `\%` and `\_` as escaped wildcards (`Token.Text` stores them as `\%`/`\_` for LIKE).
 - AST:
   - `type Query struct{ Select []SelectItem; From Name; Alias string; Where Expr; GroupBy []ValueExpr; Having Expr; OrderBy []OrderItem; Limit *int; Offset *int; With string; Pos Pos }`.
   - `SelectItem` is an interface implemented by `*FieldRef{Path []string}`, `*SubQuery{Query *Query}`, `*Aggregate{Func string; Arg *FieldRef; Alias string}`, `*Call{Func string; Args []ValueExpr; Alias string}` (`toLabel` and date functions), `*FieldsAll{Kind string}` and `*TypeOf{...}`.
@@ -322,14 +322,14 @@ OpenAPI adds:
 
 `x-source` points to the Plan 29 spec at its committed SHA, registered in `docs/compat/sources.yaml`.
 
-- [ ] **Step 1: Write failing tests.**
+- [x] **Step 1: Write failing tests.**
   - The column fixture gains the expected bodies for `unsupported-traversal` (now a parent path) and `unsupported-aggregate` (now `COUNT()`), with basis tags updated. All other 33 cases are unchanged.
   - Node traffic tests: one valid and one invalid exchange each for a parent path, child relationship, aggregate, `COUNT()`, a paged first page plus `queryMore`, describe with `childRelationships`, and each error code.
   - The contract inventory test includes `candidateQueryMore`.
-- [ ] **Step 2: Run `npm --prefix compat/clients/node run check` and `TEST_DATABASE_URL=<disposable-url> GOTOOLCHAIN=go1.25.0 go test ./internal/platform -run 'Columns|OpenAPI' -count=1`.** Expected: fail.
-- [ ] **Step 3: Implement.** Delete the old grammar once `grep -rn "query.Parse\|query.Select" internal` shows no callers.
-- [ ] **Step 4: Run Step 2 and full `go test -race ./...`.** Expected: pass.
-- [ ] **Step 5: Commit** with `feat: document the SOQL engine contract and retire the bounded grammar`.
+- [x] **Step 2: Run `npm --prefix compat/clients/node run check` and `TEST_DATABASE_URL=<disposable-url> GOTOOLCHAIN=go1.25.0 go test ./internal/platform -run 'Columns|OpenAPI' -count=1`.** Expected: fail.
+- [x] **Step 3: Implement.** Delete the old grammar once `grep -rn "query.Parse\|query.Select" internal` shows no callers.
+- [x] **Step 4: Run Step 2 and full `go test -race ./...`.** Expected: pass.
+- [x] **Step 5: Commit** with `feat: document the SOQL engine contract and retire the bounded grammar`.
 
 ### Task 10: Acceptance and documentation
 
@@ -369,15 +369,15 @@ Expected: every gate passes with all required IDs and zero required skips; clean
 ## Self-review
 
 Spec coverage:
-- §1 architecture → Tasks 2, 4, 5;
-- §2 SELECT → Tasks 5 (fields, paths), 6 (children), 7 (aggregates, `toLabel`, `FIELDS`);
-- §3 WHERE → Tasks 4 (typing, dates) and 5–6 (operators, semi-joins);
-- §4 grouping, ordering and WITH → Tasks 4, 5, 7;
-- §5 limits and errors → Task 4;
-- §6 paging → Task 8;
-- §7 child metadata → Task 3;
-- §8 security → Tasks 4 (binder) and 5, 6, 8 (tenant predicates, locators);
-- §9 compatibility and columns → Tasks 5 and 9;
-- §10 evidence → Tasks 1 and 10.
+- Sec. 1 architecture → Tasks 2, 4, 5;
+- Sec. 2 SELECT → Tasks 5 (fields, paths), 6 (children), 7 (aggregates, `toLabel`, `FIELDS`);
+- Sec. 3 WHERE → Tasks 4 (typing, dates) and 5–6 (operators, semi-joins);
+- Sec. 4 grouping, ordering and WITH → Tasks 4, 5, 7;
+- Sec. 5 limits and errors → Task 4;
+- Sec. 6 paging → Task 8;
+- Sec. 7 child metadata → Task 3;
+- Sec. 8 security → Tasks 4 (binder) and 5, 6, 8 (tenant predicates, locators);
+- Sec. 9 compatibility and columns → Tasks 5 and 9;
+- Sec. 10 evidence → Tasks 1 and 10.
 
 All five Review Focus items have owning tests. Names used across tasks: `soql.Parse`, `Bind`, `Bound`, `Compile`, `CompileChild`, `Run`, `RunAST`, `NextPage`, `Result`, `Options`, `Clock`, `DateLiteralRange`, `ColumnMetadata`, `Snapshot.ChildRelationship(s)`, `DefaultChildRelationshipName`, `records.Tx.Query`/`QueryMore`, `Store.Query`/`QueryMore`.

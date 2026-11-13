@@ -12,7 +12,9 @@ test("wire rejects off-origin paths before transport and never follows redirects
   });
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
   t.after(() => server.close());
-  const base = new URL(`http://127.0.0.1:${(server.address() as any).port}`);
+  const base = new URL(
+    `http://127.0.0.1:${(server.address() as { port: number }).port}`,
+  );
   for (const path of [
     "//other.invalid/x",
     "https://other.invalid/x",
@@ -29,7 +31,7 @@ test("wire rejects off-origin paths before transport and never follows redirects
 });
 
 test("wire preserves encoded path, method, headers, raw status and JSON properties", async (t) => {
-  const requests: any[] = [];
+  const requests: Record<string, unknown>[] = [];
   const server = createServer((req, res) => {
     requests.push({
       url: req.url,
@@ -49,7 +51,9 @@ test("wire preserves encoded path, method, headers, raw status and JSON properti
   });
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
   t.after(() => server.close());
-  const base = new URL(`http://127.0.0.1:${(server.address() as any).port}`);
+  const base = new URL(
+    `http://127.0.0.1:${(server.address() as { port: number }).port}`,
+  );
   const path =
     "/services/data/v65.0/sobjects/Account/Compat_Key__c/key%2F%25%C3%A9";
   const got = await wire(base, "synthetic", path, {
@@ -81,7 +85,9 @@ test("wire rejects oversized and stalled responses", async (t) => {
     server.closeAllConnections();
     server.close();
   });
-  const base = new URL(`http://127.0.0.1:${(server.address() as any).port}`);
+  const base = new URL(
+    `http://127.0.0.1:${(server.address() as { port: number }).port}`,
+  );
   await assert.rejects(
     wire(
       base,

@@ -48,7 +48,7 @@ const expected = [
 export interface RetrievedMember {
   type: "CustomField" | "PermissionSet";
   name: string;
-  data: any;
+  data: Record<string, any>;
 }
 export interface RetrievalResult {
   outcome: "complete" | "incomplete";
@@ -105,8 +105,9 @@ export async function scanRetrievedMetadata(
   }
   try {
     await walk(root);
-  } catch (e: any) {
-    if (e.code !== "ENOENT") throw e;
+  } catch (e: unknown) {
+    const err = e as { code?: string };
+    if (err.code !== "ENOENT") throw e;
   }
   const result: RetrievalResult = {
     outcome: found.size === 3 ? "complete" : "incomplete",
@@ -153,7 +154,7 @@ export async function scanRetrievedMetadata(
       "viewAllRecords",
       "modifyAllRecords",
     ]);
-    function values(x: any): any {
+    function values(x: unknown): unknown {
       if (Array.isArray(x)) return x.map(values);
       if (!x || typeof x !== "object") return x;
       return Object.fromEntries(
@@ -174,7 +175,7 @@ export async function scanRetrievedMetadata(
     result.members.push({
       type: item.type,
       name: item.name,
-      data: { ...values(body), fullName: item.name },
+      data: { ...(values(body) as Record<string, any>), fullName: item.name },
     });
     result.artifacts.push({
       path: item.path,
@@ -186,7 +187,7 @@ export async function scanRetrievedMetadata(
   return result;
 }
 export async function retrieveInSession(
-  run: (args: string[]) => Promise<any>,
+  run: (args: string[]) => Promise<Record<string, any>>,
   dir: string,
 ): Promise<RetrievalResult> {
   await writeFile(
@@ -203,7 +204,7 @@ export async function retrieveInSession(
     `<?xml version="1.0" encoding="UTF-8"?><Package xmlns="${namespace}"><types><members>Account.Compat_Text__c</members><members>Account.Compat_Key__c</members><name>CustomField</name></types><types><members>Compat_Admin</members><name>PermissionSet</name></types><version>65.0</version></Package>`,
     { flag: "wx", mode: 0o600 },
   );
-  let response: any;
+  let response: Record<string, any> | undefined;
   try {
     response = await run([
       "project",

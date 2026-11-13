@@ -13,9 +13,11 @@ export interface FixtureEvent {
   kind: "intent" | "known" | "deleted" | "absent" | "rejected";
   id?: string;
 }
+/** Open JSON object returned by a candidate endpoint; shape varies by operation. */
+export type JsonRecord = Record<string, any>;
 export interface Response {
   status: number;
-  body: any;
+  body: JsonRecord | null;
   exchange?: CandidateExchange;
 }
 export type Requester = (
@@ -167,12 +169,10 @@ export async function cleanupFixtures(
       try {
         let r = await request(c, e.principal, path);
         if (r.status !== 404) {
-          if (
-            r.status !== 200 ||
-            !e.names.includes(
-              r.body?.[e.object === "Contact" ? "LastName" : "Name"],
-            )
-          )
+          const nameValue = r.body?.[
+            e.object === "Contact" ? "LastName" : "Name"
+          ] as string | undefined;
+          if (r.status !== 200 || !e.names.some((n) => n === nameValue))
             throw new Error("FIXTURES");
           r = await request(c, e.principal, path, "DELETE");
           if (![204, 404].includes(r.status)) throw new Error("CLEANUP");
@@ -248,8 +248,13 @@ export async function trackFixtureAttempt<T extends { id?: string }>(
         id: result.id,
       });
     return result;
-  } catch (error: any) {
-    if (path && rejectedCodes.includes(error?.errorCode))
+  } catch (error: unknown) {
+    const err = error as { errorCode?: string } | null | undefined;
+    if (
+      path &&
+      typeof err?.errorCode === "string" &&
+      rejectedCodes.includes(err.errorCode)
+    )
       await recordFixtureEvent(path, { ...event, kind: "rejected" });
     throw error;
   }

@@ -1,0 +1,40 @@
+{
+ "select": [
+  {
+   "kind": "field",
+   "path": [
+    "Id"
+   ]
+  },
+  {
+   "kind": "field",
+   "path": [
+    "Name"
+   ]
+  },
+  {
+   "kind": "field",
+   "path": [
+    "Notes__c"
+   ]
+  }
+ ],
+ "from": "project__c",
+ "where": null,
+ "groupBy": null,
+ "having": null,
+ "orderBy": [
+  {
+   "value": {
+    "kind": "field",
+    "path": [
+     "Name"
+    ]
+   },
+   "desc": false,
+   "nulls": "default"
+  }
+ ],
+ "limit": 10,
+ "offset": null
+}

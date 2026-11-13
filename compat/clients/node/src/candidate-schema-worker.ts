@@ -21,10 +21,11 @@ try {
     throw new Error("SOURCE");
   const result = await runSchemaClientGate(c);
   process.stdout.write(JSON.stringify(result) + "\n");
-} catch (e: any) {
+} catch (e: unknown) {
+  const err = e as { code?: string };
   const code =
-    typeof e?.code === "string" && /^[A-Za-z0-9_-]{1,80}$/.test(e.code)
-      ? e.code
+    typeof err.code === "string" && /^[A-Za-z0-9_-]{1,80}$/.test(err.code)
+      ? err.code
       : "ASSERTION";
   process.stderr.write("Schema client failure: " + code + "\n");
   process.exitCode = 1;

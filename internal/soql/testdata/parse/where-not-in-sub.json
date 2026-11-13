@@ -1,0 +1,44 @@
+{
+ "select": [
+  {
+   "kind": "field",
+   "path": [
+    "Id"
+   ]
+  }
+ ],
+ "from": "Account",
+ "where": {
+  "kind": "in",
+  "left": {
+   "kind": "field",
+   "path": [
+    "Id"
+   ]
+  },
+  "not": true,
+  "values": null,
+  "sub": {
+   "select": [
+    {
+     "kind": "field",
+     "path": [
+      "AccountId"
+     ]
+    }
+   ],
+   "from": "Contact",
+   "where": null,
+   "groupBy": null,
+   "having": null,
+   "orderBy": null,
+   "limit": null,
+   "offset": null
+  }
+ },
+ "groupBy": null,
+ "having": null,
+ "orderBy": null,
+ "limit": null,
+ "offset": null
+}

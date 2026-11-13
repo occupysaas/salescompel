@@ -12,3 +12,12 @@ compat/private/
 web/dist/
 web/test-results/
 web/playwright-report/
+
+# Local agent tooling and test-environment notes — never commit.
+.devgate/
+.agent-guardrails/
+.guardrails/
+.claude/
+.gitmodules
+.github/workflows/devgate.yml
+.plan28-local.md

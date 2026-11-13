@@ -1066,7 +1066,17 @@
    "type": "url",
    "unique": false,
    "updateable": true
-  }
+  },
+  "childRelationships": [
+   {
+    "cascadeDelete": false,
+    "childSObject": "Contact",
+    "deprecatedAndHidden": false,
+    "field": "AccountId",
+    "relationshipName": "Contacts",
+    "restrictedDelete": true
+   }
+  ]
  },
  "Child__c": {
   "Id": {
@@ -1169,7 +1179,17 @@
    "type": "reference",
    "unique": false,
    "updateable": false
-  }
+  },
+  "childRelationships": [
+   {
+    "cascadeDelete": true,
+    "childSObject": "Grandchild__c",
+    "deprecatedAndHidden": false,
+    "field": "Child__c",
+    "relationshipName": "Grandchildren__r",
+    "restrictedDelete": false
+   }
+  ]
  },
  "Contact": {
   "AccountId": {
@@ -1843,7 +1863,8 @@
    "type": "string",
    "unique": false,
    "updateable": true
-  }
+  },
+  "childRelationships": []
  },
  "Item__c": {
   "Amount__c": {
@@ -2587,6 +2608,7 @@
    "type": "string",
    "unique": false,
    "updateable": true
-  }
+  },
+  "childRelationships": []
  }
 }

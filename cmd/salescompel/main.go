@@ -93,13 +93,13 @@ func dispatch(args []string, out io.Writer) error {
 		done, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 		defer stop()
 		errCh := make(chan error, 1)
-		go func() {
+		go func(ctx context.Context) {
 			if *cert != "" {
 				errCh <- server.ListenAndServeTLS(*cert, *key)
 			} else {
 				errCh <- server.ListenAndServe()
 			}
-		}()
+		}(done)
 		log.Printf("SalesCompel candidate listening on %s", *addr)
 		select {
 		case err = <-errCh:

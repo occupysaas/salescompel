@@ -41,13 +41,9 @@ func TestDynamicRecords(t *testing.T) {
 	if e != nil || row["Notes__c"] != nil {
 		t.Fatal(row, e)
 	}
-	q, e := ParseQuery("SELECT Id,Name,Notes__c FROM project__c ORDER BY Name LIMIT 10")
-	if e != nil {
-		t.Fatal(e)
-	}
-	rows, e := s.Select(ctx, p, q)
-	if e != nil || len(rows) != 1 || rows[0]["Name"] != "First" {
-		t.Fatal(rows, e)
+	res, e := s.Query(ctx, p, "SELECT Id,Name,Notes__c FROM project__c ORDER BY Name LIMIT 10", 2000)
+	if e != nil || len(res.Records) != 1 || res.Records[0]["Name"] != "First" {
+		t.Fatal(res.Records, e)
 	}
 }
 func TestDynamicCompatKeyIsOrdinaryText(t *testing.T) {

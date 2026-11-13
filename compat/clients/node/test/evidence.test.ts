@@ -59,7 +59,16 @@ function report(second = false): Report {
     })),
   };
 }
-function note(): any {
+type MutableNote = {
+  [key: string]: unknown;
+  review: { sanitized: boolean; reviewer: string; reviewedAt: string };
+  profileHash: string;
+  observer: string;
+  contracts: string[];
+  notes: { contract: string; summary: string }[];
+  captures: { sha256: string; startedAt: string; finishedAt: string }[];
+};
+function note(): MutableNote {
   return {
     schemaVersion: 1,
     id: "pilot-first",
@@ -102,15 +111,15 @@ test("capture pair accepts distinct sequential repeatable reports and rejects in
   assert.equal(result.captures.length, 2);
   assert.equal(verifyCapturePair(a, a, context).outcome, "blocked");
   for (const mutate of [
-    (r: any) => (r.provenance = "synthetic"),
-    (r: any) => (r.target = "candidate"),
-    (r: any) => (r.startedAt = "2026-01-01T00:00:10Z"),
-    (r: any) => (r.finishedAt = "2026-02-30T00:00:00Z"),
-    (r: any) => (r.cleanup = []),
-    (r: any) => (r.cleanup[0].outcome = "failed"),
-    (r: any) => r.results.pop(),
-    (r: any) => (r.apiVersion = "64.0"),
-    (r: any) => (r.connectors = { jsforce: "0.0.0" }),
+    (r: Report) => (r.provenance = "synthetic"),
+    (r: Report) => (r.target = "candidate"),
+    (r: Report) => (r.startedAt = "2026-01-01T00:00:10Z"),
+    (r: Report) => (r.finishedAt = "2026-02-30T00:00:00Z"),
+    (r: Report) => (r.cleanup = []),
+    (r: Report) => (r.cleanup[0].outcome = "failed"),
+    (r: Report) => r.results.pop(),
+    (r: Report) => (r.apiVersion = "64.0"),
+    (r: Report) => (r.connectors = { jsforce: "0.0.0" }),
   ]) {
     const r = report(true);
     mutate(r);
@@ -137,20 +146,20 @@ test("capture pair accepts distinct sequential repeatable reports and rejects in
 test("observation requires complete reviewed sanitized bindings", () => {
   assert.deepEqual(observationIssues(note(), schema, context, readiness), []);
   for (const mutate of [
-    (n: any) => (n.review.sanitized = false),
-    (n: any) => (n.review.reviewer = " "),
-    (n: any) => (n.review.reviewedAt = "2025-01-01T00:00:00Z"),
-    (n: any) => (n.review.reviewedAt = "2999-01-01T00:00:00Z"),
-    (n: any) => (n.profileHash = "b".repeat(64)),
-    (n: any) => (n.observer = "implementer"),
-    (n: any) => (n.contracts = ["unknown"]),
-    (n: any) => n.notes.pop(),
-    (n: any) => n.notes.push(n.notes[0]),
-    (n: any) => (n.captures[1].sha256 = n.captures[0].sha256),
-    (n: any) => (n.captures[1].startedAt = "2026-01-01T00:00:00Z"),
-    (n: any) => (n.secret = "bad"),
-    (n: any) => (n.notes[0].summary = "access_token=bad"),
-    (n: any) => (n.notes[0].summary = "User 005000000000001AAA"),
+    (n: MutableNote) => (n.review.sanitized = false),
+    (n: MutableNote) => (n.review.reviewer = " "),
+    (n: MutableNote) => (n.review.reviewedAt = "2025-01-01T00:00:00Z"),
+    (n: MutableNote) => (n.review.reviewedAt = "2999-01-01T00:00:00Z"),
+    (n: MutableNote) => (n.profileHash = "b".repeat(64)),
+    (n: MutableNote) => (n.observer = "implementer"),
+    (n: MutableNote) => (n.contracts = ["unknown"]),
+    (n: MutableNote) => n.notes.pop(),
+    (n: MutableNote) => n.notes.push(n.notes[0]),
+    (n: MutableNote) => (n.captures[1].sha256 = n.captures[0].sha256),
+    (n: MutableNote) => (n.captures[1].startedAt = "2026-01-01T00:00:00Z"),
+    (n: MutableNote) => (n.secret = "bad"),
+    (n: MutableNote) => (n.notes[0].summary = "access_token=bad"),
+    (n: MutableNote) => (n.notes[0].summary = "User 005000000000001AAA"),
   ]) {
     const n = note();
     mutate(n);

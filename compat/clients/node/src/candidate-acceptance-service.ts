@@ -102,7 +102,7 @@ export async function startCandidate(c: GateContext): Promise<OwnedService> {
       throw new Error("PROCESS");
     try {
       const r = await candidateRequest(c, "admin", "/services/oauth2/userinfo");
-      if (r.status === 200 && r.body.organization_id === c.tenants.first)
+      if (r.status === 200 && r.body?.organization_id === c.tenants.first)
         return owned;
     } catch {}
     await new Promise((r) => setTimeout(r, 100));

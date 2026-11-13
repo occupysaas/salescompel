@@ -1,0 +1,47 @@
+{
+ "select": [
+  {
+   "kind": "typeof",
+   "rel": "What",
+   "whens": [
+    {
+     "type": "Account",
+     "fields": [
+      {
+       "kind": "field",
+       "path": [
+        "Phone"
+       ]
+      }
+     ]
+    },
+    {
+     "type": "Opportunity",
+     "fields": [
+      {
+       "kind": "field",
+       "path": [
+        "Amount"
+       ]
+      }
+     ]
+    }
+   ],
+   "else": [
+    {
+     "kind": "field",
+     "path": [
+      "Name"
+     ]
+    }
+   ]
+  }
+ ],
+ "from": "Event",
+ "where": null,
+ "groupBy": null,
+ "having": null,
+ "orderBy": null,
+ "limit": null,
+ "offset": null
+}

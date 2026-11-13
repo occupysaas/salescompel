@@ -52,7 +52,7 @@ export function boundedTransport(t: Transport, deadline: number): Transport {
 }
 export async function verifyIdentity(c: ExternalIdConfig, t: Transport) {
   const r = await t.request("/services/oauth2/userinfo", {});
-  const b = r.body as any;
+  const b = r.body as { user_id?: unknown; organization_id?: unknown };
   if (
     r.status !== 200 ||
     b?.user_id !== c.administrator.user ||
@@ -106,6 +106,7 @@ export async function initializeRun(
 const queues = new Map<string, Promise<void>>();
 export async function appendJournal(dir: string, event: JournalEvent) {
   const previous = queues.get(dir) ?? Promise.resolve();
+  // guardrails-allow SEMANTIC-001: rejection handled by the two-arg `then` below, re-thrown by `await next`
   const next = previous.then(async () => {
     const f = await open(join(dir, "journal.jsonl"), "a", 0o600);
     try {
@@ -195,7 +196,11 @@ export async function query(
       ),
     {},
   );
-  const b = r.body as any;
+  const b = r.body as {
+    done?: unknown;
+    records: Array<RecordState>;
+    totalSize?: unknown;
+  };
   if (
     r.status !== 200 ||
     b?.done !== true ||
@@ -204,7 +209,7 @@ export async function query(
     b.totalSize !== b.records.length
   )
     throw new Error("QUERY_UNAVAILABLE");
-  const rows: RecordState[] = b.records.map((x: any) => {
+  const rows: RecordState[] = b.records.map((x) => {
     recordPath(x.Id);
     if (
       typeof x.Name !== "string" ||
@@ -236,7 +241,7 @@ export async function scopedRecords(
     if (row.Name !== marker || !keys.includes(row.Compat_Key__c ?? ""))
       throw new Error("OWNERSHIP_UNPROVEN");
     const r = await t.request(recordPath(row.Id), {});
-    const b = r.body as any;
+    const b = r.body as RecordState;
     if (
       r.status !== 200 ||
       b?.Id !== row.Id ||
@@ -266,8 +271,9 @@ export async function latchIdentity(dir: string) {
     await durableJSON(join(dir, "identity-blocked.json"), {
       reason: "IDENTITY_MISMATCH",
     });
-  } catch (e: any) {
-    if (e.code !== "EEXIST") throw e;
+  } catch (e: unknown) {
+    const err = e as { code?: string };
+    if (err.code !== "EEXIST") throw e;
   }
 }
 export async function rememberRecord(dir: string, caseId: string, id: string) {
@@ -276,8 +282,9 @@ export async function rememberRecord(dir: string, caseId: string, id: string) {
   const path = join(dir, `known-${id}.json`);
   try {
     await durableJSON(path, { caseId, id });
-  } catch (e: any) {
-    if (e.code !== "EEXIST") throw e;
+  } catch (e: unknown) {
+    const err = e as { code?: string };
+    if (err.code !== "EEXIST") throw e;
     const previous = await privateJSON(path, 65536);
     if (previous.id !== id || previous.caseId !== caseId)
       throw new Error("OWNERSHIP_UNPROVEN");
@@ -308,8 +315,9 @@ async function knownRecordIds(
         add(id.split(":")[0], response.body.id);
       else if (response.status === 201 || response.body?.created === true)
         throw new Error("CREATED_ID_UNAVAILABLE");
-    } catch (e: any) {
-      if (e.code !== "ENOENT" || stage === "response") throw e;
+    } catch (e: unknown) {
+      const err = e as { code?: string };
+      if (err.code !== "ENOENT" || stage === "response") throw e;
     }
   }
   for (const name of await readdir(dir)) {
@@ -344,8 +352,9 @@ export async function recoverExternalIdRun(
     try {
       await privateJSON(join(dir, "identity-blocked.json"), 65536);
       throw new Error("IDENTITY_LATCHED");
-    } catch (e: any) {
-      if (e.code !== "ENOENT") throw e;
+    } catch (e: unknown) {
+      const err = e as { code?: string };
+      if (err.code !== "ENOENT") throw e;
     }
     const known = await knownRecordIds(dir, run);
     const t = boundedTransport(
@@ -381,12 +390,12 @@ export async function recoverExternalIdRun(
         checkedIds.add(id);
         const response = await t.request(recordPath(id), {});
         if (response.status === 404) continue;
-        const b = response.body as any;
+        const b = response.body as RecordState;
         if (
           response.status !== 200 ||
           b?.Id !== id ||
           b?.Name !== scope.marker ||
-          !scope.keys.includes(b?.Compat_Key__c)
+          !scope.keys.includes(b?.Compat_Key__c as string)
         )
           throw new Error("OWNERSHIP_UNPROVEN");
         if (!rows.some((row) => row.Id === id))

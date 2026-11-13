@@ -37,7 +37,7 @@ export function compareExternalIdReports(
       ],
     };
   const project = (r: ExternalIdReport) => {
-    function normalize(v: unknown): any {
+    function normalize(v: unknown): unknown {
       if (typeof v === "string") {
         let s = v.replaceAll(r.runId, "<RUN>");
         for (const alias of r.aliases)
@@ -62,7 +62,7 @@ export function compareExternalIdReports(
           status: o.status,
           bodyPresent: o.bodyPresent,
           body: normalize(o.body),
-          records: normalize(o.records).sort((x: any, y: any) =>
+          records: (normalize(o.records) as unknown[]).sort((x, y) =>
             JSON.stringify(x).localeCompare(JSON.stringify(y)),
           ),
         }));

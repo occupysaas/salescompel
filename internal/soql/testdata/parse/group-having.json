@@ -1,0 +1,63 @@
+{
+ "select": [
+  {
+   "kind": "field",
+   "path": [
+    "Stage__c"
+   ]
+  },
+  {
+   "kind": "agg",
+   "func": "COUNT",
+   "arg": {
+    "kind": "field",
+    "path": [
+     "Id"
+    ]
+   },
+   "alias": "total"
+  }
+ ],
+ "from": "Item__c",
+ "where": null,
+ "groupBy": [
+  {
+   "kind": "field",
+   "path": [
+    "Stage__c"
+   ]
+  }
+ ],
+ "having": {
+  "kind": "compare",
+  "left": {
+   "kind": "agg",
+   "func": "COUNT",
+   "arg": {
+    "kind": "field",
+    "path": [
+     "Id"
+    ]
+   }
+  },
+  "op": "\u003e",
+  "right": {
+   "kind": "number",
+   "text": "1"
+  }
+ },
+ "orderBy": [
+  {
+   "value": {
+    "kind": "field",
+    "path": [
+     "Stage__c"
+    ]
+   },
+   "desc": false,
+   "nulls": "default"
+  }
+ ],
+ "limit": null,
+ "offset": null
+}

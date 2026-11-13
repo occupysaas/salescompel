@@ -1,0 +1,5 @@
+{
+  "specs": {
+    "soql-engine": "blocking"
+  }
+}

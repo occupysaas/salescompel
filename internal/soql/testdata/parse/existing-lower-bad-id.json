@@ -1,0 +1,30 @@
+{
+ "select": [
+  {
+   "kind": "field",
+   "path": [
+    "id"
+   ]
+  }
+ ],
+ "from": "account",
+ "where": {
+  "kind": "compare",
+  "left": {
+   "kind": "field",
+   "path": [
+    "id"
+   ]
+  },
+  "op": "=",
+  "right": {
+   "kind": "string",
+   "text": "bad"
+  }
+ },
+ "groupBy": null,
+ "having": null,
+ "orderBy": null,
+ "limit": null,
+ "offset": null
+}

@@ -1,0 +1,1 @@
+SELECT Id,Account.Name FROM Contact WHERE LastName = 'O\'Brien' ORDER BY LastName DESC LIMIT 2

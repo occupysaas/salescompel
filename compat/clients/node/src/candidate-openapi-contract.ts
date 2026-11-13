@@ -112,6 +112,7 @@ export const candidateOperations: readonly (readonly [
     ["200", "201"],
   ],
   [base + "/query", "get", "candidateQuery", ["200"]],
+  [base + "/query/{locator}", "get", "candidateQueryMore", ["200"]],
   [base + "/openapi.yaml", "get", "candidateOpenAPI", ["200"]],
 ];
 
@@ -120,18 +121,40 @@ export async function validateCandidateOpenAPI(
   sourceUrls: ReadonlySet<string>,
 ): Promise<void> {
   try {
-    await validateOpenApi(document);
-    const d = document as any;
+    await validateOpenApi(document as Record<string, any>);
+    const d = document as {
+      openapi?: unknown;
+      jsonSchemaDialect?: unknown;
+      servers?: unknown;
+      security?: unknown;
+      components?: {
+        securitySchemes?: {
+          bearerAuth?: { type?: unknown; scheme?: unknown };
+          oauth2?: {
+            type?: unknown;
+            flows?: {
+              authorizationCode?: {
+                authorizationUrl?: unknown;
+                tokenUrl?: unknown;
+              };
+              clientCredentials?: { tokenUrl?: unknown };
+            };
+          };
+        };
+        schemas?: Record<string, any>;
+      };
+      paths?: Record<string, any>;
+    };
     if (
       d.openapi !== "3.2.1" ||
       d.jsonSchemaDialect !== "https://json-schema.org/draft/2020-12/schema" ||
       JSON.stringify(d.servers) !== JSON.stringify([{ url: "/" }]) ||
       JSON.stringify(d.security) !== JSON.stringify([{ bearerAuth: [] }]) ||
-      d.components.securitySchemes.bearerAuth.type !== "http" ||
-      d.components.securitySchemes.bearerAuth.scheme !== "bearer"
+      d.components?.securitySchemes?.bearerAuth?.type !== "http" ||
+      d.components?.securitySchemes?.bearerAuth?.scheme !== "bearer"
     )
       throw 0;
-    const oauth = d.components.securitySchemes.oauth2;
+    const oauth = d.components?.securitySchemes?.oauth2;
     if (
       oauth?.type !== "oauth2" ||
       oauth.flows?.authorizationCode?.authorizationUrl !==
@@ -141,22 +164,24 @@ export async function validateCandidateOpenAPI(
     )
       throw 0;
     const actual: string[] = [];
-    for (const [path, item] of Object.entries(d.paths) as [string, any][]) {
-      for (const [method, op] of Object.entries(item) as [string, any][]) {
+    for (const [path, item] of Object.entries(d.paths ?? {})) {
+      for (const [method, op] of Object.entries(item as Record<string, any>)) {
+        const operation = op as Record<string, any>;
         const expected = candidateOperations.find(
           ([p, m]) => p === path && m === method,
         );
         if (
           !expected ||
-          op.operationId !== expected[2] ||
+          operation.operationId !== expected[2] ||
           (expected[2].startsWith("candidateOAuth") &&
           expected[2] !== "candidateOAuthIdentity"
-            ? JSON.stringify(op.security) !== "[]"
-            : op.security !== undefined)
+            ? JSON.stringify(operation.security) !== "[]"
+            : operation.security !== undefined)
         )
           throw 0;
-        if (op.security === undefined && !op.responses["403"]) throw 0;
-        const statuses = Object.keys(op.responses);
+        const responses = operation.responses as Record<string, any>;
+        if (operation.security === undefined && !responses["403"]) throw 0;
+        const statuses = Object.keys(responses);
         if (
           statuses.some(
             (s) =>
@@ -174,9 +199,9 @@ export async function validateCandidateOpenAPI(
         )
           throw 0;
         if (
-          !Array.isArray(op["x-source"]) ||
-          !op["x-source"].length ||
-          op["x-source"].some(
+          !Array.isArray(operation["x-source"]) ||
+          !operation["x-source"].length ||
+          operation["x-source"].some(
             (u: unknown) =>
               typeof u !== "string" ||
               !u.startsWith("https://") ||
@@ -184,12 +209,17 @@ export async function validateCandidateOpenAPI(
           )
         )
           throw 0;
-        if (op.responses["204"]?.content !== undefined) throw 0;
+        if (
+          (responses["204"] as Record<string, any> | undefined)?.content !==
+          undefined
+        )
+          throw 0;
         actual.push(path + " " + method);
       }
     }
     if (actual.length !== candidateOperations.length) throw 0;
-    function schemas(s: any): void {
+    const compositeEmptyHeaders = d.components?.schemas?.CompositeEmptyHeaders;
+    function schemas(s: unknown): void {
       if (
         !s ||
         typeof s !== "object" ||
@@ -197,26 +227,36 @@ export async function validateCandidateOpenAPI(
         !Object.keys(s).length
       )
         throw 0;
-      const types = Array.isArray(s.type) ? s.type : [s.type];
+      const node = s as Record<string, any>;
+      const types = Array.isArray(node.type) ? node.type : [node.type];
       if (
         types.includes("object") &&
-        (!s.properties ||
-          (!Object.keys(s.properties).length &&
-            !s.patternProperties &&
-            (s !== d.components.schemas.CompositeEmptyHeaders ||
-              s.maxProperties !== 0)) ||
-          s.additionalProperties !== false)
+        (!node.properties ||
+          (!Object.keys(node.properties as object).length &&
+            !node.patternProperties &&
+            (node !== compositeEmptyHeaders || node.maxProperties !== 0)) ||
+          node.additionalProperties !== false)
       )
         throw 0;
-      if (s.$ref && !s.$ref.startsWith("#/components/schemas/")) throw 0;
-      for (const child of Object.values(s.properties ?? {})) schemas(child);
-      for (const child of Object.values(s.patternProperties ?? {}))
+      if (
+        node.$ref &&
+        !(node.$ref as string).startsWith("#/components/schemas/")
+      )
+        throw 0;
+      for (const child of Object.values(
+        (node.properties as Record<string, any>) ?? {},
+      ))
         schemas(child);
-      if (s.items) schemas(s.items);
+      for (const child of Object.values(
+        (node.patternProperties as Record<string, any>) ?? {},
+      ))
+        schemas(child);
+      if (node.items) schemas(node.items);
       for (const key of ["oneOf", "anyOf", "allOf"])
-        for (const child of s[key] ?? []) schemas(child);
+        for (const child of (node[key] as unknown[]) ?? []) schemas(child);
     }
-    for (const schema of Object.values(d.components.schemas)) schemas(schema);
+    for (const schema of Object.values(d.components?.schemas ?? {}))
+      schemas(schema);
   } catch {
     throw new Error("candidate-openapi-contract");
   }
@@ -235,7 +275,7 @@ export async function loadCandidateOpenAPI(): Promise<unknown> {
     )[0].toJS();
     await validateCandidateOpenAPI(
       d,
-      new Set(registry.sources.map((s: any) => s.url)),
+      new Set(registry.sources.map((s: { url: string }) => s.url)),
     );
     return d;
   } catch {

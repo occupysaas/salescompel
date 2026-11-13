@@ -1,0 +1,50 @@
+{
+ "select": [
+  {
+   "kind": "call",
+   "func": "FISCAL_MONTH",
+   "args": [
+    {
+     "kind": "field",
+     "path": [
+      "CreatedDate"
+     ]
+    }
+   ],
+   "alias": "fm"
+  },
+  {
+   "kind": "call",
+   "func": "FISCAL_QUARTER",
+   "args": [
+    {
+     "kind": "field",
+     "path": [
+      "CreatedDate"
+     ]
+    }
+   ],
+   "alias": "fq"
+  },
+  {
+   "kind": "call",
+   "func": "FISCAL_YEAR",
+   "args": [
+    {
+     "kind": "field",
+     "path": [
+      "CreatedDate"
+     ]
+    }
+   ],
+   "alias": "fy"
+  }
+ ],
+ "from": "Item__c",
+ "where": null,
+ "groupBy": null,
+ "having": null,
+ "orderBy": null,
+ "limit": null,
+ "offset": null
+}

@@ -1,0 +1,50 @@
+{
+ "select": [
+  {
+   "kind": "field",
+   "path": [
+    "Name"
+   ]
+  },
+  {
+   "kind": "subquery",
+   "query": {
+    "select": [
+     {
+      "kind": "field",
+      "path": [
+       "Name"
+      ]
+     }
+    ],
+    "from": "Typeditems__r",
+    "where": {
+     "kind": "compare",
+     "left": {
+      "kind": "field",
+      "path": [
+       "Stage__c"
+      ]
+     },
+     "op": "=",
+     "right": {
+      "kind": "string",
+      "text": "Open"
+     }
+    },
+    "groupBy": null,
+    "having": null,
+    "orderBy": null,
+    "limit": null,
+    "offset": null
+   }
+  }
+ ],
+ "from": "Account",
+ "where": null,
+ "groupBy": null,
+ "having": null,
+ "orderBy": null,
+ "limit": null,
+ "offset": null
+}

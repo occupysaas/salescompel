@@ -1,0 +1,22 @@
+{
+ "select": [
+  {
+   "kind": "agg",
+   "func": "COUNT_DISTINCT",
+   "arg": {
+    "kind": "field",
+    "path": [
+     "Stage__c"
+    ]
+   },
+   "alias": "s"
+  }
+ ],
+ "from": "Item__c",
+ "where": null,
+ "groupBy": null,
+ "having": null,
+ "orderBy": null,
+ "limit": null,
+ "offset": null
+}

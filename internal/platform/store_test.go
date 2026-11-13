@@ -115,12 +115,13 @@ func TestStoreQueryPolicyAndRelationships(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	q, _ := ParseQuery("SELECT Id,LastName,Account.Name FROM Contact WHERE LastName = 'O\\'Brien'")
-	rows, err := s.Select(ctx, a, q)
+	res, err := s.Query(ctx, a, "SELECT Id,LastName,Account.Name FROM Contact WHERE LastName = 'O\\'Brien'", 2000)
+	rows := res.Records
 	if err != nil || len(rows) != 1 || rows[0]["Account"].(map[string]any)["Name"] != "Parent" {
 		t.Fatal(rows, err)
 	}
-	rows, err = s.Select(ctx, b, q)
+	res, err = s.Query(ctx, b, "SELECT Id,LastName,Account.Name FROM Contact WHERE LastName = 'O\\'Brien'", 2000)
+	rows = res.Records
 	if err != nil || len(rows) != 0 {
 		t.Fatal(rows, err)
 	}
@@ -133,10 +134,9 @@ func TestStoreQueryPolicyAndRelationships(t *testing.T) {
 	if _, ok := row["Compat_Text__c"]; ok {
 		t.Fatal("field leak")
 	}
-	for _, sql := range []string{"SELECT Compat_Text__c FROM Account", "SELECT Id FROM Account WHERE Compat_Text__c = 'secret'", "SELECT Id FROM Account ORDER BY Compat_Text__c", "SELECT Id FROM Bogus", "SELECT Wrong FROM Account"} {
-		q, _ = ParseQuery(sql)
-		if _, err = s.Select(ctx, restricted, q); err == nil {
-			t.Fatal("query accepted", sql)
+	for _, text := range []string{"SELECT Compat_Text__c FROM Account", "SELECT Id FROM Account WHERE Compat_Text__c = 'secret'", "SELECT Id FROM Account ORDER BY Compat_Text__c", "SELECT Id FROM Bogus", "SELECT Wrong FROM Account"} {
+		if _, err = s.Query(ctx, restricted, text, 2000); err == nil {
+			t.Fatal("query accepted", text)
 		}
 	}
 	if err = s.Delete(ctx, a, "Account", id); err == nil {
@@ -154,12 +154,12 @@ func TestStoreConcurrentUpdatesAndUpsert(t *testing.T) {
 	var wg sync.WaitGroup
 	for k, v := range map[string]any{"Name": "After", "Compat_Text__c": "Together"} {
 		wg.Add(1)
-		go func(k string, v any) {
+		go func(ctx context.Context, k string, v any) {
 			defer wg.Done()
 			if e := s.Update(ctx, a, "Account", id, map[string]any{k: v}); e != nil {
 				t.Error(e)
 			}
-		}(k, v)
+		}(ctx, k, v)
 	}
 	wg.Wait()
 	row, err := s.Read(ctx, a, "Account", id)
@@ -168,16 +168,16 @@ func TestStoreConcurrentUpdatesAndUpsert(t *testing.T) {
 	}
 	for i := 0; i < 8; i++ {
 		wg.Add(1)
-		go func() {
+		go func(ctx context.Context) {
 			defer wg.Done()
 			if _, _, e := s.Upsert(ctx, a, "concurrent", map[string]any{"Name": "One"}); e != nil {
 				t.Error(e)
 			}
-		}()
+		}(ctx)
 	}
 	wg.Wait()
-	q, _ := ParseQuery("SELECT Id FROM Account WHERE Compat_Key__c = 'concurrent'")
-	rows, err := s.Select(ctx, a, q)
+	res, err := s.Query(ctx, a, "SELECT Id FROM Account WHERE Compat_Key__c = 'concurrent'", 2000)
+	rows := res.Records
 	if err != nil || len(rows) != 1 {
 		t.Fatal(rows, err)
 	}
@@ -200,8 +200,8 @@ func TestStoreBlankNillableStringsAreNull(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	q, _ := ParseQuery("SELECT Id FROM Contact WHERE AccountId = null")
-	rows, err := s.Select(ctx, a, q)
+	res, err := s.Query(ctx, a, "SELECT Id FROM Contact WHERE AccountId = null", 2000)
+	rows := res.Records
 	if err != nil || len(rows) != 1 || rows[0]["Id"] != id {
 		t.Fatal(rows, err)
 	}
@@ -300,11 +300,11 @@ func upsertBodyFixture(t *testing.T, s *Store, existing, secondTenant bool) (Pri
 
 func accountSnapshot(t *testing.T, s *Store, p Principal) string {
 	t.Helper()
-	rows, err := s.Select(context.Background(), p, Query{Object: "Account", Fields: []string{"Id", "Name", "Compat_Key__c", "Compat_Text__c"}, Order: "Id", Limit: 100})
+	res, err := s.Query(context.Background(), p, "SELECT Id,Name,Compat_Key__c,Compat_Text__c FROM Account ORDER BY Id LIMIT 100", 2000)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return stringJSON(rows)
+	return stringJSON(res.Records)
 }
 
 func assertUpsertBodySuccess(t *testing.T, s *Store, p Principal, id, oldID string, created, retained bool) {
@@ -319,13 +319,12 @@ func assertUpsertBodySuccess(t *testing.T, s *Store, p Principal, id, oldID stri
 	if retained && row["Compat_Text__c"] != "Retained" {
 		t.Errorf("unrelated field changed: %v", row)
 	}
-	rows, err := s.Select(context.Background(), p, Query{Object: "Account", Fields: []string{"Id"}, HasWhere: true, WhereField: "Compat_Key__c", WhereValue: stringPointer("body-key"), Limit: 100})
+	res, err := s.Query(context.Background(), p, "SELECT Id FROM Account WHERE Compat_Key__c = 'body-key' LIMIT 100", 2000)
+	rows := res.Records
 	if err != nil || len(rows) != 1 || rows[0]["Id"] != id {
 		t.Fatalf("expected exactly one path-key row: %v, %v", rows, err)
 	}
 }
-
-func stringPointer(v string) *string { return &v }
 
 func TestStoreUpsertBodyValidation(t *testing.T) {
 	s := testStore(t)

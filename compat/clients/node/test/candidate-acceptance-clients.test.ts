@@ -37,8 +37,16 @@ test("restart baseline requires requested custom values, identity and relationsh
     ["b", "AccountId"],
     ["b", "Id"],
   ]) {
-    const bad = structuredClone(baseline) as any;
+    const bad = structuredClone(baseline) as unknown as Record<
+      string,
+      Record<string, unknown>
+    >;
     bad[key][field] = null;
-    assert.throws(() => assertRestartBaseline(runId, bad));
+    assert.throws(() =>
+      assertRestartBaseline(
+        runId,
+        bad as unknown as Parameters<typeof assertRestartBaseline>[1],
+      ),
+    );
   }
 });

@@ -1,0 +1,1 @@
+SELECT Id,Name,Compat_Text__c,Compat_Key__c FROM Account

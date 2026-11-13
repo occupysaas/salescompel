@@ -26,7 +26,17 @@ export function parseGateEvents(
     if (!r.stats || !Array.isArray(r.suites) || r.errors?.length)
       throw new Error("RESULT");
     const out: ParsedResult["tests"] = [];
-    const visit = (s: any) => {
+    type PlaywrightCaseResult = { status?: string };
+    type PlaywrightCase = {
+      status?: string;
+      results?: PlaywrightCaseResult[];
+    };
+    type PlaywrightSpec = { title: string; tests?: PlaywrightCase[] };
+    type PlaywrightSuite = {
+      specs?: PlaywrightSpec[];
+      suites?: PlaywrightSuite[];
+    };
+    const visit = (s: PlaywrightSuite) => {
       for (const spec of s.specs ?? [])
         for (const t of spec.tests ?? []) {
           if (!t.results?.length) throw new Error("RESULT");
@@ -34,7 +44,9 @@ export function parseGateEvents(
             id: spec.title,
             outcome:
               t.status === "expected" &&
-              t.results.every((r: any) => r.status === "passed")
+              t.results.every(
+                (r: PlaywrightCaseResult) => r.status === "passed",
+              )
                 ? "passed"
                 : t.status === "skipped"
                   ? "skipped"
@@ -58,8 +70,19 @@ export function parseGateEvents(
     const terminal = events.filter((e) =>
       ["test:pass", "test:fail"].includes(e.type),
     );
-    const fileOf = (d: any): string => d.entryFile ?? d.file ?? "unknown";
-    const byID = new Map<string, any>();
+    type NodeTestData = {
+      name: string;
+      file?: string;
+      entryFile?: string;
+      testId?: number;
+      parentId?: number;
+      nesting?: number;
+      testNumber?: number;
+      skip?: boolean;
+    };
+    const fileOf = (d: NodeTestData): string =>
+      d.entryFile ?? d.file ?? "unknown";
+    const byID = new Map<string, NodeTestData>();
     for (const e of terminal)
       if (Number.isSafeInteger(e.data.testId))
         byID.set(JSON.stringify([fileOf(e.data), e.data.testId]), e.data);
@@ -78,12 +101,12 @@ export function parseGateEvents(
       stack.length = n + 1;
       stacks.set(fileOf(d), stack);
     }
-    const nestedName = (d: any): string => {
+    const nestedName = (d: NodeTestData): string => {
       let names: string[] | undefined;
       if (Number.isSafeInteger(d.testId) && Number.isSafeInteger(d.parentId)) {
         names = [d.name];
-        const seen = new Set<number>([d.testId]);
-        let parent = d.parentId;
+        const seen = new Set<number>([d.testId as number]);
+        let parent = d.parentId as number;
         while (parent > 0) {
           if (seen.has(parent)) throw new Error("RESULT");
           seen.add(parent);
@@ -106,7 +129,7 @@ export function parseGateEvents(
         d.name === "candidate/composite/atomic" ||
         d.name === "candidate/foundation/decisions"
           ? d.name
-          : `${basename(d.file ?? "unknown")}::${d.nesting > 0 ? nestedName(d) : d.name}`;
+          : `${basename(d.file ?? "unknown")}::${(d.nesting ?? 0) > 0 ? nestedName(d) : d.name}`;
       out.push({
         id,
         outcome: d.skip
@@ -160,7 +183,10 @@ export async function readGateResult(
     !b.complete
   )
     throw new Error("RESULT");
-  if (kind === "steps" && JSON.parse(text).runId !== runId)
+  if (
+    kind === "steps" &&
+    (JSON.parse(text) as { runId?: string } | null)?.runId !== runId
+  )
     throw new Error("RESULT");
   return {
     schemaVersion: 1,

@@ -1,0 +1,76 @@
+{
+ "select": [
+  {
+   "kind": "call",
+   "func": "DAY_IN_YEAR",
+   "args": [
+    {
+     "kind": "field",
+     "path": [
+      "CreatedDate"
+     ]
+    }
+   ],
+   "alias": "diy"
+  },
+  {
+   "kind": "call",
+   "func": "DAY_ONLY",
+   "args": [
+    {
+     "kind": "field",
+     "path": [
+      "At__c"
+     ]
+    }
+   ],
+   "alias": "doy"
+  },
+  {
+   "kind": "call",
+   "func": "HOUR_IN_DAY",
+   "args": [
+    {
+     "kind": "field",
+     "path": [
+      "At__c"
+     ]
+    }
+   ],
+   "alias": "hid"
+  },
+  {
+   "kind": "call",
+   "func": "WEEK_IN_MONTH",
+   "args": [
+    {
+     "kind": "field",
+     "path": [
+      "CreatedDate"
+     ]
+    }
+   ],
+   "alias": "wim"
+  },
+  {
+   "kind": "call",
+   "func": "WEEK_IN_YEAR",
+   "args": [
+    {
+     "kind": "field",
+     "path": [
+      "CreatedDate"
+     ]
+    }
+   ],
+   "alias": "wiy"
+  }
+ ],
+ "from": "Item__c",
+ "where": null,
+ "groupBy": null,
+ "having": null,
+ "orderBy": null,
+ "limit": null,
+ "offset": null
+}

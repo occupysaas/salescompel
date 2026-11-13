@@ -335,3 +335,9 @@ sources:
     version: Plan 28 candidate defaults
     claim: Typed tenant fields, stored-not-enforced definitions and the candidate-only storedFields listing; not live reference evidence
     extraction: documentation-reviewed
+  - id: soql-engine-plan29
+    url: https://github.com/occupysaas/salescompel/blob/339b9296e2531b19f8e131ad0bccb5c08b8879cd/docs/superpowers/specs/2026-11-11-plan-29-soql-engine-design.md
+    accessedAt: 2026-11-12
+    version: 339b9296e2531b19f8e131ad0bccb5c08b8879cd (Plan 29 candidate defaults)
+    claim: Candidate SOQL engine, paging locators, column metadata, child relationships and the locked error vocabulary; not live reference evidence
+    extraction: documentation-reviewed

@@ -1,0 +1,23 @@
+{
+ "select": [
+  {
+   "kind": "call",
+   "func": "toLabel",
+   "args": [
+    {
+     "kind": "field",
+     "path": [
+      "Stage__c"
+     ]
+    }
+   ]
+  }
+ ],
+ "from": "Item__c",
+ "where": null,
+ "groupBy": null,
+ "having": null,
+ "orderBy": null,
+ "limit": null,
+ "offset": null
+}

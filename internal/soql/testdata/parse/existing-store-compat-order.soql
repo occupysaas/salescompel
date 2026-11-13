@@ -1,0 +1,1 @@
+SELECT Id FROM Account ORDER BY Compat_Text__c

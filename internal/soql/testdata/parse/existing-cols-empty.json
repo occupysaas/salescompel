@@ -1,0 +1,36 @@
+{
+ "select": [
+  {
+   "kind": "field",
+   "path": [
+    "Id"
+   ]
+  },
+  {
+   "kind": "field",
+   "path": [
+    "Name"
+   ]
+  }
+ ],
+ "from": "Account",
+ "where": {
+  "kind": "compare",
+  "left": {
+   "kind": "field",
+   "path": [
+    "Name"
+   ]
+  },
+  "op": "=",
+  "right": {
+   "kind": "string",
+   "text": "absent"
+  }
+ },
+ "groupBy": null,
+ "having": null,
+ "orderBy": null,
+ "limit": null,
+ "offset": null
+}

@@ -108,7 +108,7 @@ func benchLayout(b *testing.B, ctx context.Context, pool *pgxpool.Pool, layout s
 			start := time.Now()
 			for w := 0; w < workers; w++ {
 				wg.Add(1)
-				go func(w int) {
+				go func(ctx context.Context, w int) {
 					defer wg.Done()
 					for n := 0; n < 110; n++ {
 						id := int64(1 + (n*97+w*13)%9000)
@@ -127,7 +127,7 @@ func benchLayout(b *testing.B, ctx context.Context, pool *pgxpool.Pool, layout s
 						}
 						mu.Unlock()
 					}
-				}(w)
+				}(ctx, w)
 			}
 			wg.Wait()
 			if len(errs) > 0 {

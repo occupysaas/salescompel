@@ -149,7 +149,7 @@ test("foundation candidate capture requires independent cursor sessions before a
   const r = await capture(
     "candidate",
     {
-      COMPAT_CANDIDATE_URL: `http://127.0.0.1:${(server.address() as any).port}`,
+      COMPAT_CANDIDATE_URL: `http://127.0.0.1:${(server.address() as { port: number }).port}`,
       COMPAT_CANDIDATE_TOKEN: "synthetic-primary",
       COMPAT_API_VERSION: "65.0",
       COMPAT_DISPOSABLE: "yes",

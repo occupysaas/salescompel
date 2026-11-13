@@ -23,11 +23,11 @@ export interface Identity {
 }
 export interface DiscoveryReader {
   identity(p: Persona): Promise<Identity>;
-  describe(p: Persona, object: string): Promise<any>;
+  describe(p: Persona, object: string): Promise<Record<string, any>>;
   metadata(
     type: "CustomField" | "PermissionSet" | "Profile",
     name: string,
-  ): Promise<any>;
+  ): Promise<Record<string, any>>;
 }
 export function discoveryReader(
   c: DiscoveryConfig,
@@ -45,7 +45,7 @@ export function discoveryReader(
         "/services/oauth2/userinfo",
         {},
       );
-      const b = r.body as any;
+      const b = r.body as Record<string, any>;
       if (
         r.status !== 200 ||
         typeof b?.user_id !== "string" ||
@@ -62,7 +62,7 @@ export function discoveryReader(
         token: tokens[p],
         kind: "describe",
         name,
-      }),
+      }) as Promise<Record<string, any>>,
     metadata: (type, name) =>
       readWithClient({
         origin: c.origin,
@@ -70,7 +70,7 @@ export function discoveryReader(
         kind: "metadata",
         type,
         name,
-      }),
+      }) as Promise<Record<string, any>>,
   };
 }
 export async function verifyIdentityPair(
@@ -139,8 +139,8 @@ export async function collectMetadata(
     area: Area,
     p: Persona,
     component: string,
-    read: () => Promise<any>,
-    project: (data: any, id: string) => void,
+    read: () => Promise<Record<string, any>>,
+    project: (data: Record<string, any>, id: string) => void,
   ) {
     const id = `${area}:${p}:${component}`;
     const op = {
@@ -194,7 +194,9 @@ export async function collectMetadata(
           ])
             addFact(i, id, "describe", p, object, property, data[property]);
           for (const field of fields) {
-            const f = data.fields.find((x: any) => x.name === field);
+            const f = (data.fields as Array<Record<string, any>>).find(
+              (x) => x.name === field,
+            );
             const component = object + "." + field;
             if (!f) {
               addGap(i, id, "describe", p, component, "*", "FIELD_NOT_VISIBLE");
@@ -268,7 +270,7 @@ export function projectMetadata(
   i: Inventory,
   type: "CustomField" | "PermissionSet" | "Profile",
   name: string,
-  data: any,
+  data: Record<string, any>,
   id: string,
   area: Area = "metadata",
 ) {
@@ -324,7 +326,7 @@ export function projectMetadata(
     const rows =
       entries === undefined ? [] : Array.isArray(entries) ? entries : [entries];
     for (const component of selected) {
-      const row = rows.find((x: any) => x?.[key] === component);
+      const row = rows.find((x: Record<string, any>) => x?.[key] === component);
       if (!row) {
         addGap(
           i,

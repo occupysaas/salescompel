@@ -1,0 +1,36 @@
+{
+ "select": [
+  {
+   "kind": "field",
+   "path": [
+    "Id"
+   ]
+  }
+ ],
+ "from": "Item__c",
+ "where": {
+  "kind": "includes",
+  "left": {
+   "kind": "field",
+   "path": [
+    "Multi__c"
+   ]
+  },
+  "exclude": false,
+  "values": [
+   {
+    "kind": "string",
+    "text": "A;B"
+   },
+   {
+    "kind": "string",
+    "text": "C"
+   }
+  ]
+ },
+ "groupBy": null,
+ "having": null,
+ "orderBy": null,
+ "limit": null,
+ "offset": null
+}

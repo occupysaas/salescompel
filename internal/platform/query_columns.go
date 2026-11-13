@@ -21,8 +21,3 @@ func queryColumnsRequested(values url.Values) (bool, error) {
 	}
 	return false, invalid("INVALID_QUERY_PARAMETER", "columns must be specified once as true or false")
 }
-
-// queryColumnMetadata resolves only the existing authorized projection. Callers
-// must also complete Select successfully so filter/order policy remains enforced.
-// This minimal candidate schema serves the pinned CLI's nonaggregate consumer;
-// it is not a claim about undocumented Salesforce metadata properties.

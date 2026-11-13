@@ -1,0 +1,1 @@
+SELECT COUNT_DISTINCT(Stage__c) s FROM Item__c

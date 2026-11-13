@@ -32,24 +32,54 @@ type change struct {
 
 func manifest() []change {
 	hash := sha256.New()
-	files, _ := sources.ReadDir("legacy")
+	files, err := sources.ReadDir("legacy")
+	if err != nil {
+		panic("migration: embedded legacy sources unreadable: " + err.Error())
+	}
 	for _, f := range files {
-		v, _ := sources.ReadFile("legacy/" + f.Name())
+		v, rErr := sources.ReadFile("legacy/" + f.Name())
+		if rErr != nil {
+			panic("migration: embedded legacy source unreadable: " + f.Name())
+		}
 		hash.Write([]byte(f.Name()))
 		hash.Write(v)
 	}
-	v1, _ := sources.ReadFile("v1.go")
+	v1, rErr := sources.ReadFile("v1.go")
+	if rErr != nil {
+		panic("migration: embedded v1.go unreadable")
+	}
 	hash.Write(v1)
-	sql, _ := sources.ReadFile("migrations/0002_tenant_catalog.sql")
+	sql, sErr := sources.ReadFile("migrations/0002_tenant_catalog.sql")
+	if sErr != nil {
+		panic("migration: embedded 0002_tenant_catalog.sql unreadable")
+	}
 	sum := sha256.Sum256(sql)
 	m := []change{{Entry{1, "legacy baseline", hex.EncodeToString(hash.Sum(nil)), false}, adopt}, {Entry{2, "tenant catalog", hex.EncodeToString(sum[:]), false}, func(ctx context.Context, tx pgx.Tx) error { _, e := tx.Exec(ctx, string(sql)); return e }}}
 
-	sql3, _ := sources.ReadFile("migrations/0003_tenant_rls.sql")
+	sql3, s3Err := sources.ReadFile("migrations/0003_tenant_rls.sql")
+	if s3Err != nil {
+		panic("migration: embedded 0003_tenant_rls.sql unreadable")
+	}
 	sum3 := sha256.Sum256(sql3)
 	m = append(m, change{Entry{3, "tenant row security", hex.EncodeToString(sum3[:]), false}, func(ctx context.Context, tx pgx.Tx) error { _, e := tx.Exec(ctx, string(sql3)); return e }})
-	sql4, _ := sources.ReadFile("migrations/0004_field_types.sql")
+	sql4, s4Err := sources.ReadFile("migrations/0004_field_types.sql")
+	if s4Err != nil {
+		panic("migration: embedded 0004_field_types.sql unreadable")
+	}
 	sum4 := sha256.Sum256(sql4)
 	m = append(m, change{Entry{4, "field types", hex.EncodeToString(sum4[:]), false}, func(ctx context.Context, tx pgx.Tx) error { _, e := tx.Exec(ctx, string(sql4)); return e }})
+	sql5, s5Err := sources.ReadFile("migrations/0005_child_relationships.sql")
+	if s5Err != nil {
+		panic("migration: embedded 0005_child_relationships.sql unreadable")
+	}
+	sum5 := sha256.Sum256(sql5)
+	m = append(m, change{Entry{5, "child relationships", hex.EncodeToString(sum5[:]), false}, func(ctx context.Context, tx pgx.Tx) error { _, e := tx.Exec(ctx, string(sql5)); return e }})
+	sql6, s6Err := sources.ReadFile("migrations/0006_query_locators.sql")
+	if s6Err != nil {
+		panic("migration: embedded 0006_query_locators.sql unreadable")
+	}
+	sum6 := sha256.Sum256(sql6)
+	m = append(m, change{Entry{6, "query locators", hex.EncodeToString(sum6[:]), false}, func(ctx context.Context, tx pgx.Tx) error { _, e := tx.Exec(ctx, string(sql6)); return e }})
 	return m
 
 }

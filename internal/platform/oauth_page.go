@@ -45,7 +45,7 @@ func (s *Store) SaveAuthRequest(ctx context.Context, in AuthRequest, now time.Ti
 	if _, err = tx.Exec(ctx, "DELETE FROM oauth_requests WHERE expires_at<=$1", now); err != nil {
 		return
 	}
-	_, err = tx.Exec(ctx, "INSERT INTO oauth_requests(request_hash,client_id,redirect_uri,scope,state,code_challenge,cookie_hash,expires_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8)", digest(id), in.ClientID, in.RedirectURI, in.Scope, in.State, in.Challenge, digest(binding), now.Add(10*time.Minute))
+	_, err = tx.Exec(ctx, "INSERT INTO oauth_requests AS r (request_hash,client_id,redirect_uri,scope,state,code_challenge,cookie_hash,expires_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8)", digest(id), in.ClientID, in.RedirectURI, in.Scope, in.State, in.Challenge, digest(binding), now.Add(10*time.Minute))
 	if err != nil {
 		return
 	}
@@ -78,12 +78,21 @@ var oauthLanguages = []string{"en_US", "fr", "de", "pt_BR", "iw"}
 var oauthMatcher = language.NewMatcher([]language.Tag{language.AmericanEnglish, language.French, language.German, language.BrazilianPortuguese, language.Hebrew})
 
 func oauthMessages(header string) (map[string]string, string, string) {
-	tags, _, _ := language.ParseAcceptLanguage(header)
-	_, i, _ := oauthMatcher.Match(tags...)
+	tags, _, langErr := language.ParseAcceptLanguage(header)
+	if langErr != nil {
+		tags = nil
+	}
+	_, i, matchConf := oauthMatcher.Match(tags...)
+	_ = matchConf
 	name := oauthLanguages[i]
-	b, _ := locales.Messages.ReadFile("messages/" + name + ".json")
+	b, readErr := locales.Messages.ReadFile("messages/" + name + ".json")
+	if readErr != nil {
+		b = []byte("{}")
+	}
 	m := map[string]string{}
-	_ = json.Unmarshal(b, &m)
+	if uErr := json.Unmarshal(b, &m); uErr != nil {
+		m = map[string]string{}
+	}
 	dir := "ltr"
 	lang := strings.ReplaceAll(name, "_", "-")
 	if name == "iw" {
@@ -135,7 +144,9 @@ func handleAuthorizeCSS(_ *Store, _ Options, w http.ResponseWriter, r *http.Requ
 	}
 	w.Header().Set("Content-Type", "text/css; charset=utf-8")
 	if r.Method != "HEAD" {
-		_, _ = w.Write([]byte(oauthPageCSS))
+		if _, wErr := w.Write([]byte(oauthPageCSS)); wErr != nil {
+			return
+		}
 	}
 }
 func handleAuthorize(s *Store, o Options, w http.ResponseWriter, r *http.Request) {

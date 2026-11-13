@@ -74,7 +74,7 @@ func StandardObjects() []Object {
 
 	first := Field{Name: "FirstName", Column: "first_name", Nillable: true, Length: 255, Createable: true, Updateable: true, CompoundFieldName: ptr("Name"), Options: Options{Kind: fieldtype.Text}}
 	last := Field{Name: "LastName", Column: "last_name", Length: 255, Createable: true, Updateable: true, CompoundFieldName: ptr("Name"), Options: Options{Kind: fieldtype.Text}}
-	accountID := Field{Name: "AccountId", Column: "account_id", Nillable: true, Length: 18, Createable: true, Updateable: true, ReferenceTo: []string{"Account"}, RelationshipName: ptr("Account"), Options: Options{Kind: fieldtype.Lookup, DeleteBehavior: "Restrict"}}
+	accountID := Field{Name: "AccountId", Column: "account_id", Nillable: true, Length: 18, Createable: true, Updateable: true, ReferenceTo: []string{"Account"}, RelationshipName: ptr("Account"), Options: Options{Kind: fieldtype.Lookup, DeleteBehavior: "Restrict", ChildRelationshipName: "Contacts"}}
 	salutation := std("Salutation", "Salutation", "salutation", fieldtype.Picklist, 255)
 	salutation.PicklistValues = salutations
 	salutation.CompoundFieldName = ptr("Name")

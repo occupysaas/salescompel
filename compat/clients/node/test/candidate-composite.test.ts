@@ -194,7 +194,10 @@ test(
           } catch {
             throw Error("RESULT");
           }
-          return { status: measured.response.status, body: parsed };
+          return {
+            status: measured.response.status,
+            body: parsed as Record<string, any>,
+          };
         },
         reconcile,
       );
@@ -215,11 +218,11 @@ test(
       ],
       "commit",
     );
-    const aid = linked.body.compositeResponse[0].body.id,
-      cid = linked.body.compositeResponse[1].body.id;
+    const aid = linked.body!.compositeResponse[0].body.id,
+      cid = linked.body!.compositeResponse[1].body.id;
     const contact = await candidateRequest(c, "admin", rowPath("Contact", cid));
     assert.ok(
-      contact.status === 200 && contact.body.AccountId === aid,
+      contact.status === 200 && contact.body!.AccountId === aid,
       "linked creation did not persist",
     );
     completed.add("linked-create");
@@ -228,7 +231,7 @@ test(
       "commit",
     );
     assert.ok(
-      (await candidateRequest(c, "admin", rowPath("Contact", cid))).body
+      (await candidateRequest(c, "admin", rowPath("Contact", cid))).body!
         .FirstName === "Changed",
       "PATCH did not persist",
     );
@@ -253,9 +256,9 @@ test(
       ["request-schema"],
     );
     assert.ok(
-      rollback.body.compositeResponse[0].body[0].errorCode ===
+      rollback.body!.compositeResponse[0].body[0].errorCode ===
         "PROCESSING_HALTED" &&
-        rollback.body.compositeResponse[1].body[0].errorCode ===
+        rollback.body!.compositeResponse[1].body[0].errorCode ===
           "INVALID_FIELD",
       "observed rollback contract drift",
     );
@@ -272,7 +275,7 @@ test(
       ["request-schema"],
     );
     assert.ok(
-      (await candidateRequest(c, "admin", rowPath("Account", aid))).body
+      (await candidateRequest(c, "admin", rowPath("Account", aid))).body!
         .Name === marker("p24parent"),
       "PATCH/DELETE rollback failed",
     );
@@ -325,7 +328,7 @@ test(
         ],
         "rollback",
       );
-      assert.equal(response.body.compositeResponse[1].httpStatusCode, 404);
+      assert.equal(response.body!.compositeResponse[1].httpStatusCode, 404);
     }
     const untouched = await candidateRequest(
       c,
@@ -334,7 +337,7 @@ test(
     );
     assert.ok(
       untouched.status === 200 &&
-        untouched.body.Name === marker("p24otherseed"),
+        untouched.body!.Name === marker("p24otherseed"),
       "cross-tenant record changed",
     );
     assert.equal(

@@ -1,0 +1,1 @@
+SELECT Id FROM Item__c WHERE Flag__c = true

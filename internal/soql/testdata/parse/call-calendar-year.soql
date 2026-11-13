@@ -1,0 +1,1 @@
+SELECT CALENDAR_YEAR(CreatedDate) y, COUNT(Id) FROM Item__c GROUP BY CALENDAR_YEAR(CreatedDate)

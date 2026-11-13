@@ -1,0 +1,94 @@
+{
+ "select": [
+  {
+   "kind": "field",
+   "path": [
+    "Id"
+   ]
+  },
+  {
+   "kind": "field",
+   "path": [
+    "Name"
+   ]
+  },
+  {
+   "kind": "field",
+   "path": [
+    "Num__c"
+   ]
+  },
+  {
+   "kind": "field",
+   "path": [
+    "Amount__c"
+   ]
+  },
+  {
+   "kind": "field",
+   "path": [
+    "Pct__c"
+   ]
+  },
+  {
+   "kind": "field",
+   "path": [
+    "Day__c"
+   ]
+  },
+  {
+   "kind": "field",
+   "path": [
+    "At__c"
+   ]
+  },
+  {
+   "kind": "field",
+   "path": [
+    "Flag__c"
+   ]
+  },
+  {
+   "kind": "field",
+   "path": [
+    "Multi__c"
+   ]
+  },
+  {
+   "kind": "field",
+   "path": [
+    "Stage__c"
+   ]
+  },
+  {
+   "kind": "field",
+   "path": [
+    "Parent__c"
+   ]
+  },
+  {
+   "kind": "field",
+   "path": [
+    "Serial__c"
+   ]
+  }
+ ],
+ "from": "Item__c",
+ "where": null,
+ "groupBy": null,
+ "having": null,
+ "orderBy": [
+  {
+   "value": {
+    "kind": "field",
+    "path": [
+     "Num__c"
+    ]
+   },
+   "desc": true,
+   "nulls": "default"
+  }
+ ],
+ "limit": 10,
+ "offset": null
+}

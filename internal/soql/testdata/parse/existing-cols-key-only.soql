@@ -1,0 +1,1 @@
+SELECT Compat_Key__c FROM Account

@@ -21,7 +21,7 @@ export async function localProbe(t: TestContext) {
   const dir = await mkdtemp(join(tmpdir(), "p9-probe-"));
   t.after(() => rm(dir, { recursive: true, force: true }));
   const rows = new Map<string, RecordState>();
-  const calls: { path: string; method: string; body: any }[] = [];
+  const calls: { path: string; method: string; body: unknown }[] = [];
   const flags = {
     wrongIdentity: false,
     identityMismatchAt: 0,
@@ -127,7 +127,9 @@ export async function localProbe(t: TestContext) {
     server.closeAllConnections();
     server.close();
   });
-  const origin = new URL(`http://127.0.0.1:${(server.address() as any).port}`);
+  const origin = new URL(
+    `http://127.0.0.1:${(server.address() as { port: number }).port}`,
+  );
   const transport: Transport = {
     request: (path, init) =>
       wire(origin, "synthetic", path, init, {

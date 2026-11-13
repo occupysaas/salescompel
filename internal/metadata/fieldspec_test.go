@@ -7,6 +7,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"salescompel/internal/fieldtype"
 	. "salescompel/internal/metadata"
+	"salescompel/internal/records"
 	"strings"
 	"testing"
 )
@@ -169,9 +170,9 @@ func TestCreateFieldDDL(t *testing.T) {
 	}
 	other, _ := CreateObject(ctx, p, "ddl", ObjectInput{Name: "Task__c", Label: "Task", PluralLabel: "Tasks"})
 	for _, in := range []FieldInput{
-		{Name: "SN__c", Type: "Lookup", ReferenceTo: "Project__c"},
-		{Name: "RS__c", Type: "Lookup", ReferenceTo: "Project__c", DeleteBehavior: "Restrict"},
-		{Name: "MD__c", Type: "MasterDetail", ReferenceTo: "Project__c"},
+		{Name: "SN__c", Type: "Lookup", ReferenceTo: "Project__c", ChildRelationshipName: "SetNulls__r"},
+		{Name: "RS__c", Type: "Lookup", ReferenceTo: "Project__c", DeleteBehavior: "Restrict", ChildRelationshipName: "Restricts__r"},
+		{Name: "MD__c", Type: "MasterDetail", ReferenceTo: "Project__c", ChildRelationshipName: "Cascades__r"},
 	} {
 		in.Object, in.Label = "Task__c", in.Name
 		f, e := CreateField(ctx, p, "ddl", in)
@@ -372,5 +373,176 @@ func TestRequiredLookupRestricts(t *testing.T) {
 	}
 	if _, _, err := BuildField(FieldInput{Name: "Acct__c", Label: "A", Type: "Lookup", ReferenceTo: "Account", Required: true, DeleteBehavior: "SetNull"}, project, s, false); err == nil {
 		t.Fatal("required SetNull lookup accepted")
+	}
+}
+
+func TestChildRelationshipDefaults(t *testing.T) {
+	if got := DefaultChildRelationshipName(Object{Name: "Typed__c", Label: "Typed", PluralLabel: "Typed items"}); got != "Typeditems__r" {
+		t.Fatalf("default name %q", got)
+	}
+	if got := DefaultChildRelationshipName(Object{Name: "Contact", Label: "Contact", PluralLabel: "Contacts"}); got != "Contacts" {
+		t.Fatalf("standard default %q", got)
+	}
+	if got := DefaultChildRelationshipName(Object{Name: "Cafe__c", Label: "Cafe", PluralLabel: "Cafés"}); got != "Cafs__r" {
+		t.Fatalf("accented default %q", got)
+	}
+	s, project := specSnapshot()
+	f, _, err := BuildField(FieldInput{Name: "A__c", Label: "A", Type: "Lookup", ReferenceTo: "Account", ChildRelationshipName: "Foos"}, project, s, false)
+	if err != nil || f.Options.ChildRelationshipName != "Foos" {
+		t.Fatalf("explicit name %v %#v", err, f.Options)
+	}
+	f, _, err = BuildField(FieldInput{Name: "B__c", Label: "B", Type: "Lookup", ReferenceTo: "Account"}, project, s, false)
+	if err != nil || f.Options.ChildRelationshipName != "Projects__r" {
+		t.Fatalf("default name %v %#v", err, f.Options)
+	}
+	if _, _, err := BuildField(FieldInput{Name: "C__c", Label: "C", Type: "Lookup", ReferenceTo: "Account", ChildRelationshipName: "bad name"}, project, s, false); err == nil {
+		t.Fatal("invalid child relationship name accepted")
+	}
+	if _, _, err := BuildField(FieldInput{Name: "C__c", Label: "C", Type: "Text", Length: 5, ChildRelationshipName: "Foos"}, project, s, false); err == nil {
+		t.Fatal("child relationship name on Text accepted")
+	}
+	f1, _, err := BuildField(FieldInput{Name: "D__c", Label: "D", Type: "Lookup", ReferenceTo: "Account", ChildRelationshipName: "Dup"}, project, s, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s.Objects = append(s.Objects, Object{Name: "Other__c", Label: "Other", PluralLabel: "Others", Fields: []Field{f1}})
+	if _, _, err := BuildField(FieldInput{Name: "E__c", Label: "E", Type: "Lookup", ReferenceTo: "Account", ChildRelationshipName: "dup"}, project, s, false); err == nil {
+		t.Fatal("duplicate child relationship name accepted")
+	}
+	if _, _, err := BuildField(FieldInput{Name: "F__c", Label: "F", Type: "Lookup", ReferenceTo: "Project__c", ChildRelationshipName: "Dup"}, project, s, false); err != nil {
+		t.Fatalf("name reused on another parent: %v", err)
+	}
+	typed := Object{Name: "Typed__c", Label: "Typed", PluralLabel: "Typed items", Fields: []Field{
+		{Name: "Id", Options: Options{Kind: fieldtype.Id}},
+		Complete(Field{Name: "Account__c", Label: "Account", Nillable: true, Length: 18, ReferenceTo: []string{"Account"}, RelationshipName: ptr("Account__r"),
+			Options: Options{Kind: fieldtype.Lookup, DeleteBehavior: "Restrict", ChildRelationshipName: "Typeditems__r"}}),
+	}}
+	s2 := Snapshot{Tenant: "t", Objects: append(StandardObjects(), typed)}
+	if got := s2.ChildRelationships("Account"); len(got) != 2 {
+		t.Fatalf("children %#v", got)
+	}
+	o, fld, err := s2.ChildRelationship("account", "typeditems__r")
+	if err != nil || o.Name != "Typed__c" || fld.Name != "Account__c" {
+		t.Fatalf("resolve %v %#v %#v", err, o.Name, fld.Name)
+	}
+	if _, _, err := s2.ChildRelationship("Account", "Nope"); err == nil {
+		t.Fatal("unknown child relationship resolved")
+	}
+}
+
+func TestChildRelationshipNameMinting(t *testing.T) {
+	// Spec table: migration 0005 mints exactly these names, via
+	// MintChildRelationshipName, for every reference field that carries no
+	// explicit childRelationshipName.
+	cases := []struct{ plural, object, field, want string }{
+		{"Typed items", "Typed__c", "Lk__c", "Typeditems__r"},
+		{"Cafés", "Cafe__c", "Lk__c", "Cafs__r"},
+		{"Contacts", "Contact", "AccountId", "Contacts"},
+		{"123 Widgets", "W__c", "DigitLk__c", "RelDigitLkc"},
+		{"παιδιά", "K__c", "GreekLk__c", "RelGreekLkc"},
+		{"!!!", "E__c", "BangLk__c", "RelBangLkc"},
+		{strings.Repeat("A", 41), "L__c", "LongLk__c", "RelLongLkc"}, // over the 40-char cap
+	}
+	for _, c := range cases {
+		obj := Object{Name: c.object, PluralLabel: c.plural}
+		if got := MintChildRelationshipName(obj, c.field); got != c.want {
+			t.Errorf("mint(%q) = %q, want %q", c.plural, got, c.want)
+		}
+	}
+	if got := FallbackChildRelationshipName("Acct__c"); got != "RelAcctc" {
+		t.Fatalf("fallback %q", got)
+	}
+	if got := FallbackChildRelationshipName(strings.Repeat("x", 60)); len(got) != 40 {
+		t.Fatalf("fallback not capped at 40: %q", got)
+	}
+}
+
+func TestChildRelationshipNameCapAndHint(t *testing.T) {
+	s, project := specSnapshot()
+	// Explicit names honor the 40-character cap, like relationshipName.
+	if _, _, err := BuildField(FieldInput{Name: "A__c", Label: "A", Type: "Lookup", ReferenceTo: "Account", ChildRelationshipName: strings.Repeat("x", 40)}, project, s, false); err != nil {
+		t.Fatalf("40-char name rejected: %v", err)
+	}
+	if _, _, err := BuildField(FieldInput{Name: "B__c", Label: "B", Type: "Lookup", ReferenceTo: "Account", ChildRelationshipName: strings.Repeat("x", 41)}, project, s, false); err == nil {
+		t.Fatal("41-char name accepted")
+	}
+	// An invalid derived default (digit-leading after stripping) asks for an
+	// explicit override instead of silently falling back.
+	digit := Object{Name: "W__c", Label: "W", PluralLabel: "123 Widgets", Schema: "sc_records", Table: "o_w", Fields: []Field{{Name: "Id", Options: Options{Kind: fieldtype.Id}}}}
+	_, _, err := BuildField(FieldInput{Name: "X__c", Label: "X", Type: "Lookup", ReferenceTo: "Account"}, digit, s, false)
+	if err == nil || !strings.Contains(err.Error(), "--child-relationship-name") {
+		t.Fatalf("derived default error %v", err)
+	}
+	_, _, err = BuildField(FieldInput{Name: "Y__c", Label: "Y", Type: "Lookup", ReferenceTo: "Account", ChildRelationshipName: "bad name"}, digit, s, false)
+	if err == nil || strings.Contains(err.Error(), "--child-relationship-name") {
+		t.Fatalf("explicit name error %v", err)
+	}
+	// A derived default that is a valid identifier still mints on create.
+	f, _, err := BuildField(FieldInput{Name: "Z__c", Label: "Z", Type: "Lookup", ReferenceTo: "Account"}, Object{Name: "Cafe__c", Label: "Cafe", PluralLabel: "Cafés", Schema: "sc_records", Table: "o_c", Fields: []Field{{Name: "Id", Options: Options{Kind: fieldtype.Id}}}}, s, false)
+	if err != nil || f.Options.ChildRelationshipName != "Cafs__r" {
+		t.Fatalf("accented default create %v %#v", err, f.Options)
+	}
+}
+
+func TestDescribeChildRelationships(t *testing.T) {
+	master := Object{Name: "Master__c", Label: "Master", PluralLabel: "Masters", Fields: []Field{
+		{Name: "Id", Options: Options{Kind: fieldtype.Id}},
+	}}
+	detail := Object{Name: "Detail__c", Label: "Detail", PluralLabel: "Details", Fields: []Field{
+		{Name: "Id", Options: Options{Kind: fieldtype.Id}},
+		Complete(Field{Name: "Master__c", Label: "Master", Length: 18, ReferenceTo: []string{"Master__c"}, RelationshipName: ptr("Master__r"),
+			Options: Options{Kind: fieldtype.MasterDetail, DeleteBehavior: "Cascade", ChildRelationshipName: "Details__r"}}),
+	}}
+	s := Snapshot{Tenant: "t", Objects: append(StandardObjects(), master, detail)}
+	p := records.Principal{Role: "admin", Catalog: &s}
+	d, err := records.Describe(p, "Account")
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, cr := range d.ChildRelationships {
+		if cr.ChildSObject == "Contact" && cr.Field == "AccountId" {
+			found = true
+			if cr.RelationshipName != "Contacts" || !cr.RestrictedDelete || cr.CascadeDelete || cr.DeprecatedAndHidden {
+				t.Fatalf("Contacts %#v", cr)
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("Account children %#v", d.ChildRelationships)
+	}
+	d, err = records.Describe(p, "Master__c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	found = false
+	for _, cr := range d.ChildRelationships {
+		if cr.ChildSObject == "Detail__c" && cr.Field == "Master__c" {
+			found = true
+			if cr.RelationshipName != "Details__r" || !cr.CascadeDelete || cr.RestrictedDelete {
+				t.Fatalf("Details %#v", cr)
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("Master children %#v", d.ChildRelationships)
+	}
+	// The restricted role does not see children through a denied field.
+	denied := Object{Name: "Account", Label: "Account", PluralLabel: "Accounts", Fields: []Field{
+		{Name: "Id", Options: Options{Kind: fieldtype.Id}},
+		Complete(Field{Name: "Compat_Text__c", Label: "Compat", Nillable: true, Length: 18, ReferenceTo: []string{"Group__c"}, RelationshipName: ptr("Compat_Text__r"),
+			Options: Options{Kind: fieldtype.Lookup, DeleteBehavior: "SetNull", ChildRelationshipName: "Accounts"}}),
+	}}
+	group := Object{Name: "Group__c", Label: "Group", PluralLabel: "Groups", Fields: []Field{
+		{Name: "Id", Options: Options{Kind: fieldtype.Id}},
+	}}
+	sg := Snapshot{Tenant: "t", Objects: []Object{group, denied}}
+	admin, aErr := records.Describe(records.Principal{Role: "admin", Catalog: &sg}, "Group__c")
+	if aErr != nil || len(admin.ChildRelationships) != 1 {
+		t.Fatalf("admin children %#v %v", admin.ChildRelationships, aErr)
+	}
+	rest, rErr := records.Describe(records.Principal{Role: "restricted", Catalog: &sg}, "Group__c")
+	if rErr != nil || len(rest.ChildRelationships) != 0 {
+		t.Fatalf("restricted children %#v %v", rest.ChildRelationships, rErr)
 	}
 }

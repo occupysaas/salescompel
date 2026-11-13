@@ -1,0 +1,1 @@
+SELECT Id,LastName,Account.Name FROM Contact WHERE LastName = 'O\'Brien'

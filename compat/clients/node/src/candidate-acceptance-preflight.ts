@@ -81,7 +81,7 @@ export async function collectSourceBindings(root = ROOT): Promise<Bindings> {
           "internal/platform/types.go",
           "internal/metadata/model.go",
           "internal/records/write.go",
-          "internal/query/select.go",
+          "internal/soql/compile.go",
           "internal/platform/metadata.go",
           "internal/migration/migrate.go",
           "internal/migration/v1.go",
@@ -156,8 +156,9 @@ export async function validateOutputDestination(output: string) {
   try {
     await lstat(out);
     throw new Error("PUBLICATION");
-  } catch (e: any) {
-    if (e.code !== "ENOENT") throw e;
+  } catch (e: unknown) {
+    const err = e as { code?: string };
+    if (err.code !== "ENOENT") throw e;
   }
 }
 export async function preflightAcceptance(
@@ -260,7 +261,8 @@ export async function preflightAcceptance(
       if (r.exitCode !== 0 || !r.complete) throw new Error("PREREQUISITE");
       const text = (await readFile(r.resultPath, "utf8")).trim();
       if (name === "postgres") {
-        if (JSON.parse(text).major !== 17) throw new Error("PREREQUISITE");
+        const pg = JSON.parse(text) as { major?: number } | null;
+        if (!pg || pg.major !== 17) throw new Error("PREREQUISITE");
         bindings.tools.postgres = "17";
       } else {
         const v = text.match(/\d+\.\d+(?:\.\d+)?/)?.[0];

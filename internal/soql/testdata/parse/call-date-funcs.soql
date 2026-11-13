@@ -1,0 +1,1 @@
+SELECT CALENDAR_QUARTER(CreatedDate) cq, CALENDAR_MONTH(CreatedDate) cm, DAY_IN_MONTH(CreatedDate) dim, DAY_IN_WEEK(CreatedDate) diw FROM Item__c

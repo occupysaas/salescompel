@@ -1,0 +1,1 @@
+SELECT toLabel(Stage__c) FROM Item__c

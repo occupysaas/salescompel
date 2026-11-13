@@ -66,7 +66,10 @@ func executeComposite(ctx context.Context, p Principal, req CompositeRequest, be
 			_ = rollback()
 		}
 	}()
-	execution, _ := policy.ForAPI(p, "65.0")
+	execution, polErr := policy.ForAPI(p, "65.0")
+	if polErr != nil {
+		return CompositeResponse{}, polErr
+	}
 	writer := records.Bind(tx, execution, *p.Catalog)
 	ids := map[string]string{}
 	out := CompositeResponse{CompositeResponse: make([]CompositeSubresponse, len(req.CompositeRequest))}

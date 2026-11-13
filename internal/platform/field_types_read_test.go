@@ -28,13 +28,34 @@ func describeMap(t *testing.T, f typedFixture, object string) map[string]map[str
 	return m
 }
 
+// describeEntry is the golden shape: every field keyed by name, plus a
+// childRelationships array. The node golden consumer skips that pseudo-key.
+func describeEntry(t *testing.T, f typedFixture, object string) map[string]any {
+	t.Helper()
+	d, e := f.s.Describe(context.Background(), f.p, object)
+	if e != nil {
+		t.Fatal(e)
+	}
+	raw, _ := json.Marshal(d)
+	var full map[string]any
+	json.Unmarshal(raw, &full)
+	entry := map[string]any{}
+	for name, field := range describeMap(t, f, object) {
+		entry[name] = field
+	}
+	entry["childRelationships"] = full["childRelationships"]
+	return entry
+}
+
 func TestDescribeEveryKind(t *testing.T) {
 	f := newTypedFixture(t)
 	golden := map[string]any{}
+	fields := map[string]map[string]map[string]any{}
 	for _, object := range []string{"Item__c", "Child__c", "Account", "Contact"} {
-		golden[object] = describeMap(t, f, object)
+		fields[object] = describeMap(t, f, object)
+		golden[object] = describeEntry(t, f, object)
 	}
-	item, child, account, contact := golden["Item__c"].(map[string]map[string]any), golden["Child__c"].(map[string]map[string]any), golden["Account"].(map[string]map[string]any), golden["Contact"].(map[string]map[string]any)
+	item, child, account, contact := fields["Item__c"], fields["Child__c"], fields["Account"], fields["Contact"]
 	checks := []struct {
 		field map[string]any
 		key   string
@@ -69,13 +90,10 @@ func TestDescribeEveryKind(t *testing.T) {
 	}
 }
 
-func soql(t *testing.T, f typedFixture, soql string) ([]map[string]any, error) {
+func soql(t *testing.T, f typedFixture, text string) ([]map[string]any, error) {
 	t.Helper()
-	q, e := ParseQuery(soql)
-	if e != nil {
-		return nil, e
-	}
-	return f.s.Select(context.Background(), f.p, q)
+	res, e := f.s.Query(context.Background(), f.p, text, 2000)
+	return res.Records, e
 }
 
 func TestQueryTypedProjection(t *testing.T) {
@@ -111,20 +129,42 @@ func TestQueryTypedProjection(t *testing.T) {
 	}
 	for _, clause := range []string{"WHERE Num__c = '0.3'", "WHERE Day__c = '2026-11-11'", "WHERE At__c = 'x'", "WHERE Flag__c = 'true'"} {
 		_, e := soql(t, f, "SELECT Id FROM Item__c "+clause+" LIMIT 10")
-		if code, _ := apiCode(e); code != "MALFORMED_QUERY" || !strings.Contains(e.Error(), "not yet supported") {
+		if code, _ := apiCode(e); code != "INVALID_FIELD" || !strings.Contains(e.Error(), "enclosed in quotes") {
 			t.Errorf("%s: %v", clause, e)
 		}
 	}
-	for _, clause := range []string{"WHERE Long__c = 'x'", "ORDER BY Long__c", "ORDER BY Multi__c", "WHERE Multi__c = 'A'"} {
+	for _, clause := range []string{"WHERE Long__c = 'x'", "ORDER BY Long__c", "ORDER BY Multi__c"} {
 		_, e := soql(t, f, "SELECT Id FROM Item__c "+clause+" LIMIT 10")
 		if code, _ := apiCode(e); code != "INVALID_FIELD" {
 			t.Errorf("%s: %v", clause, e)
 		}
 	}
+	// spec soql-03: "=" on a multi-select compares the whole canonical value.
+	if _, e := soql(t, f, "SELECT Id FROM Item__c WHERE Multi__c = 'A' LIMIT 10"); e != nil {
+		t.Errorf("multi-select equality: %v", e)
+	}
 	read, e := f.s.Read(ctx, f.p, "Item__c", id)
 	if e != nil || read["Amount__c"] != json.Number("12.5") || read["At__c"] != "2026-03-09T04:30:00.000+0000" {
 		t.Fatalf("Read %v %#v", e, read)
 	}
+
+	// Numeric ORDER BY must compare stored numbers, not their text projection:
+	// text order puts "9" above "10" on DESC.
+	t.Run("numeric order is numeric not textual", func(t *testing.T) {
+		nf := newTypedFixture(t)
+		for _, n := range []json.Number{"9", "10"} {
+			if _, err := nf.s.Create(ctx, nf.p, "Item__c", map[string]any{"Num__c": n, "Txt__c": "n" + n.String()}); err != nil {
+				t.Fatal(err)
+			}
+		}
+		res, err := nf.s.Query(ctx, nf.p, "SELECT Txt__c FROM Item__c ORDER BY Num__c DESC", 2000)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(res.Records) != 2 || res.Records[0]["Txt__c"] != "n10" || res.Records[1]["Txt__c"] != "n9" {
+			t.Fatalf("numeric DESC order = %#v", res.Records)
+		}
+	})
 }
 
 func TestAddressRead(t *testing.T) {

@@ -25,7 +25,7 @@ func ParseDate(v any) (string, error) {
 
 var dateTimeLayouts = []string{time.RFC3339Nano, "2006-01-02T15:04:05.999999999-0700", "2006-01-02T15:04:05.999999999"}
 
-// ParseDateTime accepts RFC 3339 with Z, ±hh:mm or ±hhmm, or no offset (UTC), and
+// ParseDateTime accepts RFC 3339 with Z, +/-hh:mm or +/-hhmm, or no offset (UTC), and
 // returns UTC truncated to whole seconds.
 func ParseDateTime(v any) (time.Time, error) {
 	s, ok := v.(string)

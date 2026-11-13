@@ -53,8 +53,9 @@ function signalGroup(child: ChildProcess, signal: NodeJS.Signals) {
   if (child.pid)
     try {
       process.kill(-child.pid, signal);
-    } catch (e: any) {
-      if (e.code !== "ESRCH") throw e;
+    } catch (e: unknown) {
+      const err = e as { code?: string };
+      if (err.code !== "ESRCH") throw e;
     }
 }
 function groupAlive(child: ChildProcess) {
@@ -69,8 +70,9 @@ function groupAlive(child: ChildProcess) {
         return (
           Number(fields[2]) === child.pid && !["Z", "X"].includes(fields[0])
         );
-      } catch (e: any) {
-        if (["ENOENT", "ESRCH"].includes(e.code)) return false;
+      } catch (e: unknown) {
+        const err = e as { code?: string };
+        if (["ENOENT", "ESRCH"].includes(err.code as string)) return false;
         throw e;
       }
     });
@@ -78,8 +80,9 @@ function groupAlive(child: ChildProcess) {
   try {
     process.kill(-child.pid, 0);
     return true;
-  } catch (e: any) {
-    if (e.code === "ESRCH") return false;
+  } catch (e: unknown) {
+    const err = e as { code?: string };
+    if (err.code === "ESRCH") return false;
     throw e;
   }
 }

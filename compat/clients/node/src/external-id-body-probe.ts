@@ -35,6 +35,23 @@ import {
   rememberBodyRecord,
   type BodyStateArtifact,
 } from "./external-id-body-recovery.ts";
+interface AdminQueryBody {
+  done?: unknown;
+  totalSize?: unknown;
+  records?: Array<{
+    Id?: unknown;
+    IsActive?: unknown;
+    Profile?: { PermissionsModifyAllData?: unknown };
+  }>;
+}
+interface DescribeField {
+  name?: unknown;
+  type?: unknown;
+  length?: unknown;
+  externalId?: unknown;
+  unique?: unknown;
+  caseSensitive?: unknown;
+}
 async function preflight(config: ExternalIdConfig, t: Transport) {
   await verifyIdentity(config, t);
   const user = await t.request(
@@ -47,7 +64,7 @@ async function preflight(config: ExternalIdConfig, t: Transport) {
         ),
       {},
     ),
-    b = user.body as any;
+    b = user.body as AdminQueryBody;
   if (
     user.status !== 200 ||
     b?.done !== true ||
@@ -59,7 +76,7 @@ async function preflight(config: ExternalIdConfig, t: Transport) {
   )
     throw new Error("ADMINISTRATOR_UNVERIFIED");
   const describe = await t.request(base + "sobjects/Account/describe", {}),
-    fields = (describe.body as any)?.fields;
+    fields = (describe.body as { fields?: DescribeField[] } | null)?.fields;
   const key = Array.isArray(fields)
     ? fields.filter((f) => f?.name === "Compat_Key__c")
     : [];
@@ -146,12 +163,14 @@ export async function runBodyProbe(
     caseId: string,
     response: import("./wire.ts").WireResponse,
   ) => {
-    const returned = (response.body as any)?.id;
+    const returned = (
+      response.body as { id?: unknown; created?: unknown } | null
+    )?.id;
     if (typeof returned === "string")
       await rememberBodyRecord(c, dir, caseId, returned);
     else if (
       response.status === 201 ||
-      (response.body as any)?.created === true
+      (response.body as { created?: unknown } | null)?.created === true
     )
       throw new Error("CREATED_ID_UNAVAILABLE");
   };

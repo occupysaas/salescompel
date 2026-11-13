@@ -45,7 +45,7 @@ test("rejects structurally invalid documents", async () => {
   );
 });
 test("rejects unresolved and remote references without fetching", async () => {
-  const s: any = spec();
+  const s: Record<string, any> = spec();
   s.paths["/items"].get.responses["200"].content = {
     "application/json": { schema: { $ref: "#/components/schemas/Missing" } },
   };
@@ -56,7 +56,7 @@ test("rejects unresolved and remote references without fetching", async () => {
   await assert.rejects(validateOpenApi(s), /External references/);
 });
 test("rejects duplicate operation IDs", async () => {
-  const s: any = spec();
+  const s: Record<string, any> = spec();
   s.paths["/other"] = s.paths["/items"];
   await assert.rejects(validateOpenApi(s), /operationId/);
 });

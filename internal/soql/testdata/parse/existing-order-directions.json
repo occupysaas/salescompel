@@ -1,0 +1,34 @@
+{
+ "select": [
+  {
+   "kind": "field",
+   "path": [
+    "id"
+   ]
+  },
+  {
+   "kind": "field",
+   "path": [
+    "compat_text__c"
+   ]
+  }
+ ],
+ "from": "account",
+ "where": null,
+ "groupBy": null,
+ "having": null,
+ "orderBy": [
+  {
+   "value": {
+    "kind": "field",
+    "path": [
+     "compat_text__c"
+    ]
+   },
+   "desc": true,
+   "nulls": "last"
+  }
+ ],
+ "limit": null,
+ "offset": null
+}

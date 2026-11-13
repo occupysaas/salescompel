@@ -4,6 +4,7 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { candidateAcceptanceMain } from "../src/candidate-acceptance-command.ts";
+import type { GateContext } from "../src/candidate-acceptance-preflight.ts";
 test("candidate client process includes client, OpenAPI and Composite tests with its bound reporter", async () => {
   const { candidateNodeTestArgs } =
     await import("../src/candidate-acceptance-run.ts");
@@ -28,7 +29,11 @@ test("full command blocks before fixture work and publishes only a sanitized rep
     r = JSON.parse(raw);
   assert.equal(r.outcome, "blocked");
   assert.equal(r.acceptanceEligible, false);
-  assert.equal(r.gates.find((g: any) => g.id === "jsforce").outcome, "not-run");
+  assert.equal(
+    r.gates.find((g: { id: string; outcome: string }) => g.id === "jsforce")
+      .outcome,
+    "not-run",
+  );
   assert.ok(!raw.includes("DATABASE_URL"));
   assert.equal(await candidateAcceptanceMain(["full", "--out", out], {}), 2);
 });
@@ -43,7 +48,10 @@ test("CI invokes acceptance once and preserves its failure without selecting pri
   const { readDoc } = await import("../src/validate.ts");
   const workflow = await readDoc(".github/workflows/platform.yml");
   const steps = workflow.jobs.candidate.steps;
-  const stage = steps.find((s: any) => s.name === "Full candidate acceptance");
+  const stage = steps.find(
+    (s: { name?: string; run?: string }) =>
+      s.name === "Full candidate acceptance",
+  );
   assert.ok(stage);
   const dir = await mkdtemp(join(tmpdir(), "p15-ci-"));
   t.after(() => rm(dir, { recursive: true, force: true }));
@@ -61,9 +69,10 @@ test("CI invokes acceptance once and preserves its failure without selecting pri
   });
   assert.equal(r.status, 1);
   assert.equal((await readFile(join(dir, "calls"), "utf8")).trim(), "called");
-  const upload = steps.find((s: any) =>
-    s.uses?.startsWith("actions/upload-artifact"),
-  );
+  const upload = steps.find(
+    (s: { uses?: string; if?: string; with?: Record<string, string> }) =>
+      s.uses?.startsWith("actions/upload-artifact"),
+  ) as unknown as { if: string; with: Record<string, string> };
   assert.equal(upload.if, "always()");
   assert.equal(
     upload.with.path,
@@ -192,7 +201,7 @@ test("restart result publication preserves its persistence fixture and is exclus
     scratch: dir,
     runId: "a".repeat(24),
     bindings: { source: "b".repeat(64) },
-  } as any;
+  } as unknown as GateContext;
   const expected = stepResult(c, "restart", [
     "restart/identity",
     "restart/values",

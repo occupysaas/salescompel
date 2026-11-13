@@ -9,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 	"salescompel/internal/metadata"
-	"salescompel/internal/query"
 	"salescompel/internal/records"
 	"strings"
 	"unicode/utf8"
@@ -191,7 +190,9 @@ func NewHandlerWithOptions(s *Store, assetDir string, o Options) http.Handler {
 			if method(w, r, "GET") {
 				w.Header().Set("Content-Type", apicontract.CandidateOpenAPIContentType)
 				w.WriteHeader(http.StatusOK)
-				_, _ = io.WriteString(w, apicontract.CandidateOpenAPI())
+				if _, wErr := io.WriteString(w, apicontract.CandidateOpenAPI()); wErr != nil {
+					return
+				}
 			}
 			return
 		}
@@ -270,17 +271,13 @@ func NewHandlerWithOptions(s *Store, assetDir string, o Options) http.Handler {
 			if !method(w, r, "GET") {
 				return
 			}
-			if isOrganizationDiscovery(r.URL.Query().Get("q")) {
+			qtext := r.URL.Query().Get("q")
+			if isOrganizationDiscovery(qtext) {
 				writeJSON(w, 200, map[string]any{"totalSize": 1, "done": true, "records": []any{map[string]any{"Name": p.Tenant, "InstanceName": nil, "IsSandbox": false, "TrialExpirationDate": nil, "NamespacePrefix": nil, "OrganizationType": "SalesCompel"}}})
 				return
 			}
-			if isCurrencyDiscovery(r.URL.Query().Get("q")) {
+			if isCurrencyDiscovery(qtext) {
 				writeJSON(w, 200, map[string]any{"totalSize": 1, "done": true, "records": []any{map[string]any{"attributes": map[string]any{"type": "Organization"}, "DefaultCurrencyIsoCode": catalog.Currency}}})
-				return
-			}
-			q, e := ParseQuery(r.URL.Query().Get("q"))
-			if e != nil {
-				writeError(w, e)
 				return
 			}
 			options, optionErr := url.ParseQuery(r.URL.RawQuery)
@@ -293,19 +290,48 @@ func NewHandlerWithOptions(s *Store, assetDir string, o Options) http.Handler {
 				writeError(w, e)
 				return
 			}
-			rows, e := s.Select(ctx, p, q)
+			batch := queryBatchSize(r)
+			if columns {
+				res, md, e := s.QueryColumns(ctx, p, qtext, batch)
+				if e != nil {
+					writeError(w, e)
+					return
+				}
+				result := map[string]any{"totalSize": res.TotalSize, "done": res.Done, "records": res.Records, "columnMetadata": md}
+				if res.NextLocator != "" {
+					result["nextRecordsUrl"] = apiBase + "query/" + res.NextLocator
+				}
+				writeJSON(w, 200, result)
+				return
+			}
+			res, e := s.Query(ctx, p, qtext, batch)
 			if e != nil {
 				writeError(w, e)
 				return
 			}
-			result := map[string]any{"totalSize": len(rows), "done": true, "records": rows}
-			if columns {
-				metadata, err := query.ColumnMetadata(p, q)
-				if err != nil {
-					writeError(w, err)
-					return
-				}
-				result["columnMetadata"] = metadata
+			result := map[string]any{"totalSize": res.TotalSize, "done": res.Done, "records": res.Records}
+			if res.NextLocator != "" {
+				result["nextRecordsUrl"] = apiBase + "query/" + res.NextLocator
+			}
+			writeJSON(w, 200, result)
+			return
+		}
+		if parts[0] == "query" {
+			if len(parts) != 2 {
+				writeError(w, invalid("INVALID_QUERY_LOCATOR", "Query locator is invalid"))
+				return
+			}
+			if !method(w, r, "GET") {
+				return
+			}
+			res, e := s.QueryMore(ctx, p, parts[1], queryBatchSize(r))
+			if e != nil {
+				writeError(w, e)
+				return
+			}
+			result := map[string]any{"totalSize": res.TotalSize, "done": res.Done, "records": res.Records}
+			if res.NextLocator != "" {
+				result["nextRecordsUrl"] = apiBase + "query/" + res.NextLocator
 			}
 			writeJSON(w, 200, result)
 			return
@@ -339,7 +365,11 @@ func NewHandlerWithOptions(s *Store, assetDir string, o Options) http.Handler {
 			}
 			objects := []Object{}
 			for _, object := range catalog.Objects {
-				d, _ := records.Describe(p, object.Name)
+				d, dErr := records.Describe(p, object.Name)
+				if dErr != nil {
+					writeError(w, problem(500, "INTERNAL_ERROR", "Describe failed"))
+					return
+				}
 				objects = append(objects, d)
 			}
 			writeJSON(w, 200, map[string]any{"sobjects": objects, "encoding": "UTF-8", "maxBatchSize": 1})
@@ -353,7 +383,11 @@ func NewHandlerWithOptions(s *Store, assetDir string, o Options) http.Handler {
 		}
 		if len(parts) == 3 && parts[2] == "describe" {
 			if method(w, r, "GET") {
-				d, _ := records.Describe(p, object)
+				d, dErr := records.Describe(p, object)
+				if dErr != nil {
+					writeError(w, problem(500, "INTERNAL_ERROR", "Describe failed"))
+					return
+				}
 				writeJSON(w, 200, d)
 			}
 			return

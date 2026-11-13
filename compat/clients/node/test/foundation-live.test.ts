@@ -59,7 +59,7 @@ test("live preflight binds two administrator sessions, restricted persona and fi
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
   t.after(() => server.close());
   const env = {
-    COMPAT_REFERENCE_URL: `http://127.0.0.1:${(server.address() as any).port}`,
+    COMPAT_REFERENCE_URL: `http://127.0.0.1:${(server.address() as { port: number }).port}`,
     COMPAT_REFERENCE_TOKEN: "admin-one",
     COMPAT_REFERENCE_FRESH_TOKEN: "admin-two",
     COMPAT_REFERENCE_RESTRICTED_TOKEN: "restricted",
@@ -214,7 +214,7 @@ test("absence verifier reads exact owned IDs and refuses a remaining record", as
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
   t.after(() => server.close());
   const env = {
-    COMPAT_REFERENCE_URL: `http://127.0.0.1:${(server.address() as any).port}`,
+    COMPAT_REFERENCE_URL: `http://127.0.0.1:${(server.address() as { port: number }).port}`,
     COMPAT_REFERENCE_TOKEN: "admin-one",
     COMPAT_REFERENCE_FRESH_TOKEN: "admin-two",
     COMPAT_REFERENCE_RESTRICTED_TOKEN: "restricted",

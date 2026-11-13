@@ -43,7 +43,7 @@ export function validateReadRequest(r: ReadRequest) {
 export async function readWithClient(
   r: ReadRequest,
   limits = { maxBytes: 8 * 1024 * 1024, timeoutMs: 60000 },
-): Promise<any> {
+): Promise<unknown> {
   validateReadRequest(r);
   if (
     !Number.isSafeInteger(limits.maxBytes) ||
@@ -89,7 +89,10 @@ export async function readWithClient(
         return;
       }
       try {
-        accept(JSON.parse(Buffer.concat(chunks).toString()));
+        const text = Buffer.concat(chunks).toString();
+        const parsed = JSON.parse(text) as unknown;
+        if (parsed == null) throw new Error("READ_INVALID_RESPONSE");
+        accept(parsed);
       } catch {
         reject(new Error("READ_INVALID_RESPONSE"));
       }

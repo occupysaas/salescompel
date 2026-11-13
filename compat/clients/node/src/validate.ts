@@ -135,7 +135,7 @@ export async function validateRepository(): Promise<string[]> {
     issues.push("Proxied CLI endpoint profile names no proxied hosts");
   const sources = (await readDoc("docs/compat/sources.yaml")).sources;
   if (!Array.isArray(sources)) throw new Error("Invalid source registry");
-  const sourceIds = new Set(sources.map((s: any) => s.id));
+  const sourceIds = new Set(sources.map((s: Record<string, any>) => s.id));
   if (sourceIds.size !== sources.length) issues.push("Duplicate sources");
   for (const s of sources)
     if (
@@ -150,10 +150,13 @@ export async function validateRepository(): Promise<string[]> {
   const contracts = (await readDoc("docs/compat/contracts/pilot.yaml"))
     .contracts;
   if (!Array.isArray(contracts)) throw new Error("Invalid contracts");
-  if (new Set(contracts.map((c: any) => c.id)).size !== contracts.length)
+  if (
+    new Set(contracts.map((c: Record<string, any>) => c.id)).size !==
+    contracts.length
+  )
     issues.push("Duplicate contracts");
   for (const id of SCENARIOS) {
-    const c = contracts.find((c: any) => c.id === id);
+    const c = contracts.find((c: Record<string, any>) => c.id === id);
     if (
       !c ||
       !c.owner ||
@@ -173,7 +176,7 @@ export async function validateRepository(): Promise<string[]> {
     )
       issues.push(`Invalid contract references ${c.id}`);
   const allContracts = [...contracts];
-  const notes: any[] = [];
+  const notes: Array<Record<string, any>> = [];
   for (const filename of await readdir(
     resolve(ROOT, "docs/compat/observations"),
   )) {
@@ -208,7 +211,8 @@ export async function validateRepository(): Promise<string[]> {
     for (const s of doc.sources)
       if (!sourceIds.has(s)) issues.push(`${path}: unknown source ${s}`);
     if (
-      new Set(doc.contracts.map((c: any) => c.id)).size !== doc.contracts.length
+      new Set(doc.contracts.map((c: Record<string, any>) => c.id)).size !==
+      doc.contracts.length
     )
       issues.push(`${path}: duplicate contracts`);
     allContracts.push(...doc.contracts);
@@ -311,7 +315,7 @@ export async function validateRepository(): Promise<string[]> {
     await schemaCheck("locales/catalog.schema.json", catalog, code);
   issues.push(...validateCatalogs(registry.languages, catalogs));
   for (const code of p.languages)
-    if (!registry.languages.some((l: any) => l.code === code))
+    if (!registry.languages.some((l: Record<string, any>) => l.code === code))
       issues.push(`Profile language ${code} is not registered`);
   // Formatter tags must be canonical BCP 47; Salesforce wire codes stay as-is.
   for (const l of registry.languages) {
@@ -383,9 +387,11 @@ export async function observationSummary(): Promise<{
   const contracts = (await readDoc("docs/compat/contracts/pilot.yaml"))
     .contracts;
   return {
-    observed: contracts.filter((c: any) => c.observationStatus === "observed")
-      .length,
-    notRun: contracts.filter((c: any) => c.observationStatus === "not_run")
-      .length,
+    observed: contracts.filter(
+      (c: Record<string, any>) => c.observationStatus === "observed",
+    ).length,
+    notRun: contracts.filter(
+      (c: Record<string, any>) => c.observationStatus === "not_run",
+    ).length,
   };
 }

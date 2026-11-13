@@ -18,7 +18,7 @@ Every Salesforce client, report and integration speaks SOQL. Today the candidate
 
 Plan 28 also left typed WHERE literals to this plan.
 
-After Plan 29, a single engine parses, validates, secures and executes the SOQL subset below against the tenant catalog. It serves the REST query endpoint, Composite, the connected editor and later plans (reports in 43, list views in 42, Bulk query in 32). Unmodified `sf data query`, JSforce and simple-salesforce can:
+After Plan 29, a single engine parses, validates, secures and executes the SOQL subset below against the tenant catalog. It serves the REST `GET /query` endpoint, the connected editor's record reads, and later plans (reports in 43, list views in 42, Bulk query in 32). Composite *saves* keep calling the record read path (now the engine via `RunAST`); Composite *query subrequests* stay out of scope (Plan 31). Unmodified `sf data query`, JSforce and simple-salesforce can:
 - run relationship, aggregate, date-literal and multi-condition queries;
 - page through large results with `nextRecordsUrl`.
 
@@ -79,7 +79,7 @@ Anti-goals:
 - Building SQL from user text. Only validated catalog identifiers are interpolated, quoted; every value is a parameter.
 - Results whose types differ from the record read path: numbers must be exact, and dates and date-times use the REST forms from Plan 28.
 - Paging that duplicates or drops rows, or lets one user resume another's locator.
-- Any change to the observed Plan 25 behavior for queries that work today: canonical names, null placement, error codes and the 35 column cases. The only exceptions are cases that move from "refused" to "supported", each listed in §9.
+- Any change to the observed Plan 25 behavior for queries that work today: canonical names, null placement, error codes and the 35 column cases. The only exceptions are cases that move from "refused" to "supported", each listed in Sec. 9.
 
 ## Global constraints
 
@@ -100,7 +100,7 @@ A new package, `internal/soql`, replaces the bounded `internal/query` grammar. `
 
 1. **Lexer.** Builds tokens with source offsets: keywords (case-insensitive), identifiers, string literals with the documented escapes (`\'`, `\"`, `\\`, `\n`, `\r`, `\t`, `\b`, `\f`, `\u` and, in LIKE patterns, `\%` and `\_`), number, date, date-time and date literal tokens, operators and punctuation. It keeps today's UTF-8 and NUL rejection.
 2. **Parser.** Produces an AST: `Query{Select []SelectItem; From; Alias; Where Expr; GroupBy; Having; OrderBy; Limit; Offset; With}`. `SelectItem` is a field path, subquery, aggregate, `toLabel` or `FIELDS()`. `Expr` is a boolean tree of comparisons, `IN`/`NOT IN` (with value lists or semi-join subqueries) and `INCLUDES`/`EXCLUDES`. `TYPEOF` parses into a node the binder refuses, so later plans only add binding.
-3. **Binder.** Resolves every name against the tenant snapshot, case-insensitively with canonical spelling: the object, alias, fields, relationship paths, child relationship names and aggregate aliases. It types every literal against its field, applies field policy and enforces the structural rules and limits in §5. After this stage nothing refers to user text, only to catalog entries and typed values.
+3. **Binder.** Resolves every name against the tenant snapshot, case-insensitively with canonical spelling: the object, alias, fields, relationship paths, child relationship names and aggregate aliases. It types every literal against its field, applies field policy and enforces the structural rules and limits in Sec. 5. After this stage nothing refers to user text, only to catalog entries and typed values.
 4. **Compiler.** Turns the bound AST into one parameterized PostgreSQL statement, plus one statement per child subquery.
    - Parent paths become `LEFT JOIN`s on `(tenant_id, id)` with an explicit tenant predicate on every joined table (RLS stays the backstop).
    - Child subqueries run as a second query per page over the page's parent IDs (`parent_col = ANY($ids)`), ordered and limited per parent with a window function.
@@ -128,11 +128,11 @@ A new package, `internal/soql`, replaces the bounded `internal/query` grammar. `
 - The inner query supports fields, parent paths, WHERE, ORDER BY and LIMIT. It does not support aggregates, GROUP BY, OFFSET or nested subqueries (documented: one level).
 - At most 20 subqueries per query (documented).
 - Each parent row gets `{ "totalSize", "done": true, "records" }`, or `null` when there are no child rows (documented REST shape).
-- A parent's child set is capped at 2,000 rows per page (*candidate*). If a parent has more, the query fails with `QUERY_TOO_COMPLICATED` ("child relationship exceeds candidate limit; add a LIMIT to the subquery"). Salesforce instead pages large child sets; that is recorded as a gap.
+- More than 2,000 child rows for one parent fails with `QUERY_TOO_COMPLICATED` ("child relationship exceeds candidate limit; add a LIMIT to the subquery") (*candidate*). Nothing is truncated. Salesforce instead pages large child sets; that is recorded as a gap.
 
 **Aggregates:**
 - `COUNT()` with no other select items returns `totalSize` = the count and `records: []` (documented).
-- `COUNT(field)`, `COUNT_DISTINCT(field)`, `SUM`, `AVG`, `MIN` and `MAX` return rows of type `AggregateResult`. Keys are the alias or `expr0`, `expr1`, … in select order, and grouped fields keep their names.
+- `COUNT(field)`, `COUNT_DISTINCT(field)`, `SUM`, `AVG`, `MIN` and `MAX` return rows of type `AggregateResult`. Keys are the alias when present; otherwise unaliased aggregate and function items are numbered `expr0`, `expr1`, … in the order they appear among those items. Grouped fields keep their names. So `SELECT Stage__c, COUNT(Id) total, SUM(Amount__c), AVG(Amount__c) …` keys `Stage__c`, `total`, `expr0`, `expr1`.
   - `SUM` and `AVG` apply to numeric kinds.
   - `MIN` and `MAX` apply to numeric, date, date-time, text-like and picklist kinds.
   - `COUNT_DISTINCT` and `COUNT(field)` apply to any filterable, non-long-text kind.
@@ -141,7 +141,9 @@ A new package, `internal/soql`, replaces the bounded `internal/query` grammar. `
 - Mixing aggregate and plain fields without GROUP BY gives `MALFORMED_QUERY` (documented).
 - Aggregate queries are not paged. More than 2,000 result groups gives `QUERY_TOO_COMPLICATED` (documented as unsupported by queryMore).
 
-**`toLabel(Picklist__c)`** returns the picklist label instead of the API value. Labels are tenant data with no translation (translation is a later plan). It is also allowed in WHERE, comparing against labels (documented). Other functions in SELECT give `MALFORMED_QUERY` naming the function as not supported.
+**`toLabel(Picklist__c)`** returns the picklist label instead of the API value. Labels are tenant data with no translation (translation is a later plan). It is also allowed in WHERE, comparing against labels (documented).
+
+**Date functions in SELECT** (`CALENDAR_YEAR`, `CALENDAR_QUARTER`, `CALENDAR_MONTH`, `DAY_IN_MONTH`, `DAY_IN_WEEK`, `DAY_IN_YEAR`, `DAY_ONLY`, `HOUR_IN_DAY`, `WEEK_IN_MONTH`, `WEEK_IN_YEAR` and the `FISCAL_*` equivalents) are allowed as select items on date and date-time fields, alongside their WHERE/GROUP BY/HAVING/ORDER BY uses. Their result keys follow the aggregate key rule: the alias when present, otherwise `expr0`, `expr1`, … among unaliased aggregate and function items. So `SELECT CALENDAR_YEAR(CreatedDate) y, COUNT(Id) FROM Item__c GROUP BY CALENDAR_YEAR(CreatedDate)` is valid and keys `y`, `expr0`. Functions outside this set, `toLabel` and `FIELDS()` give `MALFORMED_QUERY` naming the function as not supported.
 
 **FIELDS():**
 - `FIELDS(STANDARD)` selects the object's standard fields, which on custom objects means `Id` and `Name`.
@@ -238,7 +240,7 @@ Messages never echo values from the query, only field names and constructs (*can
 ## 6. Paging and locators
 
 This follows Plan 25's decision table.
-- The default page is 2,000 rows. `totalSize` counts all rows, and `done` is false while pages remain.
+- The default page is 2,000 rows. `totalSize` counts every row in the query's result after the query's own `LIMIT`/`OFFSET` are applied — the full membership that paging walks — and stays at that first value on every page. So `LIMIT 4500` over a larger match set reports `totalSize` 4500 and nine pages at batch 500. `done` is false while pages remain.
 - `nextRecordsUrl` is `/services/data/v65.0/query/{locator}-{offset}`, the documented shape.
 - `Sforce-Query-Options: batchSize=n` is honored between 200 and 2,000 (documented bounds). Values outside are clamped to the nearest bound (*candidate*; documentation says the batch size is a hint).
 
@@ -275,7 +277,7 @@ Subqueries need child relationship names, which describe does not expose today.
 ## 8. Security
 
 The binder applies `policy.Field` to every field reference in any clause, at every relationship level and in every subquery. A denied field anywhere gives `INVALID_FIELD`, exactly like today's projection, filter and order denial.
-- `FIELDS()` silently leaves denied fields out (see §2).
+- `FIELDS()` silently leaves denied fields out (see Sec. 2).
 - Object access stays the current two-role candidate policy until Plan 33, applied per joined object.
 - Joins and subqueries carry explicit tenant predicates under RLS.
 - Locators are bound to tenant and user.

@@ -23,6 +23,7 @@ type FieldInput struct {
 	DeleteBehavior            string
 	DisplayFormat             string
 	RelationshipName          string
+	ChildRelationshipName     string
 	StartingNumber            int64
 }
 
@@ -33,7 +34,14 @@ type ColumnDDL struct {
 	ForeignKey string // optional complete FOREIGN KEY constraint clause
 }
 
-var relationshipName = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]{0,39}__r$`)
+// childRelNameMax caps the full parent-side child relationship name.
+// childRelNamePattern must agree.
+const childRelNameMax = 40
+
+var (
+	relationshipName    = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]{0,39}__r$`)
+	childRelNamePattern = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]{0,39}$`)
+)
 
 func fail(format string, args ...any) error { return fmt.Errorf("invalid field: "+format, args...) }
 
@@ -56,17 +64,18 @@ func BuildField(in FieldInput, target Object, snapshot Snapshot, hasRecords bool
 	}
 	numeric, picklist, reference := k.Numeric(), k == fieldtype.Picklist || k == fieldtype.MultiselectPicklist, k.Reference()
 	irrelevant := map[string]bool{
-		"length":            in.Length != 0 && k != fieldtype.Text && k != fieldtype.LongTextArea,
-		"precision/scale":   (in.Precision != 0 || in.Scale != 0) && !numeric,
-		"visible lines":     in.VisibleLines != 0 && k != fieldtype.LongTextArea && k != fieldtype.MultiselectPicklist,
-		"values":            (len(in.Values) != 0 || in.Restricted) && !picklist,
-		"default":           in.Default != nil && k != fieldtype.Checkbox && !picklist,
-		"reference":         (in.ReferenceTo != "" || in.RelationshipName != "") && !reference,
-		"delete behavior":   in.DeleteBehavior != "" && k != fieldtype.Lookup,
-		"reparentable":      in.Reparentable && k != fieldtype.MasterDetail,
-		"display format":    (in.DisplayFormat != "" || in.StartingNumber != 0) && k != fieldtype.AutoNumber,
-		"required":          in.Required && (k == fieldtype.Checkbox || k == fieldtype.AutoNumber || k == fieldtype.MasterDetail || k == fieldtype.TextArea || k == fieldtype.LongTextArea || k == fieldtype.MultiselectPicklist),
-		"negative starting": in.StartingNumber < 0,
+		"length":                  in.Length != 0 && k != fieldtype.Text && k != fieldtype.LongTextArea,
+		"precision/scale":         (in.Precision != 0 || in.Scale != 0) && !numeric,
+		"visible lines":           in.VisibleLines != 0 && k != fieldtype.LongTextArea && k != fieldtype.MultiselectPicklist,
+		"values":                  (len(in.Values) != 0 || in.Restricted) && !picklist,
+		"default":                 in.Default != nil && k != fieldtype.Checkbox && !picklist,
+		"reference":               (in.ReferenceTo != "" || in.RelationshipName != "") && !reference,
+		"child relationship name": in.ChildRelationshipName != "" && !reference,
+		"delete behavior":         in.DeleteBehavior != "" && k != fieldtype.Lookup,
+		"reparentable":            in.Reparentable && k != fieldtype.MasterDetail,
+		"display format":          (in.DisplayFormat != "" || in.StartingNumber != 0) && k != fieldtype.AutoNumber,
+		"required":                in.Required && (k == fieldtype.Checkbox || k == fieldtype.AutoNumber || k == fieldtype.MasterDetail || k == fieldtype.TextArea || k == fieldtype.LongTextArea || k == fieldtype.MultiselectPicklist),
+		"negative starting":       in.StartingNumber < 0,
 	}
 	for name, bad := range irrelevant {
 		if bad {
@@ -189,6 +198,28 @@ func BuildField(in FieldInput, target Object, snapshot Snapshot, hasRecords bool
 			}
 		}
 		f.ReferenceTo, f.RelationshipName, f.Length = []string{parent.Name}, &rel, 18
+		// spec: child-01
+		childName := in.ChildRelationshipName
+		if childName == "" {
+			childName = DefaultChildRelationshipName(target)
+		}
+		if !childRelNamePattern.MatchString(childName) {
+			if in.ChildRelationshipName == "" {
+				return Field{}, ddl, fail("invalid child relationship name %q; pass --child-relationship-name to choose another", childName)
+			}
+			return Field{}, ddl, fail("invalid child relationship name %q", childName)
+		}
+		for _, o := range snapshot.Objects {
+			for _, old := range o.Fields {
+				if !old.Options.Kind.Reference() || !fieldReferences(old, parent.Name) {
+					continue
+				}
+				if strings.EqualFold(childRelationshipName(o, old), childName) {
+					return Field{}, ddl, fail("child relationship name %q already used on %s; pass --child-relationship-name to choose another", childName, parent.Name)
+				}
+			}
+		}
+		f.Options.ChildRelationshipName = childName
 		action := ""
 		if k == fieldtype.Lookup {
 			behavior := in.DeleteBehavior

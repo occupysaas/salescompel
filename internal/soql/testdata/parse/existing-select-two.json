@@ -1,0 +1,23 @@
+{
+ "select": [
+  {
+   "kind": "field",
+   "path": [
+    "id"
+   ]
+  },
+  {
+   "kind": "field",
+   "path": [
+    "name"
+   ]
+  }
+ ],
+ "from": "account",
+ "where": null,
+ "groupBy": null,
+ "having": null,
+ "orderBy": null,
+ "limit": null,
+ "offset": null
+}

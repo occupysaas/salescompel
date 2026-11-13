@@ -27,7 +27,7 @@ func checkedPool(ctx context.Context, url, group string) (*pgxpool.Pool, error) 
 	}
 	fail := func() (*pgxpool.Pool, error) { p.Close(); return nil, errors.New("unsafe runtime database privileges") }
 	var safe bool
-	e = p.QueryRow(ctx, `SELECT current_user=session_user AND session_user=$2 AND pg_has_role(current_user,$1,'MEMBER') AND NOT EXISTS(SELECT FROM pg_roles r WHERE pg_has_role(current_user,r.oid,'MEMBER') AND (r.rolsuper OR r.rolbypassrls OR r.rolcreaterole OR r.rolcreatedb OR r.rolreplication OR r.rolname='salescompel_owner' OR left(r.rolname,3)='pg_')) AND NOT EXISTS(SELECT FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname IN ('public','sc_catalog','sc_records','sc_control') AND pg_has_role(current_user,c.relowner,'MEMBER')) AND NOT has_schema_privilege(current_user,'public','CREATE') AND NOT has_schema_privilege(current_user,'sc_catalog','CREATE') AND NOT has_schema_privilege(current_user,'sc_records','CREATE')`, group, p.Config().ConnConfig.User).Scan(&safe)
+	e = p.QueryRow(ctx, `SELECT current_user=session_user AND session_user=$2 AND pg_has_role(current_user,$1,'MEMBER') AND NOT EXISTS(SELECT FROM pg_roles r WHERE pg_has_role(current_user,r.oid,'MEMBER') AND (r.rolsuper OR r.rolbypassrls OR r.rolcreaterole OR r.rolcreatedb OR r.rolreplication OR r.rolname='salescompel_owner' OR left(r.rolname,3)='pg_')) AND NOT EXISTS(SELECT FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname IN ('public','sc_catalog','sc_records','sc_query','sc_control') AND pg_has_role(current_user,c.relowner,'MEMBER')) AND NOT has_schema_privilege(current_user,'public','CREATE') AND NOT has_schema_privilege(current_user,'sc_catalog','CREATE') AND NOT has_schema_privilege(current_user,'sc_records','CREATE') AND NOT has_schema_privilege(current_user,'sc_query','CREATE')`, group, p.Config().ConnConfig.User).Scan(&safe)
 	if e != nil || !safe {
 		return fail()
 	}
@@ -120,6 +120,9 @@ func (s *Store) Catalog(ctx context.Context, p Principal) (metadata.Snapshot, er
 }
 
 func (s *Store) recordTx(p Principal) *records.Tx {
-	e, _ := policy.ForAPI(p, "65.0")
+	e, polErr := policy.ForAPI(p, "65.0")
+	if polErr != nil {
+		panic("policy.ForAPI failed for default API version: " + polErr.Error())
+	}
 	return records.Bind(s.tx, e, *p.Catalog)
 }

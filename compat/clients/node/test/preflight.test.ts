@@ -90,7 +90,9 @@ test("live CI stops before capture when shared preflight blocks", async () => {
   const { resolve } = await import("node:path");
   const { readDoc } = await import("../src/validate.ts");
   const workflow = await readDoc(".github/workflows/compat.yml");
-  const step = workflow.jobs.live.steps.find((s: any) => s.env?.CAPTURE_TARGET);
+  const step = workflow.jobs.live.steps.find(
+    (s: { env?: Record<string, unknown> }) => s.env?.CAPTURE_TARGET,
+  );
   const dir = await mkdtemp(resolve(tmpdir(), "ci-preflight-"));
   try {
     await mkdir(resolve(dir, "bin"));

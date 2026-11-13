@@ -71,7 +71,7 @@ func newTypedFixture(t *testing.T) typedFixture {
 		{Object: "Item__c", Name: "Tel__c", Type: "Phone"},
 		{Object: "Item__c", Name: "Site__c", Type: "Url"},
 		{Object: "Item__c", Name: "Parent__c", Type: "Lookup", ReferenceTo: "Parent__c"},
-		{Object: "Item__c", Name: "Keep__c", Type: "Lookup", ReferenceTo: "Parent__c", DeleteBehavior: "Restrict"},
+		{Object: "Item__c", Name: "Keep__c", Type: "Lookup", ReferenceTo: "Parent__c", DeleteBehavior: "Restrict", ChildRelationshipName: "Keeps__r"},
 		{Object: "Item__c", Name: "Serial__c", Type: "AutoNumber", DisplayFormat: "S-{000}", StartingNumber: 7},
 		{Object: "Child__c", Name: "Parent__c", Type: "MasterDetail", ReferenceTo: "Parent__c"},
 		{Object: "Grandchild__c", Name: "Child__c", Type: "MasterDetail", ReferenceTo: "Child__c"},
@@ -275,10 +275,10 @@ func TestAutoNumberConcurrent(t *testing.T) {
 	errs := make([]error, 8)
 	for i := range ids {
 		wg.Add(1)
-		go func(i int) {
+		go func(ctx context.Context, i int) {
 			defer wg.Done()
 			ids[i], errs[i] = f.s.Create(ctx, f.p, "Item__c", map[string]any{})
-		}(i)
+		}(ctx, i)
 	}
 	wg.Wait()
 	seen := map[string]bool{}

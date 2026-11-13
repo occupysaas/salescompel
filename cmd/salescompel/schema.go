@@ -41,11 +41,12 @@ type definitionFile struct {
 	DisplayFormat                      string `json:"displayFormat"`
 	StartingNumber                     *int64 `json:"startingNumber"`
 	RelationshipName                   string `json:"relationshipName"`
+	ChildRelationshipName              string `json:"childRelationshipName"`
 }
 
 var schemaFlags = map[string][]string{
 	"object":   {"tenant", "name", "label", "plural-label", "name-type", "display-format", "starting-number"},
-	"field":    {"tenant", "object", "name", "label", "type", "length", "precision", "scale", "visible-lines", "values", "restricted", "default", "required", "reference-to", "delete-behavior", "reparentable", "display-format", "starting-number", "relationship-name", "definition"},
+	"field":    {"tenant", "object", "name", "label", "type", "length", "precision", "scale", "visible-lines", "values", "restricted", "default", "required", "reference-to", "delete-behavior", "reparentable", "display-format", "starting-number", "relationship-name", "child-relationship-name", "definition"},
 	"inspect":  {"tenant"},
 	"currency": {"tenant", "code"},
 }
@@ -119,7 +120,8 @@ func parseSchemaArgs(kind string, args []string) (schemaRequest, error) {
 		f := metadata.FieldInput{Object: *str["object"], Name: *str["name"], Label: *str["label"], Type: *str["type"],
 			Length: *ints["length"], Precision: *ints["precision"], Scale: *ints["scale"], VisibleLines: *ints["visible-lines"],
 			Restricted: *bools["restricted"], Required: *bools["required"], Reparentable: *bools["reparentable"],
-			ReferenceTo: *str["reference-to"], DeleteBehavior: *str["delete-behavior"], DisplayFormat: *str["display-format"], RelationshipName: *str["relationship-name"]}
+			ReferenceTo: *str["reference-to"], DeleteBehavior: *str["delete-behavior"], DisplayFormat: *str["display-format"], RelationshipName: *str["relationship-name"],
+			ChildRelationshipName: *str["child-relationship-name"]}
 		if seen["values"] {
 			f.Values = values(*str["values"])
 		}
@@ -158,7 +160,8 @@ func parseDefinition(r schemaRequest, object, path string) (schemaRequest, error
 	}
 	f := metadata.FieldInput{Object: object, Name: d.Name, Label: d.Label, Type: d.Type, Length: d.Length, Precision: d.Precision, Scale: d.Scale,
 		VisibleLines: d.VisibleLines, Restricted: d.Restricted, Required: d.Required, Reparentable: d.Reparentable, Default: d.Default,
-		ReferenceTo: d.ReferenceTo, DeleteBehavior: d.DeleteBehavior, DisplayFormat: d.DisplayFormat, RelationshipName: d.RelationshipName}
+		ReferenceTo: d.ReferenceTo, DeleteBehavior: d.DeleteBehavior, DisplayFormat: d.DisplayFormat, RelationshipName: d.RelationshipName,
+		ChildRelationshipName: d.ChildRelationshipName}
 	for _, v := range d.Values {
 		f.Values = append(f.Values, metadata.PicklistValue{Value: v.Value, Label: v.Label, Active: true})
 		if v.Default {

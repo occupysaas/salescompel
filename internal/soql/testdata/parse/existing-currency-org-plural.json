@@ -1,0 +1,17 @@
+{
+ "select": [
+  {
+   "kind": "field",
+   "path": [
+    "DefaultCurrencyIsoCode"
+   ]
+  }
+ ],
+ "from": "Organizations",
+ "where": null,
+ "groupBy": null,
+ "having": null,
+ "orderBy": null,
+ "limit": null,
+ "offset": null
+}

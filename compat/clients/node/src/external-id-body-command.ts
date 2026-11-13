@@ -74,8 +74,9 @@ export async function bodyCommand(
       let previous;
       try {
         previous = await privateJSON(last);
-      } catch (e: any) {
-        if (e.code !== "ENOENT") throw e;
+      } catch (e: unknown) {
+        const err = e as { code?: string };
+        if (err.code !== "ENOENT") throw e;
       }
       if (previous !== undefined) {
         if (!previous || Object.keys(previous).sort().join() !== "cleanup,dir")
@@ -95,8 +96,9 @@ export async function bodyCommand(
         const held = await privateJSON(lock);
         if (Object.keys(held).join() !== "dir" || held.dir !== dir)
           throw new Error("EXTERNAL_ID_RUN_PENDING");
-      } catch (e: any) {
-        if (e.code !== "ENOENT") throw e;
+      } catch (e: unknown) {
+        const err = e as { code?: string };
+        if (err.code !== "ENOENT") throw e;
         await durableJSON(lock, { dir });
         await syncDirectory(root);
       }

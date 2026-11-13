@@ -1,0 +1,36 @@
+{
+ "select": [
+  {
+   "kind": "field",
+   "path": [
+    "Id"
+   ]
+  }
+ ],
+ "from": "Item__c",
+ "where": {
+  "kind": "compare",
+  "left": {
+   "kind": "call",
+   "func": "CALENDAR_YEAR",
+   "args": [
+    {
+     "kind": "field",
+     "path": [
+      "At__c"
+     ]
+    }
+   ]
+  },
+  "op": "=",
+  "right": {
+   "kind": "number",
+   "text": "2026"
+  }
+ },
+ "groupBy": null,
+ "having": null,
+ "orderBy": null,
+ "limit": null,
+ "offset": null
+}

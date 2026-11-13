@@ -35,6 +35,23 @@ import {
   rememberNormalizationRecord,
   type NormalizationStateArtifact,
 } from "./external-id-normalization-recovery.ts";
+interface AdminQueryBody {
+  done?: unknown;
+  totalSize?: unknown;
+  records?: Array<{
+    Id?: unknown;
+    IsActive?: unknown;
+    Profile?: { PermissionsModifyAllData?: unknown };
+  }>;
+}
+interface DescribeField {
+  name?: unknown;
+  type?: unknown;
+  length?: unknown;
+  externalId?: unknown;
+  unique?: unknown;
+  caseSensitive?: unknown;
+}
 async function preflight(config: ExternalIdConfig, t: Transport) {
   await verifyIdentity(config, t);
   const user = await t.request(
@@ -47,7 +64,7 @@ async function preflight(config: ExternalIdConfig, t: Transport) {
         ),
       {},
     ),
-    b = user.body as any;
+    b = user.body as AdminQueryBody;
   if (
     user.status !== 200 ||
     b?.done !== true ||
@@ -59,7 +76,7 @@ async function preflight(config: ExternalIdConfig, t: Transport) {
   )
     throw new Error("ADMINISTRATOR_UNVERIFIED");
   const describe = await t.request(base + "sobjects/Account/describe", {}),
-    fields = (describe.body as any)?.fields;
+    fields = (describe.body as { fields?: DescribeField[] } | null)?.fields;
   const key = Array.isArray(fields)
     ? fields.filter((f) => f?.name === "Compat_Key__c")
     : [];
@@ -197,7 +214,7 @@ export async function runNormalizationProbe(
             failure = e;
           }
           try {
-            const b = o.body as any;
+            const b = o.body as { id?: unknown; created?: unknown };
             if (typeof b?.id === "string")
               await rememberNormalizationRecord(c, dir, scenario.id, b.id);
             else if (o.status === 201 || b?.created === true)
@@ -216,7 +233,7 @@ export async function runNormalizationProbe(
           o.stateVerified = true;
           if (failure) throw failure;
           if (step.id.startsWith("seed")) {
-            const b = o.body as any;
+            const b = o.body as { id?: unknown; success?: unknown };
             if (
               o.status !== 201 ||
               b?.success !== true ||

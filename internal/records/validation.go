@@ -26,7 +26,10 @@ func Describe(p Principal, object string) (Object, error) {
 	if !ok {
 		return Object{}, invalid("INVALID_TYPE", "Unsupported object")
 	}
-	d, _ := p.Catalog.Object(object)
+	d, oErr := p.Catalog.Object(object)
+	if oErr != nil {
+		return Object{}, invalid("INVALID_TYPE", "Unsupported object")
+	}
 	d.Fields = []Field{}
 	for _, f := range fields {
 		if allowed(p, d.Name, f.Name) {
@@ -37,6 +40,13 @@ func Describe(p Principal, object string) (Object, error) {
 				f.ReferenceTo = []string{}
 			}
 			d.Fields = append(d.Fields, f)
+		}
+	}
+	// spec: child-01
+	d.ChildRelationships = []metadata.ChildRelationship{}
+	for _, cr := range p.Catalog.ChildRelationships(d.Name) {
+		if allowed(p, cr.ChildSObject, cr.Field) {
+			d.ChildRelationships = append(d.ChildRelationships, cr)
 		}
 	}
 	return d, nil
@@ -91,7 +101,13 @@ func catalogFields(p Principal, object string) ([]Field, bool) {
 	}
 	return nil, false
 }
-func fieldsFor(p Principal, object string) []Field { f, _ := catalogFields(p, object); return f }
+func fieldsFor(p Principal, object string) []Field {
+	f, ok := catalogFields(p, object)
+	if !ok {
+		return nil
+	}
+	return f
+}
 func canonicalObject(p Principal, input string) (string, bool) {
 	if p.Catalog != nil {
 		o, e := p.Catalog.Object(input)

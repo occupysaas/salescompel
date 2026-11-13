@@ -31,13 +31,13 @@ export interface Report {
     reason?: string;
   }[];
 }
-export function parseDocument(text: string): any {
+export function parseDocument(text: string): Record<string, any> {
   const doc = parseYaml(text, { uniqueKeys: true });
   if (doc.errors.length)
     throw new Error(doc.errors.map((e) => e.message).join("; "));
   return doc.toJS({ maxAliasCount: 50 });
 }
-export function sanitize(value: unknown, secrets: string[] = []): any {
+export function sanitize(value: unknown, secrets: string[] = []): unknown {
   if (typeof value === "string") {
     let s = value;
     for (const secret of secrets
@@ -313,13 +313,16 @@ export function validateCatalogs(
   if (!base) return ["Missing en_US catalog"];
   const params = (s: string) => {
     const names = new Set<string>();
-    function visit(nodes: any[]) {
+    function visit(nodes: Array<Record<string, any>>) {
       for (const node of nodes) {
-        if (node.type >= 1 && node.type <= 6) names.add(node.value);
+        if ((node.type as number) >= 1 && (node.type as number) <= 6)
+          names.add(node.value as string);
         if (node.options)
-          for (const option of Object.values(node.options) as any[])
-            visit(option.value);
-        if (node.children) visit(node.children);
+          for (const option of Object.values(node.options) as Array<
+            Record<string, any>
+          >)
+            visit(option.value as Array<Record<string, any>>);
+        if (node.children) visit(node.children as Array<Record<string, any>>);
       }
     }
     visit(parseMessage(s));

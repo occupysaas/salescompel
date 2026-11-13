@@ -1,0 +1,1 @@
+SELECT Name, (SELECT Name FROM Typeditems__r WHERE Stage__c = 'Open') FROM Account

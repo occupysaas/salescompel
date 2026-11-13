@@ -149,7 +149,9 @@ export async function runAcceptance(
     const g = report.gates.find((g) => g.id === id)!;
     g.outcome = blocked ? "blocked" : "failed";
     g.categories = [
-      categories.includes(category as any) ? category : "PROCESS",
+      (categories as readonly string[]).includes(category)
+        ? category
+        : "PROCESS",
     ];
     g.finishedAt = new Date().toISOString();
     g.startedAt ??= g.finishedAt;
@@ -395,15 +397,21 @@ export async function runAcceptance(
       digest(await readFile(ctx.binary)) !== ctx.bindings.binary
     )
       throw new Error("SOURCE");
-  } catch (e: any) {
-    c ??= e.context;
+  } catch (e: unknown) {
+    const err = e as {
+      context?: GateContext;
+      message?: string;
+      gate?: string;
+    };
+    c ??= err.context;
     const code = c?.processes.interrupted
       ? "SIGNAL"
-      : typeof e?.message === "string" && categories.includes(e.message)
-        ? e.message
+      : typeof err.message === "string" &&
+          (categories as readonly string[]).includes(err.message)
+        ? err.message
         : "PROCESS";
     setFailure(
-      e?.gate === "oauth" ? "oauth" : active,
+      err.gate === "oauth" ? "oauth" : active,
       code,
       ["PREREQUISITE", "SOURCE", "TIMEOUT", "SIGNAL"].includes(code),
     );

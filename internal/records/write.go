@@ -6,14 +6,14 @@ import (
 	"fmt"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	"salescompel/internal/query"
+	"maps"
 	"salescompel/internal/recordid"
+	"salescompel/internal/soql"
 	"sort"
 	"strings"
 	"time"
 )
 
-type Query = query.Query
 type database interface {
 	Exec(context.Context, string, ...any) (pgconn.CommandTag, error)
 	Query(context.Context, string, ...any) (pgx.Rows, error)
@@ -69,7 +69,8 @@ func table(p Principal, object string) string {
 }
 
 // columns returns quoted columns, SQL parameters and per-parameter casts.
-func columns(p Principal, object string, data map[string]any) ([]string, []any, []string) {
+// Unknown fields and values that do not coerce fail the write.
+func columns(p Principal, object string, data map[string]any) ([]string, []any, []string, error) {
 	keys := make([]string, 0, len(data))
 	for k := range data {
 		keys = append(keys, k)
@@ -77,12 +78,21 @@ func columns(p Principal, object string, data map[string]any) ([]string, []any, 
 	sort.Strings(keys)
 	cols, values, casts := []string{}, []any{}, []string{}
 	for _, k := range keys {
-		f, _ := field(p, object, k)
-		v, cast, _ := coerce(f, data[k])
+		f, fErr := field(p, object, k)
+		if fErr != nil {
+			return nil, nil, nil, fErr
+		}
+		v, cast, coerceErr := coerce(f, data[k])
+		if coerceErr != nil {
+			return nil, nil, nil, coerceErr
+		}
 		if strings.EqualFold(object, "Account") && f.Name == "Compat_Key__c" && f.ExternalID {
 			var canonical any
 			if text, ok := v.(string); ok {
-				key, _ := canonicalExternalID(text)
+				key, cErr := canonicalExternalID(text)
+				if cErr != nil {
+					key = ""
+				}
 				if key != "" {
 					canonical = key
 				} else {
@@ -97,7 +107,7 @@ func columns(p Principal, object string, data map[string]any) ([]string, []any, 
 		values = append(values, v)
 		casts = append(casts, cast)
 	}
-	return cols, values, casts
+	return cols, values, casts, nil
 }
 func create(ctx context.Context, db database, p Principal, object string, data map[string]any) (string, error) {
 	var err error
@@ -130,7 +140,10 @@ func create(ctx context.Context, db database, p Principal, object string, data m
 	if err != nil {
 		return "", dbError(err)
 	}
-	cols, values, casts := columns(p, object, data)
+	cols, values, casts, err := columns(p, object, data)
+	if err != nil {
+		return "", err
+	}
 	numbers, err := allocateAutoNumbers(ctx, db, p, object, time.Now())
 	if err != nil {
 		return "", err
@@ -165,7 +178,10 @@ func update(ctx context.Context, db database, p Principal, object, id string, da
 	if err := Validate(p, object, data, false); err != nil {
 		return err
 	}
-	cols, values, casts := columns(p, object, data)
+	cols, values, casts, err := columns(p, object, data)
+	if err != nil {
+		return err
+	}
 	sets := []string{}
 	for i, c := range cols {
 		sets = append(sets, fmt.Sprintf("%s=$%d%s", c, i+3, casts[i]))
@@ -210,18 +226,19 @@ func (s *Tx) Read(ctx context.Context, object, id string) (map[string]any, error
 	if err != nil {
 		return nil, dbError(pgx.ErrNoRows)
 	}
-	q := Query{Object: object, HasWhere: true, WhereField: "Id", WhereValue: &id, Limit: 1}
+	names := make([]string, 0, len(d.Fields))
 	for _, f := range d.Fields {
-		q.Fields = append(q.Fields, f.Name)
+		names = append(names, f.Name)
 	}
-	rows, err := s.Select(ctx, q)
+	text := "SELECT " + strings.Join(names, ",") + " FROM " + object + " WHERE Id = '" + id + "' LIMIT 1"
+	res, err := s.Query(ctx, text, soql.Options{BatchSize: 1})
 	if err != nil {
 		return nil, err
 	}
-	if len(rows) == 0 {
+	if res.TotalSize == 0 {
 		return nil, dbError(pgx.ErrNoRows)
 	}
-	return rows[0], nil
+	return res.Records[0], nil
 }
 func (s *Tx) UpsertAccount(ctx context.Context, key string, data map[string]any) (string, bool, error) {
 	p := s.principal
@@ -239,9 +256,7 @@ func (s *Tx) UpsertAccount(ctx context.Context, key string, data map[string]any)
 		}
 	}
 	copyData := map[string]any{}
-	for k, v := range data {
-		copyData[k] = v
-	}
+	maps.Copy(copyData, data)
 	copyData["Compat_Key__c"] = key
 	if err := Validate(p, "Account", copyData, false); err != nil {
 		return "", false, err

@@ -52,16 +52,31 @@ test("tie permutation and page movement are diagnostics after full traversal", (
   assert.ok(result.diagnostics.length > 0);
 });
 
+type TiePage = {
+  status: number;
+  body: {
+    totalSize: number;
+    done: boolean;
+    records: Array<{ Id: string; Compat_Text__c: string }>;
+    nextRecordsUrl?: { route: string; value: string };
+  };
+};
 test("tie comparison rejects loss, duplication, foreign rows and changed values", () => {
   for (const mutate of [
-    (r: Result) => ((r.observations as any)["ties:1"].body.records = []),
     (r: Result) =>
-      ((r.observations as any)["ties:1"].body.records[0].Id = "001-0"),
+      ((r.observations as Record<string, TiePage>)["ties:1"].body.records = []),
     (r: Result) =>
-      ((r.observations as any)["ties:1"].body.records[0].Id = "foreign"),
+      ((r.observations as Record<string, TiePage>)[
+        "ties:1"
+      ].body.records[0].Id = "001-0"),
     (r: Result) =>
-      ((r.observations as any)["ties:1"].body.records[0].Compat_Text__c =
-        "different"),
+      ((r.observations as Record<string, TiePage>)[
+        "ties:1"
+      ].body.records[0].Id = "foreign"),
+    (r: Result) =>
+      ((r.observations as Record<string, TiePage>)[
+        "ties:1"
+      ].body.records[0].Compat_Text__c = "different"),
   ]) {
     const b = fixture();
     mutate(b);
@@ -71,15 +86,23 @@ test("tie comparison rejects loss, duplication, foreign rows and changed values"
 
 test("tie comparison rejects failed pages, broken links, totals and truncation", () => {
   for (const mutate of [
-    (r: Result) => ((r.observations as any)["ties:0"].status = 500),
-    (r: Result) => delete (r.observations as any)["ties:0"].body.nextRecordsUrl,
     (r: Result) =>
-      ((r.observations as any)["ties:1"].body.nextRecordsUrl = {
+      ((r.observations as Record<string, TiePage>)["ties:0"].status = 500),
+    (r: Result) =>
+      delete (r.observations as Record<string, TiePage>)["ties:0"].body
+        .nextRecordsUrl,
+    (r: Result) =>
+      ((r.observations as Record<string, TiePage>)[
+        "ties:1"
+      ].body.nextRecordsUrl = {
         route: "wrong",
         value: "wrong",
       }),
-    (r: Result) => ((r.observations as any)["ties:1"].body.totalSize = 200),
-    (r: Result) => delete (r.observations as any)["ties:1"],
+    (r: Result) =>
+      ((r.observations as Record<string, TiePage>)["ties:1"].body.totalSize =
+        200),
+    (r: Result) =>
+      delete (r.observations as unknown as Record<string, unknown>)["ties:1"],
   ]) {
     const b = fixture();
     mutate(b);

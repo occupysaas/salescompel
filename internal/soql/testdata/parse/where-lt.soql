@@ -1,0 +1,1 @@
+SELECT Id FROM Item__c WHERE Num__c < 5

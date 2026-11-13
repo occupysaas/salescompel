@@ -40,7 +40,7 @@ latest general release. No field-type, describe or REST value change after
 | Contact.Name | `FirstName LastName` | candidate / gap | locale-dependent order waits for Plan 33 |
 | Auto-number backfill | ascending Id order | candidate | Salesforce offers backfill as an option; order undocumented |
 | Required on new field | only for empty objects | candidate | candidate restriction |
-| Stored-not-enforced fields absent from describe | yes | candidate | design choice (spec §6) |
+| Stored-not-enforced fields absent from describe | yes | candidate | design choice (spec Sec. 6) |
 
 ## Gaps carried by this plan
 

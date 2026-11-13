@@ -1,0 +1,37 @@
+{
+ "select": [
+  {
+   "kind": "call",
+   "func": "CALENDAR_MONTH",
+   "args": [
+    {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    }
+   ],
+   "alias": "m"
+  }
+ ],
+ "from": "Item__c",
+ "where": null,
+ "groupBy": [
+  {
+   "kind": "call",
+   "func": "CALENDAR_MONTH",
+   "args": [
+    {
+     "kind": "field",
+     "path": [
+      "Day__c"
+     ]
+    }
+   ]
+  }
+ ],
+ "having": null,
+ "orderBy": null,
+ "limit": null,
+ "offset": null
+}

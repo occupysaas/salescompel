@@ -1,0 +1,54 @@
+{
+ "select": [
+  {
+   "kind": "agg",
+   "func": "COUNT",
+   "arg": {
+    "kind": "field",
+    "path": [
+     "Id"
+    ]
+   },
+   "alias": "total"
+  }
+ ],
+ "from": "Item__c",
+ "where": null,
+ "groupBy": [
+  {
+   "kind": "field",
+   "path": [
+    "Stage__c"
+   ]
+  }
+ ],
+ "having": null,
+ "orderBy": [
+  {
+   "value": {
+    "kind": "field",
+    "path": [
+     "total"
+    ]
+   },
+   "desc": false,
+   "nulls": "default"
+  },
+  {
+   "value": {
+    "kind": "agg",
+    "func": "COUNT",
+    "arg": {
+     "kind": "field",
+     "path": [
+      "Id"
+     ]
+    }
+   },
+   "desc": true,
+   "nulls": "default"
+  }
+ ],
+ "limit": null,
+ "offset": null
+}
