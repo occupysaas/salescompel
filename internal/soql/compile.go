@@ -167,14 +167,15 @@ func (c *compiler) compileSelection(b *Bound, root string) ([]string, map[int][]
 		}))
 	}
 	joinIDs := map[string]int{}
-	// Aggregate queries never select hidden join ids: they would have to be
-	// grouped, and aggregate rows do not carry parent paths for nesting.
-	if b.Aggregate {
-		return parts, compound, joinIDs, nil
-	}
 	base := len(parts)
 	for i, js := range c.joins {
-		parts = append(parts, js.alias+".id")
+		if b.Aggregate {
+			// MIN(id) is legal under GROUP BY and stays NULL when the left
+			// join missed, preserving null parent paths in the shaper.
+			parts = append(parts, "MIN("+js.alias+".id)")
+		} else {
+			parts = append(parts, js.alias+".id")
+		}
 		joinIDs[js.alias] = base + i
 	}
 	return parts, compound, joinIDs, nil
@@ -278,8 +279,9 @@ func (c *compiler) compoundExprs(owner string, obj metadata.Object, f metadata.F
 	return comps, exprs, nil
 }
 
-// fieldExpr renders a value for predicates and ORDER BY: raw SQL types so
-// typed comparisons and grouping stay exact.
+// fieldExpr renders an ORDER BY value. Plain fields use the SELECT projection
+// form, while aggregates and functions stay raw so ordering and grouping are
+// exact.
 func (c *compiler) fieldExpr(owner string, v BoundValue) string {
 	if v.Agg != "" {
 		return aggExpr(owner, v)

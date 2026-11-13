@@ -163,16 +163,58 @@ func TestAggregates(t *testing.T) {
 		}
 	})
 
-	t.Run("aggregate and grouped children refused", func(t *testing.T) {
+	t.Run("invalid aggregate shapes refused", func(t *testing.T) {
 		for _, query := range []string{
 			"SELECT COUNT(Id), (SELECT Id FROM Contacts) FROM Account",
 			"SELECT Name, (SELECT Id FROM Contacts) FROM Account GROUP BY Name",
 			"SELECT COUNT(Id) FROM Item__c GROUP BY COUNT(Id)",
+			"SELECT COUNT() FROM Item__c GROUP BY Stage__c",
+			"SELECT toLabel(Stage__c), COUNT(Id) FROM Item__c",
+			"SELECT DAY_ONLY(At__c), COUNT(Id) FROM Item__c",
+			"SELECT Name, COUNT(Id) FROM Item__c GROUP BY Stage__c",
+			"SELECT Stage__c, COUNT(Id) FROM Item__c GROUP BY toLabel(Stage__c)",
 		} {
 			err := soqlErr(t, s, p, query)
 			if code, _ := apiCode(err); code != "MALFORMED_QUERY" {
 				t.Fatalf("%s: got %v, want MALFORMED_QUERY", query, err)
 			}
+		}
+	})
+
+	t.Run("grouped parent path nulls", func(t *testing.T) {
+		gF := newTypedFixture(t)
+		parent, err := gF.s.Create(ctx, gF.p, "Parent__c", map[string]any{"Name": "P"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err = gF.s.Create(ctx, gF.p, "Item__c", map[string]any{"Txt__c": "with", "Parent__c": parent}); err != nil {
+			t.Fatal(err)
+		}
+		if _, err = gF.s.Create(ctx, gF.p, "Item__c", map[string]any{"Txt__c": "without"}); err != nil {
+			t.Fatal(err)
+		}
+		res := soqlQuery(t, gF.s, gF.p,
+			"SELECT Parent__r.Name, COUNT(Id) FROM Item__c GROUP BY Parent__r.Name ORDER BY Parent__r.Name")
+		if res.TotalSize != 2 || len(res.Records) != 2 {
+			t.Fatalf("grouped parent path = %#v", res)
+		}
+		nullSeen, namedSeen := false, false
+		for _, rec := range res.Records {
+			if got := aggInt(t, rec["expr0"]); got != 1 {
+				t.Fatalf("group count = %v", rec["expr0"])
+			}
+			if rec["Parent__r"] == nil {
+				nullSeen = true
+				continue
+			}
+			rel, ok := rec["Parent__r"].(map[string]any)
+			if !ok || rel["Name"] != "P" {
+				t.Fatalf("grouped parent path record = %#v", rec)
+			}
+			namedSeen = true
+		}
+		if !nullSeen || !namedSeen {
+			t.Fatalf("null=%v named=%v records=%#v", nullSeen, namedSeen, res.Records)
 		}
 	})
 
@@ -203,7 +245,7 @@ func TestToLabelAndFields(t *testing.T) {
 		Object: "Item__c", Name: "Status__c", Label: "Status", Type: "Picklist",
 		Values: []metadata.PicklistValue{
 			{Active: true, Value: "Closed", Label: "Closed label"},
-			{Active: true, Value: "Open", Label: "Open label"},
+			{Active: true, Value: "Open", Label: "O'Brien"},
 		},
 	}); err != nil {
 		t.Fatal(err)
@@ -231,8 +273,15 @@ func TestToLabelAndFields(t *testing.T) {
 			}
 			got[label] = true
 		}
-		if !got["Closed label"] || !got["Open label"] {
+		if !got["Closed label"] || !got["O'Brien"] {
 			t.Fatalf("labels = %#v", got)
+		}
+	})
+
+	t.Run("toLabel label with apostrophe", func(t *testing.T) {
+		res := soqlQuery(t, s, p, `SELECT toLabel(Status__c) FROM Item__c WHERE toLabel(Status__c) = 'O\'Brien'`)
+		if res.TotalSize != 1 || res.Records[0]["expr0"] != "O'Brien" {
+			t.Fatalf("apostrophe label = %#v", res)
 		}
 	})
 

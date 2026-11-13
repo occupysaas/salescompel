@@ -388,6 +388,11 @@ func (b *binder) bindGroupBy(q *Query, obj metadata.Object, ctx *bindCtx) ([]Bou
 		if v.Agg != "" {
 			return nil, malformed("aggregate functions are not groupable")
 		}
+		// GROUP BY is fields, parent paths and date functions only. Labels are
+		// per-row expressions and are refused here. spec: soql-05
+		if v.Label {
+			return nil, malformed("toLabel is not groupable")
+		}
 		if v.Func == "" && !v.Field.Groupable {
 			return nil, malformed("field cannot be grouped")
 		}
@@ -427,7 +432,9 @@ func (b *binder) finishAggregates(q *Query, out *Bound, child bool) error {
 			if c.Agg == "COUNT" && c.Field.Name == "" {
 				countOnly = true
 			}
-		case c.Func == "":
+		default:
+			// Functions are per-row values: like plain fields they cannot be
+			// mixed with aggregates without GROUP BY. spec: soql-02
 			plain = true
 		}
 	}
@@ -442,6 +449,10 @@ func (b *binder) finishAggregates(q *Query, out *Bound, child bool) error {
 	if out.Aggregate && len(out.Children) > 0 {
 		return malformed("aggregate queries cannot be combined with subqueries")
 	}
+	// COUNT() is an envelope-only count; grouping would need result rows.
+	if countOnly && len(out.GroupBy) > 0 {
+		return malformed("COUNT() cannot be used with GROUP BY")
+	}
 	out.CountOnly = countOnly && hasAgg && len(out.Columns) == 1 && len(out.GroupBy) == 0
 	if hasAgg && len(out.GroupBy) == 0 && plain {
 		return malformed("aggregates cannot be mixed with plain fields without GROUP BY")
@@ -449,6 +460,11 @@ func (b *binder) finishAggregates(q *Query, out *Bound, child bool) error {
 	// spec: soql-05 — HAVING is an aggregate-query clause.
 	if out.Having != nil && !out.Aggregate {
 		return malformed("HAVING requires aggregation or GROUP BY")
+	}
+	if len(out.GroupBy) > 0 {
+		if err := checkGrouped(out); err != nil {
+			return err
+		}
 	}
 	return nil
 }
