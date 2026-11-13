@@ -78,9 +78,22 @@ func TestAggregates(t *testing.T) {
 			t.Fatalf("attributes = %#v", rec["attributes"])
 		}
 		gotKeys := aggKeys(rec)
-		for _, k := range []string{"Stage__c", "total", "expr0", "expr1", "expr2", "expr3"} {
+		wantKeys := []string{"Stage__c", "total", "expr0", "expr1", "expr2", "expr3"}
+		wantSet := map[string]bool{}
+		for _, k := range wantKeys {
+			wantSet[k] = true
+		}
+		if len(gotKeys) != len(wantSet) {
+			t.Fatalf("aggregate key set = %#v, want exactly %v", gotKeys, wantKeys)
+		}
+		for _, k := range wantKeys {
 			if !gotKeys[k] {
 				t.Fatalf("missing aggregate key %q in %#v", k, rec)
+			}
+		}
+		for k := range gotKeys {
+			if !wantSet[k] {
+				t.Fatalf("unexpected aggregate key %q in %#v", k, rec)
 			}
 		}
 		if rec["Stage__c"] != "Closed" {
@@ -131,6 +144,35 @@ func TestAggregates(t *testing.T) {
 		}
 		if got := aggInt(t, res.Records[0]["expr0"]); got != 2 {
 			t.Fatalf("COUNT_DISTINCT = %v", res.Records[0]["expr0"])
+		}
+	})
+
+	t.Run("min max numeric exact text encoding", func(t *testing.T) {
+		res := soqlQuery(t, s, p, "SELECT MIN(Amount__c), MAX(Amount__c) FROM Item__c")
+		if res.TotalSize != 1 || len(res.Records) != 1 {
+			t.Fatalf("min/max = %#v", res)
+		}
+		rec := res.Records[0]
+		min, ok := rec["expr0"].(json.Number)
+		if !ok || string(min) != "0.1" {
+			t.Fatalf("MIN(Amount__c) = %T %v, want json.Number(0.1)", rec["expr0"], rec["expr0"])
+		}
+		max, ok := rec["expr1"].(json.Number)
+		if !ok || string(max) != "0.4" {
+			t.Fatalf("MAX(Amount__c) = %T %v, want json.Number(0.4)", rec["expr1"], rec["expr1"])
+		}
+	})
+
+	t.Run("aggregate and grouped children refused", func(t *testing.T) {
+		for _, query := range []string{
+			"SELECT COUNT(Id), (SELECT Id FROM Contacts) FROM Account",
+			"SELECT Name, (SELECT Id FROM Contacts) FROM Account GROUP BY Name",
+			"SELECT COUNT(Id) FROM Item__c GROUP BY COUNT(Id)",
+		} {
+			err := soqlErr(t, s, p, query)
+			if code, _ := apiCode(err); code != "MALFORMED_QUERY" {
+				t.Fatalf("%s: got %v, want MALFORMED_QUERY", query, err)
+			}
 		}
 	})
 

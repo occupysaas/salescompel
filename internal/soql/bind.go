@@ -434,11 +434,13 @@ func (b *binder) finishAggregates(q *Query, out *Bound, child bool) error {
 	if child && hasAgg {
 		return malformed("aggregates are not supported in subqueries")
 	}
-	if hasAgg && len(out.Children) > 0 {
-		return malformed("aggregates cannot be combined with subqueries")
-	}
 	if hasAgg || len(out.GroupBy) > 0 {
 		out.Aggregate = true
+	}
+	// GROUP BY makes an aggregate query even without an aggregate function;
+	// either form is a single grouped statement and cannot carry child rows.
+	if out.Aggregate && len(out.Children) > 0 {
+		return malformed("aggregate queries cannot be combined with subqueries")
 	}
 	out.CountOnly = countOnly && hasAgg && len(out.Columns) == 1 && len(out.GroupBy) == 0
 	if hasAgg && len(out.GroupBy) == 0 && plain {

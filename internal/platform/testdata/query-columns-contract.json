@@ -802,13 +802,24 @@
       "principal": "admin",
       "query": "SELECT count(Id) FROM Account",
       "querySuffix": "&columns=true",
-      "expectedStatus": 400,
-      "expectedBody": [
-        {
-          "errorCode": "QUERY_TOO_COMPLICATED",
-          "message": "aggregate queries are not yet supported"
-        }
-      ],
+      "expectedStatus": 200,
+      "expectedBody": {
+        "totalSize": 1,
+        "done": true,
+        "records": [
+          {
+            "attributes": {
+              "type": "AggregateResult"
+            },
+            "expr0": 1
+          }
+        ],
+        "columnMetadata": [
+          {
+            "columnName": "Id"
+          }
+        ]
+      },
       "basis": [
         "candidate-contract",
         "existing-policy"
