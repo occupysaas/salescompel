@@ -1,0 +1,31 @@
+# No NEW source file over 500 lines, and no file in .filesize-allowlist growing.
+# The checker is scripts/check-file-size.sh. The allowlist may shrink in a pull
+# request but never gain or raise a line.
+name: File size
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  file-size:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Self-test the checker
+        run: sh scripts/check-file-size.sh --self-test
+      - name: Fetch the base branch allowlist
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: git fetch --no-tags --depth=1 origin "+refs/heads/$BASE_REF:refs/remotes/origin/$BASE_REF"
+      - name: No new or grown oversized files
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          if [ -n "$BASE_REF" ]; then
+            sh scripts/check-file-size.sh --base "origin/$BASE_REF"
+          else
+            sh scripts/check-file-size.sh
+          fi
