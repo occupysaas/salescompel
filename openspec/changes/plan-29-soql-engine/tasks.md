@@ -44,9 +44,9 @@ with DCO sign-off.
 
 ## 7. Aggregates, grouping and field functions
 
-- [ ] 7.1 Failing tests: `TestAggregates`, `TestToLabelAndFields`, `TestDateFunctions`
-- [ ] 7.2 AggregateResult rows; COUNT() totalSize with empty Records; toLabel; FIELDS(); date functions in UTC
-- [ ] 7.3 Commit `feat: add SOQL aggregates, grouping and field functions`
+- [x] 7.1 Failing tests: `TestAggregates`, `TestToLabelAndFields`, `TestDateFunctions`
+- [x] 7.2 AggregateResult rows; COUNT() totalSize with empty Records; toLabel; FIELDS(); date functions in UTC
+- [x] 7.3 Commit `feat: add SOQL aggregates, grouping and field functions`
 
 ## 8. Paging and query locators
 
