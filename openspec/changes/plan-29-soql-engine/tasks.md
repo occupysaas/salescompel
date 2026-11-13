@@ -62,10 +62,10 @@ with DCO sign-off.
 
 ## 10. Acceptance and documentation
 
-- [ ] 10.1 `candidate-soql.ts` / `candidate-soql-python.py` gate IDs; 4,500-record fixtures
-- [ ] 10.2 Full verification on ai03: `go vet`, `go test -race ./...`, fuzz 120s, `npm run check`, web test+build, `scripts/check-candidate-acceptance.sh`
-- [ ] 10.3 Complete compat record gaps and operator notes; README/roadmap; mark plan+spec implemented only after evidence
-- [ ] 10.4 Commit `test: require SOQL engine acceptance and document Plan 29`
+- [x] 10.1 `candidate-soql.ts` / `candidate-soql-python.py` gate IDs; 4,500-record fixtures
+- [x] 10.2 Full verification on ai03: `go vet`, `go test -race ./...`, fuzz 120s, `npm run check`, web test+build, `scripts/check-candidate-acceptance.sh`
+- [x] 10.3 Complete compat record gaps and operator notes; README/roadmap; mark plan+spec implemented only after evidence
+- [x] 10.4 Commit `test: require SOQL engine acceptance and document Plan 29`
 
 ## Verification
 

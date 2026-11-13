@@ -1,6 +1,6 @@
 # Plan 29 — SOQL engine
 
-**Status:** Draft for maintainer review, 2026-11-11.
+**Status:** Implemented, 2026-11-13.
 **Date:** 2026-11-11
 **Depends on:** Plan 27 (tenant catalog, RLS, record service), Plan 28 (typed fields, relationship metadata). Uses the paging decisions recorded in Plan 25.
 **Roadmap:** [first release roadmap](2026-11-04-salescompel-first-release-roadmap-design.md), Plan 29 (Full depth); [Plan 25 decisions for Plan 29](2026-11-04-plan-25-foundation-decisions-design.md#decisions-recorded-for-plan-29).
