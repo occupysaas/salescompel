@@ -43,6 +43,12 @@ func offsetTotal(ctx context.Context, tx pgx.Tx, bound *Bound) (int, error) {
 	m.Columns = []BoundColumn{{Key: "Id", Field: idField}}
 	m.Children = nil
 	m.PageIDs = nil
+	if m.Limit == nil {
+		// The compiler's implicit 2,000-row page default must not cap a count
+		// that is meant to measure the whole post-OFFSET membership.
+		max := int(^uint(0) >> 1)
+		m.Limit = &max
+	}
 	plan, err := Compile(&m)
 	if err != nil {
 		return 0, err

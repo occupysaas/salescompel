@@ -71,12 +71,17 @@ func (c *compiler) compile(b *Bound) (*Plan, error) {
 	if b.PageIDs != nil {
 		where += fmt.Sprintf(" AND %s.id = ANY($%d::text[])", root, pageArg)
 	}
-	order, err := c.compileOrder(b.Order, root, b.Object, b.GroupBy, b.Aggregate)
-	if err != nil {
-		return nil, err
-	}
+	var order string
 	if b.PageIDs != nil {
+		// Stored membership order wins; the binder already validated ORDER BY,
+		// so a page must not compile (and discard) expression parameters.
 		order = fmt.Sprintf("array_position($%d::text[], %s.id::text)", pageArg, root)
+	} else {
+		var err error
+		order, err = c.compileOrder(b.Order, root, b.Object, b.GroupBy, b.Aggregate)
+		if err != nil {
+			return nil, err
+		}
 	}
 	group, err := c.compileGroupBy(b.GroupBy, root)
 	if err != nil {
@@ -338,6 +343,11 @@ func (c *compiler) funcExpr(owner string, v BoundValue) string {
 	if v.Label {
 		return c.labelExpr(col, v.Field)
 	}
+	if v.Func == "DAY_ONLY" && v.Field.Kind() == fieldtype.Date {
+		// A Date value is already a calendar day; a time-zone round trip would
+		// depend on the session TimeZone.
+		return col
+	}
 	return dateFuncSQL(v.Func, col)
 }
 
@@ -421,79 +431,4 @@ func (c *compiler) ensureJoin(root string, path []PathStep) (string, error) {
 func (c *compiler) addArg(v any) int {
 	c.args = append(c.args, v)
 	return len(c.args)
-}
-
-func (c *compiler) compileOrder(order []BoundOrder, root string, obj metadata.Object, group []BoundValue, aggregate bool) (string, error) {
-	parts := make([]string, 0, len(order)+1)
-	for _, o := range order {
-		owner := root
-		if len(o.Value.Path) > 0 {
-			alias, err := c.ensureJoin(root, o.Value.Path)
-			if err != nil {
-				return "", err
-			}
-			owner = alias
-		}
-		expr := c.sortExpr(owner, o.Value)
-		part := expr
-		if o.Desc {
-			part += " DESC"
-		} else {
-			part += " ASC"
-		}
-		switch o.Nulls {
-		case NullFirst:
-			part += " NULLS FIRST"
-		case NullLast:
-			part += " NULLS LAST"
-		default:
-			// Plan 25 product default: nulls first in both directions.
-			part += " NULLS FIRST"
-		}
-		parts = append(parts, part)
-	}
-	if aggregate {
-		// Aggregate queries tie-break on the group keys, not Id: Id is not
-		// grouped and would make the statement invalid. spec: soql-05, soql-06
-		for _, g := range group {
-			owner := root
-			if len(g.Path) > 0 {
-				alias, err := c.ensureJoin(root, g.Path)
-				if err != nil {
-					return "", err
-				}
-				owner = alias
-			}
-			parts = append(parts, c.sortExpr(owner, g))
-		}
-	} else {
-		parts = append(parts, root+".id")
-	}
-	return strings.Join(parts, ","), nil
-}
-
-// compileGroupBy renders GROUP BY expressions. Group keys use raw SQL types
-// (not the SELECT projections' text casts) so date functions and fields group
-// exactly; projections may re-express the same grouped column. spec: soql-05
-func (c *compiler) compileGroupBy(group []BoundValue, root string) (string, error) {
-	parts := make([]string, 0, len(group))
-	for _, g := range group {
-		if g.Agg != "" {
-			return "", malformed("aggregate functions are not groupable")
-		}
-		owner := root
-		if len(g.Path) > 0 {
-			alias, err := c.ensureJoin(root, g.Path)
-			if err != nil {
-				return "", err
-			}
-			owner = alias
-		}
-		if g.Func != "" {
-			parts = append(parts, c.funcExpr(owner, g))
-			continue
-		}
-		parts = append(parts, owner+"."+pgx.Identifier{g.Field.Column}.Sanitize())
-	}
-	return strings.Join(parts, ","), nil
 }

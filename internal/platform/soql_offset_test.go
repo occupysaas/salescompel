@@ -44,3 +44,27 @@ func TestOffsetTotalSize(t *testing.T) {
 		t.Fatalf("OFFSET queries stored %d locators", locators)
 	}
 }
+
+// TestOffsetNoExplicitLimitTotalSize proves that an OFFSET query without an
+// explicit LIMIT counts every post-OFFSET row, not the compiler's implicit
+// 2,000-row page default. page-01 still forbids a locator for OFFSET.
+func TestOffsetNoExplicitLimitTotalSize(t *testing.T) {
+	ctx := context.Background()
+	f := newTypedFixture(t)
+	bulkItems(t, f, 4500)
+	res, err := f.s.Query(ctx, f.p, "SELECT Id, Txt__c FROM Item__c ORDER BY Txt__c OFFSET 10", 200)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.TotalSize != 4490 || len(res.Records) != 200 || !res.Done || res.NextLocator != "" {
+		t.Fatalf("no-LIMIT OFFSET: total=%d rows=%d done=%v next=%q, want total=4490 rows=200 done=true next=\"\"",
+			res.TotalSize, len(res.Records), res.Done, res.NextLocator)
+	}
+	var locators int
+	if err := f.s.pool.QueryRow(ctx, "SELECT count(*) FROM sc_query.locators WHERE tenant_id=$1", f.p.Tenant).Scan(&locators); err != nil {
+		t.Fatal(err)
+	}
+	if locators != 0 {
+		t.Fatalf("OFFSET query stored %d locators", locators)
+	}
+}

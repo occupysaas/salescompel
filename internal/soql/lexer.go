@@ -132,19 +132,17 @@ func (l *lexer) lexString() (Token, error) {
 
 // decodePattern returns the literal string value of a string-literal token.
 // Token text is LIKE-pattern encoded: a literal backslash is doubled, while
-// \% and \_ stay escaped so a LIKE operand can tell them apart from the
-// wildcards. spec: soql-03
+// \% and \_ stay escaped for a LIKE operand. Only the doubled literal
+// backslash is decoded here; non-LIKE operators keep the source's literal
+// backslash before % and _. spec: soql-03
 func decodePattern(s string) string {
 	var b strings.Builder
 	b.Grow(len(s))
 	for i := 0; i < len(s); i++ {
-		if s[i] == '\\' && i+1 < len(s) {
-			switch s[i+1] {
-			case '\\', '%', '_':
-				b.WriteByte(s[i+1])
-				i++
-				continue
-			}
+		if s[i] == '\\' && i+1 < len(s) && s[i+1] == '\\' {
+			b.WriteByte('\\')
+			i++
+			continue
 		}
 		b.WriteByte(s[i])
 	}

@@ -52,6 +52,7 @@ func TestDayOnlyTimezoneIndependent(t *testing.T) {
 	for _, in := range []map[string]any{
 		{"Txt__c": "UTC", "At__c": "2026-03-09T23:30:00Z"},
 		{"Txt__c": "Next", "At__c": "2026-03-10T00:30:00Z"},
+		{"Txt__c": "DateOnly", "Day__c": "2026-03-09"},
 	} {
 		if _, err := s.Create(ctx, p, "Item__c", in); err != nil {
 			t.Fatal(err)
@@ -71,6 +72,16 @@ func TestDayOnlyTimezoneIndependent(t *testing.T) {
 		res = runInTimezone(t, f, "SELECT Txt__c FROM Item__c WHERE DAY_ONLY(At__c) IN (TODAY)", zone, fixed)
 		if res.TotalSize != 1 || res.Records[0]["Txt__c"] != "UTC" {
 			t.Fatalf("%s IN TODAY = %#v", zone, res.Records)
+		}
+		// A Date field is already a calendar day: DAY_ONLY must not round-trip
+		// it through a session-time-zone timestamptz conversion.
+		res = runInTimezone(t, f, "SELECT Txt__c FROM Item__c WHERE DAY_ONLY(Day__c) = 2026-03-09", zone, fixed)
+		if res.TotalSize != 1 || res.Records[0]["Txt__c"] != "DateOnly" {
+			t.Fatalf("%s DAY_ONLY(Date) = %#v", zone, res.Records)
+		}
+		res = runInTimezone(t, f, "SELECT DAY_ONLY(Day__c) d FROM Item__c WHERE Txt__c = 'DateOnly'", zone, fixed)
+		if res.TotalSize != 1 || res.Records[0]["d"] != "2026-03-09" {
+			t.Fatalf("%s DAY_ONLY(Date) select = %#v", zone, res.Records)
 		}
 	}
 }

@@ -319,6 +319,18 @@ func TestToLabelAndFields(t *testing.T) {
 		}
 	})
 
+	t.Run("toLabel order by refused", func(t *testing.T) {
+		for _, q := range []string{
+			"SELECT Id FROM Item__c ORDER BY toLabel(Status__c)",
+			"SELECT toLabel(Status__c) s FROM Item__c ORDER BY s",
+		} {
+			err := soqlErr(t, s, p, q)
+			if code, _ := apiCode(err); code != "MALFORMED_QUERY" {
+				t.Fatalf("%s: got %v, want MALFORMED_QUERY", q, err)
+			}
+		}
+	})
+
 	t.Run("fields standard on custom object", func(t *testing.T) {
 		res := soqlQuery(t, s, p, "SELECT FIELDS(STANDARD) FROM Item__c")
 		if res.TotalSize != 2 {

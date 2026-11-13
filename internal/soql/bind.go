@@ -425,6 +425,13 @@ func (b *binder) bindOrder(q *Query, obj metadata.Object, ctx *bindCtx) ([]Bound
 		if err != nil {
 			return nil, err
 		}
+		// ORDER BY accepts fields, paths, date functions, aggregates and their
+		// aliases. toLabel is not an order key; refusing it here avoids an
+		// expression the compiler would have to discard on a locator page.
+		// spec: soql-05
+		if v.Label {
+			return nil, malformed("toLabel is not supported in ORDER BY")
+		}
 		if v.Agg == "" && v.Func == "" && v.Field.Name != "" && !v.Field.Sortable {
 			return nil, contract.FieldProblem("INVALID_FIELD", "Field cannot be sorted", v.Field.Name)
 		}

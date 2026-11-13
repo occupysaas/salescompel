@@ -221,8 +221,10 @@ differences.
   `QUERY_TOO_COMPLICATED`; `OFFSET 2001` returns `MALFORMED_QUERY`. An OFFSET
   query returns at most one page and creates no locator, per page-01. Its
   `totalSize` is the full post-`LIMIT`/`OFFSET` result size even though the
-  single page carries at most `batchSize` rows and has no `nextRecordsUrl`;
-  rows beyond that page are not retrievable because a locator is forbidden.
+  single page carries at most `batchSize` rows and has no `nextRecordsUrl`.
+  Without an explicit `LIMIT`, the count is not capped by the compiler's
+  implicit 2,000-row page default; it counts every row after the `OFFSET`.
+  Rows beyond that page are not retrievable because a locator is forbidden.
   Salesforce documents `NUMBER_OUTSIDE_VALID_RANGE` for `OFFSET` above 2,000;
   the candidate error code is a recorded candidate choice, not parity.
 - **Aggregates:** at most 2,000 grouped rows; more returns

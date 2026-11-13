@@ -11,9 +11,10 @@ func TestLikePatternLiteral(t *testing.T) {
 		value   string
 		pattern string
 	}{
-		{`SELECT Id FROM Item__c WHERE Txt__c LIKE 'a\%'`, "a%", `a\%`},
+		{`SELECT Id FROM Item__c WHERE Txt__c LIKE 'a\%'`, `a\%`, `a\%`},
 		{`SELECT Id FROM Item__c WHERE Txt__c LIKE 'a\\%'`, `a\%`, `a\\%`},
 		{`SELECT Id FROM Item__c WHERE Txt__c = 'a\\b'`, `a\b`, `a\\b`},
+		{`SELECT Id FROM Item__c WHERE Txt__c = 'a\%x'`, `a\%x`, `a\%x`},
 	} {
 		q, err := Parse(tt.text)
 		if err != nil {
