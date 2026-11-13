@@ -3,6 +3,7 @@ import test from "node:test";
 import { loadCandidateOpenAPI } from "../src/candidate-openapi-contract.ts";
 import { createCandidateTrafficValidator } from "../src/candidate-openapi-traffic.ts";
 import {
+  aggregateParentPath,
   childDeepParentPath,
   childParentPath,
   childPlainAndParentLeaf,
@@ -54,6 +55,7 @@ test("accepts the pinned CLI recursive column traversal", async () => {
     childPlainAndParentLeaf(),
     childParentPath(),
     childDeepParentPath(),
+    aggregateParentPath(),
     customParentAccount(),
     customParentContact(),
   ]) {

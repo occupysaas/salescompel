@@ -28,22 +28,26 @@ func columnMetadata(b *Bound, nested bool) []map[string]any {
 }
 
 func columnMetadataFor(col BoundColumn, nested bool) map[string]any {
-	if col.Agg != "" {
+	if col.Agg != "" && len(col.Path) == 0 {
 		return map[string]any{"columnName": col.Key, "aggregate": true}
 	}
 	name := col.Key
 	if name == "" {
 		name = col.Field.Name
 	}
-	return parentColumnMetadata(col.Path, name, nested)
+	return parentColumnMetadata(col.Path, name, nested, col.Agg != "")
 }
 
 // parentColumnMetadata nests one joinColumns object per parent-relationship
-// hop. The leaf carries the selected field or function result key, plus an
-// empty joinColumns array when it sits inside a joinColumns chain.
-func parentColumnMetadata(path []PathStep, leaf string, nested bool) map[string]any {
+// hop. The leaf carries the selected field, function or aggregate result key
+// (with aggregate true for an aggregate), plus an empty joinColumns array when
+// it sits inside a joinColumns chain.
+func parentColumnMetadata(path []PathStep, leaf string, nested, aggregate bool) map[string]any {
 	if len(path) == 0 {
 		out := map[string]any{"columnName": leaf}
+		if aggregate {
+			out["aggregate"] = true
+		}
 		if nested {
 			out["joinColumns"] = []map[string]any{}
 		}
@@ -55,6 +59,6 @@ func parentColumnMetadata(path []PathStep, leaf string, nested bool) map[string]
 	}
 	return map[string]any{
 		"columnName":  rel,
-		"joinColumns": []map[string]any{parentColumnMetadata(path[1:], leaf, true)},
+		"joinColumns": []map[string]any{parentColumnMetadata(path[1:], leaf, true, aggregate)},
 	}
 }

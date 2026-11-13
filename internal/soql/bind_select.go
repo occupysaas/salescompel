@@ -102,7 +102,7 @@ func checkAggKind(fn string, f metadata.Field) error {
 	case "SUM", "AVG":
 		ok = k.Numeric()
 	case "MIN", "MAX":
-		ok = k.Numeric() || k == fieldtype.Date || k == fieldtype.DateTime || k.Filterable()
+		ok = minMaxKind(k)
 	case "COUNT", "COUNT_DISTINCT":
 		ok = f.Filterable && k != fieldtype.LongTextArea
 	}
@@ -110,4 +110,20 @@ func checkAggKind(fn string, f metadata.Field) error {
 		return malformed("aggregate function does not accept this field type")
 	}
 	return nil
+}
+
+// minMaxKind is the exact MIN/MAX allowlist: numeric, date, date-time,
+// text-like and picklist kinds. Checkbox, Id, reference and the remaining
+// kinds are refused by the binder so they never reach PostgreSQL.
+// spec: soql-05
+func minMaxKind(k fieldtype.Kind) bool {
+	switch k {
+	case fieldtype.Number, fieldtype.Currency, fieldtype.Percent,
+		fieldtype.Date, fieldtype.DateTime,
+		fieldtype.Text, fieldtype.TextArea, fieldtype.Email, fieldtype.Phone,
+		fieldtype.Url, fieldtype.AutoNumber, fieldtype.PersonName,
+		fieldtype.Picklist:
+		return true
+	}
+	return false
 }

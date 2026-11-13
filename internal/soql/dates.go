@@ -3,7 +3,21 @@ package soql
 import (
 	"strings"
 	"time"
+
+	"salescompel/internal/fieldtype"
 )
+
+// dateRangeCast is the SQL type a date-literal range compares as. A date field
+// and a DAY_ONLY result are calendar dates, so the range stays a date and is
+// independent of the PostgreSQL session TimeZone. MIN/MAX over date-time and
+// plain date-time fields remain instants.
+// spec: soql-04
+func dateRangeCast(left BoundValue) string {
+	if left.Field.Kind() == fieldtype.Date || left.Func == "DAY_ONLY" {
+		return "date"
+	}
+	return "timestamptz"
+}
 
 // dayStart is UTC midnight of t's calendar day.
 func dayStart(t time.Time) time.Time {

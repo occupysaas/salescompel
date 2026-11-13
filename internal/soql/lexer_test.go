@@ -29,7 +29,12 @@ func TestLexEscapes(t *testing.T) {
 		{`'50\%'`, `50\%`},
 		{`'ab\_'`, `ab\_`},
 		{`'a\"b'`, `a"b`},
-		{`'a\\b'`, `a\b`},
+		// A literal backslash stays doubled in the pattern encoding so it is
+		// distinguishable from the escape marker before % or _.
+		{`'a\\b'`, `a\\b`},
+		{`'a\\\\b'`, `a\\\\b`},
+		{`'a\%'`, `a\%`},
+		{`'a\\%'`, `a\\%`},
 		{`'a\nb'`, "a\nb"},
 		{`'a\rb'`, "a\rb"},
 		{`'a\tb'`, "a\tb"},

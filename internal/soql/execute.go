@@ -75,17 +75,8 @@ func executePlan(ctx context.Context, tx pgx.Tx, bound *Bound, plan *Plan, opt O
 		return executeAggregate(ctx, tx, bound, plan)
 	}
 	if bound.Offset != nil {
-		// OFFSET queries are not paged: one capped page, no locator.
-		limit := batch
-		if bound.Limit != nil && *bound.Limit < limit {
-			limit = *bound.Limit
-		}
-		plan.Stmt.Args[plan.LimitArg] = limit
-		records, err := runRows(ctx, tx, bound, plan)
-		if err != nil {
-			return Result{}, err
-		}
-		return Result{TotalSize: len(records), Done: true, Records: records}, nil
+		// page-01 forbids a locator for OFFSET queries: one page, no paging.
+		return executeOffset(ctx, tx, bound, batch)
 	}
 	return executePaged(ctx, tx, bound, plan, batch, opt.User)
 }

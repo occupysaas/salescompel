@@ -19,7 +19,8 @@
   "op": "LIKE",
   "right": {
    "kind": "string",
-   "text": "ab\\%%"
+   "text": "ab%%",
+   "pattern": "ab\\%%"
   }
  },
  "groupBy": null,

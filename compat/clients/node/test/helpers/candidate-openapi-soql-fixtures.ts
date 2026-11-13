@@ -308,3 +308,55 @@ export const childDeepParentPath = () =>
       ],
     },
   );
+
+export const aggregateParentPath = () =>
+  exchange(
+    "GET",
+    query(
+      "SELECT Parent__r.Name, COUNT(Id) FROM Item__c GROUP BY Parent__r.Name",
+    ),
+    200,
+    {
+      done: true,
+      totalSize: 2,
+      records: [
+        {
+          attributes: { type: "AggregateResult" },
+          Parent__r: { attributes: { type: "Parent__c" }, Name: "P1" },
+          expr0: 2,
+        },
+        {
+          attributes: { type: "AggregateResult" },
+          Parent__r: null,
+          expr0: 1,
+        },
+      ],
+      columnMetadata: [
+        {
+          columnName: "Parent__r",
+          joinColumns: [{ columnName: "Name", joinColumns: [] }],
+        },
+        { columnName: "expr0", aggregate: true },
+      ],
+    },
+  );
+
+export const aggregateOverParentPath = () =>
+  exchange("GET", query("SELECT SUM(Parent__r.Amount__c) FROM Item__c"), 200, {
+    done: true,
+    totalSize: 1,
+    records: [
+      {
+        attributes: { type: "AggregateResult" },
+        Parent__r: { attributes: { type: "Parent__c" }, expr0: 5 },
+      },
+    ],
+    columnMetadata: [
+      {
+        columnName: "Parent__r",
+        joinColumns: [
+          { columnName: "expr0", aggregate: true, joinColumns: [] },
+        ],
+      },
+    ],
+  });

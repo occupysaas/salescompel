@@ -216,12 +216,15 @@ differences.
 - **Relationships:** at most 5 relationship levels, 20 child subqueries, 2
   semi- or anti-joins and 35 joined objects. An over-limit query returns
   `QUERY_TOO_COMPLICATED`; the construct is not partially executed.
-- **`IN` lists and `OFFSET`:** `IN` lists are capped at 1,000 elements.
-  `OFFSET` is capped at 2,000. Both over-limit cases return
-  `QUERY_TOO_COMPLICATED`. An OFFSET query returns one page and no locator.
-  `OFFSET 2001` returns `MALFORMED_QUERY`; Salesforce documents
-  `NUMBER_OUTSIDE_VALID_RANGE` for that case. The candidate error code is a
-  recorded candidate choice, not parity.
+- **`IN` lists and `OFFSET`:** `IN` lists are capped at 1,000 elements and
+  `OFFSET` at 2,000. An `IN` list above 1,000 returns
+  `QUERY_TOO_COMPLICATED`; `OFFSET 2001` returns `MALFORMED_QUERY`. An OFFSET
+  query returns at most one page and creates no locator, per page-01. Its
+  `totalSize` is the full post-`LIMIT`/`OFFSET` result size even though the
+  single page carries at most `batchSize` rows and has no `nextRecordsUrl`;
+  rows beyond that page are not retrievable because a locator is forbidden.
+  Salesforce documents `NUMBER_OUTSIDE_VALID_RANGE` for `OFFSET` above 2,000;
+  the candidate error code is a recorded candidate choice, not parity.
 - **Aggregates:** at most 2,000 grouped rows; more returns
   `QUERY_TOO_COMPLICATED`. Aggregate, `COUNT()` and OFFSET queries never create
   locators.
@@ -246,7 +249,11 @@ differences.
   continue.
 - **Membership is fixed on page one:** later pages read current field values,
   rows deleted after page one are skipped, and `totalSize` keeps its first
-  value. Child subqueries and parent paths are evaluated again for each page.
+  value. Later pages apply only the tenant predicate and the captured IDs, so
+  a row that stops matching the original WHERE (or a date literal re-evaluated
+  after the day boundary) still appears with its current values. The query is
+  still re-parsed and re-bound each page for policy and catalog validation.
+  Child subqueries and parent paths are evaluated again for each page.
 - **Child subqueries:** child results have no independent `nextRecordsUrl`
   paging; only the outer result pages. Without a `LIMIT`, a parent with 2,001
   or more matching child rows returns `QUERY_TOO_COMPLICATED` with the message

@@ -173,11 +173,27 @@ func TestAggregates(t *testing.T) {
 			"SELECT DAY_ONLY(At__c), COUNT(Id) FROM Item__c",
 			"SELECT Name, COUNT(Id) FROM Item__c GROUP BY Stage__c",
 			"SELECT Stage__c, COUNT(Id) FROM Item__c GROUP BY toLabel(Stage__c)",
+			// Ungrouped aggregate ORDER BY/HAVING may reference aggregates only.
+			"SELECT COUNT() FROM Item__c ORDER BY Txt__c",
+			"SELECT COUNT(Id) FROM Item__c HAVING Txt__c = 'x'",
+			// MIN/MAX kind allowlist: these never reach PostgreSQL.
+			"SELECT MIN(Flag__c) FROM Item__c",
+			"SELECT MAX(Id) FROM Item__c",
 		} {
 			err := soqlErr(t, s, p, query)
 			if code, _ := apiCode(err); code != "MALFORMED_QUERY" {
 				t.Fatalf("%s: got %v, want MALFORMED_QUERY", query, err)
 			}
+		}
+	})
+
+	t.Run("ungrouped aggregate clauses", func(t *testing.T) {
+		res := soqlQuery(t, s, p, "SELECT COUNT(Id) FROM Item__c HAVING COUNT(Id) > 1 ORDER BY COUNT(Id)")
+		if res.TotalSize != 1 || len(res.Records) != 1 {
+			t.Fatalf("ungrouped aggregate clause result = %#v", res)
+		}
+		if got := aggInt(t, res.Records[0]["expr0"]); got != 3 {
+			t.Fatalf("COUNT(Id) = %v want 3", res.Records[0]["expr0"])
 		}
 	})
 

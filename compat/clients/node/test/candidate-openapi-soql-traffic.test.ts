@@ -3,6 +3,8 @@ import test from "node:test";
 import { loadCandidateOpenAPI } from "../src/candidate-openapi-contract.ts";
 import { createCandidateTrafficValidator } from "../src/candidate-openapi-traffic.ts";
 import {
+  aggregateOverParentPath,
+  aggregateParentPath,
   base,
   bytes,
   childDeepParentPath,
@@ -105,6 +107,8 @@ test("accepts SOQL contract additions", async () => {
     customParentAccount(),
     customParentContact(),
     aggregate(),
+    aggregateParentPath(),
+    aggregateOverParentPath(),
     countOnly(),
     firstPage(),
     secondPage(),

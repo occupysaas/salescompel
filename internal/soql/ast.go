@@ -36,7 +36,7 @@ type Query struct {
 	With    string       `json:"with,omitempty"`
 	Pos     Pos          `json:"-"`
 	// Source lengths for binder text limits (soql-06); set by Parse.
-	srcLen  int
+	srcLen   int
 	whereLen int
 }
 
@@ -50,6 +50,10 @@ type Literal struct {
 	Kind LiteralKind
 	Text string
 	N    int
+	// Pattern is the LIKE-pattern encoding of a string literal: literal
+	// backslashes are doubled and \% / \_ stay escaped. Text is the decoded
+	// value used by every non-LIKE operand. spec: soql-03
+	Pattern string
 }
 
 type SelectItem interface{ selectItem() }
@@ -286,6 +290,13 @@ func (l Literal) MarshalJSON() ([]byte, error) {
 			Text string `json:"text"`
 			N    int    `json:"n"`
 		}{l.Kind.String(), l.Text, l.N})
+	}
+	if l.Kind == LitString && l.Pattern != "" && l.Pattern != l.Text {
+		return json.Marshal(struct {
+			Kind    string `json:"kind"`
+			Text    string `json:"text"`
+			Pattern string `json:"pattern"`
+		}{l.Kind.String(), l.Text, l.Pattern})
 	}
 	return json.Marshal(struct {
 		Kind string `json:"kind"`

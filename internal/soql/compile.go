@@ -59,8 +59,9 @@ func (c *compiler) compile(b *Bound) (*Plan, error) {
 	pageArg := c.pageArg(b)
 
 	// Compile WHERE and ORDER BY first so ensureJoin runs before FROM is built.
+	// Locator pages use captured IDs, never the re-evaluated user WHERE. spec: page-01
 	where := fmt.Sprintf("%s.tenant_id=$%d", root, tenantArg)
-	if b.Where != nil {
+	if b.Where != nil && b.PageIDs == nil {
 		w, err := c.compileExpr(b.Where, root, b.Object)
 		if err != nil {
 			return nil, err

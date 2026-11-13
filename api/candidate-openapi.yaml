@@ -2299,8 +2299,75 @@ components:
           $ref: "#/components/schemas/AggregateAttributes"
       patternProperties:
         ^(?!attributes$)[A-Za-z][A-Za-z0-9_]*$:
+          anyOf:
+            - $ref: "#/components/schemas/FieldValue"
+            - $ref: "#/components/schemas/AggregateParent1"
+      description: One aggregate or grouped row. Keys are aliases, else expr0, expr1, ...; grouped fields keep their names. Values are exact JSON numbers for numeric aggregates. Supported relationship paths nest as bounded parent objects of at most five hops.
+    AggregateParent1:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+      properties:
+        attributes:
+          $ref: "#/components/schemas/RelatedAttributes"
+      patternProperties:
+        ^(?!attributes$)[A-Za-z][A-Za-z0-9_]*$:
+          anyOf:
+            - $ref: "#/components/schemas/FieldValue"
+            - $ref: "#/components/schemas/AggregateParent2"
+      description: One relationship level inside an aggregate row. Bounded at the same five-hop path cap as selected parent paths.
+    AggregateParent2:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+      properties:
+        attributes:
+          $ref: "#/components/schemas/RelatedAttributes"
+      patternProperties:
+        ^(?!attributes$)[A-Za-z][A-Za-z0-9_]*$:
+          anyOf:
+            - $ref: "#/components/schemas/FieldValue"
+            - $ref: "#/components/schemas/AggregateParent3"
+    AggregateParent3:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+      properties:
+        attributes:
+          $ref: "#/components/schemas/RelatedAttributes"
+      patternProperties:
+        ^(?!attributes$)[A-Za-z][A-Za-z0-9_]*$:
+          anyOf:
+            - $ref: "#/components/schemas/FieldValue"
+            - $ref: "#/components/schemas/AggregateParent4"
+    AggregateParent4:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+      properties:
+        attributes:
+          $ref: "#/components/schemas/RelatedAttributes"
+      patternProperties:
+        ^(?!attributes$)[A-Za-z][A-Za-z0-9_]*$:
+          anyOf:
+            - $ref: "#/components/schemas/FieldValue"
+            - $ref: "#/components/schemas/AggregateParent5"
+    AggregateParent5:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+      properties:
+        attributes:
+          $ref: "#/components/schemas/RelatedAttributes"
+      patternProperties:
+        ^(?!attributes$)[A-Za-z][A-Za-z0-9_]*$:
           $ref: "#/components/schemas/FieldValue"
-      description: One aggregate or grouped row. Keys are aliases, else expr0, expr1, ...; grouped fields keep their names. Values are exact JSON numbers for numeric aggregates.
+      description: The deepest aggregate relationship object (five relationship hops).
     ChildRelationship:
       type: object
       additionalProperties: false
