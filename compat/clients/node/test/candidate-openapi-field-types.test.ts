@@ -33,8 +33,8 @@ const ok = (r: { requestIssues: string[]; responseIssues: string[] }) =>
   assert.deepEqual([r.requestIssues, r.responseIssues], [[], []]);
 
 // Real describe output produced by the Go golden test. Each object is a map of
-// field name to field JSON, plus a childRelationships pseudo-key that is not
-// yet part of ObjectDescribe (Task 9 wires it).
+// field name to field JSON, plus a childRelationships key that ObjectDescribe
+// now wires in.
 const golden = async () =>
   JSON.parse(
     await readFile(
@@ -49,6 +49,7 @@ const describe = (name: string, raw: Record<string, any>) => ({
   fields: Object.entries(raw)
     .filter(([key]) => key !== "childRelationships")
     .map(([, value]) => value),
+  childRelationships: raw.childRelationships ?? [],
   createable: true,
   updateable: true,
   deletable: true,

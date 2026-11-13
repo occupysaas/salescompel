@@ -112,6 +112,7 @@ export const candidateOperations: readonly (readonly [
     ["200", "201"],
   ],
   [base + "/query", "get", "candidateQuery", ["200"]],
+  [base + "/query/{locator}", "get", "candidateQueryMore", ["200"]],
   [base + "/openapi.yaml", "get", "candidateOpenAPI", ["200"]],
 ];
 

@@ -100,24 +100,3 @@ func AddressValue(parent metadata.Field, components []metadata.Field, values []a
 	}
 	return out
 }
-
-// ColumnMetadata computes REST columnMetadata for bound query columns.
-// spec: soql-01
-func ColumnMetadata(cols []BoundColumn) []map[string]any {
-	out := make([]map[string]any, 0, len(cols))
-	for _, col := range cols {
-		if len(col.Path) > 0 {
-			rel := "relationship"
-			if col.Path[0].Via.RelationshipName != nil {
-				rel = *col.Path[0].Via.RelationshipName
-			}
-			out = append(out, map[string]any{
-				"columnName":  rel,
-				"joinColumns": []map[string]any{{"columnName": col.Field.Name}},
-			})
-			continue
-		}
-		out = append(out, map[string]any{"columnName": col.Field.Name})
-	}
-	return out
-}

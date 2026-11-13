@@ -164,10 +164,9 @@ func TestTenantIsolationWithOAuthToken(t *testing.T) {
 	if !errors.As(e, &api) || api.Code != "NOT_FOUND" {
 		t.Fatal(e)
 	}
-	q, _ := ParseQuery("SELECT Id FROM Account")
-	rows, e := s.Select(ctx, b, q)
-	if e != nil || len(rows) != 0 {
-		t.Fatal(rows, e)
+	res, e := s.Query(ctx, b, "SELECT Id FROM Account", 2000)
+	if e != nil || len(res.Records) != 0 {
+		t.Fatal(res.Records, e)
 	}
 }
 
@@ -183,8 +182,7 @@ func TestRestrictedOAuthUser(t *testing.T) {
 	if e = Validate(p, "Account", map[string]any{"Name": "private", "Compat_Text__c": "secret"}, true); e == nil {
 		t.Fatal("restricted field writable")
 	}
-	q, _ := ParseQuery("SELECT Compat_Text__c FROM Account")
-	if _, e = s.Select(ctx, p, q); e == nil {
+	if _, e = s.Query(ctx, p, "SELECT Compat_Text__c FROM Account", 2000); e == nil {
 		t.Fatal("restricted field readable")
 	}
 }

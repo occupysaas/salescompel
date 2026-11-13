@@ -1,6 +1,6 @@
 # Plan 29 - SOQL engine reference and compatibility record
 
-Status: reference review recorded, 2026-11-12; Tasks 2-10 pending; no Salesforce compatibility certification.
+Status: reference review recorded, 2026-11-12; Tasks 2-9 complete, Task 10 pending; no Salesforce compatibility certification.
 
 ## Reference review (2026-11-12)
 
@@ -122,12 +122,18 @@ should reconcile these before or during the named task.
 - **Winter '27 SOQL additions outside scope.** `FORMULA()` in WHERE (Beta, API
   68.0, not in production) and `SET OPTIONS` ([Winter '27 developer
   guide][c23]).
-- **Aggregate queries return `QUERY_TOO_COMPLICATED`.** Aggregate functions
-  and `COUNT()` are not yet supported by the engine. The binder rejects them
-  with `QUERY_TOO_COMPLICATED` ("aggregate queries are not yet supported")
-  rather than `MALFORMED_QUERY`. Task 7/9 should note this code choice:
-  `QUERY_TOO_COMPLICATED` signals a capability gap that a later task may
-  close, while `MALFORMED_QUERY` would imply permanently invalid syntax.
+- **Aggregate queries return `QUERY_TOO_COMPLICATED`.** Superseded by Task 7:
+  aggregate functions and `COUNT()` are supported, and this finding applied only
+  to the interim binder before that task. It is retained here as history.
+- **Contract cases that moved from refused to supported (Task 9).**
+  `unsupported-traversal` is now a parent-path response and
+  `unsupported-aggregate` is now a `COUNT(Id)` `AggregateResult` response. Their
+  fixture basis tags moved from `existing-policy` to `plan-29-engine`; the other
+  33 observed cases are unchanged. The column contract now reports plain
+  `{columnName}`, nested `joinColumns` for parent paths, relationship
+  `{columnName, joinColumns}` for child subqueries and
+  `{columnName: key, aggregate: true}` for aggregates. The richer CLI metadata
+  (`apexType`, `displayName` and so on) remains a gap.
 
 ## Items reserved for Task 10
 

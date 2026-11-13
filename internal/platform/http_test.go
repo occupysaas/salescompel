@@ -122,8 +122,8 @@ func TestHTTPExternalIDPreservesEscapedSlashes(t *testing.T) {
 	if err != nil || row["Name"] != "Original" {
 		t.Fatal("changed different external ID", row, err)
 	}
-	q, _ := ParseQuery("SELECT Id,Compat_Key__c FROM Account")
-	rows, err := s.Select(ctx, a, q)
+	res, err := s.Query(ctx, a, "SELECT Id,Compat_Key__c FROM Account", 2000)
+	rows := res.Records
 	if err != nil || len(rows) != 4 {
 		t.Fatal(rows, err)
 	}

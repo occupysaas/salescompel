@@ -99,6 +99,7 @@ const expected = [
     "candidateUpsertAccount",
   ],
   ["/services/data/v65.0/query", "get", "candidateQuery"],
+  ["/services/data/v65.0/query/{locator}", "get", "candidateQueryMore"],
   ["/services/data/v65.0/openapi.yaml", "get", "candidateOpenAPI"],
 ];
 const doc = async (): Promise<Record<string, any>> =>

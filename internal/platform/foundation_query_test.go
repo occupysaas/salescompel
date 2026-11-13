@@ -4,15 +4,35 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
+
+	"salescompel/internal/metadata"
+	soqleng "salescompel/internal/soql"
 )
 
 func selectSQL(t *testing.T, s *Store, p Principal, sql string) ([]map[string]any, error) {
 	t.Helper()
-	q, e := ParseQuery(sql)
+	res, e := s.Query(context.Background(), p, sql, 2000)
 	if e != nil {
 		return nil, e
 	}
-	return s.Select(context.Background(), p, q)
+	return res.Records, nil
+}
+
+// columnMetadataFor binds text against the standard catalog and computes the
+// REST column metadata used by the columns=true route.
+func columnMetadataFor(t *testing.T, p Principal, text string) ([]map[string]any, error) {
+	t.Helper()
+	q, e := soqleng.Parse(text)
+	if e != nil {
+		return nil, e
+	}
+	snapshot := metadata.Snapshot{Tenant: p.Tenant, Objects: metadata.StandardObjects()}
+	b, e := soqleng.Bind(q, snapshot, p, time.Now)
+	if e != nil {
+		return nil, e
+	}
+	return soqleng.ColumnMetadata(b), nil
 }
 func TestStoreQueryCaseInsensitiveNames(t *testing.T) {
 	s := testStore(t)
@@ -33,8 +53,7 @@ func TestStoreQueryCaseInsensitiveNames(t *testing.T) {
 	if e != nil || rows[0]["Account"].(map[string]any)["Name"] != "Parent" {
 		t.Fatal(rows, e)
 	}
-	q, _ := ParseQuery("select id, account.name from contact")
-	cols, e := queryColumnMetadata(p, q)
+	cols, e := columnMetadataFor(t, p, "select id, account.name from contact")
 	if e != nil || stringJSON(cols) != `[{"columnName":"Id"},{"columnName":"Account","joinColumns":[{"columnName":"Name"}]}]` {
 		t.Fatal(cols, e)
 	}

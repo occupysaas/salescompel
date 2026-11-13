@@ -433,7 +433,7 @@ func (c *compiler) compileOrder(order []BoundOrder, root string, obj metadata.Ob
 			}
 			owner = alias
 		}
-		expr := c.fieldExpr(owner, o.Value)
+		expr := c.sortExpr(owner, o.Value)
 		part := expr
 		if o.Desc {
 			part += " DESC"
@@ -463,7 +463,7 @@ func (c *compiler) compileOrder(order []BoundOrder, root string, obj metadata.Ob
 				}
 				owner = alias
 			}
-			parts = append(parts, c.fieldExpr(owner, g))
+			parts = append(parts, c.sortExpr(owner, g))
 		}
 	} else {
 		parts = append(parts, root+".id")

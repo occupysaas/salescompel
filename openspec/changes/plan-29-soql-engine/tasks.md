@@ -56,9 +56,9 @@ with DCO sign-off.
 
 ## 9. Column metadata and retire old grammar
 
-- [ ] 9.1 Update 35-case column fixture (two cases become supported); OpenAPI shapes and `candidateQueryMore`; `x-source` in sources.yaml
-- [ ] 9.2 Delete bounded grammar once `grep -rn "query.Parse\|query.Select" internal` shows no callers
-- [ ] 9.3 Commit `feat: document the SOQL engine contract and retire the bounded grammar`
+- [x] 9.1 Update 35-case column fixture (two cases become supported); OpenAPI shapes and `candidateQueryMore`; `x-source` in sources.yaml
+- [x] 9.2 Delete bounded grammar once `grep -rn "query.Parse\|query.Select" internal` shows no callers
+- [x] 9.3 Commit `feat: document the SOQL engine contract and retire the bounded grammar`
 
 ## 10. Acceptance and documentation
 

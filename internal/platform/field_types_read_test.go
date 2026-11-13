@@ -90,13 +90,10 @@ func TestDescribeEveryKind(t *testing.T) {
 	}
 }
 
-func soql(t *testing.T, f typedFixture, soql string) ([]map[string]any, error) {
+func soql(t *testing.T, f typedFixture, text string) ([]map[string]any, error) {
 	t.Helper()
-	q, e := ParseQuery(soql)
-	if e != nil {
-		return nil, e
-	}
-	return f.s.Select(context.Background(), f.p, q)
+	res, e := f.s.Query(context.Background(), f.p, text, 2000)
+	return res.Records, e
 }
 
 func TestQueryTypedProjection(t *testing.T) {
@@ -132,15 +129,19 @@ func TestQueryTypedProjection(t *testing.T) {
 	}
 	for _, clause := range []string{"WHERE Num__c = '0.3'", "WHERE Day__c = '2026-11-11'", "WHERE At__c = 'x'", "WHERE Flag__c = 'true'"} {
 		_, e := soql(t, f, "SELECT Id FROM Item__c "+clause+" LIMIT 10")
-		if code, _ := apiCode(e); code != "MALFORMED_QUERY" || !strings.Contains(e.Error(), "not yet supported") {
+		if code, _ := apiCode(e); code != "INVALID_FIELD" || !strings.Contains(e.Error(), "enclosed in quotes") {
 			t.Errorf("%s: %v", clause, e)
 		}
 	}
-	for _, clause := range []string{"WHERE Long__c = 'x'", "ORDER BY Long__c", "ORDER BY Multi__c", "WHERE Multi__c = 'A'"} {
+	for _, clause := range []string{"WHERE Long__c = 'x'", "ORDER BY Long__c", "ORDER BY Multi__c"} {
 		_, e := soql(t, f, "SELECT Id FROM Item__c "+clause+" LIMIT 10")
 		if code, _ := apiCode(e); code != "INVALID_FIELD" {
 			t.Errorf("%s: %v", clause, e)
 		}
+	}
+	// spec soql-05: "=" on a multi-select compares the whole canonical value.
+	if _, e := soql(t, f, "SELECT Id FROM Item__c WHERE Multi__c = 'A' LIMIT 10"); e != nil {
+		t.Errorf("multi-select equality: %v", e)
 	}
 	read, e := f.s.Read(ctx, f.p, "Item__c", id)
 	if e != nil || read["Amount__c"] != json.Number("12.5") || read["At__c"] != "2026-03-09T04:30:00.000+0000" {

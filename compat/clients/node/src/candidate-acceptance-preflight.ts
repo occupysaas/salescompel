@@ -81,7 +81,7 @@ export async function collectSourceBindings(root = ROOT): Promise<Bindings> {
           "internal/platform/types.go",
           "internal/metadata/model.go",
           "internal/records/write.go",
-          "internal/query/select.go",
+          "internal/soql/compile.go",
           "internal/platform/metadata.go",
           "internal/migration/migrate.go",
           "internal/migration/v1.go",

@@ -3,7 +3,7 @@ jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
 info:
   title: SalesCompel implemented candidate API
   version: 0.1.0
-  description: Object and field API names are case-insensitive; responses use canonical names. REST body duplicates use the last value; case-differing Composite fields reject. Text equality uses simple Unicode case mapping without normalization. ORDER BY defaults to nulls first in both directions and honors NULLS FIRST or NULLS LAST. Independent candidate contract, not Salesforce parity certification. Only the listed canonical paths are implemented. Provisioned bearer credentials and OAuth login/refresh are supported. Field policy, Unicode/nonblank validation, SOQL execution, own-user identity and tenant isolation remain server checks. Null/omission and the columns extension reflect existing candidate behavior. No Composite, collections, Bulk, pagination or metadata deployment is provided. Tenant-defined custom objects and typed fields (text, numbers, currency, percent, dates, checkboxes, picklists, email, phone, URL, lookup, master-detail and auto-number) are resolved from persistent metadata; values are exact decimals, never binary floating point. Compound Name and Address fields are read-only. Formula, roll-up summary, encrypted, geolocation and rich text definitions are stored, not enforced, and never described. Schema changes use operator CLI commands; no Metadata API deployment is provided.
+  description: Object and field API names are case-insensitive; responses use canonical names. REST body duplicates use the last value; case-differing Composite fields reject. Text equality uses simple Unicode case mapping without normalization. ORDER BY defaults to nulls first in both directions and honors NULLS FIRST or NULLS LAST. Independent candidate contract, not Salesforce parity certification. Only the listed canonical paths are implemented. Provisioned bearer credentials and OAuth login/refresh are supported. Field policy, Unicode/nonblank validation, SOQL execution, own-user identity and tenant isolation remain server checks. Null/omission and the columns extension reflect existing candidate behavior. Query pagination uses nextRecordsUrl and the query locator route. The locked query error vocabulary is MALFORMED_QUERY, INVALID_FIELD, INVALID_TYPE, INVALID_QUERY_FILTER_OPERATOR, QUERY_TOO_COMPLICATED and INVALID_QUERY_LOCATOR; messages never echo query values. No Bulk API or metadata deployment is provided. Tenant-defined custom objects and typed fields (text, numbers, currency, percent, dates, checkboxes, picklists, email, phone, URL, lookup, master-detail and auto-number) are resolved from persistent metadata; values are exact decimals, never binary floating point. Compound Name and Address fields are read-only. Formula, roll-up summary, encrypted, geolocation and rich text definitions are stored, not enforced, and never described. Schema changes use operator CLI commands; no Metadata API deployment is provided.
 servers:
   - url: /
 security:
@@ -177,6 +177,7 @@ paths:
       operationId: candidateDescribeAccount
       x-source:
         - https://github.com/occupysaas/salescompel/blob/272883beffc37b7597e02ef6e7ff54d3d55688d4/internal/platform/http.go
+        - https://github.com/occupysaas/salescompel/blob/339b9296e2531b19f8e131ad0bccb5c08b8879cd/docs/superpowers/specs/2026-11-11-plan-29-soql-engine-design.md
       responses:
         "200":
           description: Current candidate response
@@ -329,6 +330,7 @@ paths:
       operationId: candidateDescribeContact
       x-source:
         - https://github.com/occupysaas/salescompel/blob/272883beffc37b7597e02ef6e7ff54d3d55688d4/internal/platform/http.go
+        - https://github.com/occupysaas/salescompel/blob/339b9296e2531b19f8e131ad0bccb5c08b8879cd/docs/superpowers/specs/2026-11-11-plan-29-soql-engine-design.md
       responses:
         "200":
           description: Current candidate response
@@ -527,6 +529,7 @@ paths:
       operationId: candidateQuery
       x-source:
         - https://github.com/occupysaas/salescompel/blob/272883beffc37b7597e02ef6e7ff54d3d55688d4/internal/platform/http.go
+        - https://github.com/occupysaas/salescompel/blob/339b9296e2531b19f8e131ad0bccb5c08b8879cd/docs/superpowers/specs/2026-11-11-plan-29-soql-engine-design.md
       responses:
         "200":
           description: Current candidate response
@@ -555,7 +558,7 @@ paths:
           schema:
             type: string
             minLength: 1
-          description: Existing explicit projection, one equality filter, one ORDER BY and LIMIT 1..2000. Repeated q uses its first value; unknown query options are ignored.
+          description: Full candidate SOQL subset. Repeated q uses its first value; unknown query options are ignored.
         - name: columns
           in: query
           required: false
@@ -566,7 +569,41 @@ paths:
             enum:
               - "true"
               - "false"
-          description: Optional bounded CLI metadata extension; repeated or malformed values reject.
+          description: Optional CLI metadata extension; repeated or malformed values reject.
+  /services/data/v65.0/query/{locator}:
+    get:
+      operationId: candidateQueryMore
+      x-source:
+        - https://github.com/occupysaas/salescompel/blob/339b9296e2531b19f8e131ad0bccb5c08b8879cd/docs/superpowers/specs/2026-11-11-plan-29-soql-engine-design.md
+      responses:
+        "200":
+          description: Current candidate response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QueryResult"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: locator
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            pattern: ^01g[A-Za-z0-9]{15}-[0-9]{1,9}$
+          description: The <locator>-<offset> path from nextRecordsUrl. Unknown, expired, cross-user or cross-tenant locators return 400 INVALID_QUERY_LOCATOR.
   /services/data/v65.0/openapi.yaml:
     get:
       operationId: candidateOpenAPI
@@ -916,6 +953,7 @@ paths:
       operationId: candidateDescribeDynamic
       x-source:
         - https://github.com/occupysaas/salescompel/blob/2f5be2a6059e0a285cb167731a292e466ffdb668/docs/superpowers/specs/2026-11-05-plan-27-dynamic-schema-design.md
+        - https://github.com/occupysaas/salescompel/blob/339b9296e2531b19f8e131ad0bccb5c08b8879cd/docs/superpowers/specs/2026-11-11-plan-29-soql-engine-design.md
       responses:
         "200":
           description: Current candidate response
@@ -1971,9 +2009,17 @@ components:
           maxLength: 80
         ShippingAddress:
           $ref: "#/components/schemas/AddressValue"
+        Contacts:
+          anyOf:
+            - type: "null"
+            - $ref: "#/components/schemas/ChildResult"
       patternProperties:
         ^(?!Compat_Text__c$|Compat_Key__c$)[A-Za-z][A-Za-z0-9_]*__c$:
           $ref: "#/components/schemas/FieldValue"
+        ^[A-Za-z][A-Za-z0-9_]*__r$:
+          anyOf:
+            - type: "null"
+            - $ref: "#/components/schemas/ChildResult"
     ContactProjection:
       type: object
       additionalProperties: false
@@ -2001,19 +2047,7 @@ components:
         Account:
           anyOf:
             - type: "null"
-            - type: object
-              additionalProperties: false
-              required:
-                - attributes
-                - Name
-              properties:
-                attributes:
-                  $ref: "#/components/schemas/AccountAttributes"
-                Name:
-                  type:
-                    - string
-                    - "null"
-                  maxLength: 255
+            - $ref: "#/components/schemas/ParentObject1"
         Salutation:
           type:
             - string
@@ -2089,42 +2123,102 @@ components:
       patternProperties:
         ^[A-Za-z][A-Za-z0-9_]*__c$:
           $ref: "#/components/schemas/FieldValue"
+        ^[A-Za-z][A-Za-z0-9_]*__r$:
+          anyOf:
+            - type: "null"
+            - $ref: "#/components/schemas/ChildResult"
     Column:
-      oneOf:
-        - type: object
-          additionalProperties: false
-          required:
-            - columnName
-          properties:
-            columnName:
-              enum:
-                - Id
-                - Name
-                - Compat_Text__c
-                - Compat_Key__c
-                - FirstName
-                - LastName
-                - AccountId
-        - type: object
-          additionalProperties: false
-          required:
-            - columnName
-            - joinColumns
-          properties:
-            columnName:
-              const: Account
-            joinColumns:
-              type: array
-              items:
-                type: object
-                additionalProperties: false
-                required:
-                  - columnName
-                properties:
-                  columnName:
-                    const: Name
-              minItems: 1
-              maxItems: 1
+      type: object
+      additionalProperties: false
+      required:
+        - columnName
+      properties:
+        columnName:
+          type: string
+          minLength: 1
+        joinColumns:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/ColumnJoin2"
+        aggregate:
+          type: boolean
+      description: Plain fields carry columnName; parent paths and child subqueries nest joinColumns; aggregates add aggregate true. spec soql-08
+    ColumnJoin2:
+      type: object
+      additionalProperties: false
+      required:
+        - columnName
+      properties:
+        columnName:
+          type: string
+          minLength: 1
+        joinColumns:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/ColumnJoin3"
+        aggregate:
+          type: boolean
+    ColumnJoin3:
+      type: object
+      additionalProperties: false
+      required:
+        - columnName
+      properties:
+        columnName:
+          type: string
+          minLength: 1
+        joinColumns:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/ColumnJoin4"
+        aggregate:
+          type: boolean
+    ColumnJoin4:
+      type: object
+      additionalProperties: false
+      required:
+        - columnName
+      properties:
+        columnName:
+          type: string
+          minLength: 1
+        joinColumns:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/ColumnJoin5"
+        aggregate:
+          type: boolean
+    ColumnJoin5:
+      type: object
+      additionalProperties: false
+      required:
+        - columnName
+      properties:
+        columnName:
+          type: string
+          minLength: 1
+        joinColumns:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/ColumnLeaf"
+        aggregate:
+          type: boolean
+    ColumnLeaf:
+      type: object
+      additionalProperties: false
+      required:
+        - columnName
+      properties:
+        columnName:
+          type: string
+          minLength: 1
+        aggregate:
+          type: boolean
     QueryResult:
       type: object
       additionalProperties: false
@@ -2134,7 +2228,7 @@ components:
         - records
       properties:
         done:
-          const: true
+          type: boolean
         totalSize:
           type: integer
           minimum: 0
@@ -2147,10 +2241,165 @@ components:
               - $ref: "#/components/schemas/OrganizationProjection"
               - $ref: "#/components/schemas/CurrencyProjection"
               - $ref: "#/components/schemas/DynamicProjection"
+              - $ref: "#/components/schemas/AggregateResult"
+        nextRecordsUrl:
+          type:
+            - string
+            - "null"
+          pattern: '^/services/data/v65\.0/query/01g[A-Za-z0-9]{15}-[0-9]{1,9}$'
+          description: Present only while more pages remain; GET it to continue with queryMore.
         columnMetadata:
           type: array
           items:
             $ref: "#/components/schemas/Column"
+    AggregateAttributes:
+      type: object
+      additionalProperties: false
+      required:
+        - type
+      properties:
+        type:
+          const: AggregateResult
+    AggregateResult:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+      properties:
+        attributes:
+          $ref: "#/components/schemas/AggregateAttributes"
+      patternProperties:
+        ^(?!attributes$)[A-Za-z][A-Za-z0-9_]*$:
+          $ref: "#/components/schemas/FieldValue"
+      description: One aggregate or grouped row. Keys are aliases, else expr0, expr1, ...; grouped fields keep their names. Values are exact JSON numbers for numeric aggregates.
+    ChildRelationship:
+      type: object
+      additionalProperties: false
+      required:
+        - childSObject
+        - field
+        - relationshipName
+        - cascadeDelete
+        - restrictedDelete
+        - deprecatedAndHidden
+      properties:
+        childSObject:
+          type: string
+          pattern: ^(Account|Contact|[A-Za-z][A-Za-z0-9_]*__c)$
+        field:
+          type: string
+          minLength: 1
+        relationshipName:
+          type: string
+          minLength: 1
+        cascadeDelete:
+          type: boolean
+        restrictedDelete:
+          type: boolean
+        deprecatedAndHidden:
+          type: boolean
+    ChildResult:
+      type: object
+      additionalProperties: false
+      required:
+        - totalSize
+        - done
+        - records
+      properties:
+        totalSize:
+          type: integer
+          minimum: 0
+        done:
+          type: boolean
+        records:
+          type: array
+          items:
+            $ref: "#/components/schemas/ParentObject5"
+      description: One child subquery result nested under its relationship name; null when the parent has no children.
+    RelatedAttributes:
+      type: object
+      additionalProperties: false
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          minLength: 1
+        url:
+          type: string
+    ParentObject1:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+      properties:
+        attributes:
+          $ref: "#/components/schemas/RelatedAttributes"
+      patternProperties:
+        ^(?!attributes$)[A-Za-z][A-Za-z0-9_]*$:
+          anyOf:
+            - $ref: "#/components/schemas/FieldValue"
+            - type: "null"
+            - $ref: "#/components/schemas/ParentObject2"
+            - $ref: "#/components/schemas/ChildResult"
+      description: One parent-relationship level. The binder caps paths at five hops; this chain is bounded at the same depth because the traffic validator refuses recursive schemas.
+    ParentObject2:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+      properties:
+        attributes:
+          $ref: "#/components/schemas/RelatedAttributes"
+      patternProperties:
+        ^(?!attributes$)[A-Za-z][A-Za-z0-9_]*$:
+          anyOf:
+            - $ref: "#/components/schemas/FieldValue"
+            - type: "null"
+            - $ref: "#/components/schemas/ParentObject3"
+            - $ref: "#/components/schemas/ChildResult"
+    ParentObject3:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+      properties:
+        attributes:
+          $ref: "#/components/schemas/RelatedAttributes"
+      patternProperties:
+        ^(?!attributes$)[A-Za-z][A-Za-z0-9_]*$:
+          anyOf:
+            - $ref: "#/components/schemas/FieldValue"
+            - type: "null"
+            - $ref: "#/components/schemas/ParentObject4"
+            - $ref: "#/components/schemas/ChildResult"
+    ParentObject4:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+      properties:
+        attributes:
+          $ref: "#/components/schemas/RelatedAttributes"
+      patternProperties:
+        ^(?!attributes$)[A-Za-z][A-Za-z0-9_]*$:
+          anyOf:
+            - $ref: "#/components/schemas/FieldValue"
+            - type: "null"
+            - $ref: "#/components/schemas/ParentObject5"
+            - $ref: "#/components/schemas/ChildResult"
+    ParentObject5:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+      properties:
+        attributes:
+          $ref: "#/components/schemas/RelatedAttributes"
+      patternProperties:
+        ^(?!attributes$)[A-Za-z][A-Za-z0-9_]*$:
+          $ref: "#/components/schemas/FieldValue"
+      description: The deepest related object (five relationship hops). It also serves as a child-subquery row schema.
     Field:
       type: object
       additionalProperties: false
@@ -2424,6 +2673,7 @@ components:
         - name
         - label
         - fields
+        - childRelationships
         - createable
         - updateable
         - deletable
@@ -2439,6 +2689,11 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Field"
+        childRelationships:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChildRelationship"
+          description: Parent-to-child relationships visible to the principal; denied fields are omitted.
         createable:
           const: true
         updateable:
@@ -3095,6 +3350,11 @@ components:
       patternProperties:
         ^[A-Za-z][A-Za-z0-9_]*__c$:
           $ref: "#/components/schemas/FieldValue"
+        ^[A-Za-z][A-Za-z0-9_]*__r$:
+          anyOf:
+            - type: "null"
+            - $ref: "#/components/schemas/ParentObject1"
+            - $ref: "#/components/schemas/ChildResult"
     DynamicRead:
       type: object
       additionalProperties: false

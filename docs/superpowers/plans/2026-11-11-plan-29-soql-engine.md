@@ -322,14 +322,14 @@ OpenAPI adds:
 
 `x-source` points to the Plan 29 spec at its committed SHA, registered in `docs/compat/sources.yaml`.
 
-- [ ] **Step 1: Write failing tests.**
+- [x] **Step 1: Write failing tests.**
   - The column fixture gains the expected bodies for `unsupported-traversal` (now a parent path) and `unsupported-aggregate` (now `COUNT()`), with basis tags updated. All other 33 cases are unchanged.
   - Node traffic tests: one valid and one invalid exchange each for a parent path, child relationship, aggregate, `COUNT()`, a paged first page plus `queryMore`, describe with `childRelationships`, and each error code.
   - The contract inventory test includes `candidateQueryMore`.
-- [ ] **Step 2: Run `npm --prefix compat/clients/node run check` and `TEST_DATABASE_URL=<disposable-url> GOTOOLCHAIN=go1.25.0 go test ./internal/platform -run 'Columns|OpenAPI' -count=1`.** Expected: fail.
-- [ ] **Step 3: Implement.** Delete the old grammar once `grep -rn "query.Parse\|query.Select" internal` shows no callers.
-- [ ] **Step 4: Run Step 2 and full `go test -race ./...`.** Expected: pass.
-- [ ] **Step 5: Commit** with `feat: document the SOQL engine contract and retire the bounded grammar`.
+- [x] **Step 2: Run `npm --prefix compat/clients/node run check` and `TEST_DATABASE_URL=<disposable-url> GOTOOLCHAIN=go1.25.0 go test ./internal/platform -run 'Columns|OpenAPI' -count=1`.** Expected: fail.
+- [x] **Step 3: Implement.** Delete the old grammar once `grep -rn "query.Parse\|query.Select" internal` shows no callers.
+- [x] **Step 4: Run Step 2 and full `go test -race ./...`.** Expected: pass.
+- [x] **Step 5: Commit** with `feat: document the SOQL engine contract and retire the bounded grammar`.
 
 ### Task 10: Acceptance and documentation
 

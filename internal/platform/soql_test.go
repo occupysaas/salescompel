@@ -1,7 +1,6 @@
 package platform
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"strings"
@@ -28,47 +27,18 @@ func soqlErr(t *testing.T, s *Store, p Principal, text string) error {
 	return err
 }
 
-func runOldEngine(ctx context.Context, t *testing.T, s *Store, p Principal, text string) (string, []byte) {
+// queryBehavior executes one query through the engine and reports the closed
+// error code when it fails. The old differential oracle was retired with the
+// bounded grammar in Task 9; the 35-case fixture pins byte-identical JSON.
+func queryBehavior(t *testing.T, s *Store, p Principal, text string) (string, []byte) {
 	t.Helper()
-	q, err := ParseQuery(text)
-	if err != nil {
-		code, _ := apiCode(err)
-		return code, nil
-	}
-	rows, err := s.Select(ctx, p, q)
-	if err != nil {
-		code, _ := apiCode(err)
-		return code, nil
-	}
-	b, _ := json.Marshal(map[string]any{"totalSize": len(rows), "done": true, "records": rows})
-	return "", b
-}
-
-func runNewEngine(ctx context.Context, t *testing.T, s *Store, p Principal, text string) (string, []byte) {
-	t.Helper()
-	res, err := s.Query(ctx, p, text, 2000)
+	res, err := s.Query(context.Background(), p, text, 2000)
 	if err != nil {
 		code, _ := apiCode(err)
 		return code, nil
 	}
 	b, _ := json.Marshal(map[string]any{"totalSize": res.TotalSize, "done": res.Done, "records": res.Records})
 	return "", b
-}
-
-func assertEnginesAgree(t *testing.T, s *Store, p Principal, text string) {
-	t.Helper()
-	ctx := context.Background()
-	oldCode, oldJSON := runOldEngine(ctx, t, s, p, text)
-	newCode, newJSON := runNewEngine(ctx, t, s, p, text)
-	if oldCode != "" || newCode != "" {
-		if oldCode != newCode {
-			t.Fatalf("error code mismatch for %q: old=%s new=%s", text, oldCode, newCode)
-		}
-		return
-	}
-	if !bytes.Equal(oldJSON, newJSON) {
-		t.Fatalf("JSON mismatch for %q:\nold: %s\nnew: %s", text, oldJSON, newJSON)
-	}
 }
 
 func TestSOQLRecordQueries(t *testing.T) {
@@ -477,13 +447,36 @@ func TestSOQLExistingBehavior(t *testing.T) {
 		"SELECT Missing FROM Account",
 		"SELECT FROM Account",
 	}
-	for _, qtext := range append(queries, errQueries...) {
+	for _, qtext := range queries {
 		t.Run(qtext[:min(40, len(qtext))], func(t *testing.T) {
-			assertEnginesAgree(t, s, a, rp.Replace(qtext))
+			if code, _ := queryBehavior(t, s, a, rp.Replace(qtext)); code != "" {
+				t.Fatalf("query %q failed with %s", qtext, code)
+			}
+		})
+	}
+	wantErr := map[string]string{
+		"SELECT Id FROM Account WHERE Id = 'bad'": "INVALID_QUERY_FILTER_OPERATOR",
+		"SELECT Id FROM Nope":                     "INVALID_TYPE",
+		"SELECT Missing FROM Account":             "INVALID_FIELD",
+		"SELECT FROM Account":                     "MALFORMED_QUERY",
+	}
+	for _, qtext := range errQueries {
+		t.Run(qtext[:min(40, len(qtext))], func(t *testing.T) {
+			code, _ := queryBehavior(t, s, a, rp.Replace(qtext))
+			if code != wantErr[qtext] {
+				t.Fatalf("query %q error code = %q, want %q", qtext, code, wantErr[qtext])
+			}
 		})
 	}
 	t.Run("cross-tenant-empty", func(t *testing.T) {
-		assertEnginesAgree(t, s, b, "SELECT Id,Name FROM Account WHERE Id = '"+accID+"'")
+		code, body := queryBehavior(t, s, b, "SELECT Id,Name FROM Account WHERE Id = '"+accID+"'")
+		if code != "" {
+			t.Fatalf("cross-tenant query failed with %s", code)
+		}
+		var result struct{ TotalSize int }
+		if err := json.Unmarshal(body, &result); err != nil || result.TotalSize != 0 {
+			t.Fatalf("cross-tenant result = %s (%v)", body, err)
+		}
 	})
 }
 

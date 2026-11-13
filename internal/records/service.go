@@ -8,7 +8,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"salescompel/internal/metadata"
 	"salescompel/internal/policy"
-	"salescompel/internal/query"
 	"salescompel/internal/soql"
 )
 
@@ -43,9 +42,6 @@ func (t *Tx) Update(ctx context.Context, object, id string, data map[string]any)
 func (t *Tx) Delete(ctx context.Context, object, id string) error {
 	return deleteRecord(ctx, t.db, t.principal, object, id)
 }
-func (t *Tx) Select(ctx context.Context, q query.Query) ([]map[string]any, error) {
-	return query.Select(ctx, t.db, t.execution, t.catalog, q)
-}
 
 // Query executes SOQL text through the engine.
 func (t *Tx) Query(ctx context.Context, text string, opt soql.Options) (soql.Result, error) {
@@ -72,7 +68,7 @@ func (t *Tx) QueryColumns(ctx context.Context, text string, opt soql.Options) (s
 	if err != nil {
 		return soql.Result{}, nil, err
 	}
-	md := soql.ColumnMetadata(bound.Columns)
+	md := soql.ColumnMetadata(bound)
 	if opt.User == "" {
 		opt.User = t.execution.Principal.User
 	}
