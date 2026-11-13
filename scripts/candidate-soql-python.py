@@ -18,8 +18,11 @@ ids = [row["Id"] for row in all_rows["records"]]
 assert len(ids) == 4500, len(ids)
 assert len(set(ids)) == 4500
 
-counted = client.query("SELECT COUNT(Id) FROM %s" % item)
+counted = client.query("SELECT COUNT() FROM %s" % item)
 assert counted["totalSize"] == 4500 and counted["records"] == []
+count_field = client.query("SELECT COUNT(Id) total FROM %s" % item)
+assert count_field["totalSize"] == 1
+assert count_field["records"][0]["total"] == 4500
 
 children = client.query(
     "SELECT Name, (SELECT LastName FROM Contacts) FROM Account WHERE Name LIKE '%s%%'"

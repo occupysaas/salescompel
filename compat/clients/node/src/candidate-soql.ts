@@ -311,9 +311,14 @@ export async function soqlClientChecks(
     ).length,
     0,
   );
-  const counted = await conn.query(`SELECT COUNT(Id) FROM ${n.object}`);
+  const counted = await conn.query(`SELECT COUNT() FROM ${n.object}`);
   assert.equal(counted.totalSize, totalRecords);
   assert.deepEqual(counted.records, []);
+  const countField = rows(
+    await conn.query(`SELECT COUNT(Id) total FROM ${n.object}`),
+  );
+  assert.equal(countField.length, 1);
+  assert.equal(Number(countField[0].total), totalRecords);
   const summed = rows(
     await conn.query(`SELECT SUM(Amount__c) total FROM ${n.object}`),
   );
