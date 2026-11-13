@@ -6,7 +6,7 @@
     {
       "path": "specs/soql-engine/spec.md",
       "kind": "normative",
-      "digest": "sha256:1d91a5be3d7df118e8db179019fe30600bfb49797e294b8aaca0c01f3319df53"
+      "digest": "sha256:7c75c5e5032472e8e35ebaaca86ac589cac2646be21d6b271a0559ced1dcf82b"
     },
     {
       "path": "proposal.md",
@@ -16,7 +16,7 @@
     {
       "path": "design.md",
       "kind": "normative",
-      "digest": "sha256:8c4b2412a406631da314ec609c33e0604857c23a7215f1e29ffa3ca17ba13189"
+      "digest": "sha256:b085594595519923096cd4d9f2ce8d35e86dad1e07131ca30b08bb32d07ec724"
     },
     {
       "path": "tasks.md",
