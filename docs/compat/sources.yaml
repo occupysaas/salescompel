@@ -17,6 +17,18 @@ sources:
     version: version-sensitive; pin to reference org
     claim: REST records, describe, queries and errors
     extraction: reverify
+  - id: rest-limits-resource
+    url: https://developer.salesforce.com/docs/platform/api-rest/guide/resources-limits.html
+    accessedAt: 2026-11-13
+    version: version-sensitive; pin to reference org
+    claim: Limits resource availability, permission, allocation and reporting delay
+    extraction: documentation-reviewed
+  - id: rest-limit-info-header
+    url: https://developer.salesforce.com/docs/platform/api-rest/guide/headers-api-usage.html
+    accessedAt: 2026-11-13
+    version: version-sensitive; pin to reference org
+    claim: REST API usage header, entries and Versions URI exception
+    extraction: documentation-reviewed
   - id: composite
     url: https://developer.salesforce.com/docs/platform/api-rest/guide/requests-composite.html
     accessedAt: 2026-10-15
