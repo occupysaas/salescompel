@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Status:** Draft for maintainer review, 2026-11-11.
+**Status:** Implemented, 2026-11-13.
 
 **Goal:** Replace the bounded query grammar with one SOQL engine that parses, binds, secures, compiles and pages the spec's subset for REST, the connected editor and internal record reads.
 

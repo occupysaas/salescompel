@@ -62,7 +62,27 @@ Plan 28 adds typed fields (numbers, currency, percent, dates, checkboxes,
 picklists, email, phone, URL, lookup, master-detail, auto-number), compound
 Name and Address and common standard Account/Contact fields. See the
 [field types guide and verification](docs/compat/plan-28-field-types.md).
-The next priority is Plan 29: the SOQL engine. [Plan 25 foundation decisions](docs/compat/plan-25-foundation-decisions.md)
+Plan 29 replaces the bounded query grammar with one SOQL engine. It ships
+typed string, number, date and boolean filters; parent paths up to five levels;
+one-level child subqueries; `COUNT()`, `COUNT(field)`, `SUM`, `AVG`, `MIN` and
+`MAX`, `GROUP BY` and `HAVING`; date literals and date functions; multi-key
+`ORDER BY` with null placement; `LIMIT`/`OFFSET`; `WITH SECURITY_ENFORCED` and
+`WITH USER_MODE`; column metadata for plain, parent, child and aggregate
+columns; and server-side paging with `nextRecordsUrl` and query locators.
+Unmodified `sf data query`, JSforce `autoFetch` over 4,500 rows and
+simple-salesforce `query_all` pass full candidate acceptance.
+
+Plan 29 does not yet support `TYPEOF`, `USING SCOPE`, `FOR VIEW`/`FOR
+REFERENCE`/`FOR UPDATE`, `GROUP BY ROLLUP`/`CUBE`/`GROUPING()`, `FORMAT()` or
+`convertCurrency()`, configured fiscal periods, user time zones and locales,
+independent paging of child subquery results (a parent with more than 2,000
+matching child rows fails closed with `QUERY_TOO_COMPLICATED` unless the
+subquery carries a `LIMIT` of 2,000 or less; child results never carry their
+own `nextRecordsUrl`), or results above 50,000 IDs in one locator. SOSL is
+Plan 42; Bulk query is Plan 32; Composite query
+subrequests are Plan 31. See the
+[SOQL engine record, operator limits and verification](docs/compat/plan-29-soql-engine.md).
+The next priority is Plan 30: record lifecycle. [Plan 25 foundation decisions](docs/compat/plan-25-foundation-decisions.md)
 now define the bounded REST, query and external-ID defaults and remaining gaps. See the
 [progress roadmap and estimate assumptions](docs/plans/2026-10-20-progress-and-remaining-roadmap.md)
 and the [full architecture and milestone gates](docs/plans/2026-10-14-salesforce-compatibility-roadmap.md).

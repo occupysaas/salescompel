@@ -281,7 +281,7 @@ func (p *parser) literal() (Literal, error) {
 	switch t.Kind {
 	case String:
 		p.next()
-		return Literal{Kind: LitString, Text: t.Text}, nil
+		return Literal{Kind: LitString, Text: decodePattern(t.Text), Pattern: t.Text}, nil
 	case Number:
 		p.next()
 		return Literal{Kind: LitNumber, Text: t.Text}, nil

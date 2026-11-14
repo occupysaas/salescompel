@@ -10,6 +10,7 @@ import {
   createFieldTypeFixtures,
   runFieldTypesPython,
 } from "./candidate-schema-field-fixtures.ts";
+import { createSoqlSchemaFixtures, runSoqlPython } from "./candidate-soql.ts";
 export async function runSchemaGate(c: GateContext): Promise<ParsedResult> {
   const object = "P27_" + c.runId.slice(0, 12) + "__c",
     accountField = "P27_" + c.runId.slice(0, 12) + "_Note__c";
@@ -132,6 +133,7 @@ export async function runSchemaGate(c: GateContext): Promise<ParsedResult> {
   );
   c.env.CANDIDATE_CUSTOM_OBJECT = object;
   await createFieldTypeFixtures(c);
+  await createSoqlSchemaFixtures(c);
   const input = join(c.scratch, "schema-client-context.json");
   await writeFile(
     input,
@@ -189,6 +191,8 @@ export async function runSchemaGate(c: GateContext): Promise<ParsedResult> {
   assert.equal(parsed.suite, "schema");
   parsed.tests.unshift({ id: "schema/provision", outcome: "passed" });
   for (const id of await runFieldTypesPython(c))
+    parsed.tests.push({ id, outcome: "passed" });
+  for (const id of await runSoqlPython(c))
     parsed.tests.push({ id, outcome: "passed" });
   const state = JSON.parse(
     await readFile(join(c.scratch, "schema-client-state.json"), "utf8"),

@@ -238,7 +238,11 @@ func writeLiterals(b *strings.Builder, lits []Literal) {
 func writeLiteral(b *strings.Builder, l Literal) {
 	switch l.Kind {
 	case LitString:
-		writeQuoted(b, l.Text)
+		s := l.Pattern
+		if s == "" {
+			s = l.Text
+		}
+		writeQuoted(b, s)
 	case LitDateLiteral:
 		b.WriteString(l.Text)
 		if l.N > 0 {
@@ -252,6 +256,10 @@ func writeLiteral(b *strings.Builder, l Literal) {
 	}
 }
 
+// writeQuoted re-serializes a LIKE-pattern encoded string literal. A backslash
+// in the pattern encoding is the escape marker for \, % or _; emitting it as a
+// single backslash reproduces the original spelling and re-parses to the same
+// pattern. spec: soql-03
 func writeQuoted(b *strings.Builder, s string) {
 	b.WriteByte('\'')
 	for _, r := range s {
@@ -259,7 +267,7 @@ func writeQuoted(b *strings.Builder, s string) {
 		case '\'':
 			b.WriteString(`\'`)
 		case '\\':
-			b.WriteString(`\\`)
+			b.WriteByte('\\')
 		case '"':
 			b.WriteString(`\"`)
 		case '\n':

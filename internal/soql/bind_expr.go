@@ -80,6 +80,13 @@ func (b *binder) bindCompare(c *Compare, obj metadata.Object, ctx *bindCtx) (Bou
 	if op == "LIKE" && (left.Agg != "" || left.Func != "" || !textLike(left.Field.Kind())) {
 		return nil, contract.Invalid("INVALID_QUERY_FILTER_OPERATOR", "LIKE is not valid for this field type")
 	}
+	if op == "LIKE" {
+		right, err := b.typeLike(fieldOwner(obj, left), left.Field, c.Right)
+		if err != nil {
+			return nil, err
+		}
+		return &BoundCmp{Left: left, Op: op, Right: right}, nil
+	}
 	// Aggregates and date functions type the HAVING operand by result kind.
 	if left.Agg != "" || (left.Func != "" && !left.Label) {
 		right, err := b.typeHaving(fieldOwner(obj, left), left, c.Right)
@@ -112,10 +119,7 @@ func (b *binder) bindDateLiteralCmp(left BoundValue, op string, lit Literal) (Bo
 	if err != nil {
 		return nil, err
 	}
-	cast := "timestamptz"
-	if left.Field.Kind() == fieldtype.Date {
-		cast = "date"
-	}
+	cast := dateRangeCast(left)
 	ge := BoundCmp{Left: left, Op: ">=", Right: Param{Value: start, Cast: cast}}
 	lt := BoundCmp{Left: left, Op: "<", Right: Param{Value: end, Cast: cast}}
 	switch op {
@@ -211,10 +215,7 @@ func (b *binder) bindInRanges(left BoundValue, in *In, owner metadata.Object) (B
 	if !comparesTemporal(left) {
 		return nil, wrongType(left.Field)
 	}
-	cast := "timestamptz"
-	if left.Field.Kind() == fieldtype.Date {
-		cast = "date"
-	}
+	cast := dateRangeCast(left)
 	items := make([]BoundExpr, 0, len(in.Values))
 	for _, lit := range in.Values {
 		if lit.Kind == LitDateLiteral {

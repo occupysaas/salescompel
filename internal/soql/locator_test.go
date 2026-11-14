@@ -56,6 +56,9 @@ func TestLocatorCanonicalRoundTrip(t *testing.T) {
 		"SELECT FIELDS(ALL) FROM Item__c LIMIT 200",
 		"SELECT Id FROM Item__c WHERE At__c > 2026-06-15T12:00:00Z",
 		"SELECT Id FROM Item__c WHERE Day__c = LAST_N_DAYS:7",
+		`SELECT Id FROM Item__c WHERE Txt__c LIKE 'a\%'`,
+		`SELECT Id FROM Item__c WHERE Txt__c LIKE 'a\\%'`,
+		`SELECT Id FROM Item__c WHERE Txt__c = 'a\\b'`,
 	} {
 		first, err := Parse(text)
 		if err != nil {

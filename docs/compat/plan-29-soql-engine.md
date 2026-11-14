@@ -1,6 +1,9 @@
 # Plan 29 - SOQL engine reference and compatibility record
 
-Status: reference review recorded, 2026-11-12; Tasks 2-9 complete, Task 10 pending; no Salesforce compatibility certification.
+Status: implemented, 2026-11-13; no Salesforce compatibility certification.
+"Implemented" describes the candidate's behavior recorded here. It is not a
+claim of parity with every Salesforce SOQL detail; the status column and the
+gaps section name each known difference.
 
 ## Reference review (2026-11-12)
 
@@ -63,10 +66,14 @@ row.
 covers a spec default that no accessible public source confirms. Each `gap`
 row says which part is documented and which part is the default.
 
+`documented` records what a Salesforce page states; it does not mean the
+candidate reproduces every detail. `gap` records what the candidate does
+instead. Neither status is a compatibility certification.
+
 | Item | Candidate rule | Status | Source / note |
 | --- | --- | --- | --- |
 | 1. Hand-written parser | New `internal/soql` lexer and parser; no parser generator or new dependency | gap | Spec default and a local implementation choice; no Salesforce source applies. |
-| 2. Child subquery cap | Child subqueries capped at 2,000 rows per parent per page instead of nested paging | gap | Salesforce returns up to 2,000 results per request, including results from child objects, and pages larger sets with `nextRecordsUrl` and `queryMore()` ([limits cheatsheet][c1], [REST execute][c2], [queryMore][c3]). The per-parent cap and `QUERY_TOO_COMPLICATED` are recorded deviations. |
+| 2. Child subquery cap | Child subquery results have no independent paging. Without a `LIMIT`, a parent with more than 2,000 matching child rows fails with `QUERY_TOO_COMPLICATED`; nothing is truncated. An explicit `LIMIT` of 2,000 or less returns that bounded set, including exactly 2,000. A `LIMIT` above 2,000 does not raise the cap. | gap | Salesforce returns up to 2,000 results per request, including results from child objects, and pages larger sets with `nextRecordsUrl` and `queryMore()` ([limits cheatsheet][c1], [REST execute][c2], [queryMore][c3]). The fail-closed per-parent cap and the absence of child-result paging are recorded deviations. |
 | 3. Locators | Locators store ordered result IDs, at most 50,000 per locator, with the bound plan re-validated per page | gap | The REST example documents the locator shape `01g...-2000` in `nextRecordsUrl` ([REST execute][c2]); query results are available for 2 days, including nested results ([limits cheatsheet][c1]). The 50,000-ID cap, ID-array storage, per-page re-validation and oldest-first eviction are spec defaults; Salesforce documents no 50,000-ID cap. |
 | 4. Batch clamp | Batch sizes outside 200-2,000 are clamped, not rejected | gap | Default and maximum are 2,000 and the minimum is 200; the requested size is a hint and can change to maximize performance ([Query Options Header][c4], [Change the Batch Size][c5]). Clamping out-of-range values, rather than rejecting them, is a spec default. |
 | 5. Date time base | Date literals and date functions use UTC with Sunday-start weeks until Plan 33; fiscal periods are calendar | gap | Date-literal ranges depend on the literal and the user's locale, or the org locale when the user has none ([Date Formats and Date Literals][c6]). Client queries return date-time field values in UTC ([Date Functions][c7]), and `DAY_IN_WEEK()` is 1 for Sunday and 7 for Saturday. The UTC, Sunday-start and calendar-fiscal choices are recorded deviations until Plan 33. |
@@ -116,9 +123,11 @@ should reconcile these before or during the named task.
   returns `MALFORMED_QUERY` above the cap. The reference pages do not specify
   an error code for an over-cap ORDER BY, so `MALFORMED_QUERY` is a local
   choice.
-- **`FIELDS()` duplicate-field error.** The reference says a duplicate in the
-  SELECT list is an error, but the exact message is not shown ([SELECT
-  fields][c13]).
+- **`FIELDS()` duplicate-field error.** Salesforce's reference says a duplicate
+  field in the SELECT list is an error, but the exact message is not shown
+  ([SELECT fields][c13]). The candidate accepts exact same-path duplicates in a
+  plain SELECT as described above; a collision with an expanded `FIELDS()` key
+  is `MALFORMED_QUERY` with "duplicate field selected".
 - **Winter '27 SOQL additions outside scope.** `FORMULA()` in WHERE (Beta, API
   68.0, not in production) and `SET OPTIONS` ([Winter '27 developer
   guide][c23]).
@@ -129,17 +138,263 @@ should reconcile these before or during the named task.
   `unsupported-traversal` is now a parent-path response and
   `unsupported-aggregate` is now a `COUNT(Id)` `AggregateResult` response. Their
   fixture basis tags moved from `existing-policy` to `plan-29-engine`; the other
-  33 observed cases are unchanged. The column contract now reports plain
-  `{columnName}`, nested `joinColumns` for parent paths, relationship
+  33 observed cases are unchanged. The column contract now reports plain root
+  fields as `{columnName}`, nested `joinColumns` for parent paths, relationship
   `{columnName, joinColumns}` for child subqueries and
-  `{columnName: key, aggregate: true}` for aggregates. The richer CLI metadata
-  (`apexType`, `displayName` and so on) remains a gap.
+  `{columnName: key, aggregate: true}` for aggregates. Every entry nested under
+  `joinColumns`, including a leaf, carries an explicit `joinColumns` array
+  (empty at a leaf). The pinned `sf data query` reads that array while walking
+  the chain. Same-path duplicate fields collapse in the record: for example,
+  `SELECT Name, Id, Name FROM Account` returns one `Name` key and one `Id`
+  key, while `columnMetadata` keeps each selected entry (`Name`, `Id`, `Name`).
+  Distinct parent paths that share a leaf name, such as
+  `SELECT Name, Account.Name FROM Contact`, are supported and shape to
+  distinct JSON keys. A result-key collision with an alias, a generated
+  `exprN`, a child key or a `FIELDS()` key is `MALFORMED_QUERY` with the
+  message "duplicate field selected"; for example,
+  `SELECT SUM(Amount__c) expr0, COUNT(Id) expr0` and two child subqueries with
+  the same relationship key. The richer CLI metadata (`apexType`,
+  `displayName`, `entityName`, `length` and so on) remains a gap.
 
-## Items reserved for Task 10
+## Gaps carried by this plan
 
-Task 10 completes the gaps list, the error-code table, the operator notes for
-query limits and paging, and the acceptance evidence table. This document
-records only the reference review and the candidate status table.
+These are known differences from Salesforce that the engine records and does
+not implement. The candidate table above covers the behavioral choices; this
+list covers the missing constructs and limits. It names the Plan 29 boundary,
+not every Salesforce feature. A gap means the candidate refuses the construct
+or uses the stated candidate limit; it never means the construct is silently
+ignored.
+
+- **Child paging beyond 2,000.** Child subquery results have no independent
+  `nextRecordsUrl` paging; only the outer result pages. Without a `LIMIT`, a
+  parent with more than 2,000 matching child rows fails closed with
+  `QUERY_TOO_COMPLICATED`; nothing is truncated. An explicit `LIMIT` of 2,000
+  or less returns the requested bounded set, including exactly `LIMIT 2000`.
+  A `LIMIT` above 2,000 does not raise the cap and fails the same way when the
+  child set reaches 2,001. Salesforce pages larger child sets with nested
+  `nextRecordsUrl` and `queryMore()`; the fail-closed cap is the recorded gap.
+- **50,000-ID locator cap.** A result whose membership exceeds 50,000 rows gives
+  `QUERY_TOO_COMPLICATED` instead of paging. The cap is a candidate default;
+  Salesforce publishes no such limit.
+- **UTC date literals.** Date literals and date functions use UTC with
+  Sunday-start weeks. Salesforce evaluates them in the running user's time zone
+  or the org time zone; user time zones and locales arrive in Plan 33.
+- **Calendar fiscal periods.** `FISCAL_*` literals and functions equal their
+  calendar equivalents until fiscal-year settings exist (Plan 33).
+- **`TYPEOF`.** The AST carries the node, and the binder refuses it with
+  `MALFORMED_QUERY`; no polymorphic field exists until Plans 30 and 40.
+- **`USING SCOPE`.** Needs ownership and sharing (Plan 34).
+- **`FOR VIEW`, `FOR REFERENCE`, `FOR UPDATE`.** Refused; no lock or view
+  tracking semantics yet.
+- **`GROUP BY ROLLUP`/`CUBE` and `GROUPING()`.** Refused; grouped rows are plain
+  groups.
+- **`FORMAT()` and `convertCurrency()`.** Refused; the candidate has one display
+  currency per tenant.
+- **Richer column metadata.** `columns=true` reports `columnName`,
+  `joinColumns` and `aggregate: true`. Salesforce CLI metadata such as
+  `apexType`, `displayName`, `entityName` and `length` remains a gap.
+- **Winter '27 additions outside scope.** `FORMULA()` in WHERE (Beta, API 68.0)
+  and the `SET OPTIONS` clause are not parsed.
+- **SOSL and `FIND`.** Out of scope here; SOSL is Plan 42.
+- **Bulk query.** Bulk API 2.0 query jobs are Plan 32.
+- **Composite query subrequests.** Composite save requests use the record read
+  path, but Composite query subrequests are Plan 31.
+
+## Operator notes: actual candidate behavior, limits and paging
+
+The engine serves `GET /services/data/v65.0/query?q=...` and
+`GET /services/data/v65.0/query/{locator}-{offset}`. These notes describe what
+the candidate actually does. They are not a statement that Salesforce behaves
+the same way; the candidate status table and gaps section record the
+differences.
+
+### Errors and limits
+
+- **Query text and filters:** query text is at most 100,000 characters and a
+  WHERE clause is at most 4,000 characters. Longer input returns
+  `QUERY_TOO_COMPLICATED`.
+- **Relationships:** at most 5 relationship levels, 20 child subqueries, 2
+  semi- or anti-joins and 35 joined objects. An over-limit query returns
+  `QUERY_TOO_COMPLICATED`; the construct is not partially executed.
+- **`IN` lists and `OFFSET`:** `IN` lists are capped at 1,000 elements and
+  `OFFSET` at 2,000. An `IN` list above 1,000 returns
+  `QUERY_TOO_COMPLICATED`; `OFFSET 2001` returns `MALFORMED_QUERY`. An OFFSET
+  query returns at most one page and creates no locator, per page-01. Its
+  `totalSize` is the full post-`LIMIT`/`OFFSET` result size even though the
+  single page carries at most `batchSize` rows and has no `nextRecordsUrl`.
+  Without an explicit `LIMIT`, the count is not capped by the compiler's
+  implicit 2,000-row page default; it counts every row after the `OFFSET`.
+  Rows beyond that page are not retrievable because a locator is forbidden.
+  Salesforce documents `NUMBER_OUTSIDE_VALID_RANGE` for `OFFSET` above 2,000;
+  the candidate error code is a recorded candidate choice, not parity.
+- **Aggregates:** at most 2,000 grouped rows; more returns
+  `QUERY_TOO_COMPLICATED`. Aggregate, `COUNT()` and OFFSET queries never create
+  locators.
+- **Error vocabulary:** only `MALFORMED_QUERY`, `INVALID_FIELD`,
+  `INVALID_TYPE`, `INVALID_QUERY_FILTER_OPERATOR`, `QUERY_TOO_COMPLICATED` and
+  `INVALID_QUERY_LOCATOR`. Messages name fields and constructs but never echo
+  query values.
+
+### Paging
+
+- **Page size:** the default is 2,000 rows. `Sforce-Query-Options:
+  batchSize=n` is honored between 200 and 2,000; values outside that range are
+  clamped to the nearest bound. No header means 2,000 rows per page.
+- **Concrete example:** over 4,500 matching rows, `SELECT Id FROM P29__c LIMIT
+  5000` with `Sforce-Query-Options: batchSize=500` returns nine pages of 500
+  rows. Every page reports `totalSize: 4500`; pages one to eight report
+  `done: false` and carry `nextRecordsUrl`; page nine reports `done: true` and
+  no `nextRecordsUrl`.
+- **`nextRecordsUrl` shape:**
+  `/services/data/v65.0/query/{locator}-{offset}`, for example
+  `/services/data/v65.0/query/01gAbCdEfGhIjKlMn-500`. GET that path to
+  continue.
+- **Membership is fixed on page one:** later pages read current field values,
+  rows deleted after page one are skipped, and `totalSize` keeps its first
+  value. Later pages apply only the tenant predicate and the captured IDs, so
+  a row that stops matching the original WHERE (or a date literal re-evaluated
+  after the day boundary) still appears with its current values. The query is
+  still re-parsed and re-bound each page for policy and catalog validation.
+  Child subqueries and parent paths are evaluated again for each page.
+- **Child subqueries:** child results have no independent `nextRecordsUrl`
+  paging; only the outer result pages. Without a `LIMIT`, a parent with 2,001
+  or more matching child rows returns `QUERY_TOO_COMPLICATED` with the message
+  "child relationship exceeds candidate limit; add a LIMIT to the subquery";
+  nothing is truncated. `LIMIT 2000` returns exactly 2,000 rows with
+  `done: true`; `LIMIT 1999` returns 1,999. A `LIMIT` above 2,000 does not
+  raise the cap and returns `QUERY_TOO_COMPLICATED` when the child set reaches
+  2,001. This fail-closed behavior is the child-paging gap, not Salesforce's
+  nested pagination.
+- **Locators:** the candidate stores at most 50,000 ordered IDs per locator for
+  two days, bound to the tenant and user. At most 10 open locators per user are
+  kept; opening an eleventh evicts the oldest. Expired, unknown, cross-user and
+  cross-tenant locators return `INVALID_QUERY_LOCATOR`. Each page re-validates
+  the plan against the current catalog; a field removed or denied after page
+  one also returns `INVALID_QUERY_LOCATOR`.
+- **Result-size cap:** a query whose membership exceeds 50,000 rows returns
+  `QUERY_TOO_COMPLICATED` instead of paging. Salesforce publishes no such cap;
+  this is a candidate limit.
+
+### Date literals and query behavior
+
+- **UTC:** date literals and date functions use UTC with Sunday-start weeks.
+  `Due__c = TODAY` means the UTC calendar day, not the user's local day. User
+  time zones and locales arrive in Plan 33.
+- **Fiscal periods:** `FISCAL_*` literals and functions equal their calendar
+  equivalents until fiscal-year settings exist. This is a candidate choice, not
+  parity with a configured fiscal year.
+- **Duplicate fields and result keys:** `SELECT Name, Id, Name FROM Account`
+  is accepted. The record carries one `Name` key and one `Id` key;
+  `columnMetadata` keeps each selected entry (`Name`, `Id`, `Name`).
+  `SELECT Name, Name FROM Account` is also accepted and returns one `Name`
+  key. `SELECT Name, Account.Name FROM Contact` is accepted and returns the
+  contact `Name` plus `{Account: {Name: ...}}`. A result-key collision with an
+  alias, a generated `exprN`, a child key or a `FIELDS()` key is
+  `MALFORMED_QUERY` with "duplicate field selected"; examples include
+  `SELECT SUM(Amount__c) expr0, COUNT(Id) expr0` and two child subqueries with
+  the same relationship key.
+- **Column metadata:** with `columns=true`, parent paths and child subqueries
+  return nested `joinColumns`. Every nested entry, including a leaf, includes a
+  `joinColumns` array; it is empty at a leaf. For example,
+  `SELECT Name, Account.Name FROM Contact` returns
+  `[{columnName:"Name"}, {columnName:"Account", joinColumns:[{columnName:"Name", joinColumns:[]}]}]`.
+  The empty array is required by the pinned `sf data query`. Richer Salesforce
+  CLI metadata (`apexType`, `displayName`, `entityName`, `length`) is not
+  returned.
+
+## Acceptance evidence
+
+Task 10 adds `schema/soql-relationships`, `schema/soql-children`,
+`schema/soql-filters`, `schema/soql-aggregates`, `schema/soql-paging` and
+`schema/soql-python` to the `schema` gate, and `cli/query-relationship` and
+`cli/query-children` to the CLI gate. The schema client creates 4,500 records in
+a `P29_<run>__c` object through Composite batches of 25 and creates twelve
+Accounts with one Contact each. The P29 records are removed with their journaled
+table, following the Plan 28 ruling; the standard Accounts and Contacts are
+journaled and deleted individually. The JSforce checks include
+`query(...).run({autoFetch: true, maxFetch: 5000})` with
+`Sforce-Query-Options: batchSize=500`, a parent relationship, a child subquery,
+a numeric filter, date literals, `COUNT()` and `COUNT(Id)`, `SUM()`, and
+grouped counts. simple-salesforce runs `query_all` over the same 4,500 rows and
+runs a child subquery and `COUNT()`.
+
+Verification scope and result:
+
+- **Scope:** full candidate acceptance (`scope: full`), all 13 gates.
+- **Source revision:** `e8130a5a77b8f1514e3c23bde0ea1bf42ab8586a`.
+  This final cross-task fix commit corrects locator membership under changed
+  filters, aggregate binder allowlists, aggregate relationship
+  OpenAPI/metadata, LIKE escaping, timezone independence, child FK policy, and
+  exact OFFSET totals/no-locator gap. The later documentation-only closeout
+  commit does not change the source bindings.
+- **Report:** `/home/user001/plan29-acceptance/plan29-final-e8130a5-r1.json`,
+  SHA-256 `3633b3914d7f91a5789a8407f258175777704879177fa7e9b14b79f2a86e5dbe`,
+  outcome `passed`, `acceptanceEligible: true`, tree clean at the run. This
+  supersedes the earlier `9d506f7` report
+  (`/home/user001/plan29-acceptance/plan29-quality-9d506f7-r4.json`, SHA-256
+  `4dc72acd172fa226e8b4ae4a077e08a4f0559b74f5f86fb1f26f5b90d05b08c1`), which
+  is retained rather than rewritten.
+- **Required skips:** 0. **Total skips:** 6, all in the lab gate and all the
+  allowed offline parents: `candidate/composite/atomic`,
+  `candidate/foundation/decisions`, `candidate/openapi/traffic`,
+  `candidate/jsforce/core`, `candidate/jsforce/policy` and
+  `candidate/jsforce/isolation`. The live jsforce gate runs the corresponding
+  live tests.
+- **Cleanup:** verified; 455 journaled records removed, 0 unknown intents, and
+  all owned processes stopped. The disposable database and temporary restricted
+  roles were dropped after the run.
+- **Tools:** PostgreSQL 17.12; Go 1.25.14 with `GOTOOLCHAIN=go1.25.0`; Node
+  22.23.2; JSforce 3.11.0; Salesforce CLI 2.156.0; plugin-data 5.1.16;
+  simple-salesforce 1.12.9; Python 3.12.13; OpenSSL 3.5.5; Chrome for Testing
+  153.0.8010.
+- **Node concurrency:** the candidate Node test command runs with
+  `--test-concurrency=min(4, availableParallelism())` (1–4 workers). A
+  two-CPU acceptance host otherwise serializes every test file and misses the
+  documented 20-minute deadline; the cap bounds memory and fixed-port pressure.
+- **Run time:** 2026-11-13T09:51:26.384Z to 2026-11-13T10:07:33.470Z
+  (16 minutes 7 seconds, inside the documented 20-minute deadline).
+
+| Gate | Passed | Failed | Skipped |
+| --- | ---: | ---: | ---: |
+| bindings | 3 | 0 | 0 |
+| database | 829 | 0 | 0 |
+| lab | 474 | 0 | 6 |
+| web | 11 | 0 | 0 |
+| jsforce | 6 | 0 | 0 |
+| python | 4 | 0 | 0 |
+| cli | 11 | 0 | 0 |
+| oauth | 16 | 0 | 0 |
+| schema | 22 | 0 | 0 |
+| restart | 6 | 0 | 0 |
+| connected-browser | 14 | 0 | 0 |
+| preview | 11 | 0 | 0 |
+| cleanup | 2 | 0 | 0 |
+
+The lab row shows the gate's reporter coverage counts, which include parent
+events; the Node test command itself reported 474 top-level tests: 468 passed,
+0 failed and 6 skipped. The six skips are the allowed offline parents listed
+above; required skips are 0.
+
+Acceptance at the new source revision also ran `go test -race ./... -count=1`
+(12 packages, exit 0), `go vet ./...` (exit 0), the Node check (474 tests: 468
+passed, 0 failed, 6 skipped), the web unit tests (10 passed) and the web build.
+A standalone `npm --prefix compat/clients/node run check` at the same revision
+exited 0 with the same Node counts, and `openspec validate --all --strict`
+passed its one item. A 120-second `FuzzParse` run at `e8130a5` completed
+1,500,967 executions with no crashers and exited 0. The web gate's 11 passes
+are the 10 unit tests plus the build step. This closeout records verification
+of the existing Plan 29 implementation; it adds no new feature.
+
+Residual gaps not implemented by Plan 29: independent child-subquery paging
+(child results have no `nextRecordsUrl`; over-2,000 child sets fail closed
+unless bounded by a `LIMIT` of 2,000 or less); result membership above 50,000
+IDs in one locator;
+UTC date literals and Sunday-start weeks with calendar fiscal periods (Plan 33);
+`TYPEOF`; `USING SCOPE` (Plan 34); `FOR VIEW`, `FOR REFERENCE` and `FOR UPDATE`;
+`GROUP BY ROLLUP`/`CUBE` and `GROUPING()`; `FORMAT()` and `convertCurrency()`;
+richer column metadata (`apexType`, `displayName`, `entityName`, `length`); and
+SOSL/`FIND` (Plan 42), Bulk query (Plan 32) and Composite query subrequests
+(Plan 31). No Salesforce compatibility certification is claimed.
 
 ## Sources retrieved
 

@@ -67,15 +67,21 @@ func (c *bindCtx) takeKey(key string) error {
 	return nil
 }
 
-// recordKey records a FieldRef result key. Exact same-field duplicates
-// (same key, same path) collapse; distinct paths sharing a leaf name reject.
+// recordKey records a FieldRef result key. Exact same-field duplicates (same
+// key, same path) collapse. Distinct paths sharing a leaf keep their path
+// identity and shape to distinct JSON keys (root Name versus Account.Name), so
+// they bind. A key already taken by an alias, generated expr, child or
+// expanded FIELDS() entry still rejects.
 func (c *bindCtx) recordKey(key, pkey string) error {
 	lower := strings.ToLower(key)
 	if existing, ok := c.keyPaths[lower]; ok {
-		if existing != pkey {
-			return malformed("duplicate field selected")
+		if existing == pkey {
+			return nil // same field, same path: collapse
 		}
-		return nil // same field, same path: collapse
+		return nil // distinct path: separate shaped key
+	}
+	if c.keys[lower] {
+		return malformed("duplicate field selected")
 	}
 	c.keys[lower] = true
 	c.keyPaths[lower] = pkey
@@ -366,6 +372,12 @@ func (b *binder) bindChild(parent metadata.Object, sub *Query) (BoundChild, erro
 	if err != nil {
 		return BoundChild{}, err
 	}
+	// Traversing the relationship reads the child's foreign-key field, so that
+	// field's policy applies even when the inner projection omits it.
+	// spec: soql-02, soql-06
+	if !policy.Allowed(b.p, childObj.Name, rel.Field) {
+		return BoundChild{}, contract.FieldProblem("INVALID_FIELD", "Child relationship is unavailable", name)
+	}
 	inner, err := b.queryObj(sub, childObj, true)
 	if err != nil {
 		return BoundChild{}, err
@@ -412,6 +424,13 @@ func (b *binder) bindOrder(q *Query, obj metadata.Object, ctx *bindCtx) ([]Bound
 		v, err := b.bindOrderValue(o.Value, obj, ctx)
 		if err != nil {
 			return nil, err
+		}
+		// ORDER BY accepts fields, paths, date functions, aggregates and their
+		// aliases. toLabel is not an order key; refusing it here avoids an
+		// expression the compiler would have to discard on a locator page.
+		// spec: soql-05
+		if v.Label {
+			return nil, malformed("toLabel is not supported in ORDER BY")
 		}
 		if v.Agg == "" && v.Func == "" && v.Field.Name != "" && !v.Field.Sortable {
 			return nil, contract.FieldProblem("INVALID_FIELD", "Field cannot be sorted", v.Field.Name)
@@ -462,7 +481,11 @@ func (b *binder) finishAggregates(q *Query, out *Bound, child bool) error {
 	if out.Having != nil && !out.Aggregate {
 		return malformed("HAVING requires aggregation or GROUP BY")
 	}
-	if len(out.GroupBy) > 0 {
+	// Aggregate and grouped queries share one grouped-key rule. With no GROUP
+	// BY the key set is empty, so any non-aggregate SELECT, ORDER BY or HAVING
+	// operand fails here instead of reaching PostgreSQL as a server error.
+	// spec: soql-05
+	if out.Aggregate {
 		if err := checkGrouped(out); err != nil {
 			return err
 		}

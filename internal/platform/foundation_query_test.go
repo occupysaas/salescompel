@@ -54,7 +54,7 @@ func TestStoreQueryCaseInsensitiveNames(t *testing.T) {
 		t.Fatal(rows, e)
 	}
 	cols, e := columnMetadataFor(t, p, "select id, account.name from contact")
-	if e != nil || stringJSON(cols) != `[{"columnName":"Id"},{"columnName":"Account","joinColumns":[{"columnName":"Name"}]}]` {
+	if e != nil || stringJSON(cols) != `[{"columnName":"Id"},{"columnName":"Account","joinColumns":[{"columnName":"Name","joinColumns":[]}]}]` {
 		t.Fatal(cols, e)
 	}
 	p.Role = "restricted"

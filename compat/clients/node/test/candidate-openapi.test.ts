@@ -36,6 +36,7 @@ const expectedIds = [
   "candidateDeleteContact",
   "candidateUpsertAccount",
   "candidateQuery",
+  "candidateQueryMore",
   "candidateOpenAPI",
   "candidateCompositeAtomic",
 ];
@@ -299,7 +300,10 @@ test(
       );
       assert.deepEqual(json(relationship).columnMetadata, [
         { columnName: "Id" },
-        { columnName: "Account", joinColumns: [{ columnName: "Name" }] },
+        {
+          columnName: "Account",
+          joinColumns: [{ columnName: "Name", joinColumns: [] }],
+        },
       ]);
       const nullRelationship = checked(
         await query(
@@ -322,6 +326,79 @@ test(
         json(empty).records.length === 0 && json(empty).totalSize === 0,
         "empty query drift",
       );
+      const pagePrefix = fixtureName("page-"),
+        pageNames = Array.from({ length: 201 }, (_, i) => pagePrefix + i);
+      for (let start = 0; start < pageNames.length; start += 25) {
+        const names = pageNames.slice(start, start + 25);
+        const intents = names.map((name, i): FixtureEvent => ({
+          schemaVersion: 1,
+          runId,
+          operationId: "openapiPage" + (start + i),
+          principal: "admin",
+          object: "Account",
+          names: [name],
+          kind: "intent",
+        }));
+        let exchange: Measured | undefined;
+        const response = await runCompositeFixtureAttempt(
+          journal,
+          intents,
+          intents.map((intent) => ({
+            referenceId: intent.operationId,
+            method: "POST" as const,
+          })),
+          "commit",
+          async () => {
+            exchange = await measure("POST", base + "/composite", {
+              body: {
+                allOrNone: true,
+                compositeRequest: intents.map((intent, i) => ({
+                  method: "POST",
+                  url: base + "/sobjects/Account",
+                  referenceId: intent.operationId,
+                  body: { Name: names[i] },
+                })),
+              },
+            });
+            return { status: exchange.response.status, body: json(exchange) };
+          },
+          async () => {
+            throw Error("FIXTURES");
+          },
+        );
+        checked(exchange!, 200);
+        const entries = (
+          response.body as {
+            compositeResponse: Array<{ body: { id: string } }>;
+          }
+        ).compositeResponse;
+        for (let i = 0; i < entries.length; i++)
+          rows.set("Account" + entries[i].body.id, {
+            id: entries[i].body.id,
+            event: intents[i],
+          });
+      }
+      const firstPage = json(
+        checked(
+          await measure(
+            "GET",
+            base +
+              "/query?q=" +
+              encodeURIComponent(
+                `SELECT Id FROM Account WHERE Name LIKE '${pagePrefix}%'`,
+              ),
+            { headers: { "Sforce-Query-Options": "batchSize=200" } },
+          ),
+          200,
+        ),
+      );
+      assert.equal(firstPage.records.length, 200);
+      assert.equal(firstPage.done, false);
+      const lastPage = json(
+        checked(await measure("GET", firstPage.nextRecordsUrl), 200),
+      );
+      assert.equal(lastPage.records.length, 1);
+      assert.equal(lastPage.done, true);
       checked(
         await measure("PATCH", accountPath, {
           body: { Name: fixtureName("account") + " updated" },

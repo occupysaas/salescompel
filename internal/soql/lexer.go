@@ -90,7 +90,9 @@ func (l *lexer) lexString() (Token, error) {
 		case '"':
 			b.WriteByte('"')
 		case '\\':
-			b.WriteByte('\\')
+			// A literal backslash is doubled in the pattern encoding so LIKE can
+			// distinguish it from the escape marker before a wildcard.
+			b.WriteString(`\\`)
 		case 'n':
 			b.WriteByte('\n')
 		case 'r':
@@ -114,12 +116,37 @@ func (l *lexer) lexString() (Token, error) {
 				return Token{}, malformed("invalid unicode escape in string")
 			}
 			l.i += 4
-			b.WriteRune(rune(v))
+			if r := rune(v); r == '\\' {
+				// A unicode-escaped backslash is a literal backslash: keep the
+				// pattern encoding unambiguous.
+				b.WriteString(`\\`)
+			} else {
+				b.WriteRune(r)
+			}
 		default:
 			return Token{}, malformed("unknown escape in string")
 		}
 	}
 	return Token{}, malformed("unclosed string literal")
+}
+
+// decodePattern returns the literal string value of a string-literal token.
+// Token text is LIKE-pattern encoded: a literal backslash is doubled, while
+// \% and \_ stay escaped for a LIKE operand. Only the doubled literal
+// backslash is decoded here; non-LIKE operators keep the source's literal
+// backslash before % and _. spec: soql-03
+func decodePattern(s string) string {
+	var b strings.Builder
+	b.Grow(len(s))
+	for i := 0; i < len(s); i++ {
+		if s[i] == '\\' && i+1 < len(s) && s[i+1] == '\\' {
+			b.WriteByte('\\')
+			i++
+			continue
+		}
+		b.WriteByte(s[i])
+	}
+	return b.String()
 }
 
 func (l *lexer) lexOp() (Token, error) {

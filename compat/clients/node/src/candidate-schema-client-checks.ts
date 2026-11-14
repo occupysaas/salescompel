@@ -17,6 +17,7 @@ import {
   fieldTypeClientChecks,
   type SchemaClientContext,
 } from "./candidate-schema-field-checks.ts";
+import { soqlClientChecks } from "./candidate-soql.ts";
 export type { SchemaClientContext };
 export async function runSchemaClientGate(
   c: SchemaClientContext,
@@ -213,6 +214,7 @@ export async function runSchemaClientGate(
   await recordFixtureEvent(c.fixtureJournal, { ...intent, kind: "rejected" });
   passed("schema/composite-rollback");
   const typed = await fieldTypeClientChecks(c, conn, passed, v, observed);
+  await soqlClientChecks(c, conn, passed);
   for (const [path, method, body] of [
     [`sobjects/${object}/describe`, "GET", undefined],
     [`sobjects/${object}/${retained}`, "GET", undefined],
@@ -240,6 +242,7 @@ export async function runSchemaClientGate(
     "candidateUpdateDynamic",
     "candidateDeleteDynamic",
     "candidateStoredFields",
+    "candidateQueryMore",
   ])
     assert.ok(observed.has(id), id);
   passed("schema/http-contract");
