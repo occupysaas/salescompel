@@ -11,7 +11,7 @@ Each item has a one-page brief in this folder and an open GitHub issue labeled
 
 ## Free today
 
-Plan 33 has landed. Plans **30**, **31**, **34** and **35** are free to claim.
+Plans 31 and 33 have landed. Plans **30**, **34** and **35** are free to claim.
 Plan 36 is reserved for the maintainer, who takes it next, because Plans 37–43
 all wait on it.
 
