@@ -127,9 +127,9 @@ reference. Child relationships: `User.PermissionSetAssignments`,
 
 **Each profile owns exactly one permission set** (`IsOwnedByProfile = true`).
 Editing a profile's grants means writing ObjectPermissions and
-FieldPermissions against that set, as on Salesforce. A user's profile
-permissions come from it implicitly. It can't be assigned through
-PermissionSetAssignment.
+FieldPermissions against that set, as on Salesforce. Each user has one
+system-maintained assignment to their profile's set (see Consistency rules).
+It can't be created, moved or deleted through the API.
 
 **System permissions:**
 - Four are enforced: Modify All Data, View All Data, API Enabled and Manage
@@ -164,6 +164,14 @@ error codes.
   tenant catalog. Rows for objects or fields that are later deleted grant
   nothing and are removed with them.
 - **Every user must keep a profile.** ProfileId is required and must exist.
+- **Each user's profile-owned permission set has a PermissionSetAssignment
+  row,** as on Salesforce. Clients filter these out with
+  `PermissionSet.IsOwnedByProfile`.
+  - The system maintains these rows. It creates the row with the user and
+    moves it when ProfileId changes.
+  - The API can't create or delete them directly.
+  - The effective-permission union reads assignments uniformly, so profile
+    permissions arrive through the same row.
 - **Users can't lock themselves out:** a Manage Users user can't remove Manage
   Users or Modify All Data from the last active user who has it. Task 1 checks
   the Salesforce behaviour. Without evidence, this is a recorded SalesCompel
@@ -185,9 +193,14 @@ error codes.
   never used.
 - **Fail closed:** a user with no valid profile, an inactive user, a missing
   permission set or an unknown object name all mean no access.
-- **API Enabled** is required for every REST and Composite call. Without it,
-  the call fails with Salesforce's error for API access not enabled (Task 1
-  confirms the code).
+- **API Enabled** is required for every REST and Composite call made with a
+  token issued to a connected app or the `PlatformCLI` client. Without it, the
+  call fails with Salesforce's error for API access not enabled (Task 1
+  confirms the code). As on Salesforce, it doesn't restrict the product's own
+  UI:
+  - Requests from the first-party web UI session are exempt.
+  - Plan 36's sign-in creates that session. This plan defines the exemption
+    point and tests it with a stand-in session marker.
 - **Objects:**
   - Read is required to describe an object, list it in the global describe,
     use it in SOQL `FROM`, traverse a relationship to it, run a child subquery
@@ -227,9 +240,30 @@ error codes.
     updated to allow precisely that.
   - Token validation and login join on it, so deactivating a user over REST
     stops their tokens at once.
+- **Identity rows are written through narrow database functions.** The
+  records login never reads or writes `public.users` directly.
+  - Two `SECURITY DEFINER` functions are owned by the owner group, and the
+    records login gets `EXECUTE` on them:
+    - one creates a credential row with no usable password (login refused)
+    - one renames a username
+  - The functions are the only path from a REST User write to `public.users`.
+  - They enforce cross-tenant, case-insensitive username uniqueness and
+    return Salesforce's duplicate-username error. They run in the same
+    transaction as the setup-row write, so both commit or neither does.
+  - Username is updatable over REST, as on Salesforce, through the rename
+    function.
+  - `runtime_privileges.go` and the #18 privilege test allow exactly these
+    `EXECUTE` grants and nothing more.
 - **A user created over REST has no password.** They can't log in until the
   operator runs `salescompel user set-password`. Salesforce sends a welcome
   email at this point, and email sending isn't available. Recorded as a gap.
+- **Static-token principals** (`salescompel provision`, `public.principals`)
+  have no User row. Their stored `role` maps to a seeded profile's effective
+  permissions when the token is checked (`admin` → System Administrator,
+  `restricted` → Standard User), and they use the org-default time zone. So
+  existing provisioned tokens keep exactly today's access. They can't be
+  managed over the API. A later plan may retire `provision`. Recorded in the
+  compatibility doc.
 - **CLI changes:**
   - `salescompel user create` takes `SALESCOMPEL_PROFILE` (a profile name).
     It fills time zone, locale and language from the org defaults.
@@ -290,8 +324,11 @@ error codes.
   no grant on any profile or permission set. Only Modify All Data and View
   All Data reach them, as with Salesforce's metadata API default. Admins grant
   access through ObjectPermissions and FieldPermissions.
-- **The `role` column** stays, unused, for one release, so a rollback to the
-  previous binary still works. A later plan drops it.
+- **Rollback means restoring a backup.** The previous binary refuses a
+  database at a newer migration head (`migration.checked`) and rejects the new
+  tables (`runtimeTablesSafe`), so nothing is kept for running old binaries.
+  The `users.role` column stays for `provision` principals' sake only until a
+  later plan. It isn't synchronised for new users.
 - **The upgrade test** migrates a database with both roles and existing custom
   objects, then checks the access matrix is unchanged.
 
@@ -342,5 +379,19 @@ error codes.
   Data and View All Data holders.
 - Last-admin lockout protection is added unless Task 1 shows Salesforce
   behaves differently.
-- `SALESCOMPEL_ROLE` stays accepted for one release, and the `role` column is
-  kept, unused, for rollback.
+- `SALESCOMPEL_ROLE` stays accepted for one release. Rollback is a backup
+  restore, not an old binary.
+- Profile-owned permission sets get system-maintained PermissionSetAssignment
+  rows, as on Salesforce.
+- API Enabled gates connected-app and CLI tokens, not the first-party UI
+  session, as on Salesforce.
+- REST User writes reach `public.users` only through two `SECURITY DEFINER`
+  functions (create without a password, rename).
+- Provisioned static tokens map their role to a seeded profile, keeping
+  today's access.
+- Date-literal weeks start on Sunday unless Task 1 shows locale-dependent
+  behaviour for the reference locale (the builder logs it).
+- Migrated users get name, alias and email backfilled from their username.
+- Setup objects can't be targets of ObjectPermissions or FieldPermissions:
+  access to them comes only from Manage Users, View All Data and Modify All
+  Data.
