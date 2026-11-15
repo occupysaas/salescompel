@@ -217,18 +217,26 @@ func deleteRecord(ctx context.Context, db database, p Principal, object, id stri
 	return nil
 }
 func (s *Tx) Read(ctx context.Context, object, id string) (map[string]any, error) {
+	return s.ReadFields(ctx, object, id, nil)
+}
+
+// ReadFields reads one record. A nil fields list selects every field the
+// caller can read. Otherwise each name is resolved case-insensitively against
+// the caller's describe; an unknown or unreadable name is INVALID_FIELD. Id is
+// always returned, after the requested fields.
+func (s *Tx) ReadFields(ctx context.Context, object, id string, fields []string) (map[string]any, error) {
 	p := s.principal
 	d, err := Describe(p, object)
+	if err != nil {
+		return nil, err
+	}
+	names, err := selectFields(d, fields)
 	if err != nil {
 		return nil, err
 	}
 	id, err = normalizeID(p, object, id)
 	if err != nil {
 		return nil, dbError(pgx.ErrNoRows)
-	}
-	names := make([]string, 0, len(d.Fields))
-	for _, f := range d.Fields {
-		names = append(names, f.Name)
 	}
 	text := "SELECT " + strings.Join(names, ",") + " FROM " + object + " WHERE Id = '" + id + "' LIMIT 1"
 	res, err := s.Query(ctx, text, soql.Options{BatchSize: 1})
@@ -239,6 +247,52 @@ func (s *Tx) Read(ctx context.Context, object, id string) (map[string]any, error
 		return nil, dbError(pgx.ErrNoRows)
 	}
 	return res.Records[0], nil
+}
+
+// SelectFields resolves requested field names for object against the
+// caller's describe, as ReadFields does.
+func SelectFields(p Principal, object string, fields []string) ([]string, error) {
+	d, err := Describe(p, object)
+	if err != nil {
+		return nil, err
+	}
+	return selectFields(d, fields)
+}
+
+func selectFields(d Object, fields []string) ([]string, error) {
+	if fields == nil {
+		names := make([]string, 0, len(d.Fields))
+		for _, f := range d.Fields {
+			names = append(names, f.Name)
+		}
+		return names, nil
+	}
+	if len(fields) == 0 {
+		return nil, invalid("INVALID_FIELD", "No such column")
+	}
+	names := make([]string, 0, len(fields)+1)
+	seen := map[string]bool{}
+	for _, want := range fields {
+		want = strings.TrimSpace(want)
+		found := ""
+		for _, f := range d.Fields {
+			if want != "" && strings.EqualFold(f.Name, want) {
+				found = f.Name
+				break
+			}
+		}
+		if found == "" {
+			return nil, invalid("INVALID_FIELD", "No such column")
+		}
+		if !seen[found] {
+			seen[found] = true
+			names = append(names, found)
+		}
+	}
+	if !seen["Id"] {
+		names = append(names, "Id")
+	}
+	return names, nil
 }
 func (s *Tx) UpsertAccount(ctx context.Context, key string, data map[string]any) (string, bool, error) {
 	p := s.principal
