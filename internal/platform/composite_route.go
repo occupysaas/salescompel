@@ -110,7 +110,9 @@ func parseSubrequestURL(method, raw string) (subRoute, bool) {
 	}
 	if valueSeg >= 0 {
 		t, ok := parseTemplate(segs[valueSeg])
-		if !ok || (t.hasRefs() && len(t) != 1) {
+		// A query locator is literal: the spec allows references only in
+		// record-ID and external-ID value segments.
+		if !ok || (t.hasRefs() && (len(t) != 1 || segs[0] == "query")) {
 			return subRoute{}, false
 		}
 		if !t.hasRefs() {

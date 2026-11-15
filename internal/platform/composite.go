@@ -67,6 +67,9 @@ func executeComposite(ctx context.Context, s *Store, p Principal, req CompositeR
 	if err != nil {
 		return empty, err
 	}
+	if err := prevalidateRetrieveFields(p, req, plans); err != nil {
+		return empty, err
+	}
 	tx, err := begin(ctx)
 	if err != nil {
 		return empty, compositeUnavailable()

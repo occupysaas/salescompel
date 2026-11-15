@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"salescompel/internal/records"
 	"strings"
 )
 
@@ -142,6 +143,45 @@ func validateCollectionsSubrequest(route subRoute, body map[string]any) error {
 		}
 		if idsLit && fieldsLit {
 			return checkRetrieveGetParams(ids, fields, hasIDs, hasFields)
+		}
+	}
+	return nil
+}
+
+// prevalidateRetrieveFields checks, before the Composite transaction, the
+// fields of each Collections retrieve whose object is known and readable and
+// whose fields hold no reference: an unknown or unreadable field is a
+// request error, 400 INVALID_FIELD. Others are checked at run time. spec: col-03
+func prevalidateRetrieveFields(p Principal, req CompositeRequest, plans []subPlan) error {
+	for i, plan := range plans {
+		var fields []string
+		switch plan.route.kind {
+		case routeCollRetrieveGet:
+			t, ok := plan.route.query["fields"]
+			if !ok || t.hasRefs() {
+				continue
+			}
+			text, _ := renderText(t, nil)
+			fields = splitFields(text)
+		case routeCollRetrievePost:
+			list, _ := req.CompositeRequest[i].Body["fields"].([]any)
+			for _, v := range list {
+				name, _ := v.(string)
+				if t, ok := parseTemplate(name); !ok || t.hasRefs() {
+					fields = nil
+					break
+				}
+				fields = append(fields, name)
+			}
+		default:
+			continue
+		}
+		o, err := p.Catalog.Object(plan.route.object)
+		if len(fields) == 0 || err != nil || !records.Readable(p, o.Name) {
+			continue
+		}
+		if _, err := records.SelectFields(p, o.Name, fields); err != nil {
+			return err
 		}
 	}
 	return nil
