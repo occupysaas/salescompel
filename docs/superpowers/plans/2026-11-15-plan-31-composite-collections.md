@@ -198,7 +198,7 @@ spec wins and the plan is corrected.
       `candidate-acceptance-contract.ts` (names and required Go tests),
       `candidate-acceptance-results.ts`, and
       `compat/schemas/candidate-acceptance.schema.json`.
-- [ ] Full run: `CANDIDATE_DISPOSABLE=yes scripts/check-candidate-acceptance.sh --out <private-summary>`.
+- [x] Full run: `CANDIDATE_DISPOSABLE=yes scripts/check-candidate-acceptance.sh --out <private-summary>`.
       Record the gate table in the reference record.
 - [ ] Commit `test: add Composite II and Collections acceptance`.
 

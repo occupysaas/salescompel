@@ -157,14 +157,34 @@ JSforce 3.11.0, OpenSSL 3.6.3.
 | --- | --- |
 | `go vet ./...` and `go test ./... -count=1` against PostgreSQL 17 | All packages passed |
 | Plan 31 Go tests (Composite, references, Collections, fields) | All passed; a mutation that removed the per-subrequest savepoint made `TestCompositePartialRecovery` fail as intended |
-| `npm run check` in `compat/clients/node` | Typecheck and formatting passed. Tests: 461 run, 107 failed. The same 107 fail on unmodified upstream `main` on this machine (pinned CLI, Python and browser prerequisites are not installed), and no other test fails |
+| `npm run check` in `compat/clients/node` on macOS | Typecheck and formatting passed. Tests: 482 run, 14 failed, all also failing on unmodified upstream `main`: the target-inventory command reads `/proc/self/fd`, which macOS lacks. With the default macOS `TMPDIR` (a symlink) about 90 more fail on both branches. On Linux all pass (below) |
 | Live client acceptance against an HTTPS candidate with the limited record and identity logins, fresh run ID | `candidate/jsforce/core`, `/policy`, `/isolation`, `candidate/openapi/traffic`, `candidate/composite/atomic`, `candidate/composite/partial`, `candidate/collections/jsforce` and `candidate/foundation/decisions` all passed |
 | Fixture journal cleanup after that run | `verified: true`, 232 records, 0 unknown intents |
 | `sh scripts/check-file-size.sh`, `scripts/check-dco.sh` | Passed |
 
-Not run locally: the full `scripts/check-candidate-acceptance.sh` runner, which
-requires pinned tool versions (Salesforce CLI, Python, Chromium) not installed
-on this machine. The pull request's CI runs it.
+Full runner, `CANDIDATE_DISPOSABLE=yes scripts/check-candidate-acceptance.sh`,
+at commit `0d6e647` in a Linux container that matches the CI job: Ubuntu 24.04
+(Playwright 1.56.1 image, Chromium 1194), Go 1.25.0, Node 22.20.0, Python 3.12.3
+with `requirements.lock`, PostgreSQL 17 on `127.0.0.1`, as a non-root user.
+Outcome `passed`, `acceptanceEligible: true`, 5 min 16 s.
+
+| Gate | Passed | Failed | Skipped |
+| --- | --- | --- | --- |
+| bindings | 3 | 0 | 0 |
+| database | 858 | 0 | 0 |
+| lab | 480 | 0 | 8 |
+| web | 11 | 0 | 0 |
+| jsforce | 8 | 0 | 0 |
+| python | 4 | 0 | 0 |
+| cli | 11 | 0 | 0 |
+| oauth | 16 | 0 | 0 |
+| schema | 22 | 0 | 0 |
+| restart | 6 | 0 | 0 |
+| connected-browser | 14 | 0 | 0 |
+| preview | 11 | 0 | 0 |
+| cleanup | 2 | 0 | 0 |
+
+Cleanup: `verified: true`, 462 records, 0 unknown intents, processes stopped.
 
 ### Independent code review (2026-11-15)
 
