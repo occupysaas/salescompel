@@ -18,7 +18,9 @@ import (
 // item array.
 var errCollectionsFailed = errors.New("collections item failed")
 
-const retrieveChunk = 1000 // the SOQL IN-list limit
+// retrieveChunk keeps each WHERE clause inside the SOQL 4,000-character limit
+// (150 quoted 18-character IDs is about 3,200 characters).
+const retrieveChunk = 150
 
 type collectionsItem struct {
 	object string

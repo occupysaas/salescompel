@@ -163,7 +163,7 @@ spec wins and the plan is corrected.
       wrong object, missing and unreadable), `TestCollectionsRetrieveChunks`
       (1,000 and 2,000 IDs), field errors, GET 800-ID cap, POST body form.
 - [ ] Implement with `ReadFields`' field resolution and chunked SOQL with an
-      explicit batch size.
+      explicit batch size; chunks of 150 because of the SOQL WHERE length limit.
 - [ ] Commit `feat: add sObject Collections retrieve`.
 
 ### Task 8: Collections inside Composite

@@ -95,7 +95,7 @@ their key locks in sorted order.
 `GET /services/data/v65.0/composite/sobjects/{Object}?ids=&fields=` (at most
 800 IDs) and `POST` with `{ids, fields}` (at most 2,000 IDs) SHALL return one
 entry per requested ID in order, `null` for malformed, wrong-object, missing
-or unreadable records, reading valid IDs in chunks of at most 1,000. An
+or unreadable records, reading valid IDs in chunks of at most 150 (the SOQL WHERE length limit). An
 unknown or unreadable field SHALL be a request error with `INVALID_FIELD`.
 
 #### Scenario: 2,000 IDs

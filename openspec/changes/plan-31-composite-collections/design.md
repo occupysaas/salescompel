@@ -32,7 +32,7 @@ Tasks 1-11 are the implementation order.
 3. Omitted Composite `allOrNone` is `false`.
 4. Upsert is limited to `Account.Compat_Key__c`.
 5. No `Location` header.
-6. Retrieve reads in chunks of at most 1,000 IDs (the SOQL `IN` limit).
+6. Retrieve reads in chunks of at most 150 IDs (the SOQL WHERE length limit).
 7. Collections upserts lock keys in sorted order.
 
 ## Risks

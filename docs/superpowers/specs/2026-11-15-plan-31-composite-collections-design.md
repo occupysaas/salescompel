@@ -228,8 +228,9 @@ always present).
 Outer 200 with one entry per requested ID, in order (R18). Every ID is
 normalized with `recordid.Normalize` first; a malformed ID or one of another
 object becomes `null` and never reaches SOQL. Valid IDs are read in chunks of
-at most 1,000 (the SOQL `IN` list limit, `soql.maxInList`), each chunk with
-an explicit batch size large enough for one page. A missing or unreadable
+at most 150, so each WHERE clause stays inside the SOQL 4,000-character limit
+(`soql.maxWhereChars`, which binds before the 1,000-value `IN` limit), each
+chunk with an explicit batch size large enough for one page. A missing or unreadable
 record gives `null`. An unknown or unreadable field is a request error,
 400 `INVALID_FIELD`.
 
