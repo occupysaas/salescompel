@@ -36,6 +36,14 @@ type Options = {
   passed: Passed;
 };
 
+/** ensure, naming the failed check on stderr (labels only, no values). */
+let stage = "start";
+function check(label: string, condition: unknown) {
+  if (!condition)
+    console.error("Permissions check failed: " + stage + " " + label);
+  ensure(condition);
+}
+
 const compatQuery = (account: string) =>
   `SELECT Id, Compat_Text__c FROM Account WHERE Id = '${account}'`;
 
@@ -64,7 +72,7 @@ async function profileUser(
     o.app.client_secret,
     o.redirect,
   );
-  ensure(t.access_token);
+  check("c1", t.access_token);
   return { id, username, token: t.access_token as string };
 }
 
@@ -81,14 +89,14 @@ async function compatSet(admin: Connection, name: string) {
   const set = await admin
     .sobject("PermissionSet")
     .create({ Name: name, Label: name });
-  ensure(set.success && set.id);
+  check("c2", set.success && set.id);
   const grant = await admin.sobject("FieldPermissions").create({
     ParentId: set.id,
     SobjectType: "Account",
     Field: "Account.Compat_Text__c",
     PermissionsRead: true,
   });
-  ensure(grant.success);
+  check("c3", grant.success);
   return set.id!;
 }
 
@@ -108,10 +116,23 @@ async function sfAs(c: GateContext, env: NodeJS.ProcessEnv, args: string[]) {
     c.processes,
     "oauth",
   );
-  ensure(r.complete);
+  check("c4", r.complete);
+  const json = remember(JSON.parse(stdout)) as Record<string, any>;
+  const name =
+    typeof json.name === "string" && /^[A-Za-z_]{1,64}$/.test(json.name)
+      ? json.name
+      : "";
+  console.error(
+    "Permissions sf " +
+      args.slice(0, 3).join(" ") +
+      ": exit " +
+      r.exitCode +
+      " " +
+      name,
+  );
   return {
     exit: r.exitCode,
-    json: remember(JSON.parse(stdout)) as Record<string, any>,
+    json,
   };
 }
 
@@ -127,10 +148,11 @@ async function cliAssignPermset(c: GateContext, o: Options) {
     o.app.client_secret,
     o.redirect,
   );
-  ensure(t.access_token);
+  check("c5", t.access_token);
   const alias = "p33-std-" + c.runId;
   const stdEnv = { ...o.sfEnv, SF_ACCESS_TOKEN: t.access_token };
-  ensure(
+  check(
+    "c6",
     (
       await sfAs(c, stdEnv, [
         "org",
@@ -155,7 +177,8 @@ async function cliAssignPermset(c: GateContext, o: Options) {
     "65.0",
   ];
   const before = await sfAs(c, stdEnv, query);
-  ensure(
+  check(
+    "c7",
     before.exit !== 0 && JSON.stringify(before.json).includes("INVALID_FIELD"),
   );
   const assigned = await sfAs(c, o.sfEnv, [
@@ -169,10 +192,13 @@ async function cliAssignPermset(c: GateContext, o: Options) {
     "--target-org",
     o.adminAlias,
   ]);
-  ensure(assigned.exit === 0 && assigned.json.result?.successes?.length === 1);
+  check(
+    "c8",
+    assigned.exit === 0 && assigned.json.result?.successes?.length === 1,
+  );
   const after = await sfAs(c, stdEnv, query);
-  ensure(after.exit === 0 && after.json.result?.records?.length === 1);
-  ensure("Compat_Text__c" in after.json.result.records[0]);
+  check("c9", after.exit === 0 && after.json.result?.records?.length === 1);
+  check("c10", "Compat_Text__c" in after.json.result.records[0]);
   await o.admin.sobject("PermissionSet").destroy(set);
   o.passed("cli-assign-permset", true);
 }
@@ -183,7 +209,7 @@ async function jsforcePermset(c: GateContext, o: Options) {
   const conn = connectionFor(c, user.token);
   const fields = async () =>
     (await conn.sobject("Account").describe()).fields.map((f) => f.name);
-  ensure(!(await fields()).includes("Compat_Text__c"));
+  check("c11", !(await fields()).includes("Compat_Text__c"));
   const set = await compatSet(o.admin, "P33_" + c.runId.slice(0, 12) + "_js");
   const object = await o.admin.sobject("ObjectPermissions").create({
     ParentId: set,
@@ -191,14 +217,14 @@ async function jsforcePermset(c: GateContext, o: Options) {
     PermissionsRead: true,
     PermissionsCreate: true,
   });
-  ensure(object.success);
+  check("c12", object.success);
   const assignment = await o.admin
     .sobject("PermissionSetAssignment")
     .create({ AssigneeId: user.id, PermissionSetId: set });
-  ensure(assignment.success);
-  ensure((await fields()).includes("Compat_Text__c"));
+  check("c13", assignment.success);
+  check("c14", (await fields()).includes("Compat_Text__c"));
   await o.admin.sobject("PermissionSetAssignment").destroy(assignment.id!);
-  ensure(!(await fields()).includes("Compat_Text__c"));
+  check("c15", !(await fields()).includes("Compat_Text__c"));
   await o.admin.sobject("PermissionSet").destroy(set);
   o.passed("jsforce-permset", true);
 }
@@ -221,7 +247,7 @@ async function pythonReadOnly(c: GateContext, o: Options) {
     c.processes,
     "oauth",
   );
-  ensure(py.exitCode === 0 && py.complete);
+  check("c16", py.exitCode === 0 && py.complete);
   o.passed("python-readonly", true);
   return user;
 }
@@ -246,7 +272,8 @@ async function timezoneToday(
   );
   const conn = connectionFor(c, user.token);
   const count = async (zone: string) => {
-    ensure(
+    check(
+      "c17",
       (
         await o.admin
           .sobject("User")
@@ -259,14 +286,26 @@ async function timezoneToday(
       )
     ).totalSize;
   };
-  ensure((await count("Pacific/Kiritimati")) === 1);
-  ensure((await count("Pacific/Pago_Pago")) === 0);
+  check("c18", (await count("Pacific/Kiritimati")) === 1);
+  check("c19", (await count("Pacific/Pago_Pago")) === 0);
   o.passed("timezone-today", true);
 }
 
 export async function permissionFlows(c: GateContext, o: Options) {
-  await cliAssignPermset(c, o);
-  await jsforcePermset(c, o);
-  const readOnly = await pythonReadOnly(c, o);
-  await timezoneToday(c, o, readOnly);
+  try {
+    stage = "cli-assign-permset";
+    await cliAssignPermset(c, o);
+    stage = "jsforce-permset";
+    await jsforcePermset(c, o);
+    stage = "python-readonly";
+    const readOnly = await pythonReadOnly(c, o);
+    stage = "timezone-today";
+    await timezoneToday(c, o, readOnly);
+  } catch (error: unknown) {
+    const e = error as { errorCode?: unknown; name?: unknown };
+    const kind = typeof e?.errorCode === "string" ? e.errorCode : e?.name;
+    if (typeof kind === "string" && /^[A-Za-z_]{1,64}$/.test(kind))
+      console.error("Permissions failed in " + stage + ": " + kind);
+    throw error;
+  }
 }
