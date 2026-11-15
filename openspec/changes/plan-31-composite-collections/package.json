@@ -1,0 +1,28 @@
+{
+  "schema_version": "devgate.openspec.package/v1",
+  "package_id": "salescompel.plan-31-composite-collections",
+  "package_version": "1.0.0",
+  "normative_inventory": [
+    {
+      "path": "specs/composite-collections/spec.md",
+      "kind": "normative",
+      "digest": "sha256:8f60027e0b1c948bba0eebc7c14a59f86a6c284180b855facac16e453f71e361"
+    },
+    {
+      "path": "proposal.md",
+      "kind": "normative",
+      "digest": "sha256:109154549ac015ab30363a6513801b33bbce09a2246b552479c64ce8e78b371f"
+    },
+    {
+      "path": "design.md",
+      "kind": "normative",
+      "digest": "sha256:28b6eb0fb2b4b318de835f3ed2ff2800cf8e74f17500a70ba18ee3fa3a33dd78"
+    },
+    {
+      "path": "tasks.md",
+      "kind": "informative",
+      "digest": "sha256:37459118e84b4dd9501746d75c47f7d6873f324b758bd6da2ab8da217acbe07f"
+    }
+  ],
+  "imports": []
+}
