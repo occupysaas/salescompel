@@ -33,8 +33,9 @@ of this plan and recorded as gaps (R21). QueryAll subrequests wait for Plan 30
 - Existing standalone behavior stays byte-identical, except the one addition
   in "Standalone change".
 - Plan 24 behavior stays: `httpHeaders` in every Composite result is `{}`
-  (no `Location` header), and `candidate/composite/atomic` stays green
-  unchanged.
+  (no `Location` header), and `candidate/composite/atomic` stays green. Its
+  assertions that pinned rejections Plan 31 lifts were updated; the
+  reference record lists each one.
 - Error messages are static and never echo request values, IDs or SQL.
 - Follow CLEAN_ROOM.md. Behavior beyond the documentation is a *candidate*
   decision and is named as one.
@@ -81,7 +82,7 @@ error, 404 `NOT_FOUND`.
 | Method | URL after the version | Executes |
 | --- | --- | --- |
 | POST | `sobjects/{Object}` | `records.Tx.Create`; 201 `{id, success, errors}` |
-| GET | `sobjects/{Object}/{id}` with optional `?fields=a,b` | `records.Tx.ReadFields`; 200 record |
+| GET | `sobjects/{Object}/{id}` with optional `?fields=a,b` | `records.Tx.Read` with fields (Plan 33, D33-03); 200 record |
 | PATCH | `sobjects/{Object}/{id}` | `records.Tx.Update`; 204 |
 | DELETE | `sobjects/{Object}/{id}` | `records.Tx.Delete`; 204 |
 | PATCH | `sobjects/Account/Compat_Key__c/{value}` | `records.Tx.UpsertAccount`; 201 created or 200 updated, body as the standalone route |
@@ -97,7 +98,11 @@ Objects are any object in the tenant catalog. Validation, field permissions
 and tenant predicates are the existing ones. Upsert on any external ID field
 other than `Account.Compat_Key__c` is an item error, 404 `NOT_FOUND`, the same
 as the standalone route today (gap; decision 4). Any other route is an item
-error, 404 `NOT_FOUND`.
+error, 404 `NOT_FOUND`. A supported path with a method it doesn't take is an
+item error, 405 `METHOD_NOT_ALLOWED`, as the standalone route answers
+(decision 6). `PUT`, or any method no supported route takes, is a request
+error (decision 8). Objects hidden by Plan 33 permissions answer as unknown
+ones, item 404 (D33-02).
 
 ### References
 
@@ -110,11 +115,12 @@ Where references may appear (R7):
 
 - **In `url`**, only as the whole of a record-ID segment, the whole of an
   external-ID value segment, or inside a query-parameter value. Anywhere else
-  in a URL is a request error.
+  in a URL, including the `query/{locator}` segment, is a request error.
 - **In `body`**, in any string value at any depth. A string that is exactly
   one reference takes the referenced value with its JSON type (string,
   number, boolean or null, R9). A reference inside a longer string is
-  replaced by the scalar as text; an object or array there is an item error.
+  replaced by the scalar as text, `null` as the text `null` (decision 11); an
+  object or array there, or as a whole value, is an item error.
 
 Prevalidation (before the transaction) parses each URL with every reference
 treated as an opaque token, checks the route shape against the table above,
@@ -122,10 +128,12 @@ and checks each reference names an earlier subrequest. Forward, self or
 unknown references and malformed `@{` syntax are request errors,
 `INVALID_COMPOSITE_REQUEST`.
 
-At run time, substitute, then route the URL again. In a path segment the
-value is percent-encoded; in a query value it is query-encoded. If the
-substituted URL no longer matches the prevalidated route shape, that is an
-item error, 400 `INVALID_COMPOSITE_REQUEST`, and nothing runs. A path that
+At run time, the value is substituted into the segment or query value that
+prevalidation already parsed; the URL is never parsed again, so a value
+holding `/`, `?` or `..` stays data in that one position and cannot reach
+another route (decision 7). A value in a URL position that is null, empty or
+not a string is an item error, 400 `INVALID_COMPOSITE_REQUEST`, and nothing
+runs (decision 9). A path that
 does not exist in the earlier response, or a reference to a subrequest that
 failed or did not run, is an item error, 400 `PROCESSING_HALTED`, static
 message "Invalid reference specified" (R4, R10). This moves Plan 24's
@@ -154,7 +162,11 @@ request 500.
 ### Collections inside Composite
 
 A Collections subrequest is decoded and prevalidated with the rest of the
-Composite request; its request errors are Composite request errors. Its
+Composite request; its request errors are Composite request errors. Checks
+that depend on a reference (an `ids` or `fields` value, or a limit counted
+from one) can only run after substitution, so they are item errors
+(decision 13). Retrieve fields that hold no reference are checked against the
+caller's describe before the transaction. Its
 result is an entry with `httpStatusCode` 200 and the item array as `body`.
 
 - Outer `allOrNone: true` wins (R19): the Collections executor runs with
@@ -188,9 +200,13 @@ candidate decisions, R20): more than 200 records or IDs on a write or delete;
 more than 2,000 IDs on POST retrieve or 800 on GET retrieve (800 stands in for
 the URL length limit, R18); more than 10 type chunks on create or update
 (R14); a record without `attributes.type`; an `Id` on create; no `id` on
-update; an upsert record whose type is not `Account`; missing `fields` on
-retrieve. All use `INVALID_COMPOSITE_REQUEST` except a malformed body, which
-uses `JSON_PARSER_ERROR`.
+update; an upsert record whose type is not `Account`, or that carries an `Id`
+(decision 10); missing `fields` on retrieve. Also, so that no input is
+silently ignored (decision 14): an unknown or repeated query parameter, a
+body key other than the documented ones, a non-string `ids` or `fields`
+entry, and trailing data after the JSON body. All use
+`INVALID_COMPOSITE_REQUEST` except a malformed body, which uses
+`JSON_PARSER_ERROR`.
 
 ### Record body handling
 
@@ -240,13 +256,14 @@ sends every described field (reference record, client request shapes).
 
 ## Standalone change
 
-`GET /services/data/v65.0/sobjects/{Object}/{id}` accepts an optional
-`fields` query parameter (comma-separated, case-insensitive names, resolved
-through the catalog). Without it, output is unchanged. It uses a new
-`records.Tx.ReadFields(ctx, object, id, fields)`; `Read` keeps its signature
-and calls `ReadFields` with all fields. An unknown or unreadable field is 400
-`INVALID_FIELD`. Composite read subrequests and Collections retrieve share
-this code (decision 1).
+Superseded by Plan 33, which merged first: its decision D33-03 adds the same
+`fields` parameter to `GET /services/data/v65.0/sobjects/{Object}/{id}`
+through `records.Tx.Read(ctx, object, id, fields...)`. Plan 31 uses that path
+unchanged. Composite read subrequests call it, so their bodies still equal the
+standalone route's. Collections retrieve resolves fields the same way and adds
+`Id`, which it needs to put each row back at its requested position
+(decision 15). Under D33-03 an empty `fields` value reads every field, and
+`Id` is returned only when requested.
 
 `GET /services/data/v65.0/sobjects` keeps `maxBatchSize: 1`.
 
@@ -266,9 +283,9 @@ out of it rather than into it. Every file stays under 500 lines.
 | `internal/platform/http_composite.go` | Strict envelope decoding and prevalidation |
 | `internal/platform/collections.go` | Collections executor and result shaping |
 | `internal/platform/http_collections.go` | Collections routes, decoding and limits |
-| `internal/records/write.go`, `internal/metadata` | `ReadFields`; snapshot lookup by key prefix |
+| `internal/records/write.go`, `internal/metadata` | `SelectFields` for retrieve; snapshot lookup by key prefix |
 | `api/candidate-openapi.yaml` | Composite operation updated; six Collections operations with `x-source` |
-| `compat/clients/node/src/candidate-collections*.ts`, `test/candidate-collections.test.ts` | JSforce and raw HTTP acceptance |
+| `test/candidate-collections.test.ts` | JSforce and raw HTTP acceptance |
 
 ## Tests and acceptance
 
@@ -295,12 +312,13 @@ out of it rather than into it. Every file stays under 500 lines.
   every returned ID is recorded before any assertion, so partial-success rows
   are always cleaned up.
 - Existing Composite acceptance (`candidate/composite/atomic`, the pilot
-  rollback) stays green unchanged.
+  rollback) stays green, with the assertion changes the reference record
+  lists.
 
 ## Decisions needed
 
-1. Accept the `GET sobjects/{Object}/{id}?fields=` addition to the standalone
-   route (recommended; needed for read subrequests and retrieve).
+1. ~~Accept the `GET sobjects/{Object}/{id}?fields=` addition to the
+   standalone route.~~ Settled by Plan 33's D33-03, which Plan 31 now uses.
 2. A bad `referenceId` changes from `INVALID_COMPOSITE_REQUEST` to
    `JSON_PARSER_ERROR` to match R8. It only affects requests that already fail.
 3. Omitted Composite `allOrNone` becomes `false` (R2). Plan 24 rejected an
@@ -310,3 +328,28 @@ out of it rather than into it. Every file stays under 500 lines.
 5. Keep `httpHeaders: {}` on every Composite result rather than adding the
    documented `Location` header, so Plan 24's contract and acceptance hold.
    Adding it later is a small, separate change.
+
+Made during implementation and review, also awaiting maintainer review:
+
+6. A supported path with the wrong method inside Composite is item 405
+   `METHOD_NOT_ALLOWED`, matching the standalone route, not item 404.
+7. References are substituted into the already-parsed segment or query value,
+   never re-parsed and re-routed. A value cannot change the route, so the
+   spec's "route again and compare shapes" step is not needed.
+8. `PUT`, or any method no supported route takes, fails the whole request
+   instead of being an item 404.
+9. A reference in a URL position that resolves to null, `""` or a non-string
+   is item 400 `INVALID_COMPOSITE_REQUEST`, so it is never used as a literal
+   (e.g. an upsert with key `null`).
+10. An upsert record that carries `Id` is a request error; upsert matches on
+    the external ID only.
+11. An embedded reference to null renders as the text `null`, in body strings
+    and in query values, `q` included.
+12. Query subrequests accept `columns`, as the standalone query route does.
+13. Collections checks that depend on a reference run after substitution and
+    are item errors.
+14. Standalone Collections rejects unknown or repeated parameters, extra body
+    keys, non-string `ids`/`fields` and trailing JSON rather than ignoring them.
+15. Collections retrieve returns `Id` on every row even when not requested.
+16. A duplicate `referenceId` is `INVALID_COMPOSITE_REQUEST`; a malformed one is
+    `JSON_PARSER_ERROR` (decision 2).

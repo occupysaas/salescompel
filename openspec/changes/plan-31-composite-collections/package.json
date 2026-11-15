@@ -6,7 +6,7 @@
     {
       "path": "specs/composite-collections/spec.md",
       "kind": "normative",
-      "digest": "sha256:5b3dfff96512d673e4a5b4384e68b2c155119b5dfcf52e88d2bc35d76e049c70"
+      "digest": "sha256:f499e7029edff2a806cbf3de575d3da8ace26529b8c27c5baafa1d80b3466991"
     },
     {
       "path": "proposal.md",
@@ -16,7 +16,7 @@
     {
       "path": "design.md",
       "kind": "normative",
-      "digest": "sha256:a2404953d3b3af0ca16065e7b5186c5b4c38c81944df6d3c2dc839dbd1c31b55"
+      "digest": "sha256:4a1149381899876c878611b18c619fc35d32214098c4f2d1ceb5b0bba4812d38"
     },
     {
       "path": "tasks.md",

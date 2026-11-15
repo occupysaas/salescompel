@@ -299,7 +299,7 @@ paths:
           schema:
             type: string
             minLength: 1
-          description: Comma-separated field names; Id is always returned. Unknown or unreadable names return 400 INVALID_FIELD.
+          description: Comma-separated field names (Plan 33 D33-03). Only the named fields are returned; Id only when named. Unknown or unreadable names return 400 INVALID_FIELD.
         - name: recordId
           description: Accepts a case-sensitive 15-character base or an 18-character ID with a case-insensitive checksum suffix. Responses return 18 characters. Malformed or wrong-prefix IDs return 404 NOT_FOUND.
           in: path
@@ -463,7 +463,7 @@ paths:
           schema:
             type: string
             minLength: 1
-          description: Comma-separated field names; Id is always returned. Unknown or unreadable names return 400 INVALID_FIELD.
+          description: Comma-separated field names (Plan 33 D33-03). Only the named fields are returned; Id only when named. Unknown or unreadable names return 400 INVALID_FIELD.
         - name: recordId
           description: Accepts a case-sensitive 15-character base or an 18-character ID with a case-insensitive checksum suffix. Responses return 18 characters. Malformed or wrong-prefix IDs return 404 NOT_FOUND.
           in: path
@@ -2088,7 +2088,7 @@ paths:
           schema:
             type: string
             minLength: 1
-          description: Comma-separated field names; Id is always returned. Unknown or unreadable names return 400 INVALID_FIELD.
+          description: Comma-separated field names (Plan 33 D33-03). Only the named fields are returned; Id only when named. Unknown or unreadable names return 400 INVALID_FIELD.
         - name: object
           in: path
           required: true
@@ -5352,6 +5352,20 @@ components:
       additionalProperties: false
       required:
         - attributes
+      properties:
+        attributes:
+          $ref: "#/components/schemas/CollectionsAttributes"
+        Id:
+          type: string
+          minLength: 1
+      patternProperties:
+        ^(?!attributes$|Id$)[A-Za-z][A-Za-z0-9_]*$:
+          $ref: "#/components/schemas/CompositeValue"
+    CollectionsRetrieveRecord:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
         - Id
       properties:
         attributes:
@@ -5481,7 +5495,7 @@ components:
       items:
         anyOf:
           - type: "null"
-          - $ref: "#/components/schemas/RecordFields"
+          - $ref: "#/components/schemas/CollectionsRetrieveRecord"
   responses:
     Error:
       description: Current candidate response

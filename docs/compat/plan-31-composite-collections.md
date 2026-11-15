@@ -112,7 +112,8 @@ OpenSpec `openspec/changes/plan-31-composite-collections`).
   references with `.name` and `[n]` steps; 25/5 limits; request, item and
   storage error classes.
 - sObject Collections: create, update, upsert, delete, GET and POST retrieve.
-- Standalone `GET /sobjects/{object}/{id}` accepts `fields`.
+- Standalone `GET /sobjects/{object}/{id}` accepts `fields`; after the Plan 33
+  merge this is Plan 33's D33-03 path, which Plan 31 reuses.
 - OpenAPI: six Collections operations, the `fields` parameter on record reads,
   and the broadened Composite request and result schemas.
 
@@ -124,8 +125,40 @@ OpenSpec `openspec/changes/plan-31-composite-collections`).
 | Retrieve reads in chunks of 150 IDs | SOQL limits a WHERE clause to 4,000 characters (`soql.maxWhereChars`), which binds before the 1,000-value `IN` limit the spec first named. |
 | An embedded reference to a null renders as `null` | Nothing is documented for this case; whole-value references keep JSON null. |
 | `PUT` subrequests are request errors | No supported resource takes `PUT`. |
+| A supported path with the wrong method is item 405 `METHOD_NOT_ALLOWED` | The standalone route answers 405 for the same request; an item 404 would claim the resource doesn't exist. |
+| An upsert record carrying `Id` is a request error | Upsert matches on the external ID only; an `Id` would be silently ignored or contradict the key. |
+| Query subrequests accept `columns` | The standalone query route accepts it; read, query and upsert bodies must equal the standalone ones. |
+| Retrieve rows always include `Id` | Retrieve puts each row back at its requested position by `Id`. |
 | A well-formed URL to an unknown object, version or route is an item error, not a request error | Matches the spec's item 404; only malformed URL syntax is a request error. |
 | Concurrent Collections upserts take advisory locks in sorted key order | Proven by `TestCollectionsUpsertLockOrder` (two batches with reversed key order, four rounds). |
+
+### Plan 33 merge (2026-11-15)
+
+Plan 33 (users, profiles and permissions) merged to `main` while this plan was
+in review, and the branch now merges it in. What changed for Plan 31:
+
+| Area | Before | After |
+| --- | --- | --- |
+| Record GET `fields` | Plan 31's `ReadFields` (added `Id`, empty value was `INVALID_FIELD`) | Plan 33's `Read(..., fields...)`, D33-03 (no `Id` added, empty value reads all). Decision 1 is settled by it. Composite reads use it too. |
+| Retrieve fields | Own resolver | `SelectFields` on Plan 33's `readColumns`, so hidden fields are `INVALID_FIELD` |
+| Hidden objects | Not a concept | Composite record subrequests, Collections retrieve and delete answer a hidden object as an unknown one (D33-02). Three lookups had missed it; fixed with `TestPlan31HiddenObject` |
+| Writes | Catalog checks | Plan 33's object and field permission checks apply to every Composite and Collections write, since they go through `records` |
+| Query route | Organization and currency special cases | Removed, as Plan 33 did (Organization is a real object now) |
+| OpenAPI `RecordFields` | Required `Id` | `Id` optional for record reads; `CollectionsRetrieveRecord` keeps it required |
+
+### Final spec review (2026-11-15)
+
+A separate model session compared the code with the spec, OpenSpec and this
+record. Two drifts had no recorded reason and were fixed with failing tests
+first (`composite_drift_test.go`):
+
+| Drift | Fix |
+| --- | --- |
+| Inside Composite, an unknown or unreadable retrieve field was an item error, so other subrequests could commit | Literal fields are checked before the transaction, a request error as the spec says; fields holding a reference stay a run-time item error |
+| References were accepted in the `query/{locator}` segment | Request error, as the spec allows references only in record-ID and external-ID value segments |
+
+The other differences were deliberate. The spec and OpenSpec now describe
+them, and the spec lists each as a decision (6 to 16) for maintainer review.
 
 ### Plan 24 assertions that changed
 

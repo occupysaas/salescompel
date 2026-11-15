@@ -109,6 +109,26 @@ test("validates Plan 31 Collections and record field traffic", async () => {
       exchange("GET", base + "/sobjects/Account/001?fields=Name", 200, record),
     ),
   );
+  // D33-03: a fields read returns only the named fields, without Id.
+  const { Id: _id, ...named } = record as Record<string, unknown>;
+  valid(
+    v.validate(
+      exchange("GET", base + "/sobjects/Account/001?fields=Name", 200, named),
+    ),
+  );
+  // A retrieve row always carries Id.
+  assert.ok(
+    v
+      .validate(
+        exchange(
+          "GET",
+          base + "/composite/sobjects/Account?ids=001&fields=Name",
+          200,
+          [named],
+        ),
+      )
+      .responseIssues.includes("response-schema"),
+  );
   for (const bad of [
     { records: [{ Name: "no attributes" }] },
     { records: [] },

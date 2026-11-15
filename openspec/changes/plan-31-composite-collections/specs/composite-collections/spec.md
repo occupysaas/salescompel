@@ -46,7 +46,9 @@ delete, `Account.Compat_Key__c` upsert, query, query-more and Collections
 subrequests under `/services/data/v65.0/`, at most 25 in total and at most 5
 query or Collections subrequests. A 26th subrequest or 6th query/Collections
 subrequest SHALL be a request error. Other routes, versions and external ID
-fields SHALL be item errors with 404 `NOT_FOUND`. Read, query and upsert
+fields SHALL be item errors with 404 `NOT_FOUND`; a supported path with an
+unsupported method SHALL be an item error with 405 `METHOD_NOT_ALLOWED`, and a
+method no supported route takes SHALL be a request error. Read, query and upsert
 bodies SHALL equal the standalone route bodies.
 
 #### Scenario: sixth query
@@ -57,11 +59,14 @@ bodies SHALL equal the standalone route bodies.
 <!-- id: cmp-04 -->
 `@{ref.path}` SHALL support `.name` and `[n]` steps, including a leading index.
 In `url` it SHALL be allowed only as a whole record-ID segment, a whole
-external-ID value segment, or inside a query-parameter value. In `body` it SHALL
+external-ID value segment, or inside a query-parameter value, and not in the
+query locator segment. In `body` it SHALL
 be allowed in any string value; a whole-value reference SHALL keep the
 referenced JSON type. Forward, self, unknown or malformed references SHALL be
-request errors. After substitution, the URL SHALL be routed again and SHALL
-fail as an item error if its route shape changed.
+request errors. A referenced value SHALL be substituted into the position
+prevalidation parsed, without parsing the URL again, so it cannot change the
+route; a null, empty or non-string value in a URL position SHALL be an item
+error with 400 `INVALID_COMPOSITE_REQUEST`.
 
 #### Scenario: value that would reroute
 - **WHEN** a referenced value contains `/`, `?` or `..` and is used in a record-ID segment
@@ -116,7 +121,8 @@ flag inside its savepoint, and item failures SHALL NOT fail the subrequest.
 ### Requirement: Standalone record fields
 <!-- id: rec-31 -->
 `GET /services/data/v65.0/sobjects/{Object}/{id}` SHALL accept an optional
-`fields` parameter. Without it, output SHALL be byte-identical to before.
+`fields` parameter, as Plan 33's D33-03 defines it. Without it, output SHALL be
+byte-identical to before. Composite read subrequests SHALL use the same path.
 
 #### Scenario: unknown field
 - **WHEN** `fields` names a field that does not exist or is not readable
