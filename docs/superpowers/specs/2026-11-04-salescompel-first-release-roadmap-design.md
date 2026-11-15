@@ -85,6 +85,8 @@ Limits on this state:
 
 Order follows dependencies first, then how much a simple org relies on the feature. The maintainer may reorder anything that does not break the "Needs" column.
 
+Who is working on what, and what is free to claim: [docs/paths](../../paths/README.md).
+
 | Plan | Stage | Feature | Depth | Needs |
 | --- | --- | --- | --- | --- |
 | 25 | A | Foundation decisions: settle open REST and external-ID behavior | Short | — |

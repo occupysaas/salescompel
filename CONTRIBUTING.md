@@ -22,10 +22,11 @@ changes and what every contribution must agree to.
 These apply to everyone. The sections after them add what changes with
 experience.
 
-- **Claim the plan before you start.** Say which plan (or bug) you are taking
-  in the Discord `#contributing-coordination` channel, or comment on the
-  plan's issue, and check nobody else has claimed it. Two people building the
-  same plan wastes both of their work.
+- **Claim the plan before you start.** Comment `claiming` on the plan's issue
+  (every open plan is listed in [docs/paths](docs/paths/README.md)), check
+  that nobody else has claimed it, then mention it in the Discord
+  `#contributing-coordination` channel. For a bug, comment on its issue. Two
+  people building the same plan wastes both of their work.
 - **One plan or one bug per pull request.** A plan may land as one pull
   request with a commit per task; do not mix plans or add unrelated fixes.
 - **No source file over 500 lines.** `scripts/check-file-size.sh` (run in CI
