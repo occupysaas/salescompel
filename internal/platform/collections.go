@@ -129,7 +129,7 @@ func deleteItem(p Principal, id string) collectionsItem {
 		return malformed
 	}
 	object, ok := p.Catalog.ObjectByPrefix(id[:3])
-	if !ok {
+	if !ok || !records.Readable(p, object.Name) { // D33-02: hidden reads as unknown
 		return malformed
 	}
 	normalized, err := records.NormalizeID(p, object.Name, id)
@@ -273,7 +273,7 @@ func (s *Store) itemInSavepoint(ctx context.Context, p Principal, kind routeKind
 // record is malformed, of another object, missing or unreadable.
 func (s *Store) collectionsRetrieve(ctx context.Context, p Principal, object string, ids, fields []string) ([]any, error) {
 	definition, err := p.Catalog.Object(object)
-	if err != nil {
+	if err != nil || !records.Readable(p, definition.Name) { // D33-02
 		return nil, problem(404, "NOT_FOUND", "Object not found")
 	}
 	object = definition.Name

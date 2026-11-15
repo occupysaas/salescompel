@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"salescompel/internal/records"
 )
 
 type CompositeRequest struct {
@@ -252,7 +253,7 @@ func runSubrequest(ctx context.Context, st *Store, p Principal, sub CompositeSub
 		return status, body, nil, nil
 	}
 	definition, lookupErr := p.Catalog.Object(route.object)
-	if lookupErr != nil {
+	if lookupErr != nil || !records.Readable(p, definition.Name) { // D33-02
 		return fail(problem(404, "NOT_FOUND", "Object not found"))
 	}
 	object := definition.Name
