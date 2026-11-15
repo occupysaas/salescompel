@@ -91,9 +91,8 @@ func objectPermissionFields() []Field {
 // Access follows the spec's Objects table; setup objects never receive
 // ObjectPermissions or FieldPermissions grants (D33-32).
 //
-// Physical gaps left to later tasks: Organization is registered without a
-// table, so it isn't served yet (Task 7), and Profile's Permissions* fields
-// live on the profile-owned permission set.
+// Organization is a view over the tenant settings. Profile's Permissions*
+// fields live on the profile-owned permission set.
 func SetupObjects() []Object {
 	id := Field{Name: "Id", Column: "id", Options: Options{Kind: fieldtype.Id}}
 	named := func(length int, edit bool) Field {
@@ -156,8 +155,7 @@ func SetupObjects() []Object {
 		setupLookup("PermissionSetId", "Permission Set ID", "permission_set_id", "PermissionSet", "PermissionSet", "Assignments", "Cascade", false, true, false),
 	}
 	objects := []Object{
-		// No table yet: Load leaves Organization out until Task 7 serves it.
-		{Name: "Organization", Label: "Organization", PluralLabel: "Organizations", Prefix: "00D", Fields: organization},
+		{Name: "Organization", Label: "Organization", PluralLabel: "Organizations", Table: "organization", Prefix: "00D", Fields: organization},
 		{Name: "User", Label: "User", PluralLabel: "Users", Table: "users", Prefix: "005", Fields: user, Createable: true, Updateable: true},
 		{Name: "Profile", Label: "Profile", PluralLabel: "Profiles", Table: "profiles", Prefix: "00e", Fields: profile},
 		{Name: "PermissionSet", Label: "Permission Set", PluralLabel: "Permission Sets", Table: "permission_sets", Prefix: "0PS", Fields: permissionSet, Createable: true, Updateable: true, Deletable: true},

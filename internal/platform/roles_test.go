@@ -270,6 +270,10 @@ func TestRuntimeRejectsExtraSetupGrants(t *testing.T) {
 		{"GRANT EXECUTE ON FUNCTION sc_setup.create_identity(varchar,text,text) TO " + identity, "REVOKE EXECUTE ON FUNCTION sc_setup.create_identity(varchar,text,text) FROM " + identity},
 		{"GRANT SELECT(username) ON sc_setup.users TO " + identity, "REVOKE SELECT(username) ON sc_setup.users FROM " + identity},
 		{"GRANT SELECT ON sc_setup.profiles TO " + identity, "REVOKE SELECT ON sc_setup.profiles FROM " + identity},
+		{"GRANT SELECT ON sc_setup.organization TO " + identity, "REVOKE SELECT ON sc_setup.organization FROM " + identity},
+		{"GRANT UPDATE ON sc_setup.organization TO " + records, "REVOKE UPDATE ON sc_setup.organization FROM " + records},
+		// A view running as its owner would bypass the settings table's RLS.
+		{"ALTER VIEW sc_setup.organization SET (security_invoker=false)", "ALTER VIEW sc_setup.organization SET (security_invoker=true)"},
 	} {
 		if _, e := owner.pool.Exec(ctx, c.grant); e != nil {
 			t.Fatal(e)

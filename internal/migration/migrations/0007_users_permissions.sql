@@ -235,7 +235,7 @@ DECLARE tid text;
 BEGIN
  FOR tid IN SELECT id FROM public.tenants ORDER BY id LOOP
   PERFORM set_config('salescompel.tenant_id',tid,true);
-  INSERT INTO sc_catalog.objects(id,tenant_id,api_name,label,plural_label,standard,physical_schema,physical_table,prefix) VALUES(md5('object:'||tid||':Organization'),tid,'Organization','Organization','Organizations',true,'sc_setup','','00D');
+  INSERT INTO sc_catalog.objects(id,tenant_id,api_name,label,plural_label,standard,physical_schema,physical_table,prefix) VALUES(md5('object:'||tid||':Organization'),tid,'Organization','Organization','Organizations',true,'sc_setup','organization','00D');
   INSERT INTO sc_catalog.fields(id,tenant_id,object_id,api_name,physical_column,definition,ordinal) VALUES
    (md5('field:'||tid||':Organization:Id'),tid,md5('object:'||tid||':Organization'),'Id','id','{"v":2,"field":{"name":"Id","label":"Id","type":"id","soapType":"tns:ID","nillable":false,"createable":false,"updateable":false,"externalId":false,"length":0,"precision":0,"scale":0,"digits":0,"referenceTo":[],"relationshipName":null,"relationshipOrder":null,"cascadeDelete":false,"restrictedDelete":false,"picklistValues":[],"restrictedPicklist":false,"dependentPicklist":false,"autoNumber":false,"calculated":false,"defaultValue":null,"defaultedOnCreate":false,"nameField":false,"compoundFieldName":null,"htmlFormatted":false,"filterable":true,"sortable":true,"groupable":true,"unique":false},"options":{"kind":"Id"}}',0),
    (md5('field:'||tid||':Organization:Name'),tid,md5('object:'||tid||':Organization'),'Name','name','{"v":2,"field":{"name":"Name","label":"Name","type":"string","soapType":"xsd:string","nillable":false,"createable":false,"updateable":false,"externalId":false,"length":80,"precision":0,"scale":0,"digits":0,"referenceTo":[],"relationshipName":null,"relationshipOrder":null,"cascadeDelete":false,"restrictedDelete":false,"picklistValues":[],"restrictedPicklist":false,"dependentPicklist":false,"autoNumber":false,"calculated":false,"defaultValue":null,"defaultedOnCreate":false,"nameField":true,"compoundFieldName":null,"htmlFormatted":false,"filterable":true,"sortable":true,"groupable":true,"unique":false},"options":{"kind":"Text"}}',1),
@@ -373,3 +373,17 @@ BEGIN
  PERFORM set_config('salescompel.tenant_id','',true);
 END $$;
 DROP FUNCTION sc_setup.new_id(text);
+
+-- Organization: the tenant settings as one read-only row. security_invoker
+-- keeps the settings table's forced RLS for the records login. The Id is
+-- internal/platform.orgID, the ID in access tokens and identity URLs: 00D,
+-- twelve lowercase hex digits of sha256(tenant), and the checksum, which is
+-- always EAA since only the D is upper case.
+CREATE VIEW sc_setup.organization WITH (security_invoker=true) AS
+ SELECT s.tenant_id,('00D'||encode(substr(sha256(convert_to(s.tenant_id,'UTF8')),1,6),'hex')||'EAA')::varchar(18) AS id,s.tenant_id::varchar(80) AS name,
+  s.time_zone_sid_key,s.default_locale_sid_key,s.language_locale_key,s.currency_iso_code::text AS currency_iso_code,
+  NULL::varchar(5) AS instance_name,false AS is_sandbox,NULL::timestamptz AS trial_expiration_date,
+  NULL::varchar(15) AS namespace_prefix,'SalesCompel'::varchar(40) AS organization_type
+ FROM sc_catalog.settings s;
+ALTER VIEW sc_setup.organization OWNER TO salescompel_owner;
+GRANT SELECT ON sc_setup.organization TO salescompel_records;

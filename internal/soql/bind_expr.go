@@ -115,11 +115,11 @@ func (b *binder) bindLabelCmp(left BoundValue, op string, lit Literal) (BoundExp
 // bindDateLiteralCmp rewrites a comparison against a date literal into
 // half-open range predicates. spec: soql-04
 func (b *binder) bindDateLiteralCmp(left BoundValue, op string, lit Literal) (BoundExpr, error) {
-	start, end, err := DateLiteralRange(lit, b.now().UTC())
+	cast := dateRangeCast(left)
+	start, end, err := b.dateRange(lit, cast)
 	if err != nil {
 		return nil, err
 	}
-	cast := dateRangeCast(left)
 	ge := BoundCmp{Left: left, Op: ">=", Right: Param{Value: start, Cast: cast}}
 	lt := BoundCmp{Left: left, Op: "<", Right: Param{Value: end, Cast: cast}}
 	switch op {
@@ -219,7 +219,7 @@ func (b *binder) bindInRanges(left BoundValue, in *In, owner metadata.Object) (B
 	items := make([]BoundExpr, 0, len(in.Values))
 	for _, lit := range in.Values {
 		if lit.Kind == LitDateLiteral {
-			start, end, err := DateLiteralRange(lit, b.now().UTC())
+			start, end, err := b.dateRange(lit, cast)
 			if err != nil {
 				return nil, err
 			}

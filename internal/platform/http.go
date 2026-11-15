@@ -279,14 +279,6 @@ func NewHandlerWithOptions(s *Store, assetDir string, o Options) http.Handler {
 				return
 			}
 			qtext := r.URL.Query().Get("q")
-			if isOrganizationDiscovery(qtext) {
-				writeJSON(w, 200, map[string]any{"totalSize": 1, "done": true, "records": []any{map[string]any{"Name": p.Tenant, "InstanceName": nil, "IsSandbox": false, "TrialExpirationDate": nil, "NamespacePrefix": nil, "OrganizationType": "SalesCompel"}}})
-				return
-			}
-			if isCurrencyDiscovery(qtext) {
-				writeJSON(w, 200, map[string]any{"totalSize": 1, "done": true, "records": []any{map[string]any{"attributes": map[string]any{"type": "Organization"}, "DefaultCurrencyIsoCode": catalog.Currency}}})
-				return
-			}
 			options, optionErr := url.ParseQuery(r.URL.RawQuery)
 			if optionErr != nil {
 				writeError(w, invalid("INVALID_QUERY_PARAMETER", "Invalid query parameter encoding"))

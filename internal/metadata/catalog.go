@@ -41,7 +41,7 @@ func Load(ctx context.Context, tx pgx.Tx, tenant string) (Snapshot, error) {
 			o.Createable, o.Updateable, o.Deletable = flags.Createable, flags.Updateable, flags.Deletable
 		}
 		if o.Table == "" {
-			continue // registered without storage (Organization until Task 7): not served
+			continue // registered without storage: not served
 		}
 		// Physical field mappings are separate from public describe JSON.
 		out.Objects = append(out.Objects, o)

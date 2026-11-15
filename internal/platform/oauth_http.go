@@ -311,15 +311,3 @@ func handleIdentity(p Principal, o Options, w http.ResponseWriter, r *http.Reque
 	}
 	writeJSON(w, 200, map[string]any{"id": identityURL(p, o), "user_id": p.User, "organization_id": orgID(p.Tenant), "username": username})
 }
-func isOrganizationDiscovery(q string) bool {
-	// Tokenize identifiers and commas separately, so whitespace never changes a
-	// token boundary ("Org anization" must not become "Organization").
-	q = strings.ReplaceAll(q, ",", " , ")
-	return strings.EqualFold(strings.Join(strings.Fields(q), " "), "SELECT Name , InstanceName , IsSandbox , TrialExpirationDate , NamespacePrefix , OrganizationType FROM Organization")
-}
-
-// isCurrencyDiscovery matches exactly the tenant currency bridge query used by
-// the connected editor (Salesforce's documented Organization field name).
-func isCurrencyDiscovery(q string) bool {
-	return strings.EqualFold(strings.Join(strings.Fields(q), " "), "SELECT DefaultCurrencyIsoCode FROM Organization")
-}

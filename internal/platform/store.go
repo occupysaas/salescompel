@@ -93,3 +93,9 @@ func (s *Store) Authenticate(ctx context.Context, token string) (Principal, erro
 func (s *Store) SetCurrency(ctx context.Context, tenant, code string) error {
 	return metadata.SetCurrency(ctx, s.pool, tenant, code)
 }
+
+// SetOrgDefaults changes a tenant's default time zone, locale and language
+// (operator store only).
+func (s *Store) SetOrgDefaults(ctx context.Context, tenant string, d metadata.OrgDefaults) error {
+	return metadata.SetOrgDefaults(ctx, s.pool, tenant, d)
+}

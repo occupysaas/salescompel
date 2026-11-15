@@ -62,7 +62,7 @@ func TestDateLiteralRanges(t *testing.T) {
 	}
 	for _, c := range cases {
 		lit := Literal{Kind: LitDateLiteral, Text: c.name, N: c.n}
-		s, e, err := DateLiteralRange(lit, c.now)
+		s, e, err := DateLiteralRange(lit, c.now, nil)
 		if err != nil {
 			t.Errorf("%s:%d @ %s: %v", c.name, c.n, c.now.Format("2006-01-02"), err)
 			continue
@@ -80,11 +80,11 @@ func TestDateLiteralRanges(t *testing.T) {
 		{Kind: LitDateLiteral, Text: "LAST_N_DAYS", N: 0},
 		{Kind: LitDateLiteral, Text: "N_DAYS_AGO", N: 1001},
 	} {
-		if _, _, err := DateLiteralRange(lit, utc(2026, 11, 11)); !malformedCode(err) {
+		if _, _, err := DateLiteralRange(lit, utc(2026, 11, 11), nil); !malformedCode(err) {
 			t.Errorf("%v error = %v want MALFORMED_QUERY", lit, err)
 		}
 	}
-	if _, _, err := DateLiteralRange(Literal{Kind: LitDateLiteral, Text: "NOPE"}, utc(2026, 11, 11)); !malformedCode(err) {
+	if _, _, err := DateLiteralRange(Literal{Kind: LitDateLiteral, Text: "NOPE"}, utc(2026, 11, 11), nil); !malformedCode(err) {
 		t.Error("unknown date literal accepted")
 	}
 }

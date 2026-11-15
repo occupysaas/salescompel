@@ -74,12 +74,13 @@ func (p Permissions) Object(object string) ObjectAccess {
 }
 
 // setupObjectAccess is the read rule for setup objects, which never take
-// ObjectPermissions grants: every API-enabled user reads User; the others
-// need Manage Users or View All Data. Empty permissions (an inactive or
-// unknown user) read nothing. Writes are refused by the record path until
-// the setup write rules exist (Task 6).
+// ObjectPermissions grants: every API-enabled user reads User and
+// Organization; the others need Manage Users or View All Data. Empty
+// permissions (an inactive or unknown user) read nothing. Writes follow the
+// setup write rules in internal/records.
 func setupObjectAccess(s SystemPerms, object string) ObjectAccess {
-	read := (strings.EqualFold(object, "User") && s.APIEnabled) || s.ManageUsers || s.ViewAllData
+	everyone := strings.EqualFold(object, "User") || strings.EqualFold(object, "Organization")
+	read := (everyone && s.APIEnabled) || s.ManageUsers || s.ViewAllData
 	return ObjectAccess{Read: read, ViewAll: s.ViewAllData}
 }
 

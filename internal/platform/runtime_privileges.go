@@ -15,7 +15,8 @@ func runtimeTablesSafe(ctx context.Context, p *pgxpool.Pool, group string) (bool
  ARRAY(SELECT a.attname::text FROM pg_attribute a WHERE a.attrelid=c.oid AND a.attnum>0 AND NOT a.attisdropped AND has_column_privilege(current_user,c.oid,a.attnum,'UPDATE') ORDER BY a.attnum),
  ARRAY(SELECT a.attname::text FROM pg_attribute a WHERE a.attrelid=c.oid AND a.attnum>0 AND NOT a.attisdropped AND has_column_privilege(current_user,c.oid,a.attnum,'SELECT') ORDER BY a.attnum),
  ARRAY[has_any_column_privilege(current_user,c.oid,'SELECT'),has_any_column_privilege(current_user,c.oid,'INSERT'),has_any_column_privilege(current_user,c.oid,'UPDATE'),has_any_column_privilege(current_user,c.oid,'REFERENCES')],
- ARRAY[has_table_privilege(current_user,c.oid,'SELECT'),has_table_privilege(current_user,c.oid,'INSERT'),has_table_privilege(current_user,c.oid,'UPDATE'),has_table_privilege(current_user,c.oid,'DELETE'),has_table_privilege(current_user,c.oid,'TRUNCATE'),has_table_privilege(current_user,c.oid,'REFERENCES'),has_table_privilege(current_user,c.oid,'TRIGGER'),has_table_privilege(current_user,c.oid,'MAINTAIN')]
+ ARRAY[has_table_privilege(current_user,c.oid,'SELECT'),has_table_privilege(current_user,c.oid,'INSERT'),has_table_privilege(current_user,c.oid,'UPDATE'),has_table_privilege(current_user,c.oid,'DELETE'),has_table_privilege(current_user,c.oid,'TRUNCATE'),has_table_privilege(current_user,c.oid,'REFERENCES'),has_table_privilege(current_user,c.oid,'TRIGGER'),has_table_privilege(current_user,c.oid,'MAINTAIN')],
+ c.relkind='v' AND coalesce('security_invoker=true'=ANY(c.reloptions),false)
  FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname IN ('public','sc_catalog','sc_records','sc_query','sc_control','sc_setup') AND c.relkind IN ('r','p','v','m')`, "(tenant_id = NULLIF(current_setting('salescompel.tenant_id'::text, true), ''::text))")
 	if e != nil {
 		return false, e
@@ -27,10 +28,10 @@ func runtimeTablesSafe(ctx context.Context, p *pgxpool.Pool, group string) (bool
 	setupTables := map[string]bool{"users": true, "profiles": true, "permission_sets": true, "object_permissions": true, "field_permissions": true, "permission_set_assignments": true, "revisions": true}
 	for rows.Next() {
 		var schema, table string
-		var rls, force, closed bool
+		var rls, force, closed, invoker bool
 		var got, columns []bool
 		var writable, readable []string
-		if e = rows.Scan(&schema, &table, &rls, &force, &closed, &writable, &readable, &columns, &got); e != nil {
+		if e = rows.Scan(&schema, &table, &rls, &force, &closed, &writable, &readable, &columns, &got, &invoker); e != nil {
 			return false, e
 		}
 		want := make([]bool, 8)
@@ -44,6 +45,13 @@ func runtimeTablesSafe(ctx context.Context, p *pgxpool.Pool, group string) (bool
 		if schema == "sc_control" && table == "schema_migrations" {
 			want[0] = true
 		}
+		// Organization is a view over the settings; it must run as the
+		// caller so the settings table's RLS applies.
+		organization := schema == "sc_setup" && table == "organization"
+		if organization && !invoker {
+			return false, nil
+		}
+		want[0] = want[0] || organization && group == "salescompel_records"
 		if group == "salescompel_records" {
 			if record || setup {
 				for i := 0; i < 4; i++ {
