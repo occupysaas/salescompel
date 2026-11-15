@@ -3,7 +3,7 @@
 > **For agentic workers:** use superpowers:subagent-driven-development or
 > superpowers:executing-plans, task by task. Steps use checkbox syntax.
 
-**Status:** Planned, 2026-11-15.
+**Status:** Implemented, 2026-11-15. [Implementation record](../../compat/plan-31-composite-collections.md#implementation-record-2026-11-15).
 
 **Goal:** Composite partial success, read/query/upsert subrequests and general
 references; the six sObject Collections operations; JSforce and raw HTTP

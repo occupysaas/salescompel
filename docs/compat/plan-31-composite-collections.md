@@ -1,7 +1,7 @@
 # Plan 31 - Composite II and sObject Collections reference record
 
-Status: Task 1 (observation) complete, 2026-11-15; implementation not started.
-Nothing here claims Salesforce parity. Each row in the status table says
+Status: implemented and verified locally, 2026-11-15; no Salesforce
+compatibility certification. Nothing here claims Salesforce parity. Each row in the status table says
 whether its behavior is `observed`, `documented` or a `gap`.
 
 ## Reference review (2026-11-15)
@@ -98,3 +98,80 @@ of retrieve; it is implemented from the documentation and tested by raw HTTP.
 - Error messages never echo request values (project rule). Where the
   documentation's example messages include IDs or values, the candidate uses a
   static message with the same error code.
+
+## Implementation record (2026-11-15)
+
+Delivered on branch `plan-31-composite-collections`
+([spec](../superpowers/specs/2026-11-15-plan-31-composite-collections-design.md),
+[plan](../superpowers/plans/2026-11-15-plan-31-composite-collections.md),
+OpenSpec `openspec/changes/plan-31-composite-collections`).
+
+- Composite: optional `allOrNone` (default `false`) with a savepoint per
+  subrequest; record GET with `fields`, query, query-more, Account
+  `Compat_Key__c` upsert and Collections subrequests; `@{ref.path}`
+  references with `.name` and `[n]` steps; 25/5 limits; request, item and
+  storage error classes.
+- sObject Collections: create, update, upsert, delete, GET and POST retrieve.
+- Standalone `GET /sobjects/{object}/{id}` accepts `fields`.
+- OpenAPI: six Collections operations, the `fields` parameter on record reads,
+  and the broadened Composite request and result schemas.
+
+### Decisions made during implementation
+
+| Decision | Why |
+| --- | --- |
+| References are substituted into an already-parsed URL (a segment or a query value), never re-parsed | A referenced value such as `x/../../query` stays data inside one segment. It reaches `normalizeID` as a malformed ID (item 404) or is stored as a literal external ID (`TestCompositeRefReroute`). |
+| Retrieve reads in chunks of 150 IDs | SOQL limits a WHERE clause to 4,000 characters (`soql.maxWhereChars`), which binds before the 1,000-value `IN` limit the spec first named. |
+| An embedded reference to a null renders as `null` | Nothing is documented for this case; whole-value references keep JSON null. |
+| `PUT` subrequests are request errors | No supported resource takes `PUT`. |
+| A well-formed URL to an unknown object, version or route is an item error, not a request error | Matches the spec's item 404; only malformed URL syntax is a request error. |
+| Concurrent Collections upserts take advisory locks in sorted key order | Proven by `TestCollectionsUpsertLockOrder` (two batches with reversed key order, four rounds). |
+
+### Plan 24 assertions that changed
+
+The spec intended Plan 24 tests to stay untouched apart from decisions 2 and 3.
+Plan 31 lifts more restrictions than that, so these assertions now pin the new
+behavior. Every Plan 24 scenario still runs.
+
+| Test | Old expectation | New expectation |
+| --- | --- | --- |
+| `TestDecodeComposite` | Omitted or `false` `allOrNone`, `collateSubrequests: true` and `httpHeaders: {}` rejected | Accepted; `null` values and a forbidden header still rejected |
+| `TestValidateComposite` | Unsupported but well-formed URLs, `@{a.Id}`, embedded references and references to non-POST subrequests rejected before the transaction | Unsupported routes classified as item errors; well-formed references accepted and resolved at run time; malformed or forward references and references outside value positions still rejected |
+| `TestCompositeAtomic/prevalidation` | GET on a create URL rejected before the transaction | Item 405 that rolls back; a malformed reference keeps the prevalidation case |
+| `candidate/composite/atomic` | `request-schema` issues for an unknown Account field and an empty Contact body; `allOrNone: false` as the prevalidation case | Field checks happen on the server (still `INVALID_FIELD` and rollback); the prevalidation case uses `allOrNone: "false"` |
+| OpenAPI traffic and contract tests | Plan 24 closed request schema and `const` flags | Plan 31 schemas; result bodies stay tied to status codes and `httpHeaders` stays the closed empty object |
+
+### Client note
+
+JSforce's `sobject(X).create(records)` sets every record's `attributes.type`
+to `X`, so a mixed-type create cannot be sent through one `sobject` call. The
+JSforce acceptance creates Contacts separately; mixed-type chunks are covered
+by raw HTTP and Go tests.
+
+### Verification (local, 2026-11-15)
+
+Tools: Go 1.25.0, PostgreSQL 17.12 (disposable container), Node 24.19.0,
+JSforce 3.11.0, OpenSSL 3.6.3.
+
+| Check | Result |
+| --- | --- |
+| `go vet ./...` and `go test ./... -count=1` against PostgreSQL 17 | All packages passed |
+| Plan 31 Go tests (Composite, references, Collections, fields) | All passed; a mutation that removed the per-subrequest savepoint made `TestCompositePartialRecovery` fail as intended |
+| `npm run check` in `compat/clients/node` | Typecheck and formatting passed. Tests: 461 run, 107 failed. The same 107 fail on unmodified upstream `main` on this machine (pinned CLI, Python and browser prerequisites are not installed), and no other test fails |
+| Live client acceptance against an HTTPS candidate with the limited record and identity logins, fresh run ID | `candidate/jsforce/core`, `/policy`, `/isolation`, `candidate/openapi/traffic`, `candidate/composite/atomic`, `candidate/composite/partial`, `candidate/collections/jsforce` and `candidate/foundation/decisions` all passed |
+| Fixture journal cleanup after that run | `verified: true`, 232 records, 0 unknown intents |
+| `sh scripts/check-file-size.sh`, `scripts/check-dco.sh` | Passed |
+
+Not run locally: the full `scripts/check-candidate-acceptance.sh` runner, which
+requires pinned tool versions (Salesforce CLI, Python, Chromium) not installed
+on this machine. The pull request's CI runs it.
+
+### Gaps
+
+- Composite Graph and Composite Batch (R21).
+- QueryAll subrequests, until Plan 30 (R22).
+- Subrequest `httpHeaders` other than none or `{}`; `If-Match` waits for
+  Plan 30.
+- Upsert on any external ID other than `Account.Compat_Key__c`.
+- The documented `Location` result header (spec decision 5).
+- Collection-level error codes and messages are candidate choices (R20).

@@ -1,7 +1,8 @@
 # Plan 31 - Composite II and sObject Collections
 
-Status: draft for maintainer review, 2026-11-15. Reviewed once by a separate
-model session; its findings are folded in.
+Status: implemented, 2026-11-15; decisions below still await maintainer review.
+Reviewed once by a separate model session; its findings are folded in.
+[Implementation record](../../compat/plan-31-composite-collections.md#implementation-record-2026-11-15).
 Issue: [#21](https://github.com/occupysaas/salescompel/issues/21). Brief: [plan-31](../../paths/plan-31-composite-collections.md).
 Roadmap: [first release, Plan 31](2026-11-04-salescompel-first-release-roadmap-design.md#3-plans).
 Reference record: [plan-31-composite-collections.md](../../compat/plan-31-composite-collections.md) (rows cited below as R1-R22).
