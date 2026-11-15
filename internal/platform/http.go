@@ -186,6 +186,10 @@ func NewHandlerWithOptions(s *Store, assetDir string, o Options) http.Handler {
 			handleIdentity(p, o, w, r)
 			return
 		}
+		if e := requireAPIEnabled(p, r); e != nil {
+			writeError(w, e)
+			return
+		}
 		if path == apicontract.CandidateOpenAPIPath {
 			if method(w, r, "GET") {
 				w.Header().Set("Content-Type", apicontract.CandidateOpenAPIContentType)
@@ -365,6 +369,9 @@ func NewHandlerWithOptions(s *Store, assetDir string, o Options) http.Handler {
 			}
 			objects := []Object{}
 			for _, object := range catalog.Objects {
+				if !records.Readable(p, object.Name) {
+					continue
+				}
 				d, dErr := records.Describe(p, object.Name)
 				if dErr != nil {
 					writeError(w, problem(500, "INTERNAL_ERROR", "Describe failed"))
@@ -376,7 +383,8 @@ func NewHandlerWithOptions(s *Store, assetDir string, o Options) http.Handler {
 			return
 		}
 		definition, lookupErr := catalog.Object(parts[1])
-		object, known := definition.Name, lookupErr == nil
+		// D33-02: a hidden object is answered as an unknown one.
+		object, known := definition.Name, lookupErr == nil && records.Readable(p, definition.Name)
 		if !known {
 			writeError(w, problem(404, "NOT_FOUND", "Object not found"))
 			return
@@ -440,7 +448,7 @@ func NewHandlerWithOptions(s *Store, assetDir string, o Options) http.Handler {
 		id := parts[2]
 		switch r.Method {
 		case "GET":
-			row, e := s.Read(ctx, p, object, id)
+			row, e := s.Read(ctx, p, object, id, readFields(r)...)
 			if e != nil {
 				writeError(w, e)
 				return

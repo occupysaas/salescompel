@@ -237,19 +237,23 @@ func deleteRecord(ctx context.Context, db database, p Principal, object, id stri
 	}
 	return nil
 }
-func (s *Tx) Read(ctx context.Context, object, id string) (map[string]any, error) {
+
+// Read returns one record. fields, from REST ?fields=, limits the columns;
+// a hidden or unknown name is INVALID_FIELD (D33-03). Without fields every
+// readable field is returned.
+func (s *Tx) Read(ctx context.Context, object, id string, fields ...string) (map[string]any, error) {
 	p := s.principal
 	d, err := Describe(p, object)
+	if err != nil {
+		return nil, err
+	}
+	names, err := readColumns(p, d, fields)
 	if err != nil {
 		return nil, err
 	}
 	id, err = normalizeID(p, object, id)
 	if err != nil {
 		return nil, dbError(pgx.ErrNoRows)
-	}
-	names := make([]string, 0, len(d.Fields))
-	for _, f := range d.Fields {
-		names = append(names, f.Name)
 	}
 	text := "SELECT " + strings.Join(names, ",") + " FROM " + object + " WHERE Id = '" + id + "' LIMIT 1"
 	res, err := s.Query(ctx, text, soql.Options{BatchSize: 1})

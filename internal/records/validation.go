@@ -6,6 +6,7 @@ import (
 	"salescompel/internal/metadata"
 	"salescompel/internal/policy"
 	"sort"
+	"strings"
 )
 
 type Principal = policy.Principal
@@ -26,6 +27,11 @@ func allowed(p Principal, object, name string) bool {
 	f, e := p.Catalog.Field(object, name)
 	return e == nil && policy.Allowed(p, object, f)
 }
+
+// Readable reports whether p can read the object: describe it, list it in
+// the global describe and read its records.
+func Readable(p Principal, object string) bool { return p.Perms.Object(object).Read }
+
 func field(p Principal, object, name string) (Field, error) { return policy.Field(p, object, name) }
 func Describe(p Principal, object string) (Object, error) {
 	fields, ok := catalogFields(p, object)
@@ -33,7 +39,8 @@ func Describe(p Principal, object string) (Object, error) {
 		return Object{}, invalid("INVALID_TYPE", "Unsupported object")
 	}
 	d, oErr := p.Catalog.Object(object)
-	if oErr != nil {
+	// A hidden object describes as an unknown one (D33-02, D33-09).
+	if oErr != nil || !Readable(p, d.Name) {
 		return Object{}, invalid("INVALID_TYPE", "Unsupported object")
 	}
 	d.Fields = []Field{}
@@ -120,4 +127,32 @@ func canonicalObject(p Principal, input string) (string, bool) {
 		return o.Name, e == nil
 	}
 	return "", false
+}
+
+// readColumns gives the columns a record read selects: the requested fields,
+// each resolved to its canonical name, or every described field.
+func readColumns(p Principal, d Object, requested []string) ([]string, error) {
+	var names []string
+	seen := map[string]bool{}
+	for _, name := range requested {
+		name = strings.TrimSpace(name)
+		if name == "" {
+			continue
+		}
+		f, err := field(p, d.Name, name)
+		if err != nil {
+			return nil, err
+		}
+		if !seen[f.Name] {
+			seen[f.Name] = true
+			names = append(names, f.Name)
+		}
+	}
+	if len(names) > 0 {
+		return names, nil
+	}
+	for _, f := range d.Fields {
+		names = append(names, f.Name)
+	}
+	return names, nil
 }
