@@ -41,4 +41,10 @@ jobs:
         env:
           BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
           HEAD: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
-        run: ./scripts/check-migrations.sh "$BASE" "$HEAD"
+        run: |
+          # On a push, `before` is all zeros for a new branch and may be
+          # unreachable after a force-push; compare with the parent instead.
+          if [ "$GITHUB_EVENT_NAME" = push ] && ! git rev-parse --verify --quiet "$BASE^{commit}" >/dev/null; then
+            BASE="$HEAD~1"
+          fi
+          ./scripts/check-migrations.sh "$BASE" "$HEAD"

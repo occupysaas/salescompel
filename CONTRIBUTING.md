@@ -174,8 +174,9 @@ Contributors work from a fork. Nobody pushes directly to this repository.
 the next number after the latest one on `main`. Before merging, rename the
 file and its entry in `manifest()` in `internal/migration/migrate.go` if
 `main` has moved. Never reserve numbers. The `migrations` check fails a pull
-request whose new migration is numbered at or below `main`'s latest. Run
-`scripts/check-migrations.sh main HEAD` to check locally.
+request whose new migration is numbered at or below `main`'s latest. To check locally, fetch this repository's `main` and compare against it,
+for example `git fetch https://github.com/occupysaas/salescompel.git main`
+then `scripts/check-migrations.sh FETCH_HEAD HEAD`.
 
 ## Licence and sign-off (DCO)
 

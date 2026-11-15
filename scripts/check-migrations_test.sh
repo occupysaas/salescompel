@@ -48,6 +48,15 @@ run_case next_number 0 "" "" -- "$mig/0007_y.sql"
 run_case stale_number 1 "0006_z.sql" "" -- "$mig/0006_z.sql"
 run_case two_files_one_stale 1 "0005_w.sql" "0007_y.sql" -- "$mig/0007_y.sql" "$mig/0005_w.sql"
 
+# bad_base: an unknown base ref must not pass silently.
+got=0
+out=$("$script" 0000000000000000000000000000000000000000 main 2>&1) || got=$?
+if [ "$got" -eq 2 ] && grep -qF "not a commit" <<<"$out"; then
+	echo "ok bad_base"
+else
+	echo "FAIL bad_base (exit $got, want 2)"; echo "$out" | sed 's/^/  | /'; fails=$((fails + 1))
+fi
+
 if [ "$fails" -gt 0 ]; then
 	echo "$fails case(s) failed"
 	exit 1

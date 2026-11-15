@@ -27,9 +27,13 @@ Show every item with one status, using the rules in
 
 - **free:** it can be claimed now
 - **claimed by @user:** it has the `claimed` label
-- **claim requested by @user:** it has a comment whose text starts with
-  `claiming` (any case), from someone other than the maintainer, and no
-  `claimed` label. This counts as taken for the item and its track.
+- **claim requested by @user:** it has no `claimed` label, and its latest
+  comment starting with `claiming`, `released` or `declined` (any case) is a
+  `claiming` comment from someone other than the maintainer. If several such
+  `claiming` comments follow the last `released`/`declined`, the first one
+  wins. This counts as taken for the item and its track. A `released` or
+  `declined` comment cancels the claims before it. `claiming` comments on
+  `maintainer-only` items are ignored.
 - **blocked by #N, #M:** a plan it needs is still open, or another item in its
   track is claimed or claim requested. List every direct blocker by issue
   number. The README's table maps plan numbers to issues.
@@ -42,7 +46,7 @@ every `track:c` item and Plan 47 (which is labeled `track:d`, like 44–46).
 
 Then ask which item to work on. List the free items first.
 
-If `gh` is missing or there is no network, list the briefs in `docs/paths/`
+If the command fails for any reason (no `gh`, not logged in, no network), list the briefs in `docs/paths/`
 (`plan-*.md`), say that claim status is unknown, and ask the person to check
 the issues before starting.
 
@@ -60,8 +64,9 @@ the issues before starting.
 ### 3. When the work merges or stops
 
 - **If it merged:** the pull request's `Closes #<issue>` closes the issue.
-- **If it stopped:** comment on the issue with where it stands, and release
-  the claim if the person is not coming back to it.
+- **If it stopped:** comment on the issue with where it stands. If the person
+  is not coming back to it, comment `released` (and, as the maintainer, remove
+  `claimed` and the assignee).
 
 Then ask what is next, showing the free items again.
 

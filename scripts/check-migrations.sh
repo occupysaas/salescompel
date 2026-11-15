@@ -9,6 +9,13 @@ base=${1:?usage: check-migrations.sh <base> <head>}
 head=${2:?usage: check-migrations.sh <base> <head>}
 dir=internal/migration/migrations
 
+for ref in "$base" "$head"; do
+	if ! git rev-parse --verify --quiet "$ref^{commit}" >/dev/null; then
+		echo "::error::$ref is not a commit in this clone; fetch it first (e.g. git fetch upstream)"
+		exit 2
+	fi
+done
+
 latest=0
 while IFS= read -r path; do
 	name=${path##*/}

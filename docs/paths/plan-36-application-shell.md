@@ -41,7 +41,7 @@ Likely to touch:
 
 ## How to start
 
-1. Claim the issue (see [Claiming](README.md#claiming)).
+1. Reserved for the maintainer. Contributors can't claim it (see [Claiming](README.md#claiming)).
 2. Follow the roadmap's plan shape (§1, "Every plan keeps the same shape"), starting with Task 1: observation.
 3. Spec: `docs/superpowers/specs/YYYY-MM-DD-plan-36-application-shell-design.md` (required: this is a Full plan)
 4. Plan: `docs/superpowers/plans/YYYY-MM-DD-plan-36-application-shell.md`

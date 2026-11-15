@@ -68,12 +68,19 @@ Plans 25–29 have merged, so a dependency on them is already met.
   assigning you.
 - **A claim request blocks like a claim.** An open issue with a comment
   starting with `claiming`, from someone other than the maintainer
-  (`thomasmeadows`), and no `claimed` label is **claim requested**. It counts as taken,
-  for that item and for its track, until the maintainer confirms it or turns
-  it down with a comment. This stops two people claiming the same thing
-  before anyone has looked.
-- **Release:** remove `claimed` (or ask the maintainer to) and comment. When a
-  claim goes quiet, the maintainer asks first, then releases it.
+  (`thomasmeadows`), and no `claimed` label is **claim requested**. It counts
+  as taken, for that item and for its track, until the maintainer confirms it
+  or declines it. This stops two people claiming the same thing before anyone
+  has looked. If two people comment `claiming`, the first comment wins.
+- **Only the latest claim comment counts.** A later comment starting with
+  `released` (from the claimant or the maintainer) or `declined` (from the
+  maintainer) cancels every earlier `claiming` comment, and the item is free
+  again unless it still has the `claimed` label.
+- **Release:** comment `released`. The maintainer also removes `claimed` and
+  the assignee. When a claim goes quiet, the maintainer asks first, then
+  comments `released` and removes the label.
+- **Maintainer-only items** can't be claimed by contributors. A `claiming`
+  comment on one is ignored.
 - **Finish:** the pull request that completes the item says
   `Closes #<issue>`, so merging it closes the issue.
 
