@@ -168,6 +168,14 @@ Contributors work from a fork. Nobody pushes directly to this repository.
    `CLEAN_ROOM.md`, and cite the public source or recorded evidence for any
    new or changed compatibility behavior.
 
+**Migration numbers.** Several plans run at once, so a new migration in
+`internal/migration/migrations/` takes its number when your branch merges:
+the next number after the latest one on `main`. Before merging, rename the
+file and its entry in `manifest()` in `internal/migration/migrate.go` if
+`main` has moved. Never reserve numbers. The `migrations` check fails a pull
+request whose new migration is numbered at or below `main`'s latest. Run
+`scripts/check-migrations.sh main HEAD` to check locally.
+
 ## Licence and sign-off (DCO)
 
 SalesCompel is licensed under the [Apache License 2.0](LICENSE). Under section

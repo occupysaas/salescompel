@@ -1,16 +1,22 @@
 name: dco
-# Every commit in a pull request must carry a Signed-off-by line for its
-# author, certifying the Developer Certificate of Origin 1.1 (CONTRIBUTING.md).
-# Merge commits are skipped. Runs on the pull_request event, so fork PRs get
-# a read-only token and no secrets.
+# sign-off: every commit in a pull request must carry a Signed-off-by line for
+# its author, certifying the Developer Certificate of Origin 1.1
+# (CONTRIBUTING.md). Merge commits are skipped.
+# migrations: a new migration must be numbered above the base branch's latest
+# (CONTRIBUTING.md, "Workflow"). It also runs on pushes to main as a backstop
+# for a pull request that went stale after its last check.
+# Runs on pull_request, so fork PRs get a read-only token and no secrets.
 on:
   pull_request:
+  push:
+    branches: [main]
 
 permissions:
   contents: read
 
 jobs:
   sign-off:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -22,3 +28,17 @@ jobs:
           BASE: ${{ github.event.pull_request.base.sha }}
           HEAD: ${{ github.event.pull_request.head.sha }}
         run: ./scripts/check-dco.sh "$BASE" "$HEAD"
+
+  migrations:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Test the migration-order check
+        run: bash scripts/check-migrations_test.sh
+      - name: Check migration order
+        env:
+          BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: ./scripts/check-migrations.sh "$BASE" "$HEAD"
