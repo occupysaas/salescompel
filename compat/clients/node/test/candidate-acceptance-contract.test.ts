@@ -48,6 +48,10 @@ test("coverage requires the OpenAPI parent and database route measurement", () =
     ["database", "TestCompositeAtomic"],
     ["database", "TestHTTPCompositeAtomic"],
     ["jsforce", "candidate/composite/atomic"],
+    ["jsforce", "candidate/composite/partial"],
+    ["jsforce", "candidate/collections/jsforce"],
+    ["database", "TestCompositePartialSuccess"],
+    ["database", "TestCollectionsAllOrNone"],
     ["jsforce", "candidate/foundation/decisions"],
   ] as const) {
     const complete: ParsedResult = {

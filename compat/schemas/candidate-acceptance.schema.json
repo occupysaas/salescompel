@@ -13,17 +13,10 @@
       "pattern": "^[a-f0-9]{24}$"
     },
     "scope": {
-      "enum": [
-        "full",
-        "candidate-only"
-      ]
+      "enum": ["full", "candidate-only"]
     },
     "outcome": {
-      "enum": [
-        "passed",
-        "failed",
-        "blocked"
-      ]
+      "enum": ["passed", "failed", "blocked"]
     },
     "acceptanceEligible": {
       "type": "boolean"
@@ -106,12 +99,7 @@
             ]
           },
           "outcome": {
-            "enum": [
-              "passed",
-              "failed",
-              "blocked",
-              "not-run"
-            ]
+            "enum": ["passed", "failed", "blocked", "not-run"]
           },
           "coverage": {
             "type": "object",
@@ -149,6 +137,8 @@
                   "enum": [
                     "candidate/openapi/traffic",
                     "candidate/composite/atomic",
+                    "candidate/composite/partial",
+                    "candidate/collections/jsforce",
                     "candidate/foundation/decisions",
                     "candidate/jsforce/core",
                     "candidate/jsforce/policy",
@@ -187,16 +177,10 @@
             "maxItems": 10000
           },
           "startedAt": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "finishedAt": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           }
         },
         "required": [
@@ -268,10 +252,7 @@
             "pattern": "^([a-f0-9]{64})?$"
           }
         },
-        "required": [
-          "gate",
-          "sha256"
-        ]
+        "required": ["gate", "sha256"]
       },
       "maxItems": 10000
     }
