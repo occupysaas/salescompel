@@ -66,8 +66,9 @@ Plans 25–29 have merged, so a dependency on them is already met.
   Discord `#contributing-coordination`. Only the maintainer can add labels
   today, so the maintainer confirms your claim by adding `claimed` and
   assigning you.
-- **A claim request blocks like a claim.** An open issue with a `claiming`
-  comment and no `claimed` label is **claim requested**. It counts as taken,
+- **A claim request blocks like a claim.** An open issue with a comment
+  starting with `claiming`, from someone other than the maintainer
+  (`thomasmeadows`), and no `claimed` label is **claim requested**. It counts as taken,
   for that item and for its track, until the maintainer confirms it or turns
   it down with a comment. This stops two people claiming the same thing
   before anyone has looked.
