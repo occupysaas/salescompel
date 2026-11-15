@@ -400,7 +400,6 @@ async function main(c: GateContext) {
     });
     await permissionFlows(c, {
       admin: connection,
-      adminAlias: alias,
       sfEnv,
       account,
       password,

@@ -25,7 +25,6 @@ export const permissionSteps = [
 
 type Options = {
   admin: Connection;
-  adminAlias: string;
   sfEnv: NodeJS.ProcessEnv;
   account: string;
   password: string;
@@ -181,7 +180,26 @@ async function cliAssignPermset(c: GateContext, o: Options) {
     "c7",
     before.exit !== 0 && JSON.stringify(before.json).includes("INVALID_FIELD"),
   );
-  const assigned = await sfAs(c, o.sfEnv, [
+  // The admin logs in under its own alias; the web-login alias belongs to
+  // the earlier OAuth steps.
+  const adminAlias = "p33-admin-" + c.runId;
+  const adminEnv = { ...o.sfEnv, SF_ACCESS_TOKEN: o.admin.accessToken! };
+  check(
+    "c7a",
+    (
+      await sfAs(c, adminEnv, [
+        "org",
+        "login",
+        "access-token",
+        "--instance-url",
+        c.url,
+        "--alias",
+        adminAlias,
+        "--no-prompt",
+      ])
+    ).exit === 0,
+  );
+  const assigned = await sfAs(c, adminEnv, [
     "org",
     "assign",
     "permset",
@@ -190,7 +208,7 @@ async function cliAssignPermset(c: GateContext, o: Options) {
     "--on-behalf-of",
     o.restricted,
     "--target-org",
-    o.adminAlias,
+    adminAlias,
   ]);
   check(
     "c8",
