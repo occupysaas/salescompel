@@ -18,13 +18,15 @@ const compositeCreate = `{"method":"POST","url":"/services/data/v65.0/sobjects/A
 
 func TestDecodeComposite(t *testing.T) {
 	valid := compositeJSON(compositeCreate)
-	for _, input := range []string{valid, strings.Replace(valid, `"allOrNone":true`, `"allOrNone":true,"collateSubrequests":false`, 1), strings.Replace(valid, `"Name":"Synthetic"`, `"Unknown":true`, 1)} {
+	for _, input := range []string{valid, strings.Replace(valid, `"allOrNone":true`, `"allOrNone":true,"collateSubrequests":false`, 1), strings.Replace(valid, `"Name":"Synthetic"`, `"Unknown":true`, 1),
+		// Plan 31: allOrNone is optional and may be false; collation may be true; headers may be empty.
+		strings.Replace(valid, `"allOrNone":true,`, ``, 1), strings.Replace(valid, `true`, `false`, 1), strings.Replace(valid, `true`, `true,"collateSubrequests":true`, 1), strings.Replace(valid, `"body":`, `"httpHeaders":{},"body":`, 1)} {
 		if _, err := decodeComposite(strings.NewReader(input)); err != nil {
 			t.Fatal(err)
 		}
 	}
 	for name, input := range map[string]string{
-		"missing": `{}`, "false": strings.Replace(valid, `true`, `false`, 1), "null": strings.Replace(valid, `true`, `null`, 1), "collate": strings.Replace(valid, `true`, `true,"collateSubrequests":true`, 1), "collate-null": strings.Replace(valid, `true`, `true,"collateSubrequests":null`, 1), "unknown": strings.Replace(valid, `true`, `true,"private_marker":1`, 1), "empty": compositeJSON(""), "null-sub": compositeJSON("null"), "null-array": `{"allOrNone":true,"compositeRequest":null}`, "trailing": valid + ` {}`, "bad-json": `{`, "headers": strings.Replace(valid, `"body":`, `"httpHeaders":{},"body":`, 1), "body-null": strings.Replace(valid, `{"Name":"Synthetic"}`, `null`, 1), "body-array": strings.Replace(valid, `{"Name":"Synthetic"}`, `[]`, 1), "body-missing": strings.Replace(valid, `,"body":{"Name":"Synthetic"}`, ``, 1), "duplicate": compositeJSON(compositeCreate + "," + compositeCreate),
+		"missing": `{}`, "null": strings.Replace(valid, `true`, `null`, 1), "collate-null": strings.Replace(valid, `true`, `true,"collateSubrequests":null`, 1), "unknown": strings.Replace(valid, `true`, `true,"private_marker":1`, 1), "empty": compositeJSON(""), "null-sub": compositeJSON("null"), "null-array": `{"allOrNone":true,"compositeRequest":null}`, "trailing": valid + ` {}`, "bad-json": `{`, "headers-null": strings.Replace(valid, `"body":`, `"httpHeaders":null,"body":`, 1), "headers-auth": strings.Replace(valid, `"body":`, `"httpHeaders":{"Authorization":"x"},"body":`, 1), "body-null": strings.Replace(valid, `{"Name":"Synthetic"}`, `null`, 1), "body-array": strings.Replace(valid, `{"Name":"Synthetic"}`, `[]`, 1), "body-missing": strings.Replace(valid, `,"body":{"Name":"Synthetic"}`, ``, 1), "duplicate": compositeJSON(compositeCreate + "," + compositeCreate),
 	} {
 		t.Run(name, func(t *testing.T) {
 			_, err := decodeComposite(strings.NewReader(input))
@@ -71,10 +73,19 @@ func TestValidateComposite(t *testing.T) {
 		}
 	}
 	r.CompositeRequest[0].ReferenceID = "a"
-	for _, url := range []string{"https://private_marker.invalid/", "//evil/", "/services/data/v65.0/composite", "/services/data/v64.0/sobjects/Account", "/services/data/v65.0/sobjects/User", "/services/data/v65.0/sobjects/Account/", "/services/data/v65.0/sobjects/Account?q=1", "/services/data/v65.0/sobjects/Account#x", "/services/data/v65.0/sobjects/%41ccount", "/services/data/v65.0/sobjects/../Account", "/services//data/v65.0/sobjects/Account"} {
+	for _, url := range []string{"https://private_marker.invalid/", "//evil/", "/services/data/v65.0/sobjects/Account/", "/services/data/v65.0/sobjects/Account#x", "/services/data/v65.0/sobjects/%41ccount", "/services/data/v65.0/sobjects/../Account", "/services//data/v65.0/sobjects/Account"} {
 		r.CompositeRequest[0].URL = url
 		if err := validateComposite(r); err == nil {
 			t.Fatal("accepted URL")
+		}
+	}
+	// Plan 31: well-formed URLs for unsupported routes, versions or objects are
+	// item errors at run time, not request errors.
+	for url, kind := range map[string]routeKind{"/services/data/v65.0/composite": routeUnsupported, "/services/data/v64.0/sobjects/Account": routeUnsupported, "/services/data/v65.0/sobjects/User": routeCreate, "/services/data/v65.0/sobjects/Account?q=1": routeUnsupported} {
+		r.CompositeRequest[0].URL = url
+		plans, err := planComposite(r)
+		if err != nil || plans[0].route.kind != kind {
+			t.Fatalf("%s: %v", url, err)
 		}
 	}
 	r.CompositeRequest[0].URL = "/services/data/v65.0/sobjects/Account"
@@ -90,15 +101,23 @@ func TestValidateComposite(t *testing.T) {
 	if err := validateComposite(r); err != nil {
 		t.Fatal(err)
 	}
-	for _, ref := range []string{"@{a.Id}", "@{c.id}", "@{future.id}", "before@{a.id}", "@{a.records[0].Id}", "@{a.id}/more"} {
+	for _, ref := range []string{"@{c.id}", "@{future.id}", "@{a.id", "@{a}", "@{.id}"} {
 		r.CompositeRequest[1].Body["AccountId"] = ref
 		if err := validateComposite(r); err == nil {
-			t.Fatal("accepted reference")
+			t.Fatal("accepted reference", ref)
+		}
+	}
+	// Plan 31: any well-formed reference to an earlier subrequest is accepted
+	// before the transaction; a path that does not resolve fails at run time.
+	for _, ref := range []string{"@{a.Id}", "before@{a.id}", "@{a.records[0].Id}", "@{a.id}/more"} {
+		r.CompositeRequest[1].Body["AccountId"] = ref
+		if err := validateComposite(r); err != nil {
+			t.Fatal("rejected reference", ref, err)
 		}
 	}
 	r.CompositeRequest[1].Body = map[string]any{"LastName": "@{a.id}"}
-	if err := validateComposite(r); err == nil {
-		t.Fatal("reference in ordinary field")
+	if err := validateComposite(r); err != nil {
+		t.Fatal("reference in ordinary field", err)
 	}
 	r.CompositeRequest[1].Body = map[string]any{"@{a.id}": "x"}
 	if err := validateComposite(r); err == nil {
@@ -108,9 +127,11 @@ func TestValidateComposite(t *testing.T) {
 	if err := validateComposite(r); err != nil {
 		t.Fatal(err)
 	}
-	r.CompositeRequest = append(r.CompositeRequest, CompositeSubrequest{Method: "DELETE", URL: "/services/data/v65.0/sobjects/Account/@{p.id}", ReferenceID: "d"})
-	if err := validateComposite(r); err == nil {
-		t.Fatal("reference to non-POST")
+	for _, url := range []string{"/services/data/v65.0/sobjects/@{a.id}/x", "/services/data/v65.0/sobjects/Account/x@{a.id}", "/services/data/v65.0/@{a.id}"} {
+		r.CompositeRequest[1].URL = url
+		if err := validateComposite(r); err == nil {
+			t.Fatal("reference outside a value position", url)
+		}
 	}
 }
 

@@ -271,6 +271,10 @@ func NewHandlerWithOptions(s *Store, assetDir string, o Options) http.Handler {
 			serveQuery(s, ctx, p, w, r, parts)
 			return
 		}
+		if parts[0] == "composite" && len(parts) >= 2 && parts[1] == "sobjects" {
+			serveCollections(s, ctx, p, w, r, parts)
+			return
+		}
 		if parts[0] == "candidate" && len(parts) == 4 && parts[1] == "sobjects" && parts[3] == "storedFields" {
 			// Candidate-only: stored-not-enforced definitions are never described.
 			if !method(w, r, "GET") {
