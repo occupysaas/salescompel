@@ -238,7 +238,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AccountRead"
+                anyOf:
+                  - $ref: "#/components/schemas/AccountRead"
+                  - $ref: "#/components/schemas/RecordFields"
         "400":
           $ref: "#/components/responses/Error"
         "401":
@@ -252,6 +254,15 @@ paths:
         "500":
           $ref: "#/components/responses/Error"
       parameters:
+        - name: fields
+          in: query
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: string
+            minLength: 1
+          description: Comma-separated field names; Id is always returned. Unknown or unreadable names return 400 INVALID_FIELD.
         - name: recordId
           description: Accepts a case-sensitive 15-character base or an 18-character ID with a case-insensitive checksum suffix. Responses return 18 characters. Malformed or wrong-prefix IDs return 404 NOT_FOUND.
           in: path
@@ -391,7 +402,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ContactRead"
+                anyOf:
+                  - $ref: "#/components/schemas/ContactRead"
+                  - $ref: "#/components/schemas/RecordFields"
         "400":
           $ref: "#/components/responses/Error"
         "401":
@@ -405,6 +418,15 @@ paths:
         "500":
           $ref: "#/components/responses/Error"
       parameters:
+        - name: fields
+          in: query
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: string
+            minLength: 1
+          description: Comma-separated field names; Id is always returned. Unknown or unreadable names return 400 INVALID_FIELD.
         - name: recordId
           description: Accepts a case-sensitive 15-character base or an 18-character ID with a case-insensitive checksum suffix. Responses return 18 characters. Malformed or wrong-prefix IDs return 404 NOT_FOUND.
           in: path
@@ -633,10 +655,12 @@ paths:
   /services/data/v65.0/composite:
     post:
       operationId: candidateCompositeAtomic
-      description: "Restricted atomic Account/Contact writes: allOrNone must be true; collateSubrequests absent or false executes sequentially. Only earlier POST id references in row URLs and Contact.AccountId are supported. No partial success, reads, query, upsert, headers, or nested Composite. References and transaction effects are checked separately from schemas. Every result is rewritten on rollback; no committed success is reported before commit."
+      description: "Composite subrequests run in order in one transaction. allOrNone is optional (default false): when false each subrequest has its own savepoint and dependents of a failed subrequest report PROCESSING_HALTED; when true the first failure rolls back everything. Supported: record create, read (optional fields), update, delete, Account Compat_Key__c upsert, query, query-more and sObject Collections; at most 25 subrequests and 5 query or Collections subrequests. References @{ref.path} may appear in body strings and in record-ID, external-ID and query-value URL positions. httpHeaders is always empty in results. Reference resolution and transaction effects are checked separately from schemas."
       x-source:
         - https://github.com/occupysaas/salescompel/blob/059bc87/docs/superpowers/specs/2026-11-04-plan-24-atomic-composite-writes-design.md
+        - https://github.com/occupysaas/salescompel/blob/4a73bc9/docs/superpowers/specs/2026-11-15-plan-31-composite-collections-design.md
         - https://developer.salesforce.com/docs/platform/api-rest/guide/resources-composite-composite-post.html
+        - https://developer.salesforce.com/docs/platform/api-rest/guide/requests-composite.html
       requestBody:
         required: true
         content:
@@ -650,6 +674,240 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CompositeResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+  /services/data/v65.0/composite/sobjects:
+    post:
+      operationId: candidateCollectionsCreate
+      description: "Create up to 200 records of up to 10 consecutive type chunks. allOrNone defaults to false (per-record savepoints); true rolls back every record on the first failure and reports ALL_OR_NONE_OPERATION_ROLLED_BACK for the others."
+      x-source:
+        - https://github.com/occupysaas/salescompel/blob/4a73bc9/docs/superpowers/specs/2026-11-15-plan-31-composite-collections-design.md
+        - https://developer.salesforce.com/docs/platform/api-rest/guide/resources-composite-sobjects-collections-create.html
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollectionsWrite"
+      responses:
+        "200":
+          description: Current candidate response; inspect every item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CollectionsSaveResults"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+    patch:
+      operationId: candidateCollectionsUpdate
+      description: "Update up to 200 records; each record carries attributes.type and one id. allOrNone as for create."
+      x-source:
+        - https://github.com/occupysaas/salescompel/blob/4a73bc9/docs/superpowers/specs/2026-11-15-plan-31-composite-collections-design.md
+        - https://developer.salesforce.com/docs/platform/api-rest/guide/resources-composite-sobjects-collections-update.html
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollectionsWrite"
+      responses:
+        "200":
+          description: Current candidate response; inspect every item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CollectionsSaveResults"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+    delete:
+      operationId: candidateCollectionsDelete
+      description: "Delete up to 200 records of any objects, found by key prefix. Malformed or unknown IDs report MALFORMED_ID."
+      x-source:
+        - https://github.com/occupysaas/salescompel/blob/4a73bc9/docs/superpowers/specs/2026-11-15-plan-31-composite-collections-design.md
+        - https://developer.salesforce.com/docs/platform/api-rest/guide/resources-composite-sobjects-collections-delete.html
+      parameters:
+        - name: ids
+          in: query
+          required: true
+          style: form
+          explode: true
+          schema:
+            type: string
+            minLength: 1
+          description: Comma-separated record IDs, 1 to 200.
+        - name: allOrNone
+          in: query
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: string
+            enum:
+              - "true"
+              - "false"
+          description: true or false; default false.
+      responses:
+        "200":
+          description: Current candidate response; inspect every item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CollectionsSaveResults"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+  /services/data/v65.0/composite/sobjects/{object}:
+    get:
+      operationId: candidateCollectionsRetrieve
+      description: "Read up to 800 records of one object. One entry per requested ID, in order; null for malformed, other-object, missing or unreadable IDs. Unknown or unreadable fields return 400 INVALID_FIELD."
+      x-source:
+        - https://github.com/occupysaas/salescompel/blob/4a73bc9/docs/superpowers/specs/2026-11-15-plan-31-composite-collections-design.md
+        - https://developer.salesforce.com/docs/platform/api-rest/guide/resources-composite-sobjects-collections-retrieve.html
+      parameters:
+        - name: object
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            pattern: ^[A-Za-z][A-Za-z0-9_]{0,79}$
+        - name: ids
+          in: query
+          required: true
+          style: form
+          explode: true
+          schema:
+            type: string
+            minLength: 1
+          description: Comma-separated record IDs, 1 to 800.
+        - name: fields
+          in: query
+          required: true
+          style: form
+          explode: true
+          schema:
+            type: string
+            minLength: 1
+          description: Comma-separated field names.
+      responses:
+        "200":
+          description: Current candidate response; inspect every item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CollectionsRetrieveResults"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+    post:
+      operationId: candidateCollectionsRetrievePost
+      description: "Read up to 2,000 records of one object; results as for GET."
+      x-source:
+        - https://github.com/occupysaas/salescompel/blob/4a73bc9/docs/superpowers/specs/2026-11-15-plan-31-composite-collections-design.md
+        - https://developer.salesforce.com/docs/platform/api-rest/guide/resources-composite-sobjects-collections-retrieve-post.html
+      parameters:
+        - name: object
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            pattern: ^[A-Za-z][A-Za-z0-9_]{0,79}$
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollectionsRetrieveRequest"
+      responses:
+        "200":
+          description: Current candidate response; inspect every item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CollectionsRetrieveResults"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+  /services/data/v65.0/composite/sobjects/Account/Compat_Key__c:
+    patch:
+      operationId: candidateCollectionsUpsertAccount
+      description: "Upsert up to 200 Accounts matched on each record Compat_Key__c, taking key locks in sorted order. Results add created. Other external ID fields are not supported."
+      x-source:
+        - https://github.com/occupysaas/salescompel/blob/4a73bc9/docs/superpowers/specs/2026-11-15-plan-31-composite-collections-design.md
+        - https://developer.salesforce.com/docs/platform/api-rest/guide/resources-composite-sobjects-collections-upsert.html
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollectionsWrite"
+      responses:
+        "200":
+          description: Current candidate response; inspect every item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CollectionsSaveResults"
         "400":
           $ref: "#/components/responses/Error"
         "401":
@@ -1034,7 +1292,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/DynamicRead"
+                anyOf:
+                  - $ref: "#/components/schemas/DynamicRead"
+                  - $ref: "#/components/schemas/RecordFields"
         "400":
           $ref: "#/components/responses/Error"
         "401":
@@ -1048,6 +1308,15 @@ paths:
         "500":
           $ref: "#/components/responses/Error"
       parameters:
+        - name: fields
+          in: query
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: string
+            minLength: 1
+          description: Comma-separated field names; Id is always returned. Unknown or unreadable names return 400 INVALID_FIELD.
         - name: object
           in: path
           required: true
@@ -3050,162 +3319,44 @@ components:
             - type: string
               pattern: ^@\{[A-Za-z0-9][A-Za-z0-9_]{0,79}\.id\}$
     CompositeSubrequest:
-      oneOf:
-        - type: object
+      type: object
+      additionalProperties: false
+      required:
+        - method
+        - url
+        - referenceId
+      properties:
+        method:
+          type: string
+          enum:
+            - POST
+            - PATCH
+            - GET
+            - DELETE
+        url:
+          type: string
+          pattern: ^/services/data/v[0-9]+\.[0-9]/
+        referenceId:
+          $ref: "#/components/schemas/CompositeReferenceID"
+        body:
+          $ref: "#/components/schemas/CompositeObject"
+        httpHeaders:
+          type: object
           additionalProperties: false
-          required:
-            - method
-            - url
-            - referenceId
-            - body
-          properties:
-            method:
-              const: POST
-            url:
+          properties: {}
+          patternProperties:
+            ^[A-Za-z0-9-]+$:
               type: string
-              pattern: ^/services/data/v65\.0/sobjects/Account$
-            referenceId:
-              $ref: "#/components/schemas/CompositeReferenceID"
-            body:
-              $ref: "#/components/schemas/AccountCreate"
-        - type: object
-          additionalProperties: false
-          required:
-            - method
-            - url
-            - referenceId
-            - body
-          properties:
-            method:
-              const: PATCH
-            url:
-              type: string
-              pattern: ^/services/data/v65\.0/sobjects/Account/(?:[A-Za-z0-9]{18}|@\{[A-Za-z0-9][A-Za-z0-9_]{0,79}\.id\})$
-            referenceId:
-              $ref: "#/components/schemas/CompositeReferenceID"
-            body:
-              $ref: "#/components/schemas/AccountPatch"
-        - type: object
-          additionalProperties: false
-          required:
-            - method
-            - url
-            - referenceId
-          properties:
-            method:
-              const: DELETE
-            url:
-              type: string
-              pattern: ^/services/data/v65\.0/sobjects/Account/(?:[A-Za-z0-9]{18}|@\{[A-Za-z0-9][A-Za-z0-9_]{0,79}\.id\})$
-            referenceId:
-              $ref: "#/components/schemas/CompositeReferenceID"
-        - type: object
-          additionalProperties: false
-          required:
-            - method
-            - url
-            - referenceId
-            - body
-          properties:
-            method:
-              const: POST
-            url:
-              type: string
-              pattern: ^/services/data/v65\.0/sobjects/Contact$
-            referenceId:
-              $ref: "#/components/schemas/CompositeReferenceID"
-            body:
-              $ref: "#/components/schemas/CompositeContactCreate"
-        - type: object
-          additionalProperties: false
-          required:
-            - method
-            - url
-            - referenceId
-            - body
-          properties:
-            method:
-              const: PATCH
-            url:
-              type: string
-              pattern: ^/services/data/v65\.0/sobjects/Contact/(?:[A-Za-z0-9]{18}|@\{[A-Za-z0-9][A-Za-z0-9_]{0,79}\.id\})$
-            referenceId:
-              $ref: "#/components/schemas/CompositeReferenceID"
-            body:
-              $ref: "#/components/schemas/CompositeContactPatch"
-        - type: object
-          additionalProperties: false
-          required:
-            - method
-            - url
-            - referenceId
-          properties:
-            method:
-              const: DELETE
-            url:
-              type: string
-              pattern: ^/services/data/v65\.0/sobjects/Contact/(?:[A-Za-z0-9]{18}|@\{[A-Za-z0-9][A-Za-z0-9_]{0,79}\.id\})$
-            referenceId:
-              $ref: "#/components/schemas/CompositeReferenceID"
-        - type: object
-          additionalProperties: false
-          required:
-            - method
-            - url
-            - referenceId
-            - body
-          properties:
-            method:
-              const: POST
-            url:
-              type: string
-              pattern: ^/services/data/v65\.0/sobjects/[A-Za-z][A-Za-z0-9_]*__c$
-            referenceId:
-              $ref: "#/components/schemas/CompositeReferenceID"
-            body:
-              $ref: "#/components/schemas/DynamicCreate"
-        - type: object
-          additionalProperties: false
-          required:
-            - method
-            - url
-            - referenceId
-            - body
-          properties:
-            method:
-              const: PATCH
-            url:
-              type: string
-              pattern: ^/services/data/v65\.0/sobjects/[A-Za-z][A-Za-z0-9_]*__c/(?:[A-Za-z0-9]{18}|@\{[A-Za-z0-9][A-Za-z0-9_]{0,79}\.id\})$
-            referenceId:
-              $ref: "#/components/schemas/CompositeReferenceID"
-            body:
-              $ref: "#/components/schemas/DynamicPatch"
-        - type: object
-          additionalProperties: false
-          required:
-            - method
-            - url
-            - referenceId
-          properties:
-            method:
-              const: DELETE
-            url:
-              type: string
-              pattern: ^/services/data/v65\.0/sobjects/[A-Za-z][A-Za-z0-9_]*__c/(?:[A-Za-z0-9]{18}|@\{[A-Za-z0-9][A-Za-z0-9_]{0,79}\.id\})$
-            referenceId:
-              $ref: "#/components/schemas/CompositeReferenceID"
     CompositeRequest:
       type: object
       additionalProperties: false
       required:
-        - allOrNone
         - compositeRequest
       properties:
         allOrNone:
-          const: true
+          type: boolean
         collateSubrequests:
-          const: false
+          type: boolean
         compositeRequest:
           type: array
           minItems: 1
@@ -3223,11 +3374,38 @@ components:
             - referenceId
           properties:
             body:
-              $ref: "#/components/schemas/CreateResult"
+              anyOf:
+                - $ref: "#/components/schemas/CreateResult"
+                - $ref: "#/components/schemas/UpsertResult"
             httpHeaders:
               $ref: "#/components/schemas/CompositeEmptyHeaders"
             httpStatusCode:
-              const: 201
+              type: integer
+              enum:
+                - 201
+            referenceId:
+              $ref: "#/components/schemas/CompositeReferenceID"
+        - type: object
+          additionalProperties: false
+          required:
+            - body
+            - httpHeaders
+            - httpStatusCode
+            - referenceId
+          properties:
+            body:
+              anyOf:
+                - $ref: "#/components/schemas/UpsertResult"
+                - $ref: "#/components/schemas/QueryResult"
+                - $ref: "#/components/schemas/RecordFields"
+                - $ref: "#/components/schemas/CollectionsSaveResults"
+                - $ref: "#/components/schemas/CollectionsRetrieveResults"
+            httpHeaders:
+              $ref: "#/components/schemas/CompositeEmptyHeaders"
+            httpStatusCode:
+              type: integer
+              enum:
+                - 200
             referenceId:
               $ref: "#/components/schemas/CompositeReferenceID"
         - type: object
@@ -3243,7 +3421,9 @@ components:
             httpHeaders:
               $ref: "#/components/schemas/CompositeEmptyHeaders"
             httpStatusCode:
-              const: 204
+              type: integer
+              enum:
+                - 204
             referenceId:
               $ref: "#/components/schemas/CompositeReferenceID"
         - type: object
@@ -3263,6 +3443,25 @@ components:
               enum:
                 - 400
                 - 404
+                - 405
+            referenceId:
+              $ref: "#/components/schemas/CompositeReferenceID"
+        - type: object
+          additionalProperties: false
+          required:
+            - body
+            - httpHeaders
+            - httpStatusCode
+            - referenceId
+          properties:
+            body:
+              $ref: "#/components/schemas/CollectionsSaveResults"
+            httpHeaders:
+              $ref: "#/components/schemas/CompositeEmptyHeaders"
+            httpStatusCode:
+              type: integer
+              enum:
+                - 400
             referenceId:
               $ref: "#/components/schemas/CompositeReferenceID"
     CompositeResponse:
@@ -3559,6 +3758,190 @@ components:
       patternProperties:
         ^[A-Za-z][A-Za-z0-9_]*__c$:
           $ref: "#/components/schemas/FieldValue"
+    CompositeScalar:
+      anyOf:
+        - type: string
+        - type: number
+        - type: boolean
+        - type: "null"
+    CompositeValue:
+      anyOf:
+        - $ref: "#/components/schemas/CompositeScalar"
+        - type: array
+          items:
+            $ref: "#/components/schemas/CompositeValue2"
+        - type: object
+          additionalProperties: false
+          properties: {}
+          patternProperties:
+            ^.+$:
+              $ref: "#/components/schemas/CompositeValue2"
+    CompositeValue2:
+      anyOf:
+        - $ref: "#/components/schemas/CompositeScalar"
+        - type: array
+          items:
+            $ref: "#/components/schemas/CompositeValue3"
+        - type: object
+          additionalProperties: false
+          properties: {}
+          patternProperties:
+            ^.+$:
+              $ref: "#/components/schemas/CompositeValue3"
+    CompositeValue3:
+      anyOf:
+        - $ref: "#/components/schemas/CompositeScalar"
+        - type: array
+          items:
+            $ref: "#/components/schemas/CompositeScalar"
+        - type: object
+          additionalProperties: false
+          properties: {}
+          patternProperties:
+            ^.+$:
+              $ref: "#/components/schemas/CompositeScalar"
+    CompositeObject:
+      type: object
+      additionalProperties: false
+      properties: {}
+      patternProperties:
+        ^.+$:
+          $ref: "#/components/schemas/CompositeValue"
+    RecordFields:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+        - Id
+      properties:
+        attributes:
+          $ref: "#/components/schemas/CollectionsAttributes"
+        Id:
+          type: string
+          minLength: 1
+      patternProperties:
+        ^(?!attributes$|Id$)[A-Za-z][A-Za-z0-9_]*$:
+          $ref: "#/components/schemas/CompositeValue"
+    CollectionsAttributes:
+      type: object
+      additionalProperties: false
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          pattern: ^[A-Za-z][A-Za-z0-9_]{0,79}$
+        url:
+          type: string
+    CollectionsRecord:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+      properties:
+        attributes:
+          $ref: "#/components/schemas/CollectionsAttributes"
+      patternProperties:
+        ^(?!attributes$)[A-Za-z][A-Za-z0-9_]*$:
+          $ref: "#/components/schemas/CompositeValue"
+    CollectionsWrite:
+      type: object
+      additionalProperties: false
+      required:
+        - records
+      properties:
+        allOrNone:
+          type: boolean
+        records:
+          type: array
+          minItems: 1
+          maxItems: 200
+          items:
+            $ref: "#/components/schemas/CollectionsRecord"
+    CollectionsError:
+      type: object
+      additionalProperties: false
+      required:
+        - statusCode
+        - message
+        - fields
+      properties:
+        statusCode:
+          type: string
+          minLength: 1
+        message:
+          type: string
+          minLength: 1
+        fields:
+          type: array
+          items:
+            type: string
+    CollectionsSaveResult:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required:
+            - id
+            - success
+            - errors
+          properties:
+            id:
+              type: string
+              minLength: 1
+            success:
+              const: true
+            errors:
+              type: array
+              maxItems: 0
+            created:
+              type: boolean
+        - type: object
+          additionalProperties: false
+          required:
+            - success
+            - errors
+          properties:
+            id:
+              type: string
+              minLength: 1
+            success:
+              const: false
+            errors:
+              type: array
+              minItems: 1
+              items:
+                $ref: "#/components/schemas/CollectionsError"
+    CollectionsSaveResults:
+      type: array
+      minItems: 1
+      maxItems: 200
+      items:
+        $ref: "#/components/schemas/CollectionsSaveResult"
+    CollectionsRetrieveRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - ids
+        - fields
+      properties:
+        ids:
+          type: array
+          minItems: 1
+          maxItems: 2000
+          items:
+            type: string
+        fields:
+          type: array
+          minItems: 1
+          items:
+            type: string
+    CollectionsRetrieveResults:
+      type: array
+      maxItems: 2000
+      items:
+        anyOf:
+          - type: "null"
+          - $ref: "#/components/schemas/RecordFields"
   responses:
     Error:
       description: Current candidate response

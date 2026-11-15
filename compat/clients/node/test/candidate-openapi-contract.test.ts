@@ -98,6 +98,36 @@ const expected = [
     "patch",
     "candidateUpsertAccount",
   ],
+  [
+    "/services/data/v65.0/composite/sobjects",
+    "post",
+    "candidateCollectionsCreate",
+  ],
+  [
+    "/services/data/v65.0/composite/sobjects",
+    "patch",
+    "candidateCollectionsUpdate",
+  ],
+  [
+    "/services/data/v65.0/composite/sobjects",
+    "delete",
+    "candidateCollectionsDelete",
+  ],
+  [
+    "/services/data/v65.0/composite/sobjects/{object}",
+    "get",
+    "candidateCollectionsRetrieve",
+  ],
+  [
+    "/services/data/v65.0/composite/sobjects/{object}",
+    "post",
+    "candidateCollectionsRetrievePost",
+  ],
+  [
+    "/services/data/v65.0/composite/sobjects/Account/Compat_Key__c",
+    "patch",
+    "candidateCollectionsUpsertAccount",
+  ],
   ["/services/data/v65.0/query", "get", "candidateQuery"],
   ["/services/data/v65.0/query/{locator}", "get", "candidateQueryMore"],
   ["/services/data/v65.0/openapi.yaml", "get", "candidateOpenAPI"],
@@ -261,20 +291,77 @@ test("candidateContractShapes", async () => {
     undefined,
   );
 });
-test("atomic Composite contract fixes the restricted request and result envelopes", async () => {
+test("Composite II and Collections contracts fix their envelopes", async () => {
   const d = await doc();
   const c = d.components.schemas;
-  assert.equal(c.CompositeRequest.properties.allOrNone.const, true);
-  assert.equal(c.CompositeRequest.properties.collateSubrequests.const, false);
+  assert.equal(c.CompositeRequest.properties.allOrNone.type, "boolean");
+  assert.deepEqual(c.CompositeRequest.required, ["compositeRequest"]);
   assert.equal(c.CompositeRequest.properties.compositeRequest.minItems, 1);
   assert.equal(c.CompositeRequest.properties.compositeRequest.maxItems, 25);
   assert.equal(c.CompositeEmptyHeaders.maxProperties, 0);
   assert.equal(c.CompositeEmptyHeaders.additionalProperties, false);
+  for (const branch of c.CompositeSubresponse.oneOf)
+    assert.equal(
+      branch.properties.httpHeaders.$ref,
+      "#/components/schemas/CompositeEmptyHeaders",
+    );
   assert.equal(c.CompositeReferenceID.maxLength, 80);
+  assert.equal(c.CollectionsWrite.properties.records.maxItems, 200);
+  assert.equal(c.CollectionsRetrieveRequest.properties.ids.maxItems, 2000);
+  assert.deepEqual(c.CollectionsError.required, [
+    "statusCode",
+    "message",
+    "fields",
+  ]);
   assert.equal(
     c.Resources.properties.composite.const,
     "/services/data/v65.0/composite",
   );
+  const definitions = JSON.parse(
+    JSON.stringify(c).replaceAll("#/components/schemas/", "#/$defs/"),
+  );
+  const check = (name: string, data: unknown) =>
+    new Ajv2020({ strict: true }).compile({
+      $defs: definitions,
+      $ref: "#/$defs/" + name,
+    })(data);
+  const failed = {
+    success: false,
+    errors: [{ statusCode: "INVALID_FIELD", message: "m", fields: [] }],
+  };
+  for (const [schema, good, bad] of [
+    [
+      "CollectionsSaveResults",
+      [{ id: "001", success: true, errors: [], created: true }, failed],
+      [{ success: false, errors: [] }],
+    ],
+    [
+      "CollectionsWrite",
+      {
+        allOrNone: true,
+        records: [{ attributes: { type: "Account" }, Name: "A" }],
+      },
+      { records: [{ Name: "no attributes" }] },
+    ],
+    [
+      "CollectionsRetrieveResults",
+      [null, { attributes: { type: "Account" }, Id: "001", Name: "A" }],
+      [{ Name: "no attributes" }],
+    ],
+    [
+      "CompositeSubresponse",
+      { body: null, httpHeaders: {}, httpStatusCode: 204, referenceId: "a" },
+      {
+        body: null,
+        httpHeaders: { Location: "/x" },
+        httpStatusCode: 201,
+        referenceId: "a",
+      },
+    ],
+  ] as const) {
+    assert.equal(check(schema, good), true, schema);
+    assert.equal(check(schema, bad), false, schema);
+  }
   const mutated = structuredClone(d);
   mutated.components.schemas.AccountRead = {
     type: "object",

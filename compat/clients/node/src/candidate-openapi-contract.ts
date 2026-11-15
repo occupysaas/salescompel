@@ -34,6 +34,24 @@ export const candidateOperations: readonly (readonly [
   ],
   ["/id/{orgId}/{userId}", "get", "candidateOAuthIdentity", ["200"]],
   [base + "/composite", "post", "candidateCompositeAtomic", ["200"]],
+  ...(
+    [
+      ["/composite/sobjects", "post", "candidateCollectionsCreate"],
+      ["/composite/sobjects", "patch", "candidateCollectionsUpdate"],
+      ["/composite/sobjects", "delete", "candidateCollectionsDelete"],
+      ["/composite/sobjects/{object}", "get", "candidateCollectionsRetrieve"],
+      [
+        "/composite/sobjects/{object}",
+        "post",
+        "candidateCollectionsRetrievePost",
+      ],
+      [
+        "/composite/sobjects/Account/Compat_Key__c",
+        "patch",
+        "candidateCollectionsUpsertAccount",
+      ],
+    ] as const
+  ).map(([p, m, id]) => [base + p, m, id, ["200"]] as const),
   ["/services/data", "get", "candidateVersions", ["200"]],
   [base, "get", "candidateResources", ["200"]],
   ["/services/oauth2/userinfo", "get", "candidateUserInfo", ["200"]],

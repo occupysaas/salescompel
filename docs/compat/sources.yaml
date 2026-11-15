@@ -353,3 +353,59 @@ sources:
     version: 339b9296e2531b19f8e131ad0bccb5c08b8879cd (Plan 29 candidate defaults)
     claim: Candidate SOQL engine, paging locators, column metadata, child relationships and the locked error vocabulary; not live reference evidence
     extraction: documentation-reviewed
+
+  # Plan 31 additions; preserve earlier provenance.
+  - id: composite-design-plan31
+    url: https://github.com/occupysaas/salescompel/blob/4a73bc9/docs/superpowers/specs/2026-11-15-plan-31-composite-collections-design.md
+    accessedAt: 2026-11-15
+    version: Public mutable REST guide read 2026-11-15
+    claim: Bounded Composite II and Collections candidate contract
+    extraction: documentation-reviewed
+  - id: composite-plan31-request
+    url: https://developer.salesforce.com/docs/platform/api-rest/guide/requests-composite.html
+    accessedAt: 2026-11-15
+    version: Public mutable REST guide read 2026-11-15
+    claim: allOrNone, collation, httpHeaders, reference operators, 25/5 limits; independently summarized
+    extraction: documentation-reviewed
+  - id: composite-plan31-allornone
+    url: https://developer.salesforce.com/docs/platform/api-rest/guide/resources-composite-allornone.html
+    accessedAt: 2026-11-15
+    version: Public mutable REST guide read 2026-11-15
+    claim: Outer and inner allOrNone interaction
+    extraction: documentation-reviewed
+  - id: composite-plan31-coll-create
+    url: https://developer.salesforce.com/docs/platform/api-rest/guide/resources-composite-sobjects-collections-create.html
+    accessedAt: 2026-11-15
+    version: Public mutable REST guide read 2026-11-15
+    claim: Collections create, 200 records, 10 chunks, result shapes
+    extraction: documentation-reviewed
+  - id: composite-plan31-coll-retrieve
+    url: https://developer.salesforce.com/docs/platform/api-rest/guide/resources-composite-sobjects-collections-retrieve.html
+    accessedAt: 2026-11-15
+    version: Public mutable REST guide read 2026-11-15
+    claim: Collections GET retrieve, null entries
+    extraction: documentation-reviewed
+  - id: composite-plan31-coll-retrieve-post
+    url: https://developer.salesforce.com/docs/platform/api-rest/guide/resources-composite-sobjects-collections-retrieve-post.html
+    accessedAt: 2026-11-15
+    version: Public mutable REST guide read 2026-11-15
+    claim: Collections POST retrieve, 2,000 IDs
+    extraction: documentation-reviewed
+  - id: composite-plan31-coll-update
+    url: https://developer.salesforce.com/docs/platform/api-rest/guide/resources-composite-sobjects-collections-update.html
+    accessedAt: 2026-11-15
+    version: Public mutable REST guide read 2026-11-15
+    claim: Collections update
+    extraction: documentation-reviewed
+  - id: composite-plan31-coll-upsert
+    url: https://developer.salesforce.com/docs/platform/api-rest/guide/resources-composite-sobjects-collections-upsert.html
+    accessedAt: 2026-11-15
+    version: Public mutable REST guide read 2026-11-15
+    claim: Collections upsert, created flag
+    extraction: documentation-reviewed
+  - id: composite-plan31-coll-delete
+    url: https://developer.salesforce.com/docs/platform/api-rest/guide/resources-composite-sobjects-collections-delete.html
+    accessedAt: 2026-11-15
+    version: Public mutable REST guide read 2026-11-15
+    claim: Collections delete across objects
+    extraction: documentation-reviewed
