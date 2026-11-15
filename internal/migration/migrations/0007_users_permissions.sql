@@ -47,11 +47,13 @@ CREATE UNIQUE INDEX permission_set_names ON sc_setup.permission_sets(tenant_id,l
 -- Each profile owns exactly one set; the pair is written in one transaction.
 ALTER TABLE sc_setup.profiles ADD FOREIGN KEY(tenant_id,permission_set_id) REFERENCES sc_setup.permission_sets(tenant_id,id) DEFERRABLE INITIALLY DEFERRED;
 
+-- Setup rows reference their credential row within the same tenant.
+ALTER TABLE public.users ADD UNIQUE(tenant_id,id);
 CREATE TABLE sc_setup.users(
- id varchar(18) NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+ id varchar(18) NOT NULL,
  tenant_id text NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
  username varchar(80) NOT NULL,
- username_canonical varchar(80) NOT NULL UNIQUE CHECK(username_canonical=lower(username)),
+ username_canonical varchar(80) NOT NULL UNIQUE CHECK(username_canonical=lower(username COLLATE "C")),
  first_name varchar(40),
  last_name varchar(80) NOT NULL,
  alias varchar(8) NOT NULL,
@@ -63,6 +65,7 @@ CREATE TABLE sc_setup.users(
  language_locale_key varchar(40) NOT NULL,
  email_encoding_key varchar(40) NOT NULL,
  PRIMARY KEY(tenant_id,id),
+ FOREIGN KEY(tenant_id,id) REFERENCES public.users(tenant_id,id) ON DELETE CASCADE,
  FOREIGN KEY(tenant_id,profile_id) REFERENCES sc_setup.profiles(tenant_id,id)
 );
 CREATE INDEX users_profile ON sc_setup.users(tenant_id,profile_id);
@@ -169,17 +172,19 @@ BEGIN
  END IF;
 END $$;
 
+-- Usernames are canonicalized with lower(... COLLATE "C") so the result is
+-- locale-independent and agrees with Go's strings.ToLower on ASCII.
 -- Creates a credential row with no usable password: login is refused until
 -- the operator sets one. Returns nothing, so no credential data leaves.
 CREATE FUNCTION sc_setup.create_identity(p_id varchar,p_tenant text,p_username text) RETURNS void
  LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public AS $$
 BEGIN
  PERFORM sc_setup.check_identity_args(p_id,p_tenant,p_username);
- IF EXISTS(SELECT FROM public.users WHERE username_canonical=lower(p_username)) THEN
+ IF EXISTS(SELECT FROM public.users WHERE username_canonical=lower(p_username COLLATE "C")) THEN
   RAISE EXCEPTION 'duplicate username' USING ERRCODE='23505',CONSTRAINT='users_username_canonical_key';
  END IF;
  INSERT INTO public.users(id,tenant_id,username,username_canonical,password_hash,role)
-  VALUES(p_id,p_tenant,p_username,lower(p_username),'','restricted');
+  VALUES(p_id,p_tenant,p_username,lower(p_username COLLATE "C"),'','restricted');
 END $$;
 
 -- Renames a credential row in the caller's tenant.
@@ -187,10 +192,10 @@ CREATE FUNCTION sc_setup.rename_identity(p_id varchar,p_tenant text,p_username t
  LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public AS $$
 BEGIN
  PERFORM sc_setup.check_identity_args(p_id,p_tenant,p_username);
- IF EXISTS(SELECT FROM public.users WHERE username_canonical=lower(p_username) AND id<>p_id) THEN
+ IF EXISTS(SELECT FROM public.users WHERE username_canonical=lower(p_username COLLATE "C") AND id<>p_id) THEN
   RAISE EXCEPTION 'duplicate username' USING ERRCODE='23505',CONSTRAINT='users_username_canonical_key';
  END IF;
- UPDATE public.users SET username=p_username,username_canonical=lower(p_username) WHERE id=p_id AND tenant_id=p_tenant;
+ UPDATE public.users SET username=p_username,username_canonical=lower(p_username COLLATE "C") WHERE id=p_id AND tenant_id=p_tenant;
  IF NOT FOUND THEN
   RAISE EXCEPTION 'identity not found' USING ERRCODE='P0002';
  END IF;
@@ -264,7 +269,7 @@ BEGIN
   -- admin becomes System Administrator and restricted Standard User. Name,
   -- alias and email come from the username; settings from the org defaults.
   INSERT INTO sc_setup.users(id,tenant_id,username,username_canonical,last_name,alias,email,is_active,profile_id,time_zone_sid_key,locale_sid_key,language_locale_key,email_encoding_key)
-   SELECT u.id,u.tenant_id,u.username,lower(u.username),
+   SELECT u.id,u.tenant_id,u.username,lower(u.username COLLATE "C"),
     left(coalesce(nullif(split_part(u.username,'@',1),''),u.username),80),
     left(coalesce(nullif(split_part(u.username,'@',1),''),u.username),8),
     u.username,u.active,p.id,
