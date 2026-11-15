@@ -186,9 +186,11 @@ func NewHandlerWithOptions(s *Store, assetDir string, o Options) http.Handler {
 			handleIdentity(p, o, w, r)
 			return
 		}
-		if e := requireAPIEnabled(p, r); e != nil {
-			writeError(w, e)
-			return
+		if path == "/services/data" || strings.HasPrefix(path, "/services/data/") {
+			if e := requireAPIEnabled(p, r); e != nil {
+				writeError(w, e)
+				return
+			}
 		}
 		if path == apicontract.CandidateOpenAPIPath {
 			if method(w, r, "GET") {
@@ -346,7 +348,7 @@ func NewHandlerWithOptions(s *Store, assetDir string, o Options) http.Handler {
 				return
 			}
 			definition, lookupErr := catalog.Object(parts[2])
-			if lookupErr != nil {
+			if lookupErr != nil || !records.Readable(p, definition.Name) { // D33-02
 				writeError(w, problem(404, "NOT_FOUND", "Object not found"))
 				return
 			}
@@ -448,7 +450,11 @@ func NewHandlerWithOptions(s *Store, assetDir string, o Options) http.Handler {
 		id := parts[2]
 		switch r.Method {
 		case "GET":
-			row, e := s.Read(ctx, p, object, id, readFields(r)...)
+			var fields []string // REST ?fields=, comma separated
+			if v := r.URL.Query().Get("fields"); v != "" {
+				fields = strings.Split(v, ",")
+			}
+			row, e := s.Read(ctx, p, object, id, fields...)
 			if e != nil {
 				writeError(w, e)
 				return

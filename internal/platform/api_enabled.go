@@ -3,7 +3,6 @@ package platform
 import (
 	"context"
 	"net/http"
-	"strings"
 )
 
 type uiSessionKeyType struct{}
@@ -21,13 +20,10 @@ func withUISession(r *http.Request) *http.Request {
 	return r.WithContext(context.WithValue(r.Context(), uiSessionKey, true))
 }
 
-// requireAPIEnabled gates every REST and Composite route under
-// /services/data. The OAuth endpoints and the identity URL are not gated.
+// requireAPIEnabled is the API Enabled gate. The handler applies it to every
+// REST and Composite route under /services/data; the OAuth endpoints and the
+// identity URL are not gated.
 func requireAPIEnabled(p Principal, r *http.Request) error {
-	path := strings.TrimSuffix("/"+strings.TrimLeft(r.URL.EscapedPath(), "/"), "/")
-	if path != "/services/data" && !strings.HasPrefix(path, "/services/data/") {
-		return nil
-	}
 	if p.Perms.System().APIEnabled {
 		return nil
 	}
@@ -36,13 +32,4 @@ func requireAPIEnabled(p Principal, r *http.Request) error {
 	}
 	// D33-07
 	return problem(403, "API_CURRENTLY_DISABLED", "API is not enabled for this User")
-}
-
-// readFields is the REST record read's ?fields= list, comma separated.
-func readFields(r *http.Request) []string {
-	v := r.URL.Query().Get("fields")
-	if v == "" {
-		return nil
-	}
-	return strings.Split(v, ",")
 }

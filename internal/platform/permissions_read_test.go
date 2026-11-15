@@ -146,6 +146,9 @@ func TestHiddenObjectTraversal(t *testing.T) {
 	if code, body := f.query("SELECT Account.Name FROM Contact"); code != 200 {
 		t.Fatal("visible traversal", code, body)
 	}
+	if code, body := f.do("GET", "sobjects/Account/describe", "", false); code != 200 || !strings.Contains(stringJSON(body), `"relationshipName":"Contacts"`) {
+		t.Fatal("visible child relationship", code, body)
+	}
 	f.revoke("Standard User", "Account")
 	// D33-01: a hidden object in a traversal or subquery is INVALID_TYPE, as
 	// for an object that doesn't exist.
@@ -163,6 +166,10 @@ func TestHiddenObjectTraversal(t *testing.T) {
 	f2.revoke("Standard User", "Contact")
 	code, body := f2.query("SELECT (SELECT Id FROM Contacts) FROM Account")
 	wantFailure(t, "hidden child", code, body, 400, "INVALID_TYPE")
+	code, body = f2.do("GET", "sobjects/Account/describe", "", false)
+	if code != 200 || strings.Contains(stringJSON(body), `"relationshipName":"Contacts"`) {
+		t.Fatal("hidden child relationship described", code, body)
+	}
 }
 
 func TestHiddenObjectDescribe(t *testing.T) {
@@ -181,6 +188,8 @@ func TestHiddenObjectDescribe(t *testing.T) {
 		{"DELETE", "sobjects/Account/" + f.account, ""},
 		{"POST", "sobjects/Account", `{"Name":"x"}`},
 		{"GET", "sobjects/PermissionSet/describe", ""},
+		{"GET", "candidate/sobjects/Account/storedFields", ""},
+		{"GET", "candidate/sobjects/PermissionSet/storedFields", ""},
 	} {
 		code, body := f.do(r.method, r.path, r.body, false)
 		wantFailure(t, r.method+" "+r.path, code, body, 404, "NOT_FOUND")
