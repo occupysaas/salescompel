@@ -220,8 +220,9 @@ func NewHandlerWithOptions(s *Store, assetDir string, o Options) http.Handler {
 			}
 			return
 		}
-		// The pinned CLI uses v51.0 for this discovery call only.
-		if path == "/services/data/v51.0/sobjects/User/"+p.User || path == apiBase+"sobjects/User/"+p.User {
+		// The pinned CLI uses v51.0 for this discovery call only. Writes to
+		// the caller's own User record take the record route below.
+		if path == "/services/data/v51.0/sobjects/User/"+p.User || path == apiBase+"sobjects/User/"+p.User && r.Method == "GET" {
 			if method(w, r, "GET") {
 				username := p.User
 				if p.Username != "" {

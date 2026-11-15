@@ -56,10 +56,11 @@ func assignmentCount(t *testing.T, s *Store, tenant, user string) int {
 	return n
 }
 
-// Until Task 6's setup write rules, generic writes to setup objects are
-// refused for everyone, and restricted users can't read the setup objects
-// other than User.
-func TestSetupObjectsStopGap(t *testing.T) {
+// A profile's system-maintained assignment can't be deleted by anyone
+// (D33-21), restricted users can't read the setup objects other than User,
+// and an admin's generic create of a PermissionSet goes through the setup
+// write rules.
+func TestSetupObjectAccess(t *testing.T) {
 	s, a, tokens, user := setupAccessFixture(t)
 	code, body := setupQuery(t, s, "SELECT Id FROM PermissionSetAssignment WHERE AssigneeId = '"+user+"'", tokens["admin"])
 	if code != 200 || !strings.Contains(body, `"totalSize":1`) {
@@ -79,11 +80,6 @@ func TestSetupObjectsStopGap(t *testing.T) {
 	if n := assignmentCount(t, s, a.Tenant, user); n != 1 {
 		t.Fatalf("assignment rows after refused deletes: %d", n)
 	}
-	if _, e := s.Create(context.Background(), a, "PermissionSet", map[string]any{"Name": "X", "Label": "X"}); e == nil {
-		t.Fatal("generic create of a setup object succeeded")
-	} else if c, _ := apiCode(e); c != "INSUFFICIENT_ACCESS_OR_READONLY" {
-		t.Fatalf("create error %v", e)
-	}
 	for _, q := range []string{"SELECT COUNT() FROM PermissionSetAssignment", "SELECT Id FROM PermissionSet", "SELECT Id, (SELECT Id FROM PermissionSetAssignments) FROM User", "SELECT Profile.Name FROM User"} {
 		if code, body = setupQuery(t, s, q, tokens["restricted"]); code != 400 || !strings.Contains(body, "INVALID_TYPE") {
 			t.Fatalf("restricted %q: %d %s", q, code, body)
@@ -94,6 +90,9 @@ func TestSetupObjectsStopGap(t *testing.T) {
 	}
 	if code, body = setupQuery(t, s, "SELECT Id, Username FROM User", tokens["restricted"]); code != 200 || !strings.Contains(body, user) {
 		t.Fatalf("restricted User query: %d %s", code, body)
+	}
+	if _, e := s.Create(context.Background(), a, "PermissionSet", map[string]any{"Name": "X", "Label": "X"}); e != nil {
+		t.Fatalf("admin PermissionSet create: %v", e)
 	}
 }
 

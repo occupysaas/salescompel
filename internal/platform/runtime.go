@@ -169,8 +169,14 @@ func (s *Store) resolveAccess(ctx context.Context, q policy.Querier, p *Principa
 		key = "role:" + p.Role
 		e = q.QueryRow(ctx, "SELECT time_zone_sid_key FROM sc_catalog.settings WHERE tenant_id=$1", p.Tenant).Scan(&zone)
 	} else {
-		e = q.QueryRow(ctx, `SELECT u.profile_id,u.time_zone_sid_key FROM sc_setup.users u WHERE u.tenant_id=$1 AND u.id=$2
-			UNION ALL SELECT '',s.time_zone_sid_key FROM sc_catalog.settings s WHERE s.tenant_id=$1 AND NOT EXISTS(SELECT FROM sc_setup.users WHERE tenant_id=$1 AND id=$2)`, p.Tenant, p.User).Scan(&p.ProfileID, &zone)
+		active := true
+		e = q.QueryRow(ctx, `SELECT u.profile_id,u.time_zone_sid_key,u.is_active FROM sc_setup.users u WHERE u.tenant_id=$1 AND u.id=$2
+			UNION ALL SELECT '',s.time_zone_sid_key,true FROM sc_catalog.settings s WHERE s.tenant_id=$1 AND NOT EXISTS(SELECT FROM sc_setup.users WHERE tenant_id=$1 AND id=$2)`, p.Tenant, p.User).Scan(&p.ProfileID, &zone, &active)
+		if e == nil && !active {
+			// A user deactivated over REST loses every token at once (D33-20);
+			// the token check maps this to INVALID_SESSION_ID.
+			e = pgx.ErrNoRows
+		}
 	}
 	if e != nil {
 		return e

@@ -111,20 +111,20 @@ func columns(p Principal, object string, data map[string]any) ([]string, []any, 
 	return cols, values, casts, nil
 }
 
-// refuseSetupWrite blocks every generic write to a setup object until the
-// setup write rules (Manage Users, revision bumps, system-maintained rows)
-// exist in Task 6. The error is the D33-08 / D33-31 shape: 403
-// INSUFFICIENT_ACCESS_OR_READONLY.
-func refuseSetupWrite(object string) error {
-	if metadata.IsSetupObject(object) {
-		return problem(403, "INSUFFICIENT_ACCESS_OR_READONLY", "insufficient access rights on object id")
-	}
-	return nil
-}
 func create(ctx context.Context, db database, p Principal, object string, data map[string]any) (string, error) {
-	if err := refuseSetupWrite(object); err != nil {
+	o, err := writeAccess(p, object, "create", data)
+	if err != nil {
 		return "", err
 	}
+	if metadata.IsSetupObject(o.Name) {
+		return setupWrite(ctx, db, p, "create", o.Name, "", data)
+	}
+	return insertRecord(ctx, db, p, o.Name, data, "", nil)
+}
+
+// insertRecord writes a new row. id is generated when empty; extra holds
+// physical columns that no catalog field maps (setup rows only).
+func insertRecord(ctx context.Context, db database, p Principal, object string, data map[string]any, id string, extra map[string]any) (string, error) {
 	var err error
 	data, err = canonicalFields(p, object, data)
 	if err != nil {
@@ -134,26 +134,18 @@ func create(ctx context.Context, db database, p Principal, object string, data m
 	if err != nil {
 		return "", err
 	}
-	if o, e := p.Catalog.Object(object); e == nil {
-		applyDefaults(o, data)
+	o, err := p.Catalog.Object(object)
+	if err != nil {
+		return "", err
 	}
+	applyDefaults(o, data)
 	if err := Validate(p, object, data, true); err != nil {
 		return "", err
 	}
-	prefix := "001"
-	if object == "Contact" {
-		prefix = "003"
-	}
-	if p.Catalog != nil {
-		o, e := p.Catalog.Object(object)
-		if e != nil {
-			return "", e
+	if id == "" {
+		if id, err = recordid.New(o.Prefix); err != nil {
+			return "", dbError(err)
 		}
-		prefix = o.Prefix
-	}
-	id, err := recordid.New(prefix)
-	if err != nil {
-		return "", dbError(err)
 	}
 	cols, values, casts, err := columns(p, object, data)
 	if err != nil {
@@ -166,6 +158,7 @@ func create(ctx context.Context, db database, p Principal, object string, data m
 	for _, n := range numbers {
 		cols, values, casts = append(cols, pgx.Identifier{n.column}.Sanitize()), append(values, n.value), append(casts, "")
 	}
+	cols, values, casts = appendExtra(cols, values, casts, extra)
 	cols = append([]string{"tenant_id", "id"}, cols...)
 	values = append([]any{p.Tenant, id}, values...)
 	casts = append([]string{"", ""}, casts...)
@@ -176,10 +169,33 @@ func create(ctx context.Context, db database, p Principal, object string, data m
 	_, err = db.Exec(ctx, "INSERT INTO "+table(p, object)+" ("+strings.Join(cols, ",")+") VALUES ("+strings.Join(marks, ",")+")", values...)
 	return id, dbError(err)
 }
+
+func appendExtra(cols []string, values []any, casts []string, extra map[string]any) ([]string, []any, []string) {
+	keys := make([]string, 0, len(extra))
+	for k := range extra {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		cols, values, casts = append(cols, pgx.Identifier{k}.Sanitize()), append(values, extra[k]), append(casts, "")
+	}
+	return cols, values, casts
+}
+
 func update(ctx context.Context, db database, p Principal, object, id string, data map[string]any) error {
-	if err := refuseSetupWrite(object); err != nil {
+	o, err := writeAccess(p, object, "update", data)
+	if err != nil {
 		return err
 	}
+	if metadata.IsSetupObject(o.Name) {
+		_, err = setupWrite(ctx, db, p, "update", o.Name, id, data)
+		return err
+	}
+	return updateRecord(ctx, db, p, o.Name, id, data, nil)
+}
+
+// updateRecord changes one row; extra is as for insertRecord.
+func updateRecord(ctx context.Context, db database, p Principal, object, id string, data map[string]any, extra map[string]any) error {
 	var err error
 	id, err = normalizeID(p, object, id)
 	if err != nil {
@@ -200,6 +216,7 @@ func update(ctx context.Context, db database, p Principal, object, id string, da
 	if err != nil {
 		return err
 	}
+	cols, values, casts = appendExtra(cols, values, casts, extra)
 	sets := []string{}
 	for i, c := range cols {
 		sets = append(sets, fmt.Sprintf("%s=$%d%s", c, i+3, casts[i]))
@@ -218,12 +235,17 @@ func update(ctx context.Context, db database, p Principal, object, id string, da
 	return nil
 }
 func deleteRecord(ctx context.Context, db database, p Principal, object, id string) error {
-	if err := refuseSetupWrite(object); err != nil {
+	o, err := writeAccess(p, object, "delete", nil)
+	if err != nil {
 		return err
 	}
-	if _, err := Describe(p, object); err != nil {
+	if metadata.IsSetupObject(o.Name) {
+		_, err = setupWrite(ctx, db, p, "delete", o.Name, id, nil)
 		return err
 	}
+	return removeRecord(ctx, db, p, o.Name, id)
+}
+func removeRecord(ctx context.Context, db database, p Principal, object, id string) error {
 	id, err := normalizeID(p, object, id)
 	if err != nil {
 		return dbError(pgx.ErrNoRows)
@@ -267,6 +289,9 @@ func (s *Tx) Read(ctx context.Context, object, id string, fields ...string) (map
 }
 func (s *Tx) UpsertAccount(ctx context.Context, key string, data map[string]any) (string, bool, error) {
 	p := s.principal
+	if _, err := writeAccess(p, "Account", "upsert", data); err != nil {
+		return "", false, err
+	}
 	var err error
 	data, err = canonicalFields(p, "Account", data)
 	if err != nil {
@@ -319,4 +344,61 @@ func dbErrorPreserve(err error) error {
 		return err
 	}
 	return dbError(err)
+}
+
+// errObjectNotFound is REST's answer for an unknown object, also given for
+// a hidden one (D33-02) so the two can't be told apart on any write path.
+var errObjectNotFound = problem(404, "NOT_FOUND", "Object not found")
+
+// errInsufficientAccess is the 403 for a missing object permission (D33-06),
+// Manage Users (D33-08), a profile-owned row (D33-21) or an operation the
+// object doesn't support (D33-31).
+var errInsufficientAccess = problem(403, "INSUFFICIENT_ACCESS_OR_READONLY", "insufficient access rights on object id")
+
+// writeAccess checks a write against the object and its operation flags,
+// then, outside the setup objects (whose rules are in setupWrite), the
+// object permission for op and the field permissions for data. op is
+// create, update, delete or upsert (create or edit).
+func writeAccess(p Principal, object, op string, data map[string]any) (Object, error) {
+	o, err := p.Catalog.Object(object)
+	if err != nil || !Readable(p, o.Name) {
+		return Object{}, errObjectNotFound // D33-02
+	}
+	if !(op == "create" && o.Createable || op == "update" && o.Updateable || op == "delete" && o.Deletable || op == "upsert" && (o.Createable || o.Updateable)) {
+		return Object{}, errInsufficientAccess // D33-31
+	}
+	if metadata.IsSetupObject(o.Name) {
+		return o, nil
+	}
+	a := p.Perms.Object(o.Name)
+	if !(op == "create" && a.Create || op == "update" && a.Edit || op == "delete" && a.Delete || op == "upsert" && (a.Create || a.Edit)) {
+		return Object{}, errInsufficientAccess // D33-06
+	}
+	return o, fieldWriteAccess(p, o, data)
+}
+
+// fieldWriteAccess refuses a field the caller can't read as nonexistent
+// (D33-04) and a readable one they can't edit (D33-05). Names the catalog
+// doesn't know, and fields no one can write, are left to Validate.
+func fieldWriteAccess(p Principal, o Object, data map[string]any) error {
+	keys := make([]string, 0, len(data))
+	for k := range data {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		for _, f := range o.Fields {
+			if !strings.EqualFold(f.Name, k) {
+				continue
+			}
+			if !p.Perms.FieldRead(o.Name, f) {
+				return fieldProblem("INVALID_FIELD", "No such column '"+k+"' on sobject of type "+o.Name, k) // D33-04
+			}
+			if (f.Createable || f.Updateable) && !p.Perms.FieldEdit(o.Name, f) {
+				return fieldProblem("INVALID_FIELD_FOR_INSERT_UPDATE", "Unable to create/update fields: "+f.Name+
+					". Please check the security settings of this field and verify that it is read-only for this user.", f.Name) // D33-05
+			}
+		}
+	}
+	return nil
 }

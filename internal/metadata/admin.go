@@ -197,6 +197,9 @@ func CreateField(ctx context.Context, p *pgxpool.Pool, tenant string, in FieldIn
 		if e != nil {
 			return e
 		}
+		if IsSetupObject(o.Name) {
+			return errSetupSchema
+		}
 		if taken, e := storedNameTaken(ctx, tx, tenant, o.ID, in.Name); e != nil || taken {
 			if e == nil {
 				e = errors.New("field already exists as a stored definition")
@@ -270,6 +273,9 @@ func CreateStoredField(ctx context.Context, p *pgxpool.Pool, tenant, object stri
 		if e != nil {
 			return e
 		}
+		if IsSetupObject(o.Name) {
+			return errSetupSchema
+		}
 		out.Object = o.Name
 		for _, f := range o.Fields {
 			if strings.EqualFold(f.Name, head.Name) {
@@ -288,6 +294,91 @@ func CreateStoredField(ctx context.Context, p *pgxpool.Pool, tenant, object stri
 		return bumpRevision(ctx, tx, tenant)
 	})
 	return out, e
+}
+
+// errSetupSchema refuses schema changes on the setup objects, whose
+// storage and access rules are fixed (Plan 33).
+var errSetupSchema = errors.New("setup objects can't be changed")
+
+var customColumn = regexp.MustCompile(`^f_[a-f0-9]{32}$`)
+var customTable = regexp.MustCompile(`^o_[a-f0-9]{32}$`)
+
+// dropGrants removes the permission rows naming a deleted object or field
+// and bumps the permission revision, so cached permissions are reloaded and
+// a later field or object of the same name starts with no grant.
+// column and tables are constants; value is the deleted name.
+func dropGrants(ctx context.Context, tx pgx.Tx, tenant, column, value string, tables ...string) error {
+	for _, t := range tables {
+		if _, e := tx.Exec(ctx, "DELETE FROM sc_setup."+t+" WHERE tenant_id=$1 AND "+column+"=$2", tenant, value); e != nil {
+			return e
+		}
+	}
+	_, e := tx.Exec(ctx, "UPDATE sc_setup.revisions SET revision=revision+1 WHERE tenant_id=$1", tenant)
+	return e
+}
+
+// DeleteField drops a custom field made by CreateField, with its column and
+// field permissions, in one transaction.
+func DeleteField(ctx context.Context, p *pgxpool.Pool, tenant, object, field string) error {
+	return ownerTx(ctx, p, tenant, func(tx pgx.Tx) error {
+		if e := lockRevision(ctx, tx, tenant); e != nil {
+			return e
+		}
+		snapshot, e := Load(ctx, tx, tenant)
+		if e != nil {
+			return e
+		}
+		f, e := snapshot.Field(object, field)
+		if e != nil {
+			return e
+		}
+		o, _ := snapshot.Object(object)
+		if IsSetupObject(o.Name) || f.NameField || !customColumn.MatchString(f.Column) {
+			return errors.New("only custom fields can be deleted")
+		}
+		if _, e = tx.Exec(ctx, "ALTER TABLE "+o.TableSQL()+" DROP COLUMN "+pgx.Identifier{f.Column}.Sanitize()); e != nil {
+			return e
+		}
+		if _, e = tx.Exec(ctx, "DELETE FROM sc_catalog.fields WHERE tenant_id=$1 AND id=$2", tenant, f.ID); e != nil {
+			return e
+		}
+		if e = dropGrants(ctx, tx, tenant, "field", o.Name+"."+f.Name, "field_permissions"); e != nil {
+			return e
+		}
+		return bumpRevision(ctx, tx, tenant)
+	})
+}
+
+// DeleteObject drops a custom object made by CreateObject, with its table,
+// fields and object and field permissions, in one transaction. A table that
+// another object's lookup still references is not dropped.
+func DeleteObject(ctx context.Context, p *pgxpool.Pool, tenant, object string) error {
+	return ownerTx(ctx, p, tenant, func(tx pgx.Tx) error {
+		if e := lockRevision(ctx, tx, tenant); e != nil {
+			return e
+		}
+		snapshot, e := Load(ctx, tx, tenant)
+		if e != nil {
+			return e
+		}
+		o, e := snapshot.Object(object)
+		if e != nil {
+			return e
+		}
+		if o.Standard || o.Schema != "sc_records" || !customTable.MatchString(o.Table) {
+			return errors.New("only custom objects can be deleted")
+		}
+		if _, e = tx.Exec(ctx, "DROP TABLE "+o.TableSQL()); e != nil {
+			return e
+		}
+		if _, e = tx.Exec(ctx, "DELETE FROM sc_catalog.objects WHERE tenant_id=$1 AND id=$2", tenant, o.ID); e != nil {
+			return e
+		}
+		if e = dropGrants(ctx, tx, tenant, "sobject_type", o.Name, "object_permissions", "field_permissions"); e != nil {
+			return e
+		}
+		return bumpRevision(ctx, tx, tenant)
+	})
 }
 
 // SetCurrency changes the tenant corporate currency used for UI formatting.
