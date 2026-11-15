@@ -176,9 +176,9 @@ ignored.
 - **50,000-ID locator cap.** A result whose membership exceeds 50,000 rows gives
   `QUERY_TOO_COMPLICATED` instead of paging. The cap is a candidate default;
   Salesforce publishes no such limit.
-- **UTC date literals.** Date literals and date functions use UTC with
-  Sunday-start weeks. Salesforce evaluates them in the running user's time zone
-  or the org time zone; user time zones and locales arrive in Plan 33.
+- ~~**UTC date literals.**~~ Closed by Plan 33: date literals use the running
+  user's time zone. Date functions such as `DAY_ONLY` stay UTC, and weeks
+  start on Sunday.
 - **Calendar fiscal periods.** `FISCAL_*` literals and functions equal their
   calendar equivalents until fiscal-year settings exist (Plan 33).
 - **`TYPEOF`.** The AST carries the node, and the binder refuses it with
@@ -277,9 +277,9 @@ differences.
 
 ### Date literals and query behavior
 
-- **UTC:** date literals and date functions use UTC with Sunday-start weeks.
-  `Due__c = TODAY` means the UTC calendar day, not the user's local day. User
-  time zones and locales arrive in Plan 33.
+- **Time zone:** since Plan 33, date literals use the running user's time
+  zone, so `Due__c = TODAY` is the user's local calendar day. Date functions
+  stay UTC, and weeks start on Sunday.
 - **Fiscal periods:** `FISCAL_*` literals and functions equal their calendar
   equivalents until fiscal-year settings exist. This is a candidate choice, not
   parity with a configured fiscal year.

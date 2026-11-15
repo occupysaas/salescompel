@@ -173,6 +173,52 @@ document chose the value without a public source.
 | G33-14 | Changelog gap | The official Winter '27 release notes could not be read. Only third-party summaries were reviewed. |
 | G33-15 | Setup objects in permissions | Salesforce allows object permissions on some setup objects; D33-32 refuses all of them. |
 | G33-16 | Assumed rows without a feature gap | D33-09, D33-19, D33-20 and D33-28 are assumed behaviors; each is a candidate for correction when a session is available. |
+| G33-17 | Own-user discovery | The pinned CLI's `GET /services/data/v51.0/sobjects/User/<own id>` keeps its fixed discovery shape (`TimeZoneSidKey: UTC`, `en_US` locale and language). Other User reads return the stored record. |
+| G33-18 | Organization fields | Organization is a read-only view over the tenant settings. `Name` is the tenant ID, `InstanceName`, `TrialExpirationDate` and `NamespacePrefix` are null, `IsSandbox` is false and `OrganizationType` is `SalesCompel`. Every API-enabled user can read it, as the CLI's discovery query requires. |
+
+## Implementation and verification
+
+- **Read path (Task 5):** hidden objects behave as unknown in SOQL (`FROM`,
+  parent traversal, child subquery), describe, global describe and REST.
+  Hidden fields give `INVALID_FIELD`. Every `/services/data` route needs
+  API Enabled unless the request carries the first-party UI session marker.
+- **Write path (Task 6):** record create, update, delete and upsert check the
+  object's operation flags, the object permission and field edit permissions
+  (D33-04 to D33-06, D33-31). Setup writes need Manage Users or Modify All
+  Data and enforce the grant rules, uniqueness, profile-owned sets and their
+  assignments, the last-admin rule, and User create and rename through the
+  identity functions. Every setup write bumps the permission revision in the
+  same transaction. A user deactivated over REST loses every token on its next
+  request. Deleting a custom field or object removes its grants.
+- **Time zones and org defaults (Task 7):** date literals use the caller's
+  time zone, with day boundaries at local midnights (a range across a DST
+  change is an hour longer or shorter), and date fields compare against the
+  local calendar date. `DAY_ONLY` and the other date functions stay UTC.
+  `salescompel org set` reads `SALESCOMPEL_TIME_ZONE`, `SALESCOMPEL_LOCALE`
+  and `SALESCOMPEL_LANGUAGE`; existing users keep theirs. `user create` reads
+  `SALESCOMPEL_PROFILE` (any profile name) and falls back to the deprecated
+  `SALESCOMPEL_ROLE` with a notice on stderr. Organization is served from the
+  catalog, with the same `00D` ID as tokens and identity URLs.
+- **Access matrix:** `TestAccessMatrixNoUnexpectedGrants` checks every catalog
+  object and field for System Administrator, Standard User, Read Only, Minimum
+  Access and a Standard User with a custom set against the seeded grants, and
+  names any extra allowed cell.
+- **Real clients:** the OAuth acceptance gate runs `permissions/cli-assign-permset`
+  (`sf org assign permset` makes `Account.Compat_Text__c` queryable for a
+  Standard User through `sf data query`, which gave `INVALID_FIELD` before),
+  `permissions/jsforce-permset` (JSforce creates a set with ObjectPermissions
+  and FieldPermissions, and describe shows and then hides the field as the
+  assignment comes and goes), `permissions/python-readonly` (simple-salesforce
+  as Read Only reads, and create gives 403 `INSUFFICIENT_ACCESS_OR_READONLY`)
+  and `permissions/timezone-today` (a date matches `TODAY` in
+  `Pacific/Kiritimati` and not in `Pacific/Pago_Pago`).
+
+| Full attempt | Revision | UTC interval | Outcome | Run ID | Summary SHA-256 |
+| --- | --- | --- | --- | --- | --- |
+| A | `e4f480ad3731b44266c275d193d6678129c2fa9a` | 2026-11-15T10:15:29.951Z → 2026-11-15T10:20:12.749Z | passed / 0 | `b07482d98cb4bf75b8c98f1b` | `efdb8f88a8da968795ea36f30599379da41edb3424bfec5b8a4580f873c30e2f` |
+
+The run used a disposable PostgreSQL 17 database and the Playwright Chromium
+build already installed locally (`CHROMIUM_PATH`).
 
 ## Evidence and Sources
 
