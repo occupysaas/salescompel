@@ -66,6 +66,29 @@ so only the v52.0-and-later behavior applies.
 | 21 | Composite Graph and Composite Batch | out of scope for this plan's first pass ("if ready" in the roadmap) | roadmap |
 | 22 | QueryAll subrequests | deferred to after Plan 30, which adds `queryAll` | brief |
 
+## Client request shapes (2026-11-15)
+
+Unmodified JSforce 3.11.0 (the pinned compat client) was pointed at a local
+logging HTTP server that recorded only method, path, query-parameter names and
+JSON property names, never values or tokens. This is candidate-side,
+black-box observation of the client, not of Salesforce. No client source was
+read.
+
+| Call (arrays of 2) | Request sent | Body or query |
+| --- | --- | --- |
+| `create(records, {allOrNone})` | `POST composite/sobjects` | `allOrNone`, `records[]` with `attributes` and fields |
+| `update(records, {allOrNone})` | `PATCH composite/sobjects` | `allOrNone`, `records[]` with lowercase `id`, `attributes` and fields |
+| `upsert(records, 'Compat_Key__c', {allOrNone})` | `PATCH composite/sobjects/Account/Compat_Key__c` | `allOrNone`, `records[]` with the key field in each record |
+| `destroy(ids, {allOrNone: false})` | `DELETE composite/sobjects?ids=` | no `allOrNone` parameter |
+| `destroy(ids, {allOrNone: true})` | `DELETE composite/sobjects?ids=&allOrNone=true` | |
+| `retrieve(ids)` | `GET sobjects/Account/describe`, then `POST composite/sobjects/Account` | `ids`, `fields` (every described field) |
+| `retrieve(ids, {fields})` | `POST composite/sobjects/Account` | `ids`, `fields` |
+| `retrieve(id)`, `create(record)` | Standalone `sobjects` routes | unchanged |
+
+Result: JSforce always sends `fields` on retrieve, so the spec's required
+`fields` holds and its fallback is not needed. JSforce never uses the GET form
+of retrieve; it is implemented from the documentation and tested by raw HTTP.
+
 ## Candidate limits carried into the spec
 
 - Rows-by-external-ID upsert exists only for `Account` keyed on

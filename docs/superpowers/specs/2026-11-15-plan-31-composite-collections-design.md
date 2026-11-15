@@ -233,11 +233,8 @@ an explicit batch size large enough for one page. A missing or unreadable
 record gives `null`. An unknown or unreadable field is a request error,
 400 `INVALID_FIELD`.
 
-Whether unmodified JSforce `retrieve` sends `fields` is unknown. Task 1 of the
-implementation plan checks it with a black-box run before the retrieve
-contract is fixed (CLEAN_ROOM.md forbids reading the client's source). If it
-does not send `fields`, the candidate returns every readable field when
-`fields` is absent, and that is recorded as a candidate decision.
+Unmodified JSforce always sends `fields` on retrieve; without caller fields it
+sends every described field (reference record, client request shapes).
 
 ## Standalone change
 
