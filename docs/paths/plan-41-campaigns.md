@@ -1,6 +1,6 @@
 # Plan 41 — Campaigns
 
-Issue: —
+Issue: [#31](https://github.com/occupysaas/salescompel/issues/31)
 
 ## Track and dependencies
 

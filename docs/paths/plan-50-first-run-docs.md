@@ -1,6 +1,6 @@
 # Plan 50 — First-run documentation
 
-Issue: —
+Issue: [#40](https://github.com/occupysaas/salescompel/issues/40)
 
 **Maintainer-only.** This item is reserved for the maintainer.
 

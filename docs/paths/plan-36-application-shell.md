@@ -1,6 +1,6 @@
 # Plan 36 — Live application shell
 
-Issue: —
+Issue: [#26](https://github.com/occupysaas/salescompel/issues/26)
 
 **Maintainer-only.** This item is reserved for the maintainer.
 

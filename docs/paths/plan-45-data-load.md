@@ -1,6 +1,6 @@
 # Plan 45 — Data load
 
-Issue: —
+Issue: [#35](https://github.com/occupysaas/salescompel/issues/35)
 
 ## Track and dependencies
 

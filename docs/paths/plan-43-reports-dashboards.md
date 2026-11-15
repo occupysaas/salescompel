@@ -1,6 +1,6 @@
 # Plan 43 — Basic reports and dashboards
 
-Issue: —
+Issue: [#33](https://github.com/occupysaas/salescompel/issues/33)
 
 ## Track and dependencies
 

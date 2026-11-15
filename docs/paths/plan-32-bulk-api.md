@@ -1,6 +1,6 @@
 # Plan 32 — Bulk API 2.0
 
-Issue: —
+Issue: [#22](https://github.com/occupysaas/salescompel/issues/22)
 
 ## Track and dependencies
 

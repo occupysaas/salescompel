@@ -1,6 +1,6 @@
 # Plan 35 — Metadata deploy and retrieve subset
 
-Issue: —
+Issue: [#25](https://github.com/occupysaas/salescompel/issues/25)
 
 ## Track and dependencies
 

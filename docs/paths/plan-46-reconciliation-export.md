@@ -1,6 +1,6 @@
 # Plan 46 — Reconciliation and export
 
-Issue: —
+Issue: [#36](https://github.com/occupysaas/salescompel/issues/36)
 
 ## Track and dependencies
 

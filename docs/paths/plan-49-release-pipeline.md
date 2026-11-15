@@ -1,6 +1,6 @@
 # Plan 49 — Release pipeline
 
-Issue: —
+Issue: [#39](https://github.com/occupysaas/salescompel/issues/39)
 
 **Maintainer-only.** This item is reserved for the maintainer.
 

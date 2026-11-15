@@ -1,6 +1,6 @@
 # Plan 38 — Opportunities
 
-Issue: —
+Issue: [#28](https://github.com/occupysaas/salescompel/issues/28)
 
 ## Track and dependencies
 

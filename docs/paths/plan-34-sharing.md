@@ -1,6 +1,6 @@
 # Plan 34 — Sharing
 
-Issue: —
+Issue: [#24](https://github.com/occupysaas/salescompel/issues/24)
 
 ## Track and dependencies
 

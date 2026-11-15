@@ -1,6 +1,6 @@
 # Plan 40 — Activities and notes
 
-Issue: —
+Issue: [#30](https://github.com/occupysaas/salescompel/issues/30)
 
 ## Track and dependencies
 

@@ -1,6 +1,6 @@
 # Plan 33 — Users, profiles and permission sets
 
-Issue: —
+Issue: [#23](https://github.com/occupysaas/salescompel/issues/23)
 
 ## Track and dependencies
 

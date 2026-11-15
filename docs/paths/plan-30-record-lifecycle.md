@@ -1,6 +1,6 @@
 # Plan 30 — Record lifecycle
 
-Issue: —
+Issue: [#20](https://github.com/occupysaas/salescompel/issues/20)
 
 ## Track and dependencies
 

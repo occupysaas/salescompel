@@ -1,6 +1,6 @@
 # Plan 47 — Connected extraction
 
-Issue: —
+Issue: [#37](https://github.com/occupysaas/salescompel/issues/37)
 
 ## Track and dependencies
 

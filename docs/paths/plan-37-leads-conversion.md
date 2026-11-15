@@ -1,6 +1,6 @@
 # Plan 37 — Leads and conversion
 
-Issue: —
+Issue: [#27](https://github.com/occupysaas/salescompel/issues/27)
 
 ## Track and dependencies
 

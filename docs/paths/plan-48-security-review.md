@@ -1,6 +1,6 @@
 # Plan 48 — Security review and hardening
 
-Issue: —
+Issue: [#38](https://github.com/occupysaas/salescompel/issues/38)
 
 **Maintainer-only.** This item is reserved for the maintainer.
 

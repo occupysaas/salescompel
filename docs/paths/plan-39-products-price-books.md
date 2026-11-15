@@ -1,6 +1,6 @@
 # Plan 39 — Products and price books
 
-Issue: —
+Issue: [#29](https://github.com/occupysaas/salescompel/issues/29)
 
 ## Track and dependencies
 

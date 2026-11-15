@@ -1,6 +1,6 @@
 # Plan 31 — Composite II and sObject Collections
 
-Issue: —
+Issue: [#21](https://github.com/occupysaas/salescompel/issues/21)
 
 ## Track and dependencies
 

@@ -1,6 +1,6 @@
 # Plan 44 — Dry-run report
 
-Issue: —
+Issue: [#34](https://github.com/occupysaas/salescompel/issues/34)
 
 ## Track and dependencies
 

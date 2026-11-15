@@ -1,6 +1,6 @@
 # Plan 42 — List views and search
 
-Issue: —
+Issue: [#32](https://github.com/occupysaas/salescompel/issues/32)
 
 ## Track and dependencies
 
