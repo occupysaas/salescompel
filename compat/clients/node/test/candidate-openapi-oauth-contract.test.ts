@@ -99,6 +99,7 @@ test("OAuth schemas are closed offline contracts including errors and Organizati
       ).map(([key, schema]) => [key, schema.type === "array" ? ["x"] : "x"]),
     ),
     OrganizationProjection: {
+      attributes: { type: "Organization" },
       Name: "tenant",
       InstanceName: null,
       IsSandbox: false,

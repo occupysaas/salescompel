@@ -13,7 +13,8 @@ import {
 } from "./candidate-oauth-worker-runtime.ts";
 import { revoke } from "./candidate-oauth-worker-http.ts";
 
-export type Passed = (id: string) => void;
+/** Records a passed step: oauth/<id>, or permissions/<id> for Plan 33. */
+export type Passed = (id: string, permissions?: boolean) => void;
 
 export type SalesforceCli = (
   args: string[],

@@ -126,7 +126,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OwnUser"
+                oneOf:
+                  - $ref: "#/components/schemas/OwnUser"
+                  - $ref: "#/components/schemas/UserRead"
         "400":
           $ref: "#/components/responses/Error"
         "401":
@@ -139,6 +141,41 @@ paths:
           $ref: "#/components/responses/MethodError"
         "500":
           $ref: "#/components/responses/Error"
+      description: The caller's own User is the CLI discovery shape; any other User is the Plan 33 record.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            minLength: 1
+    patch:
+      operationId: candidateUpdateUser
+      x-source:
+        - https://github.com/occupysaas/salescompel/blob/eaa64c23626d32ee34170d4f3baf803aee3608b7/docs/superpowers/specs/2026-11-14-plan-33-users-profiles-permissions-design.md
+      responses:
+        "204":
+          description: Current candidate response
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserPatch"
       parameters:
         - name: userId
           in: path
@@ -471,6 +508,741 @@ paths:
       parameters:
         - name: recordId
           description: Accepts a case-sensitive 15-character base or an 18-character ID with a case-insensitive checksum suffix. Responses return 18 characters. Malformed or wrong-prefix IDs return 404 NOT_FOUND.
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            minLength: 1
+  /services/data/v65.0/sobjects/Organization/describe:
+    get:
+      operationId: candidateDescribeOrganization
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/eaa64c23626d32ee34170d4f3baf803aee3608b7/docs/superpowers/specs/2026-11-14-plan-33-users-profiles-permissions-design.md"
+      responses:
+        "200":
+          description: "Current candidate response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObjectDescribe"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+  /services/data/v65.0/sobjects/Organization/{recordId}:
+    get:
+      operationId: candidateReadOrganization
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/eaa64c23626d32ee34170d4f3baf803aee3608b7/docs/superpowers/specs/2026-11-14-plan-33-users-profiles-permissions-design.md"
+      responses:
+        "200":
+          description: "Current candidate response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrganizationRead"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: recordId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            minLength: 1
+  /services/data/v65.0/sobjects/User/describe:
+    get:
+      operationId: candidateDescribeUser
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/eaa64c23626d32ee34170d4f3baf803aee3608b7/docs/superpowers/specs/2026-11-14-plan-33-users-profiles-permissions-design.md"
+      responses:
+        "200":
+          description: "Current candidate response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObjectDescribe"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+  /services/data/v65.0/sobjects/User:
+    post:
+      operationId: candidateCreateUser
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/eaa64c23626d32ee34170d4f3baf803aee3608b7/docs/superpowers/specs/2026-11-14-plan-33-users-profiles-permissions-design.md"
+      responses:
+        "201":
+          description: "Current candidate response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateResult"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserCreate"
+      description: "Plan 33 setup object: needs Manage Users or Modify All Data."
+  /services/data/v65.0/sobjects/Profile/describe:
+    get:
+      operationId: candidateDescribeProfile
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/eaa64c23626d32ee34170d4f3baf803aee3608b7/docs/superpowers/specs/2026-11-14-plan-33-users-profiles-permissions-design.md"
+      responses:
+        "200":
+          description: "Current candidate response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObjectDescribe"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+  /services/data/v65.0/sobjects/Profile/{recordId}:
+    get:
+      operationId: candidateReadProfile
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/eaa64c23626d32ee34170d4f3baf803aee3608b7/docs/superpowers/specs/2026-11-14-plan-33-users-profiles-permissions-design.md"
+      responses:
+        "200":
+          description: "Current candidate response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileRead"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: recordId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            minLength: 1
+  /services/data/v65.0/sobjects/PermissionSet/describe:
+    get:
+      operationId: candidateDescribePermissionSet
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/eaa64c23626d32ee34170d4f3baf803aee3608b7/docs/superpowers/specs/2026-11-14-plan-33-users-profiles-permissions-design.md"
+      responses:
+        "200":
+          description: "Current candidate response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObjectDescribe"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+  /services/data/v65.0/sobjects/PermissionSet:
+    post:
+      operationId: candidateCreatePermissionSet
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/eaa64c23626d32ee34170d4f3baf803aee3608b7/docs/superpowers/specs/2026-11-14-plan-33-users-profiles-permissions-design.md"
+      responses:
+        "201":
+          description: "Current candidate response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateResult"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PermissionSetCreate"
+      description: "Plan 33 setup object: needs Manage Users or Modify All Data."
+  /services/data/v65.0/sobjects/PermissionSet/{recordId}:
+    get:
+      operationId: candidateReadPermissionSet
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/eaa64c23626d32ee34170d4f3baf803aee3608b7/docs/superpowers/specs/2026-11-14-plan-33-users-profiles-permissions-design.md"
+      responses:
+        "200":
+          description: "Current candidate response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PermissionSetRead"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: recordId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            minLength: 1
+    patch:
+      operationId: candidateUpdatePermissionSet
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/eaa64c23626d32ee34170d4f3baf803aee3608b7/docs/superpowers/specs/2026-11-14-plan-33-users-profiles-permissions-design.md"
+      responses:
+        "204":
+          description: "Current candidate response"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PermissionSetPatch"
+      parameters:
+        - name: recordId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            minLength: 1
+    delete:
+      operationId: candidateDeletePermissionSet
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/eaa64c23626d32ee34170d4f3baf803aee3608b7/docs/superpowers/specs/2026-11-14-plan-33-users-profiles-permissions-design.md"
+      responses:
+        "204":
+          description: "Current candidate response"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: recordId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            minLength: 1
+  /services/data/v65.0/sobjects/ObjectPermissions/describe:
+    get:
+      operationId: candidateDescribeObjectPermissions
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/eaa64c23626d32ee34170d4f3baf803aee3608b7/docs/superpowers/specs/2026-11-14-plan-33-users-profiles-permissions-design.md"
+      responses:
+        "200":
+          description: "Current candidate response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObjectDescribe"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+  /services/data/v65.0/sobjects/ObjectPermissions:
+    post:
+      operationId: candidateCreateObjectPermissions
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/eaa64c23626d32ee34170d4f3baf803aee3608b7/docs/superpowers/specs/2026-11-14-plan-33-users-profiles-permissions-design.md"
+      responses:
+        "201":
+          description: "Current candidate response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateResult"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ObjectPermissionsCreate"
+      description: "Plan 33 setup object: needs Manage Users or Modify All Data."
+  /services/data/v65.0/sobjects/ObjectPermissions/{recordId}:
+    get:
+      operationId: candidateReadObjectPermissions
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/eaa64c23626d32ee34170d4f3baf803aee3608b7/docs/superpowers/specs/2026-11-14-plan-33-users-profiles-permissions-design.md"
+      responses:
+        "200":
+          description: "Current candidate response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObjectPermissionsRead"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: recordId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            minLength: 1
+    patch:
+      operationId: candidateUpdateObjectPermissions
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/eaa64c23626d32ee34170d4f3baf803aee3608b7/docs/superpowers/specs/2026-11-14-plan-33-users-profiles-permissions-design.md"
+      responses:
+        "204":
+          description: "Current candidate response"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ObjectPermissionsPatch"
+      parameters:
+        - name: recordId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            minLength: 1
+    delete:
+      operationId: candidateDeleteObjectPermissions
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/eaa64c23626d32ee34170d4f3baf803aee3608b7/docs/superpowers/specs/2026-11-14-plan-33-users-profiles-permissions-design.md"
+      responses:
+        "204":
+          description: "Current candidate response"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: recordId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            minLength: 1
+  /services/data/v65.0/sobjects/FieldPermissions/describe:
+    get:
+      operationId: candidateDescribeFieldPermissions
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/eaa64c23626d32ee34170d4f3baf803aee3608b7/docs/superpowers/specs/2026-11-14-plan-33-users-profiles-permissions-design.md"
+      responses:
+        "200":
+          description: "Current candidate response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObjectDescribe"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+  /services/data/v65.0/sobjects/FieldPermissions:
+    post:
+      operationId: candidateCreateFieldPermissions
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/eaa64c23626d32ee34170d4f3baf803aee3608b7/docs/superpowers/specs/2026-11-14-plan-33-users-profiles-permissions-design.md"
+      responses:
+        "201":
+          description: "Current candidate response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateResult"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FieldPermissionsCreate"
+      description: "Plan 33 setup object: needs Manage Users or Modify All Data."
+  /services/data/v65.0/sobjects/FieldPermissions/{recordId}:
+    get:
+      operationId: candidateReadFieldPermissions
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/eaa64c23626d32ee34170d4f3baf803aee3608b7/docs/superpowers/specs/2026-11-14-plan-33-users-profiles-permissions-design.md"
+      responses:
+        "200":
+          description: "Current candidate response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FieldPermissionsRead"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: recordId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            minLength: 1
+    patch:
+      operationId: candidateUpdateFieldPermissions
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/eaa64c23626d32ee34170d4f3baf803aee3608b7/docs/superpowers/specs/2026-11-14-plan-33-users-profiles-permissions-design.md"
+      responses:
+        "204":
+          description: "Current candidate response"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FieldPermissionsPatch"
+      parameters:
+        - name: recordId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            minLength: 1
+    delete:
+      operationId: candidateDeleteFieldPermissions
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/eaa64c23626d32ee34170d4f3baf803aee3608b7/docs/superpowers/specs/2026-11-14-plan-33-users-profiles-permissions-design.md"
+      responses:
+        "204":
+          description: "Current candidate response"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: recordId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            minLength: 1
+  /services/data/v65.0/sobjects/PermissionSetAssignment/describe:
+    get:
+      operationId: candidateDescribePermissionSetAssignment
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/eaa64c23626d32ee34170d4f3baf803aee3608b7/docs/superpowers/specs/2026-11-14-plan-33-users-profiles-permissions-design.md"
+      responses:
+        "200":
+          description: "Current candidate response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObjectDescribe"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+  /services/data/v65.0/sobjects/PermissionSetAssignment:
+    post:
+      operationId: candidateCreatePermissionSetAssignment
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/eaa64c23626d32ee34170d4f3baf803aee3608b7/docs/superpowers/specs/2026-11-14-plan-33-users-profiles-permissions-design.md"
+      responses:
+        "201":
+          description: "Current candidate response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateResult"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PermissionSetAssignmentCreate"
+      description: "Plan 33 setup object: needs Manage Users or Modify All Data."
+  /services/data/v65.0/sobjects/PermissionSetAssignment/{recordId}:
+    get:
+      operationId: candidateReadPermissionSetAssignment
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/eaa64c23626d32ee34170d4f3baf803aee3608b7/docs/superpowers/specs/2026-11-14-plan-33-users-profiles-permissions-design.md"
+      responses:
+        "200":
+          description: "Current candidate response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PermissionSetAssignmentRead"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: recordId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            minLength: 1
+    delete:
+      operationId: candidateDeletePermissionSetAssignment
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/eaa64c23626d32ee34170d4f3baf803aee3608b7/docs/superpowers/specs/2026-11-14-plan-33-users-profiles-permissions-design.md"
+      responses:
+        "204":
+          description: "Current candidate response"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: recordId
           in: path
           required: true
           style: simple
@@ -2268,7 +3040,12 @@ components:
               - $ref: "#/components/schemas/AccountProjection"
               - $ref: "#/components/schemas/ContactProjection"
               - $ref: "#/components/schemas/OrganizationProjection"
-              - $ref: "#/components/schemas/CurrencyProjection"
+              - $ref: "#/components/schemas/UserProjection"
+              - $ref: "#/components/schemas/ProfileProjection"
+              - $ref: "#/components/schemas/PermissionSetProjection"
+              - $ref: "#/components/schemas/ObjectPermissionsProjection"
+              - $ref: "#/components/schemas/FieldPermissionsProjection"
+              - $ref: "#/components/schemas/PermissionSetAssignmentProjection"
               - $ref: "#/components/schemas/DynamicProjection"
               - $ref: "#/components/schemas/AggregateResult"
         nextRecordsUrl:
@@ -2381,7 +3158,7 @@ components:
       properties:
         childSObject:
           type: string
-          pattern: ^(Account|Contact|[A-Za-z][A-Za-z0-9_]*__c)$
+          pattern: ^(Account|Contact|Organization|User|Profile|PermissionSet|ObjectPermissions|FieldPermissions|PermissionSetAssignment|[A-Za-z][A-Za-z0-9_]*__c)$
         field:
           type: string
           minLength: 1
@@ -2834,24 +3611,6 @@ components:
                   - EncryptedText
                   - Geolocation
                   - RichTextArea
-    CurrencyProjection:
-      type: object
-      additionalProperties: false
-      required:
-        - attributes
-        - DefaultCurrencyIsoCode
-      properties:
-        attributes:
-          type: object
-          additionalProperties: false
-          required:
-            - type
-          properties:
-            type:
-              const: Organization
-        DefaultCurrencyIsoCode:
-          type: string
-          pattern: ^[A-Z]{3}$
     ObjectDescribe:
       type: object
       additionalProperties: false
@@ -2867,7 +3626,7 @@ components:
       properties:
         name:
           type: string
-          pattern: ^(Account|Contact|[A-Za-z][A-Za-z0-9_]*__c)$
+          pattern: ^(Account|Contact|Organization|User|Profile|PermissionSet|ObjectPermissions|FieldPermissions|PermissionSetAssignment|[A-Za-z][A-Za-z0-9_]*__c)$
         label:
           type: string
           minLength: 1
@@ -2881,11 +3640,11 @@ components:
             $ref: "#/components/schemas/ChildRelationship"
           description: Parent-to-child relationships visible to the principal; denied fields are omitted.
         createable:
-          const: true
+          type: boolean
         updateable:
-          const: true
+          type: boolean
         deletable:
-          const: true
+          type: boolean
         queryable:
           const: true
         labelPlural:
@@ -3464,29 +4223,810 @@ components:
         - scopes_supported
         - code_challenge_methods_supported
         - token_endpoint_auth_methods_supported
+    OrganizationAttributes:
+      type: object
+      additionalProperties: false
+      required:
+        - type
+      properties:
+        type:
+          const: Organization
+        url:
+          type: string
     OrganizationProjection:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+      properties:
+        attributes:
+          $ref: "#/components/schemas/OrganizationAttributes"
+        Id:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        Name:
+          type: string
+          maxLength: 80
+        TimeZoneSidKey:
+          type: string
+          maxLength: 40
+        DefaultLocaleSidKey:
+          type: string
+          maxLength: 40
+        LanguageLocaleKey:
+          type: string
+          maxLength: 40
+        DefaultCurrencyIsoCode:
+          type: string
+          maxLength: 3
+        InstanceName:
+          anyOf:
+            - type: string
+              maxLength: 5
+            - type: "null"
+        IsSandbox:
+          type: boolean
+        TrialExpirationDate:
+          anyOf:
+            - type: string
+            - type: "null"
+        NamespacePrefix:
+          anyOf:
+            - type: string
+              maxLength: 15
+            - type: "null"
+        OrganizationType:
+          type: string
+          maxLength: 40
+      description: "One Organization query row (Plan 33 setup object)."
+    OrganizationRead:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+        - Id
+      properties:
+        attributes:
+          $ref: "#/components/schemas/OrganizationAttributes"
+        Id:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        Name:
+          type: string
+          maxLength: 80
+        TimeZoneSidKey:
+          type: string
+          maxLength: 40
+        DefaultLocaleSidKey:
+          type: string
+          maxLength: 40
+        LanguageLocaleKey:
+          type: string
+          maxLength: 40
+        DefaultCurrencyIsoCode:
+          type: string
+          maxLength: 3
+        InstanceName:
+          anyOf:
+            - type: string
+              maxLength: 5
+            - type: "null"
+        IsSandbox:
+          type: boolean
+        TrialExpirationDate:
+          anyOf:
+            - type: string
+            - type: "null"
+        NamespacePrefix:
+          anyOf:
+            - type: string
+              maxLength: 15
+            - type: "null"
+        OrganizationType:
+          type: string
+          maxLength: 40
+    UserAttributes:
+      type: object
+      additionalProperties: false
+      required:
+        - type
+      properties:
+        type:
+          const: User
+        url:
+          type: string
+    UserProjection:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+      properties:
+        attributes:
+          $ref: "#/components/schemas/UserAttributes"
+        Id:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        Username:
+          type: string
+          maxLength: 80
+        FirstName:
+          anyOf:
+            - type: string
+              maxLength: 40
+            - type: "null"
+        LastName:
+          type: string
+          maxLength: 80
+        Name:
+          type: string
+          maxLength: 121
+        Alias:
+          type: string
+          maxLength: 8
+        Email:
+          type: string
+          maxLength: 128
+        IsActive:
+          type: boolean
+        ProfileId:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        Profile:
+          anyOf:
+            - type: "null"
+            - $ref: "#/components/schemas/ParentObject1"
+        TimeZoneSidKey:
+          type: string
+          maxLength: 40
+        LocaleSidKey:
+          type: string
+          maxLength: 40
+        LanguageLocaleKey:
+          type: string
+          maxLength: 40
+        EmailEncodingKey:
+          type: string
+          maxLength: 40
+        PermissionSetAssignments:
+          anyOf:
+            - type: "null"
+            - $ref: "#/components/schemas/ChildResult"
+      description: "One User query row (Plan 33 setup object)."
+    UserRead:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+        - Id
+      properties:
+        attributes:
+          $ref: "#/components/schemas/UserAttributes"
+        Id:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        Username:
+          type: string
+          maxLength: 80
+        FirstName:
+          anyOf:
+            - type: string
+              maxLength: 40
+            - type: "null"
+        LastName:
+          type: string
+          maxLength: 80
+        Name:
+          type: string
+          maxLength: 121
+        Alias:
+          type: string
+          maxLength: 8
+        Email:
+          type: string
+          maxLength: 128
+        IsActive:
+          type: boolean
+        ProfileId:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        TimeZoneSidKey:
+          type: string
+          maxLength: 40
+        LocaleSidKey:
+          type: string
+          maxLength: 40
+        LanguageLocaleKey:
+          type: string
+          maxLength: 40
+        EmailEncodingKey:
+          type: string
+          maxLength: 40
+    UserCreate:
+      type: object
+      additionalProperties: false
+      properties:
+        Username:
+          type: string
+          maxLength: 80
+        FirstName:
+          anyOf:
+            - type: string
+              maxLength: 40
+            - type: "null"
+        LastName:
+          type: string
+          maxLength: 80
+        Alias:
+          type: string
+          maxLength: 8
+        Email:
+          type: string
+          maxLength: 128
+        IsActive:
+          type: boolean
+        ProfileId:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        TimeZoneSidKey:
+          type: string
+          maxLength: 40
+        LocaleSidKey:
+          type: string
+          maxLength: 40
+        LanguageLocaleKey:
+          type: string
+          maxLength: 40
+        EmailEncodingKey:
+          type: string
+          maxLength: 40
+      required:
+        - Username
+        - LastName
+        - Alias
+        - Email
+        - ProfileId
+        - TimeZoneSidKey
+        - LocaleSidKey
+        - LanguageLocaleKey
+        - EmailEncodingKey
+    UserPatch:
+      type: object
+      additionalProperties: false
+      properties:
+        Username:
+          type: string
+          maxLength: 80
+        FirstName:
+          anyOf:
+            - type: string
+              maxLength: 40
+            - type: "null"
+        LastName:
+          type: string
+          maxLength: 80
+        Alias:
+          type: string
+          maxLength: 8
+        Email:
+          type: string
+          maxLength: 128
+        IsActive:
+          type: boolean
+        ProfileId:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        TimeZoneSidKey:
+          type: string
+          maxLength: 40
+        LocaleSidKey:
+          type: string
+          maxLength: 40
+        LanguageLocaleKey:
+          type: string
+          maxLength: 40
+        EmailEncodingKey:
+          type: string
+          maxLength: 40
+    ProfileAttributes:
+      type: object
+      additionalProperties: false
+      required:
+        - type
+      properties:
+        type:
+          const: Profile
+        url:
+          type: string
+    ProfileProjection:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+      properties:
+        attributes:
+          $ref: "#/components/schemas/ProfileAttributes"
+        Id:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        Name:
+          type: string
+          maxLength: 255
+        Description:
+          anyOf:
+            - type: string
+              maxLength: 255
+            - type: "null"
+        PermissionsModifyAllData:
+          type: boolean
+        PermissionsViewAllData:
+          type: boolean
+        PermissionsApiEnabled:
+          type: boolean
+        PermissionsManageUsers:
+          type: boolean
+        Users:
+          anyOf:
+            - type: "null"
+            - $ref: "#/components/schemas/ChildResult"
+        PermissionSets:
+          anyOf:
+            - type: "null"
+            - $ref: "#/components/schemas/ChildResult"
+      description: "One Profile query row (Plan 33 setup object)."
+    ProfileRead:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+        - Id
+      properties:
+        attributes:
+          $ref: "#/components/schemas/ProfileAttributes"
+        Id:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        Name:
+          type: string
+          maxLength: 255
+        Description:
+          anyOf:
+            - type: string
+              maxLength: 255
+            - type: "null"
+        PermissionsModifyAllData:
+          type: boolean
+        PermissionsViewAllData:
+          type: boolean
+        PermissionsApiEnabled:
+          type: boolean
+        PermissionsManageUsers:
+          type: boolean
+    PermissionSetAttributes:
+      type: object
+      additionalProperties: false
+      required:
+        - type
+      properties:
+        type:
+          const: PermissionSet
+        url:
+          type: string
+    PermissionSetProjection:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+      properties:
+        attributes:
+          $ref: "#/components/schemas/PermissionSetAttributes"
+        Id:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        Name:
+          type: string
+          maxLength: 80
+        Label:
+          type: string
+          maxLength: 80
+        Description:
+          anyOf:
+            - type: string
+              maxLength: 255
+            - type: "null"
+        IsOwnedByProfile:
+          type: boolean
+        ProfileId:
+          anyOf:
+            - type: string
+              pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+            - type: "null"
+        Profile:
+          anyOf:
+            - type: "null"
+            - $ref: "#/components/schemas/ParentObject1"
+        PermissionsModifyAllData:
+          type: boolean
+        PermissionsViewAllData:
+          type: boolean
+        PermissionsApiEnabled:
+          type: boolean
+        PermissionsManageUsers:
+          type: boolean
+        Assignments:
+          anyOf:
+            - type: "null"
+            - $ref: "#/components/schemas/ChildResult"
+        ObjectPerms:
+          anyOf:
+            - type: "null"
+            - $ref: "#/components/schemas/ChildResult"
+        FieldPerms:
+          anyOf:
+            - type: "null"
+            - $ref: "#/components/schemas/ChildResult"
+      description: "One PermissionSet query row (Plan 33 setup object)."
+    PermissionSetRead:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+        - Id
+      properties:
+        attributes:
+          $ref: "#/components/schemas/PermissionSetAttributes"
+        Id:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        Name:
+          type: string
+          maxLength: 80
+        Label:
+          type: string
+          maxLength: 80
+        Description:
+          anyOf:
+            - type: string
+              maxLength: 255
+            - type: "null"
+        IsOwnedByProfile:
+          type: boolean
+        ProfileId:
+          anyOf:
+            - type: string
+              pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+            - type: "null"
+        PermissionsModifyAllData:
+          type: boolean
+        PermissionsViewAllData:
+          type: boolean
+        PermissionsApiEnabled:
+          type: boolean
+        PermissionsManageUsers:
+          type: boolean
+    PermissionSetCreate:
       type: object
       additionalProperties: false
       properties:
         Name:
           type: string
-        InstanceName:
-          type: "null"
-        IsSandbox:
-          const: false
-        TrialExpirationDate:
-          type: "null"
-        NamespacePrefix:
-          type: "null"
-        OrganizationType:
-          const: SalesCompel
+          maxLength: 80
+        Label:
+          type: string
+          maxLength: 80
+        Description:
+          anyOf:
+            - type: string
+              maxLength: 255
+            - type: "null"
+        PermissionsModifyAllData:
+          type: boolean
+        PermissionsViewAllData:
+          type: boolean
+        PermissionsApiEnabled:
+          type: boolean
+        PermissionsManageUsers:
+          type: boolean
       required:
         - Name
-        - InstanceName
-        - IsSandbox
-        - TrialExpirationDate
-        - NamespacePrefix
-        - OrganizationType
+        - Label
+    PermissionSetPatch:
+      type: object
+      additionalProperties: false
+      properties:
+        Name:
+          type: string
+          maxLength: 80
+        Label:
+          type: string
+          maxLength: 80
+        Description:
+          anyOf:
+            - type: string
+              maxLength: 255
+            - type: "null"
+        PermissionsModifyAllData:
+          type: boolean
+        PermissionsViewAllData:
+          type: boolean
+        PermissionsApiEnabled:
+          type: boolean
+        PermissionsManageUsers:
+          type: boolean
+    ObjectPermissionsAttributes:
+      type: object
+      additionalProperties: false
+      required:
+        - type
+      properties:
+        type:
+          const: ObjectPermissions
+        url:
+          type: string
+    ObjectPermissionsProjection:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+      properties:
+        attributes:
+          $ref: "#/components/schemas/ObjectPermissionsAttributes"
+        Id:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        ParentId:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        Parent:
+          anyOf:
+            - type: "null"
+            - $ref: "#/components/schemas/ParentObject1"
+        SobjectType:
+          type: string
+          maxLength: 255
+        PermissionsRead:
+          type: boolean
+        PermissionsCreate:
+          type: boolean
+        PermissionsEdit:
+          type: boolean
+        PermissionsDelete:
+          type: boolean
+        PermissionsViewAllRecords:
+          type: boolean
+        PermissionsModifyAllRecords:
+          type: boolean
+      description: "One ObjectPermissions query row (Plan 33 setup object)."
+    ObjectPermissionsRead:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+        - Id
+      properties:
+        attributes:
+          $ref: "#/components/schemas/ObjectPermissionsAttributes"
+        Id:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        ParentId:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        SobjectType:
+          type: string
+          maxLength: 255
+        PermissionsRead:
+          type: boolean
+        PermissionsCreate:
+          type: boolean
+        PermissionsEdit:
+          type: boolean
+        PermissionsDelete:
+          type: boolean
+        PermissionsViewAllRecords:
+          type: boolean
+        PermissionsModifyAllRecords:
+          type: boolean
+    ObjectPermissionsCreate:
+      type: object
+      additionalProperties: false
+      properties:
+        ParentId:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        SobjectType:
+          type: string
+          maxLength: 255
+        PermissionsRead:
+          type: boolean
+        PermissionsCreate:
+          type: boolean
+        PermissionsEdit:
+          type: boolean
+        PermissionsDelete:
+          type: boolean
+        PermissionsViewAllRecords:
+          type: boolean
+        PermissionsModifyAllRecords:
+          type: boolean
+      required:
+        - ParentId
+        - SobjectType
+    ObjectPermissionsPatch:
+      type: object
+      additionalProperties: false
+      properties:
+        PermissionsRead:
+          type: boolean
+        PermissionsCreate:
+          type: boolean
+        PermissionsEdit:
+          type: boolean
+        PermissionsDelete:
+          type: boolean
+        PermissionsViewAllRecords:
+          type: boolean
+        PermissionsModifyAllRecords:
+          type: boolean
+    FieldPermissionsAttributes:
+      type: object
+      additionalProperties: false
+      required:
+        - type
+      properties:
+        type:
+          const: FieldPermissions
+        url:
+          type: string
+    FieldPermissionsProjection:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+      properties:
+        attributes:
+          $ref: "#/components/schemas/FieldPermissionsAttributes"
+        Id:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        ParentId:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        Parent:
+          anyOf:
+            - type: "null"
+            - $ref: "#/components/schemas/ParentObject1"
+        SobjectType:
+          type: string
+          maxLength: 255
+        Field:
+          type: string
+          maxLength: 255
+        PermissionsRead:
+          type: boolean
+        PermissionsEdit:
+          type: boolean
+      description: "One FieldPermissions query row (Plan 33 setup object)."
+    FieldPermissionsRead:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+        - Id
+      properties:
+        attributes:
+          $ref: "#/components/schemas/FieldPermissionsAttributes"
+        Id:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        ParentId:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        SobjectType:
+          type: string
+          maxLength: 255
+        Field:
+          type: string
+          maxLength: 255
+        PermissionsRead:
+          type: boolean
+        PermissionsEdit:
+          type: boolean
+    FieldPermissionsCreate:
+      type: object
+      additionalProperties: false
+      properties:
+        ParentId:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        SobjectType:
+          type: string
+          maxLength: 255
+        Field:
+          type: string
+          maxLength: 255
+        PermissionsRead:
+          type: boolean
+        PermissionsEdit:
+          type: boolean
+      required:
+        - ParentId
+        - SobjectType
+        - Field
+    FieldPermissionsPatch:
+      type: object
+      additionalProperties: false
+      properties:
+        PermissionsRead:
+          type: boolean
+        PermissionsEdit:
+          type: boolean
+    PermissionSetAssignmentAttributes:
+      type: object
+      additionalProperties: false
+      required:
+        - type
+      properties:
+        type:
+          const: PermissionSetAssignment
+        url:
+          type: string
+    PermissionSetAssignmentProjection:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+      properties:
+        attributes:
+          $ref: "#/components/schemas/PermissionSetAssignmentAttributes"
+        Id:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        AssigneeId:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        Assignee:
+          anyOf:
+            - type: "null"
+            - $ref: "#/components/schemas/ParentObject1"
+        PermissionSetId:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        PermissionSet:
+          anyOf:
+            - type: "null"
+            - $ref: "#/components/schemas/ParentObject1"
+      description: "One PermissionSetAssignment query row (Plan 33 setup object)."
+    PermissionSetAssignmentRead:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+        - Id
+      properties:
+        attributes:
+          $ref: "#/components/schemas/PermissionSetAssignmentAttributes"
+        Id:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        AssigneeId:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        PermissionSetId:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+    PermissionSetAssignmentCreate:
+      type: object
+      additionalProperties: false
+      properties:
+        AssigneeId:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        PermissionSetId:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+      required:
+        - AssigneeId
+        - PermissionSetId
     DynamicAttributes:
       type: object
       additionalProperties: false
