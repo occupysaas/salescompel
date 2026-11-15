@@ -96,7 +96,7 @@ func TestStoreIsolationAndPersistence(t *testing.T) {
 		t.Fatal(row, err)
 	}
 	p, err := reopened.Authenticate(ctx, "token-"+a.Tenant)
-	if err != nil || p != a {
+	if err != nil || p.Tenant != a.Tenant || p.User != a.User || p.Role != a.Role || !p.Perms.System().ModifyAllData {
 		t.Fatal(p, err)
 	}
 	if _, err = s.Authenticate(ctx, "wrong"); err == nil {

@@ -6,6 +6,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"net/url"
 	"os"
+	"salescompel/internal/metadata"
 	"salescompel/internal/migration"
 	"testing"
 	"time"
@@ -123,7 +124,7 @@ func TestRLSOmittedTenantPredicate(t *testing.T) {
 	}
 	var metadataCount int
 	var metadataTenant string
-	if e = tx.QueryRow(ctx, "SELECT count(*),min(tenant_id) FROM sc_catalog.objects").Scan(&metadataCount, &metadataTenant); e != nil || metadataCount != 2 || metadataTenant != a.Tenant {
+	if e = tx.QueryRow(ctx, "SELECT count(*),min(tenant_id) FROM sc_catalog.objects").Scan(&metadataCount, &metadataTenant); e != nil || metadataCount != len(metadata.StandardObjects()) || metadataTenant != a.Tenant {
 		t.Fatal("metadata RLS leaked definitions", metadataCount, metadataTenant, e)
 	}
 	if _, e = tx.Exec(ctx, "UPDATE public.accounts SET tenant_id=$1", b.Tenant); e == nil {

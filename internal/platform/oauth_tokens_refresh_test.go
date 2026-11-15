@@ -173,7 +173,7 @@ func TestTenantIsolationWithOAuthToken(t *testing.T) {
 func TestRestrictedOAuthUser(t *testing.T) {
 	s, g, n := tokenFixture(t)
 	ctx := context.Background()
-	s.pool.Exec(ctx, "UPDATE users SET role='restricted' WHERE id=$1", g.User.ID)
+	moveToProfile(t, s, g.User.Tenant, g.User.ID, "Standard User")
 	v := issueTest(t, s, g, n)
 	p, e := s.AuthenticateAt(ctx, v.Access, n)
 	if e != nil {

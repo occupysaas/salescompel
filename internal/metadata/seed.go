@@ -50,8 +50,9 @@ var (
 	salutations  = picklist("Mr.", "Ms.", "Mrs.", "Dr.", "Prof.", "Mx.")
 )
 
-// StandardObjects returns the seeded Account and Contact definitions. Plan 27
-// fields keep their order, labels and columns; Plan 28 fields follow.
+// StandardObjects returns the seeded Account and Contact definitions, then
+// the Plan 33 setup objects. Plan 27 fields keep their order, labels and
+// columns; Plan 28 fields follow.
 func StandardObjects() []Object {
 	id := Field{Name: "Id", Column: "id", Options: Options{Kind: fieldtype.Id}}
 	accountName := Field{Name: "Name", Column: "name", Length: 255, Createable: true, Updateable: true, NameField: true, Options: Options{Kind: fieldtype.Text}}
@@ -98,10 +99,10 @@ func StandardObjects() []Object {
 			fs[i] = Complete(fs[i])
 		}
 	}
-	return []Object{
+	return append([]Object{
 		{Name: "Account", Label: "Account", PluralLabel: "Accounts", Standard: true, Schema: "public", Table: "accounts", Prefix: "001", Fields: account},
 		{Name: "Contact", Label: "Contact", PluralLabel: "Contacts", Standard: true, Schema: "public", Table: "contacts", Prefix: "003", Fields: contact},
-	}
+	}, SetupObjects()...)
 }
 
 func insertField(ctx context.Context, tx pgx.Tx, tenant, obj string, f Field, ordinal int) error {

@@ -68,13 +68,45 @@ func TestPrincipalFromOAuthToken(t *testing.T) {
 	v := issueTest(t, s, g, n)
 	ctx := context.Background()
 	p, e := s.AuthenticateAt(ctx, v.Access, n)
-	if e != nil || p.Tenant != g.User.Tenant || p.User != g.User.ID || p.Username != g.User.Username || p.Scope != g.Scope || p.Role != "admin" {
+	if e != nil || p.Tenant != g.User.Tenant || p.User != g.User.ID || p.Username != g.User.Username || p.Scope != g.Scope || p.Role != "" || p.ProfileID == "" || !p.Perms.System().ModifyAllData || p.Location == nil {
 		t.Fatal(p, e)
 	}
-	s.pool.Exec(ctx, "UPDATE users SET role='restricted' WHERE id=$1", g.User.ID)
+	moveToProfile(t, s, g.User.Tenant, g.User.ID, "Standard User")
 	p, e = s.AuthenticateAt(ctx, v.Access, n)
-	if e != nil || p.Role != "restricted" {
+	if e != nil || p.Perms.System().ModifyAllData || !p.Perms.System().APIEnabled || p.Perms.Object("Account").ViewAll {
 		t.Fatal(p, e)
+	}
+}
+
+// moveToProfile changes a user's profile and moves their profile-owned
+// assignment, bumping the permission revision as a setup write does.
+func moveToProfile(t *testing.T, s *Store, tenant, user, profile string) {
+	t.Helper()
+	ctx := context.Background()
+	tx, e := s.pool.Begin(ctx)
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer tx.Rollback(ctx)
+	for _, sql := range []string{
+		"SELECT set_config('salescompel.tenant_id',$1,true)",
+		`UPDATE sc_setup.permission_set_assignments a SET permission_set_id=np.permission_set_id
+			FROM sc_setup.users u, sc_setup.profiles op, sc_setup.profiles np
+			WHERE u.tenant_id=$1 AND u.id=$2 AND op.tenant_id=$1 AND op.id=u.profile_id AND np.tenant_id=$1 AND np.name=$3
+			AND a.tenant_id=$1 AND a.assignee_id=u.id AND a.permission_set_id=op.permission_set_id`,
+		"UPDATE sc_setup.users SET profile_id=(SELECT id FROM sc_setup.profiles WHERE tenant_id=$1 AND name=$3) WHERE tenant_id=$1 AND id=$2",
+		"UPDATE sc_setup.revisions SET revision=revision+1 WHERE tenant_id=$1",
+	} {
+		args := []any{tenant, user, profile}
+		if !strings.Contains(sql, "$2") {
+			args = args[:1]
+		}
+		if _, e = tx.Exec(ctx, sql, args...); e != nil {
+			t.Fatalf("%s: %v", sql, e)
+		}
+	}
+	if e = tx.Commit(ctx); e != nil {
+		t.Fatal(e)
 	}
 }
 

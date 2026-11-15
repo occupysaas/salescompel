@@ -15,6 +15,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"salescompel/internal/metadata"
 	"salescompel/internal/migration"
+	"salescompel/internal/policy"
 )
 
 //go:embed schema.sql
@@ -25,6 +26,7 @@ type Store struct {
 	auth         *pgxpool.Pool
 	tx           pgx.Tx
 	passwordWork chan struct{}
+	perms        *policy.Cache // effective permissions by revision
 }
 
 func OpenOperator(ctx context.Context, url string) (*Store, error) {
@@ -44,7 +46,7 @@ func OpenOperator(ctx context.Context, url string) (*Store, error) {
 		pool.Close()
 		return nil, e
 	}
-	return &Store{pool: pool, passwordWork: make(chan struct{}, 4)}, nil
+	return &Store{pool: pool, passwordWork: make(chan struct{}, 4), perms: &policy.Cache{}}, nil
 }
 func (s *Store) Close() {
 	s.pool.Close()

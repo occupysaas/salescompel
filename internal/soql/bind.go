@@ -298,7 +298,7 @@ func (b *binder) resolveField(obj metadata.Object, name string) (metadata.Field,
 	if err != nil {
 		return metadata.Field{}, err
 	}
-	if !policy.Allowed(b.p, obj.Name, f.Name) {
+	if !policy.Allowed(b.p, obj.Name, f) {
 		return metadata.Field{}, contract.FieldProblem("INVALID_FIELD", "Field is unavailable", f.Name)
 	}
 	return f, nil
@@ -309,7 +309,7 @@ func (b *binder) resolveRel(obj metadata.Object, name string) (metadata.Object, 
 		if f.RelationshipName == nil || !strings.EqualFold(*f.RelationshipName, name) {
 			continue
 		}
-		if !policy.Allowed(b.p, obj.Name, f.Name) {
+		if !policy.Allowed(b.p, obj.Name, f) {
 			return metadata.Object{}, metadata.Field{}, contract.FieldProblem("INVALID_FIELD", "Field is unavailable", name)
 		}
 		if len(f.ReferenceTo) == 0 {
@@ -341,7 +341,7 @@ func (b *binder) expandFields(obj metadata.Object, fa *FieldsAll) ([]BoundColumn
 				continue
 			}
 		}
-		if !policy.Allowed(b.p, obj.Name, f.Name) {
+		if !policy.Allowed(b.p, obj.Name, f) {
 			continue
 		}
 		cols = append(cols, BoundColumn{Key: f.Name, Field: f})
@@ -375,7 +375,7 @@ func (b *binder) bindChild(parent metadata.Object, sub *Query) (BoundChild, erro
 	// Traversing the relationship reads the child's foreign-key field, so that
 	// field's policy applies even when the inner projection omits it.
 	// spec: soql-02, soql-06
-	if !policy.Allowed(b.p, childObj.Name, rel.Field) {
+	if fk, err := b.snap.Field(childObj.Name, rel.Field); err != nil || !policy.Allowed(b.p, childObj.Name, fk) {
 		return BoundChild{}, contract.FieldProblem("INVALID_FIELD", "Child relationship is unavailable", name)
 	}
 	inner, err := b.queryObj(sub, childObj, true)

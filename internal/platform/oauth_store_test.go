@@ -211,3 +211,31 @@ func TestAdminStoreRevokesTokens(t *testing.T) {
 		})
 	}
 }
+
+// A CLI-created user gets a setup row and its profile-owned assignment, so
+// token checks load the role's profile.
+func TestCreateUserWritesSetupUser(t *testing.T) {
+	s, tenant, name := oauthFixture(t)
+	ctx := context.Background()
+	for role, profile := range map[string]string{"admin": "System Administrator", "restricted": "Standard User"} {
+		username := role + "." + name
+		id, e := s.CreateUser(ctx, tenant, username, "long-password", role)
+		if e != nil {
+			t.Fatal(e)
+		}
+		tx, e := s.pool.Begin(ctx)
+		if e != nil {
+			t.Fatal(e)
+		}
+		tx.Exec(ctx, "SELECT set_config('salescompel.tenant_id',$1,true)", tenant)
+		var got, alias, email, tz, locale, language string
+		var assigned bool
+		e = tx.QueryRow(ctx, `SELECT p.name,u.alias,u.email,u.time_zone_sid_key,u.locale_sid_key,u.language_locale_key,
+			EXISTS(SELECT FROM sc_setup.permission_set_assignments a WHERE a.tenant_id=u.tenant_id AND a.assignee_id=u.id AND a.permission_set_id=p.permission_set_id)
+			FROM sc_setup.users u JOIN sc_setup.profiles p ON p.tenant_id=u.tenant_id AND p.id=u.profile_id WHERE u.tenant_id=$1 AND u.id=$2`, tenant, id).Scan(&got, &alias, &email, &tz, &locale, &language, &assigned)
+		tx.Rollback(ctx)
+		if e != nil || got != profile || !assigned || email != username || alias != username[:8] || tz != "America/Los_Angeles" || locale != "en_US" || language != "en_US" {
+			t.Fatalf("%s: profile=%q assigned=%v alias=%q email=%q %s %s %s %v", role, got, assigned, alias, email, tz, locale, language, e)
+		}
+	}
+}

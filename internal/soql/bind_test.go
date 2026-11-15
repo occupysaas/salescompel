@@ -87,8 +87,8 @@ func newBindFixture() bindFixture {
 	fixed := time.Date(2026, 11, 11, 15, 0, 0, 0, time.UTC)
 	return bindFixture{
 		snap:       snap,
-		admin:      policy.Principal{Tenant: "t1", Role: "admin"},
-		restricted: policy.Principal{Tenant: "t1", Role: "restricted"},
+		admin:      policy.Principal{Tenant: "t1", Role: "admin", Perms: adminPerms()},
+		restricted: policy.Principal{Tenant: "t1", Role: "restricted", Perms: standardPerms(snap.Objects)},
 		now:        func() time.Time { return fixed },
 	}
 }

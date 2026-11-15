@@ -2,11 +2,13 @@ package platform
 
 import (
 	"context"
+	"github.com/jackc/pgx/v5"
 	"strings"
 	"testing"
 	"time"
 
 	"salescompel/internal/metadata"
+	"salescompel/internal/policy/policytest"
 	soqleng "salescompel/internal/soql"
 )
 
@@ -28,11 +30,27 @@ func columnMetadataFor(t *testing.T, p Principal, text string) ([]map[string]any
 		return nil, e
 	}
 	snapshot := metadata.Snapshot{Tenant: p.Tenant, Objects: metadata.StandardObjects()}
+	if p.Location == nil { // not resolved by a store: use the role's seeded profile
+		p.Perms = policytest.Admin()
+		if p.Role == "restricted" {
+			p.Perms = policytest.StandardUser(snapshot.Objects)
+		}
+	}
 	b, e := soqleng.Bind(q, snapshot, p, time.Now)
 	if e != nil {
 		return nil, e
 	}
 	return soqleng.ColumnMetadata(b), nil
+}
+
+// resolvedIn loads p's permissions in tx, for tests that call the engine
+// directly instead of through a Store method.
+func resolvedIn(t *testing.T, s *Store, tx pgx.Tx, p Principal) Principal {
+	t.Helper()
+	if e := s.resolveAccess(context.Background(), tx, &p); e != nil {
+		t.Fatal(e)
+	}
+	return p
 }
 func TestStoreQueryCaseInsensitiveNames(t *testing.T) {
 	s := testStore(t)

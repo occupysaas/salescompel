@@ -177,6 +177,9 @@ func TestCompositeInfrastructure(t *testing.T) {
 		t.Fatal(err)
 	}
 	a.Catalog = &snapshot
+	if err = s.authorize(context.Background(), &a); err != nil {
+		t.Fatal(err)
+	}
 	for _, mode := range []string{"begin", "commit", "rollback", "cancel"} {
 		t.Run(mode, func(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())

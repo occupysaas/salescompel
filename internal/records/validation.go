@@ -17,8 +17,14 @@ var invalid = contract.Invalid
 var problem = contract.Problem
 var fieldProblem = contract.FieldProblem
 
+// allowed looks the field up in the catalog and delegates to policy.Allowed;
+// an unknown field is not readable.
 func allowed(p Principal, object, name string) bool {
-	return !(p.Role != "admin" && object == "Account" && name == "Compat_Text__c")
+	if p.Catalog == nil {
+		return false
+	}
+	f, e := p.Catalog.Field(object, name)
+	return e == nil && policy.Allowed(p, object, f)
 }
 func field(p Principal, object, name string) (Field, error) { return policy.Field(p, object, name) }
 func Describe(p Principal, object string) (Object, error) {
@@ -32,7 +38,7 @@ func Describe(p Principal, object string) (Object, error) {
 	}
 	d.Fields = []Field{}
 	for _, f := range fields {
-		if allowed(p, d.Name, f.Name) {
+		if policy.Allowed(p, d.Name, f) {
 			if f.Label == "" {
 				f.Label = f.Name
 			}

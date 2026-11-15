@@ -140,6 +140,9 @@ func TestMigration7MapsRoles(t *testing.T) {
 
 	admin, restricted := userPermissions(t, p, "t1", want[0].id), userPermissions(t, p, "t1", want[1].id)
 	for _, o := range metadata.StandardObjects() {
+		if metadata.IsSetupObject(o.Name) {
+			continue // reached only through system permissions
+		}
 		for _, f := range o.Fields {
 			hidden := o.Name == "Account" && f.Name == "Compat_Text__c"
 			if restricted.FieldRead(o.Name, f) == hidden || !admin.FieldRead(o.Name, f) {
