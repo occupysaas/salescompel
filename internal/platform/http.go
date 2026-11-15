@@ -267,73 +267,8 @@ func NewHandlerWithOptions(s *Store, assetDir string, o Options) http.Handler {
 			writeJSON(w, 200, result)
 			return
 		}
-		if parts[0] == "query" && len(parts) == 1 {
-			if !method(w, r, "GET") {
-				return
-			}
-			qtext := r.URL.Query().Get("q")
-			if isOrganizationDiscovery(qtext) {
-				writeJSON(w, 200, map[string]any{"totalSize": 1, "done": true, "records": []any{map[string]any{"Name": p.Tenant, "InstanceName": nil, "IsSandbox": false, "TrialExpirationDate": nil, "NamespacePrefix": nil, "OrganizationType": "SalesCompel"}}})
-				return
-			}
-			if isCurrencyDiscovery(qtext) {
-				writeJSON(w, 200, map[string]any{"totalSize": 1, "done": true, "records": []any{map[string]any{"attributes": map[string]any{"type": "Organization"}, "DefaultCurrencyIsoCode": catalog.Currency}}})
-				return
-			}
-			options, optionErr := url.ParseQuery(r.URL.RawQuery)
-			if optionErr != nil {
-				writeError(w, invalid("INVALID_QUERY_PARAMETER", "Invalid query parameter encoding"))
-				return
-			}
-			columns, e := queryColumnsRequested(options)
-			if e != nil {
-				writeError(w, e)
-				return
-			}
-			batch := queryBatchSize(r)
-			if columns {
-				res, md, e := s.QueryColumns(ctx, p, qtext, batch)
-				if e != nil {
-					writeError(w, e)
-					return
-				}
-				result := map[string]any{"totalSize": res.TotalSize, "done": res.Done, "records": res.Records, "columnMetadata": md}
-				if res.NextLocator != "" {
-					result["nextRecordsUrl"] = apiBase + "query/" + res.NextLocator
-				}
-				writeJSON(w, 200, result)
-				return
-			}
-			res, e := s.Query(ctx, p, qtext, batch)
-			if e != nil {
-				writeError(w, e)
-				return
-			}
-			result := map[string]any{"totalSize": res.TotalSize, "done": res.Done, "records": res.Records}
-			if res.NextLocator != "" {
-				result["nextRecordsUrl"] = apiBase + "query/" + res.NextLocator
-			}
-			writeJSON(w, 200, result)
-			return
-		}
 		if parts[0] == "query" {
-			if len(parts) != 2 {
-				writeError(w, invalid("INVALID_QUERY_LOCATOR", "Query locator is invalid"))
-				return
-			}
-			if !method(w, r, "GET") {
-				return
-			}
-			res, e := s.QueryMore(ctx, p, parts[1], queryBatchSize(r))
-			if e != nil {
-				writeError(w, e)
-				return
-			}
-			result := map[string]any{"totalSize": res.TotalSize, "done": res.Done, "records": res.Records}
-			if res.NextLocator != "" {
-				result["nextRecordsUrl"] = apiBase + "query/" + res.NextLocator
-			}
-			writeJSON(w, 200, result)
+			serveQuery(s, ctx, p, w, r, parts)
 			return
 		}
 		if parts[0] == "candidate" && len(parts) == 4 && parts[1] == "sobjects" && parts[3] == "storedFields" {
@@ -434,36 +369,7 @@ func NewHandlerWithOptions(s *Store, assetDir string, o Options) http.Handler {
 			writeError(w, problem(404, "NOT_FOUND", "Resource not implemented"))
 			return
 		}
-		if !method(w, r, "GET", "PATCH", "DELETE") {
-			return
-		}
-		id := parts[2]
-		switch r.Method {
-		case "GET":
-			row, e := s.Read(ctx, p, object, id)
-			if e != nil {
-				writeError(w, e)
-				return
-			}
-			writeJSON(w, 200, row)
-		case "PATCH":
-			data, e := body(r)
-			if e != nil {
-				writeError(w, e)
-				return
-			}
-			if e = s.Update(ctx, p, object, id, data); e != nil {
-				writeError(w, e)
-				return
-			}
-			writeJSON(w, 204, nil)
-		case "DELETE":
-			if e := s.Delete(ctx, p, object, id); e != nil {
-				writeError(w, e)
-				return
-			}
-			writeJSON(w, 204, nil)
-		}
+		serveRecord(s, ctx, p, w, r, object, parts[2])
 	})
 }
 
