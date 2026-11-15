@@ -36,27 +36,27 @@ except for items marked *independent*.
 
 | Plan | Track | Needs | Brief | Issue |
 |---|---|---|---|---|
-| 30 Record lifecycle | R | 27, 29 | — | — |
-| 31 Composite II and Collections | W | 29 | — | — |
-| 32 Bulk API 2.0 | R | 29, 30 | — | — |
-| 33 Users, profiles, permission sets | S | 26, 27, 29 | — | — |
-| 34 Sharing | S | 33 | — | — |
-| 35 Metadata subset | D | 28, 33 | — | — |
-| 36 Live application shell | A (maintainer-only) | 26, 28, 33 | — | — |
-| 37 Leads and conversion | C | 34, 36 | — | — |
-| 38 Opportunities | C | 34, 36 | — | — |
-| 39 Products and price books | C | 38 | — | — |
-| 40 Activities and notes | C | 36 | — | — |
-| 41 Campaigns | C | 37, 38 | — | — |
-| 42 List views and search | A | 29, 36 | — | — |
-| 43 Reports and dashboards | A | 29, 34, 42 | — | — |
-| 44 Dry-run report | D | 35 | — | — |
-| 45 Data load | D | 32, 44 | — | — |
-| 46 Reconciliation and export | D | 45 | — | — |
-| 47 Connected extraction | D (independent) | 44 | — | — |
-| 48 Security review and hardening | E (maintainer-only) | all above | — | — |
-| 49 Release pipeline | E (maintainer-only) | 48 | — | — |
-| 50 First-run docs | E (maintainer-only) | 49 | — | — |
+| 30 Record lifecycle | R | 27, 29 | | [brief](plan-30-record-lifecycle.md) | — |
+| 31 Composite II and Collections | W | 29 | | [brief](plan-31-composite-collections.md) | — |
+| 32 Bulk API 2.0 | R | 29, 30 | | [brief](plan-32-bulk-api.md) | — |
+| 33 Users, profiles, permission sets | S | 26, 27, 29 | | [brief](plan-33-users-profiles-permissions.md) | — |
+| 34 Sharing | S | 33 | | [brief](plan-34-sharing.md) | — |
+| 35 Metadata subset | D | 28, 33 | | [brief](plan-35-metadata-subset.md) | — |
+| 36 Live application shell | A (maintainer-only) | 26, 28, 33 | | [brief](plan-36-application-shell.md) | — |
+| 37 Leads and conversion | C | 34, 36 | | [brief](plan-37-leads-conversion.md) | — |
+| 38 Opportunities | C | 34, 36 | | [brief](plan-38-opportunities.md) | — |
+| 39 Products and price books | C | 38 | | [brief](plan-39-products-price-books.md) | — |
+| 40 Activities and notes | C | 36 | | [brief](plan-40-activities-notes.md) | — |
+| 41 Campaigns | C | 37, 38 | | [brief](plan-41-campaigns.md) | — |
+| 42 List views and search | A | 29, 36 | | [brief](plan-42-list-views-search.md) | — |
+| 43 Reports and dashboards | A | 29, 34, 42 | | [brief](plan-43-reports-dashboards.md) | — |
+| 44 Dry-run report | D | 35 | | [brief](plan-44-dry-run-report.md) | — |
+| 45 Data load | D | 32, 44 | | [brief](plan-45-data-load.md) | — |
+| 46 Reconciliation and export | D | 45 | | [brief](plan-46-reconciliation-export.md) | — |
+| 47 Connected extraction | D (independent) | 44 | | [brief](plan-47-connected-extraction.md) | — |
+| 48 Security review and hardening | E (maintainer-only) | all above | | [brief](plan-48-security-review.md) | — |
+| 49 Release pipeline | E (maintainer-only) | 48 | | [brief](plan-49-release-pipeline.md) | — |
+| 50 First-run docs | E (maintainer-only) | 49 | | [brief](plan-50-first-run-docs.md) | — |
 
 Plans 25–29 have merged, so a dependency on them is already met.
 
