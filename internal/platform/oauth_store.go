@@ -6,6 +6,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"net/url"
 	"salescompel/internal/metadata"
+	"salescompel/internal/recordid"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -63,8 +64,26 @@ func (s *Store) passwordHash(ctx context.Context, p string) (string, error) {
 	return hashPassword(p)
 }
 func (s *Store) CreateUser(ctx context.Context, tenant, username, password, role string) (string, error) {
-	if tenant == "" || !validUsername(username) || !validPassword(password) || (role != "admin" && role != "restricted") {
+	profile, ok := RoleProfiles[role]
+	if !ok {
 		return "", errors.New("invalid user configuration")
+	}
+	return s.CreateUserWithProfile(ctx, tenant, username, password, profile)
+}
+
+// RoleProfiles maps the deprecated roles to the profiles that replace them.
+var RoleProfiles = map[string]string{"admin": "System Administrator", "restricted": "Standard User"}
+
+// CreateUserWithProfile creates a password user on the named profile, with
+// the tenant's org defaults for time zone, locale and language.
+func (s *Store) CreateUserWithProfile(ctx context.Context, tenant, username, password, profile string) (string, error) {
+	if tenant == "" || profile == "" || !validUsername(username) || !validPassword(password) {
+		return "", errors.New("invalid user configuration")
+	}
+	// The credential row keeps a role for provisioned-token compatibility.
+	role := "restricted"
+	if profile == RoleProfiles["admin"] {
+		role = "admin"
 	}
 	h, e := s.passwordHash(ctx, password)
 	if e != nil {
@@ -90,7 +109,39 @@ func (s *Store) CreateUser(ctx context.Context, tenant, username, password, role
 	if _, e = tx.Exec(ctx, "INSERT INTO users(id,tenant_id,username,username_canonical,password_hash,role) VALUES($1,$2,$3,$4,$5,$6)", id, tenant, username, strings.ToLower(username), h, role); e != nil {
 		return "", errors.New("user could not be created; username may already exist")
 	}
+	if e = createSetupUser(ctx, tx, id, tenant, profile); e != nil {
+		return "", e
+	}
 	return id, tx.Commit(ctx)
+}
+
+// createSetupUser writes the user's sc_setup row and its system-maintained
+// assignment to the profile-owned set, as migration 7 does for existing
+// users. Name, alias and email come from the username, settings from the
+// org defaults. The transaction's tenant is already set (SeedTenant).
+func createSetupUser(ctx context.Context, tx pgx.Tx, id, tenant, profile string) error {
+	tag, e := tx.Exec(ctx, `INSERT INTO sc_setup.users(id,tenant_id,username,username_canonical,last_name,alias,email,profile_id,time_zone_sid_key,locale_sid_key,language_locale_key,email_encoding_key)
+		SELECT u.id,u.tenant_id,u.username,lower(u.username COLLATE "C"),
+			left(coalesce(nullif(split_part(u.username,'@',1),''),u.username),80),
+			left(coalesce(nullif(split_part(u.username,'@',1),''),u.username),8),
+			u.username,p.id,s.time_zone_sid_key,s.default_locale_sid_key,s.language_locale_key,'UTF-8'
+		FROM public.users u JOIN sc_setup.profiles p ON p.tenant_id=u.tenant_id AND p.name=$3
+		JOIN sc_catalog.settings s ON s.tenant_id=u.tenant_id
+		WHERE u.id=$1 AND u.tenant_id=$2`, id, tenant, profile)
+	if e != nil {
+		return e
+	}
+	if tag.RowsAffected() != 1 {
+		return errors.New("user could not be created; no such profile")
+	}
+	assignment, e := recordid.New("0Pa")
+	if e != nil {
+		return e
+	}
+	_, e = tx.Exec(ctx, `INSERT INTO sc_setup.permission_set_assignments(id,tenant_id,assignee_id,permission_set_id)
+		SELECT $1,u.tenant_id,u.id,p.permission_set_id FROM sc_setup.users u JOIN sc_setup.profiles p ON p.tenant_id=u.tenant_id AND p.id=u.profile_id
+		WHERE u.tenant_id=$2 AND u.id=$3`, assignment, tenant, id)
+	return e
 }
 func deleteUserTokens(ctx context.Context, tx pgx.Tx, id string) error {
 	for _, table := range []string{"oauth_access_tokens", "oauth_refresh_tokens", "oauth_codes"} {

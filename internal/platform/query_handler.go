@@ -6,16 +6,10 @@ import (
 	"net/url"
 )
 
-// restQuery runs SOQL text exactly as GET /query does, including the
-// Organization and currency discovery answers, and returns the REST body.
+// restQuery runs SOQL text exactly as GET /query does and returns the REST
+// body.
 // options carries the request's query parameters (q is ignored here).
 func (s *Store) restQuery(ctx context.Context, p Principal, qtext string, options url.Values, batch int) (map[string]any, error) {
-	if isOrganizationDiscovery(qtext) {
-		return map[string]any{"totalSize": 1, "done": true, "records": []any{map[string]any{"Name": p.Tenant, "InstanceName": nil, "IsSandbox": false, "TrialExpirationDate": nil, "NamespacePrefix": nil, "OrganizationType": "SalesCompel"}}}, nil
-	}
-	if isCurrencyDiscovery(qtext) {
-		return map[string]any{"totalSize": 1, "done": true, "records": []any{map[string]any{"attributes": map[string]any{"type": "Organization"}, "DefaultCurrencyIsoCode": p.Catalog.Currency}}}, nil
-	}
 	columns, e := queryColumnsRequested(options)
 	if e != nil {
 		return nil, e
@@ -62,13 +56,10 @@ func serveQuery(s *Store, ctx context.Context, p Principal, w http.ResponseWrite
 			return
 		}
 		qtext := r.URL.Query().Get("q")
-		var options url.Values
-		if !isOrganizationDiscovery(qtext) && !isCurrencyDiscovery(qtext) {
-			var optionErr error
-			if options, optionErr = url.ParseQuery(r.URL.RawQuery); optionErr != nil {
-				writeError(w, invalid("INVALID_QUERY_PARAMETER", "Invalid query parameter encoding"))
-				return
-			}
+		options, optionErr := url.ParseQuery(r.URL.RawQuery)
+		if optionErr != nil {
+			writeError(w, invalid("INVALID_QUERY_PARAMETER", "Invalid query parameter encoding"))
+			return
 		}
 		result, e := s.restQuery(ctx, p, qtext, options, queryBatchSize(r))
 		if e != nil {

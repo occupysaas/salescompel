@@ -13,9 +13,10 @@ import { randomBytes } from "node:crypto";
 import { runCommand } from "./candidate-acceptance-process.ts";
 import type { GateContext } from "./candidate-acceptance-preflight.ts";
 import { ROOT, SF_BIN } from "./versions.ts";
-import { parseLauncherURL } from "./candidate-oauth.ts";
+import { parseLauncherURL, redactOAuthEvidence } from "./candidate-oauth.ts";
 import {
   addSecret,
+  capturedSecrets,
   ensure,
   remember,
 } from "./candidate-oauth-worker-runtime.ts";
@@ -249,4 +250,14 @@ export async function retainApp(
     JSON.stringify({ app: clientId, tenant, retained: true }) + "\n",
     { mode: 0o600 },
   );
+}
+
+// Verify every captured credential against evidence before returning sanitized IDs.
+export async function evidenceScan(c: GateContext) {
+  const { readdir } = await import("node:fs/promises");
+  for (const name of await readdir(c.scratch))
+    if (name.startsWith("command-")) {
+      const text = await readFile(join(c.scratch, name), "utf8");
+      ensure(redactOAuthEvidence(text, capturedSecrets()) === text);
+    }
 }

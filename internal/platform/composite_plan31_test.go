@@ -137,7 +137,7 @@ func TestCompositeReadQueryUpsert(t *testing.T) {
 		}
 	}
 	id := r[0].Body.(map[string]any)["id"].(string)
-	standalone, err := s.ReadFields(ctx, a, "Account", id, []string{"Name"})
+	standalone, err := s.Read(ctx, a, "Account", id, "Name")
 	if err != nil || stringJSON(standalone) != stringJSON(r[1].Body) {
 		t.Fatalf("read body differs: %v %s", err, stringJSON(r[1].Body))
 	}

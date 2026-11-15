@@ -165,10 +165,11 @@ func TestOrganizationBridge(t *testing.T) {
 			}
 		}
 	}
-	for _, query := range []string{"SELECT Name FROM Organization", q + " WHERE Name = 'x'"} {
-		w, _ := identityGET(t, s, n, apiBase+"query?q="+url.QueryEscape(query), v.Access, "")
-		if w.Code != 400 || !strings.Contains(w.Body.String(), "INVALID_TYPE") {
-			t.Fatal(w.Code, w.Body.String())
+	// Organization is an ordinary object now: other queries work too.
+	for query, total := range map[string]float64{"SELECT Name FROM Organization": 1, q + " WHERE Name = 'x'": 0} {
+		w, m := identityGET(t, s, n, apiBase+"query?q="+url.QueryEscape(query), v.Access, "")
+		if w.Code != 200 || m["totalSize"] != total {
+			t.Fatal(query, w.Code, w.Body.String())
 		}
 	}
 }

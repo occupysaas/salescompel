@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"salescompel/internal/metadata"
 	"salescompel/internal/platform"
 	"strings"
 	"time"
@@ -17,9 +18,20 @@ type repeatedStrings []string
 
 func (r *repeatedStrings) String() string     { return strings.Join(*r, ",") }
 func (r *repeatedStrings) Set(s string) error { *r = append(*r, s); return nil }
+
+// stderr receives deprecation notices.
+var stderr io.Writer = os.Stderr
+
 func adminCommand(ctx context.Context, s *platform.Store, args []string, out io.Writer) error {
 	if len(args) < 2 {
 		return errors.New("admin subcommand required")
+	}
+	if args[0] == "org" {
+		if len(args) != 2 || args[1] != "set" {
+			return errors.New("org set accepts environment variables only")
+		}
+		return s.SetOrgDefaults(ctx, os.Getenv("SALESCOMPEL_TENANT"), metadata.OrgDefaults{
+			TimeZone: os.Getenv("SALESCOMPEL_TIME_ZONE"), Locale: os.Getenv("SALESCOMPEL_LOCALE"), Language: os.Getenv("SALESCOMPEL_LANGUAGE")})
 	}
 	if args[0] == "user" {
 		if len(args) != 2 {
@@ -28,7 +40,7 @@ func adminCommand(ctx context.Context, s *platform.Store, args []string, out io.
 		name := os.Getenv("SALESCOMPEL_USERNAME")
 		switch args[1] {
 		case "create":
-			id, e := s.CreateUser(ctx, os.Getenv("SALESCOMPEL_TENANT"), name, os.Getenv("SALESCOMPEL_PASSWORD"), os.Getenv("SALESCOMPEL_ROLE"))
+			id, e := s.CreateUserWithProfile(ctx, os.Getenv("SALESCOMPEL_TENANT"), name, os.Getenv("SALESCOMPEL_PASSWORD"), cliProfile())
 			if e != nil {
 				return e
 			}
@@ -103,4 +115,17 @@ func adminCommand(ctx context.Context, s *platform.Store, args []string, out io.
 	default:
 		return errors.New("unknown oauth-app command")
 	}
+}
+
+// cliProfile is SALESCOMPEL_PROFILE, or the profile for the deprecated
+// SALESCOMPEL_ROLE (admin or restricted) when that is unset.
+func cliProfile() string {
+	if p := os.Getenv("SALESCOMPEL_PROFILE"); p != "" {
+		return p
+	}
+	role := os.Getenv("SALESCOMPEL_ROLE")
+	if role != "" {
+		fmt.Fprintln(stderr, "SalesCompel: SALESCOMPEL_ROLE is deprecated; set SALESCOMPEL_PROFILE to a profile name instead")
+	}
+	return platform.RoleProfiles[role]
 }

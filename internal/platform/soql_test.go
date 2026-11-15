@@ -203,7 +203,7 @@ func TestSOQLRecordQueries(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		exec, err := policy.ForAPI(f.p, "65.0")
+		exec, err := policy.ForAPI(resolvedIn(t, f.s, tx, f.p), "65.0")
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"salescompel/internal/policy"
 )
 
 type TokenGrant struct {
@@ -79,22 +80,39 @@ func (s *Store) AuthenticateAt(ctx context.Context, token string, now time.Time)
 	if token == "" {
 		return p, problem(401, "INVALID_SESSION_ID", "Bearer token required")
 	}
-	e := s.authPool().QueryRow(ctx, `SELECT u.tenant_id,u.id,u.role,u.username,t.scope FROM oauth_access_tokens t JOIN users u ON u.id=t.user_id LEFT JOIN oauth_apps a ON a.client_id=t.client_id WHERE t.token_hash=$1 AND t.expires_at>$2 AND u.active AND (t.client_id=$3 OR (a.active AND a.tenant_id=u.tenant_id))`, digest(token), now, PlatformCLIClientID).Scan(&p.Tenant, &p.User, &p.Role, &p.Username, &p.Scope)
+	e := s.authPool().QueryRow(ctx, `SELECT u.tenant_id,u.id,u.username,t.scope FROM oauth_access_tokens t JOIN users u ON u.id=t.user_id LEFT JOIN oauth_apps a ON a.client_id=t.client_id WHERE t.token_hash=$1 AND t.expires_at>$2 AND u.active AND (t.client_id=$3 OR (a.active AND a.tenant_id=u.tenant_id))`, digest(token), now, PlatformCLIClientID).Scan(&p.Tenant, &p.User, &p.Username, &p.Scope)
 	if e == nil {
-		return p, nil
+		e = s.authorized(ctx, &p)
+		return p, e
 	}
 	if !errors.Is(e, pgx.ErrNoRows) {
 		return Principal{}, dbError(e)
 	}
 	e = s.authPool().QueryRow(ctx, "SELECT tenant_id,user_id,role FROM principals WHERE token_hash=$1", digest(token)).Scan(&p.Tenant, &p.User, &p.Role)
 	if e == nil {
-		return p, nil
+		e = s.authorized(ctx, &p)
+		return p, e
 	}
 	if !errors.Is(e, pgx.ErrNoRows) {
 		return Principal{}, dbError(e)
 	}
 
 	return Principal{}, problem(401, "INVALID_SESSION_ID", "Invalid session")
+}
+
+// authorized loads a resolved token's permissions. A token whose tenant or
+// role has no setup data to load is an invalid session (fail closed, D33-20);
+// a storage failure is a server error. Either way no principal is returned.
+func (s *Store) authorized(ctx context.Context, p *Principal) error {
+	e := s.authorize(ctx, p)
+	if e == nil {
+		return nil
+	}
+	*p = Principal{}
+	if errors.Is(e, pgx.ErrNoRows) || errors.Is(e, policy.ErrUnknownRole) || errors.Is(e, errBadZone) {
+		return problem(401, "INVALID_SESSION_ID", "Invalid session")
+	}
+	return dbError(e)
 }
 
 // Locks always follow app -> user -> code/refresh/access. Admin invalidation locks

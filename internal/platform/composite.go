@@ -264,11 +264,7 @@ func runSubrequest(ctx context.Context, st *Store, p Principal, sub CompositeSub
 		}
 		return 201, map[string]any{"id": id, "success": true, "errors": []any{}}, nil, nil
 	case routeRead:
-		var fields []string
-		if _, ok := route.query["fields"]; ok {
-			fields = splitFields(params.Get("fields"))
-		}
-		row, err := st.ReadFields(ctx, p, object, value, fields)
+		row, err := st.Read(ctx, p, object, value, restFields(params.Get("fields"))...)
 		if err != nil {
 			return fail(err)
 		}

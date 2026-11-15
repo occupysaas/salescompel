@@ -6,16 +6,13 @@ import (
 	"strings"
 )
 
-// fieldsParam returns nil when the request has no fields parameter, and the
-// comma-separated names otherwise (an empty value gives an empty list, which
-// the record layer rejects).
-// Malformed parameters other than fields are ignored, as before this change.
-func fieldsParam(r *http.Request) ([]string, error) {
-	raw, ok := r.URL.Query()["fields"]
-	if !ok {
-		return nil, nil
+// restFields splits a REST ?fields= value the way the standalone record GET
+// does (D33-03): nil when absent or empty, otherwise the comma-separated names.
+func restFields(v string) []string {
+	if v == "" {
+		return nil
 	}
-	return splitFields(strings.Join(raw, ",")), nil
+	return strings.Split(v, ",")
 }
 
 func splitFields(raw string) []string {
@@ -33,12 +30,7 @@ func serveRecord(s *Store, ctx context.Context, p Principal, w http.ResponseWrit
 	}
 	switch r.Method {
 	case "GET":
-		fields, e := fieldsParam(r)
-		if e != nil {
-			writeError(w, e)
-			return
-		}
-		row, e := s.ReadFields(ctx, p, object, id, fields)
+		row, e := s.Read(ctx, p, object, id, restFields(r.URL.Query().Get("fields"))...)
 		if e != nil {
 			writeError(w, e)
 			return

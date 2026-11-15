@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/jackc/pgx/v5"
+	"strings"
 )
 
 func Load(ctx context.Context, tx pgx.Tx, tenant string) (Snapshot, error) {
@@ -35,6 +36,12 @@ func Load(ctx context.Context, tx pgx.Tx, tenant string) (Snapshot, error) {
 				return out, e
 			}
 			o.Fields = append(o.Fields, f)
+		}
+		if flags, ok := setupFlags[strings.ToLower(o.Name)]; ok && o.Standard && o.Schema == SetupSchema {
+			o.Createable, o.Updateable, o.Deletable = flags.Createable, flags.Updateable, flags.Deletable
+		}
+		if o.Table == "" {
+			continue // registered without storage: not served
 		}
 		// Physical field mappings are separate from public describe JSON.
 		out.Objects = append(out.Objects, o)

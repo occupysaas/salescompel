@@ -115,9 +115,10 @@ func coerce(f Field, v any) (any, string, error) {
 }
 
 // applyDefaults fills omitted checkbox and picklist values on create.
+// Fields the caller can't create are left to their column default.
 func applyDefaults(o Object, data map[string]any) {
 	for _, f := range o.Fields {
-		if _, given := data[f.Name]; given {
+		if _, given := data[f.Name]; given || !f.Createable {
 			continue
 		}
 		switch f.Kind() {

@@ -189,7 +189,7 @@ func fixedClockBody(t *testing.T, s *Store, p Principal, text string, now time.T
 	if err != nil {
 		t.Fatal(err)
 	}
-	exec, err := policy.ForAPI(p, "65.0")
+	exec, err := policy.ForAPI(resolvedIn(t, s, tx, p), "65.0")
 	if err != nil {
 		t.Fatal(err)
 	}

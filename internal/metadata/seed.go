@@ -2,8 +2,11 @@ package metadata
 
 import (
 	"context"
+	"strings"
+
 	"github.com/jackc/pgx/v5"
 	"salescompel/internal/fieldtype"
+	"salescompel/internal/recordid"
 )
 
 func ptr[T any](v T) *T { return &v }
@@ -47,8 +50,9 @@ var (
 	salutations  = picklist("Mr.", "Ms.", "Mrs.", "Dr.", "Prof.", "Mx.")
 )
 
-// StandardObjects returns the seeded Account and Contact definitions. Plan 27
-// fields keep their order, labels and columns; Plan 28 fields follow.
+// StandardObjects returns the seeded Account and Contact definitions, then
+// the Plan 33 setup objects. Plan 27 fields keep their order, labels and
+// columns; Plan 28 fields follow.
 func StandardObjects() []Object {
 	id := Field{Name: "Id", Column: "id", Options: Options{Kind: fieldtype.Id}}
 	accountName := Field{Name: "Name", Column: "name", Length: 255, Createable: true, Updateable: true, NameField: true, Options: Options{Kind: fieldtype.Text}}
@@ -95,10 +99,10 @@ func StandardObjects() []Object {
 			fs[i] = Complete(fs[i])
 		}
 	}
-	return []Object{
+	return append([]Object{
 		{Name: "Account", Label: "Account", PluralLabel: "Accounts", Standard: true, Schema: "public", Table: "accounts", Prefix: "001", Fields: account},
 		{Name: "Contact", Label: "Contact", PluralLabel: "Contacts", Standard: true, Schema: "public", Table: "contacts", Prefix: "003", Fields: contact},
-	}
+	}, SetupObjects()...)
 }
 
 func insertField(ctx context.Context, tx pgx.Tx, tenant, obj string, f Field, ordinal int) error {
@@ -135,6 +139,91 @@ func SeedTenant(ctx context.Context, tx pgx.Tx, tenant string) error {
 			if e = insertField(ctx, tx, tenant, id, f, i); e != nil {
 				return e
 			}
+		}
+	}
+	return seedProfiles(ctx, tx, tenant)
+}
+
+var systemFields = map[string]bool{
+	"id": true, "createddate": true, "createdbyid": true, "lastmodifieddate": true,
+	"lastmodifiedbyid": true, "systemmodstamp": true, "isdeleted": true,
+}
+
+// Permissionable reports whether field-level security can be set on f. It is
+// false for Id, required (non-nillable), name, generated and system fields.
+// Migration 7 repeats this rule in SQL for existing tenants.
+func Permissionable(f Field) bool {
+	return f.Nillable && !f.NameField && !f.Options.Generated && !systemFields[strings.ToLower(f.Name)]
+}
+
+// Plan 33 seeded profiles. access is "edit" (CRUD on objects, Read and Edit on
+// fields), "read" (Read only) or "" (no object or field grants).
+var seededProfiles = []struct {
+	name                           string
+	modifyAll, viewAll, api, users bool
+	access                         string
+}{
+	{"System Administrator", true, true, true, true, ""},
+	{"Standard User", false, false, true, false, "edit"},
+	{"Read Only", false, false, true, false, "read"},
+	{"Minimum Access", false, false, false, false, ""},
+}
+
+// seedProfiles gives a new tenant the four profiles, each owning one
+// permission set, matching migration 7. Standard User and Read Only cover
+// Account and Contact; Standard User has no grant on Account.Compat_Text__c.
+func seedProfiles(ctx context.Context, tx pgx.Tx, tenant string) error {
+	if _, e := tx.Exec(ctx, "INSERT INTO sc_setup.revisions(tenant_id,revision) VALUES($1,1)", tenant); e != nil {
+		return e
+	}
+	for _, sp := range seededProfiles {
+		profile, e := recordid.New("00e")
+		if e != nil {
+			return e
+		}
+		set, e := recordid.New("0PS")
+		if e != nil {
+			return e
+		}
+		if _, e = tx.Exec(ctx, "INSERT INTO sc_setup.profiles(id,tenant_id,name,permission_set_id) VALUES($1,$2,$3,$4)", profile, tenant, sp.name, set); e != nil {
+			return e
+		}
+		if _, e = tx.Exec(ctx, `INSERT INTO sc_setup.permission_sets(id,tenant_id,name,label,is_owned_by_profile,profile_id,permissions_modify_all_data,permissions_view_all_data,permissions_api_enabled,permissions_manage_users)
+			VALUES($1,$2,$3,$4,true,$5,$6,$7,$8,$9)`, set, tenant, "X"+profile, sp.name, profile, sp.modifyAll, sp.viewAll, sp.api, sp.users); e != nil {
+			return e
+		}
+		if sp.access == "" {
+			continue
+		}
+		edit := sp.access == "edit"
+		var ids, objects, fields []string
+		var edits []bool
+		for _, o := range StandardObjects() {
+			if o.Name != "Account" && o.Name != "Contact" {
+				continue
+			}
+			id, e := recordid.New("110")
+			if e != nil {
+				return e
+			}
+			if _, e = tx.Exec(ctx, "INSERT INTO sc_setup.object_permissions(id,tenant_id,parent_id,sobject_type,permissions_read,permissions_create,permissions_edit,permissions_delete) VALUES($1,$2,$3,$4,true,$5,$5,$5)", id, tenant, set, o.Name, edit); e != nil {
+				return e
+			}
+			for _, f := range o.Fields {
+				if !Permissionable(f) || (edit && o.Name == "Account" && f.Name == "Compat_Text__c") {
+					continue
+				}
+				id, e := recordid.New("01k")
+				if e != nil {
+					return e
+				}
+				ids, objects, fields = append(ids, id), append(objects, o.Name), append(fields, o.Name+"."+f.Name)
+				edits = append(edits, edit && (f.Createable || f.Updateable))
+			}
+		}
+		if _, e = tx.Exec(ctx, `INSERT INTO sc_setup.field_permissions(id,tenant_id,parent_id,sobject_type,field,permissions_read,permissions_edit)
+			SELECT id,$2,$3,o,f,true,ed FROM unnest($1::text[],$4::text[],$5::text[],$6::boolean[]) AS g(id,o,f,ed)`, ids, tenant, set, objects, fields, edits); e != nil {
+			return e
 		}
 	}
 	return nil

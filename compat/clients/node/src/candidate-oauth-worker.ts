@@ -16,6 +16,7 @@ import { ROOT } from "./versions.ts";
 import { stepResult } from "./candidate-acceptance-clients.ts";
 import { createFixture } from "./candidate-acceptance-fixtures.ts";
 import { redactOAuthEvidence } from "./candidate-oauth.ts";
+import { permissionFlows } from "./candidate-permissions.ts";
 import { createCandidateTrafficValidator } from "./candidate-openapi-traffic.ts";
 import {
   addSecret,
@@ -34,6 +35,7 @@ import {
   candidateUsers,
   createPassword,
   createSfHome,
+  evidenceScan,
   ownerCommand,
   retainApp,
   retainPrincipal,
@@ -306,23 +308,14 @@ async function rawProtocolFlows(
   passed("http-contract");
 }
 
-// Verify every captured credential against evidence before returning sanitized IDs.
-async function evidenceScan(c: GateContext) {
-  const { readdir } = await import("node:fs/promises");
-  for (const name of await readdir(c.scratch))
-    if (name.startsWith("command-")) {
-      const text = await readFile(join(c.scratch, name), "utf8");
-      ensure(redactOAuthEvidence(text, capturedSecrets()) === text);
-    }
-}
-
 async function main(c: GateContext) {
   setCandidateOrigin(c.url);
   const steps: string[] = [];
   for (const token of Object.values(c.tokens)) addSecret(token);
-  const passed = (id: string) => {
-    steps.push("oauth/" + id);
-    console.error("OAuth passed: " + id);
+  const passed = (id: string, permissions = false) => {
+    const step = (permissions ? "permissions/" : "oauth/") + id;
+    steps.push(step);
+    console.error("OAuth passed: " + step);
   };
   const command = ownerCommand(c);
   const password = createPassword();
@@ -403,6 +396,17 @@ async function main(c: GateContext) {
       users,
       redirect,
       accessToken: connection.accessToken!,
+      passed,
+    });
+    await permissionFlows(c, {
+      admin: connection,
+      sfEnv,
+      account,
+      password,
+      restricted: users.restricted,
+      app,
+      redirect,
+      command,
       passed,
     });
     await evidenceScan(c);

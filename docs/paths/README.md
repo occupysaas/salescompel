@@ -11,9 +11,9 @@ Each item has a one-page brief in this folder and an open GitHub issue labeled
 
 ## Free today
 
-Plans **30**, **31** and **33** are free to claim. Plan 36 is reserved for the
-maintainer, who takes it right after Plan 33 lands, because Plans 37–43 all
-wait on it. Until then, contributors have 30, 31 and 33, then 32, 34 and 35.
+Plan 33 has landed. Plans **30**, **31**, **34** and **35** are free to claim.
+Plan 36 is reserved for the maintainer, who takes it next, because Plans 37–43
+all wait on it.
 
 The live status is always the issue list:
 `gh issue list --label path --state open`.

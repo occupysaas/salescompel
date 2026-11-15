@@ -494,7 +494,7 @@ func TestDescribeChildRelationships(t *testing.T) {
 			Options: Options{Kind: fieldtype.MasterDetail, DeleteBehavior: "Cascade", ChildRelationshipName: "Details__r"}}),
 	}}
 	s := Snapshot{Tenant: "t", Objects: append(StandardObjects(), master, detail)}
-	p := records.Principal{Role: "admin", Catalog: &s}
+	p := records.Principal{Role: "admin", Catalog: &s, Perms: adminPerms()}
 	d, err := records.Describe(p, "Account")
 	if err != nil {
 		t.Fatal(err)
@@ -537,11 +537,11 @@ func TestDescribeChildRelationships(t *testing.T) {
 		{Name: "Id", Options: Options{Kind: fieldtype.Id}},
 	}}
 	sg := Snapshot{Tenant: "t", Objects: []Object{group, denied}}
-	admin, aErr := records.Describe(records.Principal{Role: "admin", Catalog: &sg}, "Group__c")
+	admin, aErr := records.Describe(records.Principal{Role: "admin", Catalog: &sg, Perms: adminPerms()}, "Group__c")
 	if aErr != nil || len(admin.ChildRelationships) != 1 {
 		t.Fatalf("admin children %#v %v", admin.ChildRelationships, aErr)
 	}
-	rest, rErr := records.Describe(records.Principal{Role: "restricted", Catalog: &sg}, "Group__c")
+	rest, rErr := records.Describe(records.Principal{Role: "restricted", Catalog: &sg, Perms: standardPerms(sg.Objects)}, "Group__c")
 	if rErr != nil || len(rest.ChildRelationships) != 0 {
 		t.Fatalf("restricted children %#v %v", rest.ChildRelationships, rErr)
 	}

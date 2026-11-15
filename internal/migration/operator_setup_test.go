@@ -77,9 +77,14 @@ func TestFreshOperatorSetup(t *testing.T) {
 		has_schema_privilege('salescompel_records', 'public', 'CREATE') OR
 		has_schema_privilege('salescompel_identity', 'public', 'CREATE') OR
 		EXISTS(SELECT FROM unnest(ARRAY['salescompel_records','salescompel_identity']) AS role_name,
-		 unnest(ARRAY['sc_control','sc_catalog','sc_records','sc_query']) AS schema_name
+		 unnest(ARRAY['sc_control','sc_catalog','sc_records','sc_query','sc_setup']) AS schema_name
 		 WHERE has_schema_privilege(role_name, schema_name, 'CREATE')) OR
 		has_table_privilege('salescompel_records', 'public.users', 'SELECT') OR
+		has_any_column_privilege('salescompel_records', 'public.users', 'SELECT') OR
+		has_table_privilege('salescompel_identity', 'sc_setup.users', 'SELECT') OR
+		has_function_privilege('salescompel_identity', 'sc_setup.create_identity(varchar,text,text)', 'EXECUTE') OR
+		has_function_privilege('salescompel_identity', 'sc_setup.rename_identity(varchar,text,text)', 'EXECUTE') OR
+		has_function_privilege('salescompel_records', 'sc_setup.id_checksum(text)', 'EXECUTE') OR
 		has_table_privilege('salescompel_identity', 'sc_catalog.objects', 'SELECT') OR
 		pg_has_role('salescompel_records', 'salescompel_owner', 'MEMBER') OR
 		pg_has_role('salescompel_identity', 'salescompel_owner', 'MEMBER')`).Scan(&unsafe)
@@ -97,6 +102,26 @@ func TestFreshOperatorSetup(t *testing.T) {
 		 AND (NOT c.relrowsecurity OR NOT c.relforcerowsecurity))`).Scan(&usable)
 	if err != nil || !usable {
 		t.Fatalf("missing runtime privileges or row security: %t, %v", usable, err)
+	}
+	var identityColumns string
+	if err = admin.QueryRow(ctx, `SELECT string_agg(attname, ',' ORDER BY attnum) FROM pg_attribute
+		WHERE attrelid = 'sc_setup.users'::regclass AND attnum > 0 AND NOT attisdropped
+		AND has_column_privilege('salescompel_identity', attrelid, attnum, 'SELECT')`).Scan(&identityColumns); err != nil {
+		t.Fatal(err)
+	}
+	if identityColumns != "id,tenant_id,is_active,profile_id" {
+		t.Fatalf("identity reads sc_setup.users columns %q", identityColumns)
+	}
+	var executable string
+	if err = admin.QueryRow(ctx, `SELECT coalesce(string_agg(r.rolname || ':' || n.nspname || '.' || p.proname || '(' || pg_get_function_identity_arguments(p.oid) || ')', ',' ORDER BY r.rolname, p.proname), '')
+		FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+		CROSS JOIN (SELECT rolname FROM pg_roles WHERE rolname IN ('salescompel_records', 'salescompel_identity')) r
+		WHERE n.nspname IN ('public', 'sc_control', 'sc_catalog', 'sc_records', 'sc_query', 'sc_setup')
+		AND has_function_privilege(r.rolname, p.oid, 'EXECUTE')`).Scan(&executable); err != nil {
+		t.Fatal(err)
+	}
+	if executable != "salescompel_records:sc_setup.create_identity(p_id character varying, p_tenant text, p_username text),salescompel_records:sc_setup.rename_identity(p_id character varying, p_tenant text, p_username text)" {
+		t.Fatalf("runtime EXECUTE grants: %s", executable)
 	}
 }
 

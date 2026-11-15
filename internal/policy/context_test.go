@@ -7,13 +7,15 @@ func TestExecutionContextFailsClosed(t *testing.T) {
 	if e := base.Validate(); e != nil {
 		t.Fatal(e)
 	}
-	for _, mode := range []string{"tenant", "role", "version", "privilege", "sharing"} {
+	// Role no longer decides anything: an empty role is valid (OAuth users).
+	if e := (ExecutionContext{Principal: Principal{Tenant: "A"}, APIVersion: "65.0", PrivilegeMode: "user", SharingMode: "tenant"}).Validate(); e != nil {
+		t.Fatal(e)
+	}
+	for _, mode := range []string{"tenant", "version", "privilege", "sharing"} {
 		bad := base
 		switch mode {
 		case "tenant":
 			bad.Principal.Tenant = ""
-		case "role":
-			bad.Principal.Role = "unknown"
 		case "version":
 			bad.APIVersion = "99.0"
 		case "privilege":

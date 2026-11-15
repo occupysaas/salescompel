@@ -46,7 +46,7 @@ func dispatch(args []string, out io.Writer) error {
 	}
 	defer s.Close()
 	switch args[0] {
-	case "user", "oauth-app":
+	case "user", "oauth-app", "org":
 		return adminCommand(ctx, s, args, out)
 	case "provision":
 		tenant := os.Getenv("SALESCOMPEL_TENANT")

@@ -22,16 +22,11 @@ func (s *Store) Update(ctx context.Context, p Principal, object, id string, data
 func (s *Store) Delete(ctx context.Context, p Principal, object, id string) error {
 	return s.within(ctx, p, func(s *Store, p Principal) error { return s.recordTx(p).Delete(ctx, object, id) })
 }
-func (s *Store) Read(ctx context.Context, p Principal, object, id string) (map[string]any, error) {
-	return s.ReadFields(ctx, p, object, id, nil)
-}
-
-// ReadFields reads one record; nil fields means every readable field.
-func (s *Store) ReadFields(ctx context.Context, p Principal, object, id string, fields []string) (map[string]any, error) {
+func (s *Store) Read(ctx context.Context, p Principal, object, id string, fields ...string) (map[string]any, error) {
 	var out map[string]any
 	e := s.within(ctx, p, func(s *Store, p Principal) error {
 		var e error
-		out, e = s.recordTx(p).ReadFields(ctx, object, id, fields)
+		out, e = s.recordTx(p).Read(ctx, object, id, fields...)
 		return e
 	})
 	return out, e

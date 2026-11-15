@@ -103,7 +103,7 @@ func newChildFixture(n int) bindFixture {
 	fixed := newBindFixture()
 	return bindFixture{
 		snap:  metadata.Snapshot{Tenant: "t1", Objects: objs},
-		admin: policy.Principal{Tenant: "t1", Role: "admin"},
+		admin: policy.Principal{Tenant: "t1", Role: "admin", Perms: adminPerms()},
 		now:   fixed.now,
 	}
 }
@@ -128,7 +128,7 @@ func newJoinFixture(n int) bindFixture {
 	fixed := newBindFixture()
 	return bindFixture{
 		snap:  metadata.Snapshot{Tenant: "t1", Objects: objs},
-		admin: policy.Principal{Tenant: "t1", Role: "admin"},
+		admin: policy.Principal{Tenant: "t1", Role: "admin", Perms: adminPerms()},
 		now:   fixed.now,
 	}
 }

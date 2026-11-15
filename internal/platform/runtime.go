@@ -9,6 +9,8 @@ import (
 	"salescompel/internal/migration"
 	"salescompel/internal/policy"
 	"salescompel/internal/records"
+	"time"
+	_ "time/tzdata" // user zones load on hosts without a zone database
 )
 
 type StoreConfig struct{ RecordsURL, IdentityURL string }
@@ -27,7 +29,7 @@ func checkedPool(ctx context.Context, url, group string) (*pgxpool.Pool, error) 
 	}
 	fail := func() (*pgxpool.Pool, error) { p.Close(); return nil, errors.New("unsafe runtime database privileges") }
 	var safe bool
-	e = p.QueryRow(ctx, `SELECT current_user=session_user AND session_user=$2 AND pg_has_role(current_user,$1,'MEMBER') AND NOT EXISTS(SELECT FROM pg_roles r WHERE pg_has_role(current_user,r.oid,'MEMBER') AND (r.rolsuper OR r.rolbypassrls OR r.rolcreaterole OR r.rolcreatedb OR r.rolreplication OR r.rolname='salescompel_owner' OR left(r.rolname,3)='pg_')) AND NOT EXISTS(SELECT FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname IN ('public','sc_catalog','sc_records','sc_query','sc_control') AND pg_has_role(current_user,c.relowner,'MEMBER')) AND NOT has_schema_privilege(current_user,'public','CREATE') AND NOT has_schema_privilege(current_user,'sc_catalog','CREATE') AND NOT has_schema_privilege(current_user,'sc_records','CREATE') AND NOT has_schema_privilege(current_user,'sc_query','CREATE')`, group, p.Config().ConnConfig.User).Scan(&safe)
+	e = p.QueryRow(ctx, `SELECT current_user=session_user AND session_user=$2 AND pg_has_role(current_user,$1,'MEMBER') AND NOT EXISTS(SELECT FROM pg_roles r WHERE pg_has_role(current_user,r.oid,'MEMBER') AND (r.rolsuper OR r.rolbypassrls OR r.rolcreaterole OR r.rolcreatedb OR r.rolreplication OR r.rolname='salescompel_owner' OR left(r.rolname,3)='pg_')) AND NOT EXISTS(SELECT FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname IN ('public','sc_catalog','sc_records','sc_query','sc_control','sc_setup') AND pg_has_role(current_user,c.relowner,'MEMBER')) AND NOT has_schema_privilege(current_user,'public','CREATE') AND NOT has_schema_privilege(current_user,'sc_catalog','CREATE') AND NOT has_schema_privilege(current_user,'sc_records','CREATE') AND NOT has_schema_privilege(current_user,'sc_query','CREATE') AND NOT has_schema_privilege(current_user,'sc_setup','CREATE')`, group, p.Config().ConnConfig.User).Scan(&safe)
 	if e != nil || !safe {
 		return fail()
 	}
@@ -75,7 +77,7 @@ func OpenRuntime(ctx context.Context, c StoreConfig) (*Store, error) {
 		a.Close()
 		return nil, errors.New("record and identity logins must differ")
 	}
-	return &Store{pool: r, auth: a, passwordWork: make(chan struct{}, 4)}, nil
+	return &Store{pool: r, auth: a, passwordWork: make(chan struct{}, 4), perms: &policy.Cache{}}, nil
 }
 func (s *Store) authPool() *pgxpool.Pool {
 	if s.auth != nil {
@@ -98,6 +100,13 @@ func (s *Store) within(ctx context.Context, p Principal, fn func(*Store, Princip
 		return e
 	}
 	return records.WithTenantTx(ctx, s.pool, execution, func(tx pgx.Tx) error {
+		// Principals built without a token check (operator code, tests) are
+		// resolved here, in the request's tenant transaction.
+		if p.Location == nil {
+			if e := s.resolveAccess(ctx, tx, &p); e != nil {
+				return e
+			}
+		}
 		catalog, e := metadata.Load(ctx, tx, p.Tenant)
 		if e != nil {
 			return e
@@ -125,4 +134,77 @@ func (s *Store) recordTx(p Principal) *records.Tx {
 		panic("policy.ForAPI failed for default API version: " + polErr.Error())
 	}
 	return records.Bind(s.tx, e, *p.Catalog)
+}
+
+// authorize loads p's effective permissions, profile and location after its
+// token resolved, in a transaction scoped to p's tenant: sc_setup rows have
+// forced row-level security, so the tenant must be set before reading them.
+func (s *Store) authorize(ctx context.Context, p *Principal) error {
+	tx, e := s.begin(ctx)
+	if e != nil {
+		return e
+	}
+	defer tx.Rollback(ctx)
+	if _, e = tx.Exec(ctx, "SELECT set_config('salescompel.tenant_id',$1,true)", p.Tenant); e != nil {
+		return e
+	}
+	if e = s.resolveAccess(ctx, tx, p); e != nil {
+		return e
+	}
+	return tx.Commit(ctx)
+}
+
+// resolveAccess fills p.Perms, p.ProfileID and p.Location from the setup
+// tables, consulting the cache at the tenant's current permission revision.
+// A provisioned token (Role set) gets its role's seeded profile and the org
+// default time zone. A user with no setup row gets no permissions.
+func (s *Store) resolveAccess(ctx context.Context, q policy.Querier, p *Principal) error {
+	rev, e := policy.Revision(ctx, q, p.Tenant)
+	if e != nil {
+		return e
+	}
+	key := p.User
+	var zone string
+	if p.Role != "" {
+		key = "role:" + p.Role
+		e = q.QueryRow(ctx, "SELECT time_zone_sid_key FROM sc_catalog.settings WHERE tenant_id=$1", p.Tenant).Scan(&zone)
+	} else {
+		active := true
+		e = q.QueryRow(ctx, `SELECT u.profile_id,u.time_zone_sid_key,u.is_active FROM sc_setup.users u WHERE u.tenant_id=$1 AND u.id=$2
+			UNION ALL SELECT '',s.time_zone_sid_key,true FROM sc_catalog.settings s WHERE s.tenant_id=$1 AND NOT EXISTS(SELECT FROM sc_setup.users WHERE tenant_id=$1 AND id=$2)`, p.Tenant, p.User).Scan(&p.ProfileID, &zone, &active)
+		if e == nil && !active {
+			// A user deactivated over REST loses every token at once (D33-20);
+			// the token check maps this to INVALID_SESSION_ID.
+			e = pgx.ErrNoRows
+		}
+	}
+	if e != nil {
+		return e
+	}
+	if p.Location, e = time.LoadLocation(zone); e != nil {
+		return errBadZone
+	}
+	perms, ok := s.permsCache().Get(p.Tenant, key, rev)
+	if !ok {
+		if p.Role != "" {
+			perms, rev, e = policy.RoleProfilePermissions(ctx, q, p.Tenant, p.Role)
+		} else {
+			perms, rev, e = policy.LoadPermissions(ctx, q, p.Tenant, p.User)
+		}
+		if e != nil {
+			return e
+		}
+		s.permsCache().Put(p.Tenant, key, rev, perms)
+	}
+	p.Perms = perms
+	return nil
+}
+
+var errBadZone = errors.New("time zone does not load")
+
+func (s *Store) permsCache() *policy.Cache {
+	if s.perms == nil { // a Store built without a constructor (tests)
+		return &policy.Cache{}
+	}
+	return s.perms
 }

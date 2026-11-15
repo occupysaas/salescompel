@@ -19,8 +19,15 @@ func dateRangeCast(left BoundValue) string {
 	return "timestamptz"
 }
 
-// dayStart is UTC midnight of t's calendar day.
+// dayStart is midnight of t's calendar day in t's location.
 func dayStart(t time.Time) time.Time {
+	y, m, d := t.Date()
+	return time.Date(y, m, d, 0, 0, 0, 0, t.Location())
+}
+
+// calendarDate is the UTC midnight of t's calendar day in t's location, the
+// form date-typed parameters take.
+func calendarDate(t time.Time) time.Time {
 	y, m, d := t.Date()
 	return time.Date(y, m, d, 0, 0, 0, 0, time.UTC)
 }
@@ -36,26 +43,26 @@ func weekStart(t time.Time) time.Time {
 
 func monthStart(t time.Time) time.Time {
 	y, m, _ := t.Date()
-	return time.Date(y, m, 1, 0, 0, 0, 0, time.UTC)
+	return time.Date(y, m, 1, 0, 0, 0, 0, t.Location())
 }
 
 func addMonths(t time.Time, n int) time.Time {
 	y, m, _ := t.Date()
 	// Callers pass month starts, so add whole months from the first.
-	return time.Date(y, m, 1, 0, 0, 0, 0, time.UTC).AddDate(0, n, 0)
+	return time.Date(y, m, 1, 0, 0, 0, 0, t.Location()).AddDate(0, n, 0)
 }
 
 func quarterStart(t time.Time) time.Time {
 	y, m, _ := t.Date()
 	q := time.Month((int(m)-1)/3*3 + 1)
-	return time.Date(y, q, 1, 0, 0, 0, 0, time.UTC)
+	return time.Date(y, q, 1, 0, 0, 0, 0, t.Location())
 }
 
 func addQuarters(t time.Time, n int) time.Time { return addMonths(t, 3*n) }
 
 func yearStart(t time.Time) time.Time {
 	y, _, _ := t.Date()
-	return time.Date(y, 1, 1, 0, 0, 0, 0, time.UTC)
+	return time.Date(y, 1, 1, 0, 0, 0, 0, t.Location())
 }
 
 func addYears(t time.Time, n int) time.Time { return addMonths(t, 12*n) }
@@ -87,16 +94,20 @@ func dateFuncSQL(fn, col string) string {
 	return col
 }
 
-// DateLiteralRange returns the UTC half-open range a date literal covers at
-// now. Weeks start on Sunday; fiscal periods equal calendar periods.
-// Relative N is 1–1000 for every unit. spec: soql-04
-func DateLiteralRange(lit Literal, now time.Time) (start, end time.Time, err error) {
+// DateLiteralRange returns the half-open range a date literal covers at now,
+// with day boundaries at midnight in loc (the user's time zone; nil is UTC).
+// Weeks start on Sunday; fiscal periods equal calendar periods. Relative N
+// is 1–1000 for every unit. spec: soql-04
+func DateLiteralRange(lit Literal, now time.Time, loc *time.Location) (start, end time.Time, err error) {
 	if lit.Kind != LitDateLiteral {
 		return time.Time{}, time.Time{}, malformed("expected date literal")
 	}
 	name := strings.ToUpper(lit.Text)
 	n := lit.N
-	today := dayStart(now.UTC())
+	if loc == nil {
+		loc = time.UTC
+	}
+	today := dayStart(now.In(loc))
 
 	// Relative-period N bounds (days documented as 1–1000; applied uniformly).
 	// LAST_N_*/NEXT_N_* contain _N_; N_*_AGO start with N_.
@@ -186,4 +197,14 @@ func DateLiteralRange(lit Literal, now time.Time) (start, end time.Time, err err
 		return addYears(yearStart(today), -n), addYears(yearStart(today), -n+1), nil
 	}
 	return time.Time{}, time.Time{}, malformed("unknown date literal")
+}
+
+// dateRange is DateLiteralRange in the caller's time zone. Date-typed
+// comparisons take the local calendar dates. spec: soql-04
+func (b *binder) dateRange(lit Literal, cast string) (time.Time, time.Time, error) {
+	start, end, err := DateLiteralRange(lit, b.now(), b.p.Location)
+	if err != nil || cast != "date" {
+		return start.UTC(), end.UTC(), err
+	}
+	return calendarDate(start), calendarDate(end), nil
 }

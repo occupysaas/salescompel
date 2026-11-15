@@ -20,7 +20,9 @@ const nameDef = `{"v":2,"field":{"name":"Name","label":"Name","type":"string","s
 
 func catalogRows(t *testing.T, p *pgxpool.Pool, tenant string) []string {
 	t.Helper()
-	rows, e := p.Query(context.Background(), `SELECT o.api_name||'.'||f.api_name||'|'||f.physical_column||'|'||f.ordinal||'|'||f.definition::text FROM sc_catalog.fields f JOIN sc_catalog.objects o ON o.tenant_id=f.tenant_id AND o.id=f.object_id WHERE f.tenant_id=$1 AND o.standard ORDER BY o.api_name,f.ordinal`, tenant)
+	rows, e := p.Query(context.Background(), `SELECT o.api_name||'.'||f.api_name||'|'||f.physical_column||'|'||f.ordinal||'|'||f.definition::text FROM sc_catalog.fields f JOIN sc_catalog.objects o ON o.tenant_id=f.tenant_id AND o.id=f.object_id WHERE f.tenant_id=$1 AND o.standard
+		UNION ALL SELECT 'object '||concat_ws('|',api_name,label,plural_label,physical_schema,physical_table,prefix) FROM sc_catalog.objects WHERE tenant_id=$1 AND standard
+		ORDER BY 1`, tenant)
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -56,6 +58,16 @@ func TestCatalogSeedParity(t *testing.T) {
 	for i := range old {
 		if old[i] != fresh[i] {
 			t.Fatalf("migrated and seeded differ:\n%s\n%s", old[i], fresh[i])
+		}
+	}
+	for _, o := range metadata.SetupObjects() {
+		want := "object " + strings.Join([]string{o.Name, o.Label, o.PluralLabel, "sc_setup", o.Table, o.Prefix}, "|")
+		found := false
+		for _, r := range old {
+			found = found || r == want
+		}
+		if !found {
+			t.Fatalf("setup object %s missing from the migrated catalog", o.Name)
 		}
 	}
 	for _, tenant := range []string{"old", "new"} {
@@ -100,7 +112,7 @@ func TestMigrationFieldTypesUpgrade(t *testing.T) {
 		p.QueryRow(ctx, `SELECT (SELECT jsonb_agg(jsonb_build_array(id,name,compat_key,compat_key_canonical) ORDER BY id) FROM accounts)::text||
 			(SELECT jsonb_agg(jsonb_build_array(id,first_name,last_name,account_id) ORDER BY id) FROM contacts)::text||
 			(SELECT jsonb_agg(jsonb_build_array(id,name,f_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa) ORDER BY id) FROM sc_records.o_0123456789abcdef0123456789abcdef)::text||
-			(SELECT jsonb_agg(jsonb_build_array(tenant_id,id,api_name,physical_column,ordinal) ORDER BY id) FROM sc_catalog.fields WHERE ordinal<4)::text||
+			(SELECT jsonb_agg(jsonb_build_array(tenant_id,id,api_name,physical_column,ordinal) ORDER BY id) FROM sc_catalog.fields WHERE ordinal<4 AND object_id NOT IN (SELECT id FROM sc_catalog.objects WHERE physical_schema='sc_setup'))::text||
 			(SELECT jsonb_agg(jsonb_build_array(tenant_id,revision) ORDER BY tenant_id) FROM sc_catalog.revisions)::text`).Scan(&out)
 		return out
 	}
@@ -200,7 +212,7 @@ func TestMigrationChildRelationshipBackfill(t *testing.T) {
 		var out string
 		p.QueryRow(ctx, `SELECT (SELECT jsonb_agg(jsonb_build_array(id,name) ORDER BY id) FROM accounts)::text||
 			(SELECT jsonb_agg(jsonb_build_array(id,last_name,account_id) ORDER BY id) FROM contacts)::text||
-			(SELECT jsonb_agg(jsonb_build_array(tenant_id,id,api_name,physical_column,ordinal) ORDER BY id) FROM sc_catalog.fields WHERE api_name IN ('Id','Name','Acct__c','AccountId'))::text||
+			(SELECT jsonb_agg(jsonb_build_array(tenant_id,id,api_name,physical_column,ordinal) ORDER BY id) FROM sc_catalog.fields WHERE api_name IN ('Id','Name','Acct__c','AccountId') AND object_id NOT IN (SELECT id FROM sc_catalog.objects WHERE physical_schema='sc_setup'))::text||
 			(SELECT jsonb_agg(jsonb_build_array(tenant_id,id,api_name,plural_label) ORDER BY api_name) FROM sc_catalog.objects WHERE NOT standard)::text`).Scan(&out)
 		return out
 	}

@@ -161,6 +161,10 @@ export const requiredCoverage: Record<GateID, readonly string[]> = {
     "oauth/tenant-isolation",
     "oauth/http-contract",
     "oauth/browser-page",
+    "permissions/cli-assign-permset",
+    "permissions/jsforce-permset",
+    "permissions/python-readonly",
+    "permissions/timezone-today",
   ],
   schema: [
     "schema/provision",
