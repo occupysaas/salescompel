@@ -196,28 +196,29 @@ JSforce 3.11.0, OpenSSL 3.6.3.
 | `sh scripts/check-file-size.sh`, `scripts/check-dco.sh` | Passed |
 
 Full runner, `CANDIDATE_DISPOSABLE=yes scripts/check-candidate-acceptance.sh`,
-at commit `0d6e647` in a Linux container that matches the CI job: Ubuntu 24.04
+at commit `45bb260` (after the Plan 33 merge and the final review fixes) in a Linux container that matches the CI job: Ubuntu 24.04
 (Playwright 1.56.1 image, Chromium 1194), Go 1.25.0, Node 22.20.0, Python 3.12.3
 with `requirements.lock`, PostgreSQL 17 on `127.0.0.1`, as a non-root user.
-Outcome `passed`, `acceptanceEligible: true`, 5 min 16 s.
+Outcome `passed`, `acceptanceEligible: true`, 5 min 21 s. (The run before the
+merge, at `0d6e647`, also passed: database 858, oauth 16, 462 records.)
 
 | Gate | Passed | Failed | Skipped |
 | --- | --- | --- | --- |
 | bindings | 3 | 0 | 0 |
-| database | 858 | 0 | 0 |
+| database | 920 | 0 | 0 |
 | lab | 480 | 0 | 8 |
 | web | 11 | 0 | 0 |
 | jsforce | 8 | 0 | 0 |
 | python | 4 | 0 | 0 |
 | cli | 11 | 0 | 0 |
-| oauth | 16 | 0 | 0 |
+| oauth | 20 | 0 | 0 |
 | schema | 22 | 0 | 0 |
 | restart | 6 | 0 | 0 |
 | connected-browser | 14 | 0 | 0 |
 | preview | 11 | 0 | 0 |
 | cleanup | 2 | 0 | 0 |
 
-Cleanup: `verified: true`, 462 records, 0 unknown intents, processes stopped.
+Cleanup: `verified: true`, 463 records, 0 unknown intents, processes stopped.
 
 ### Independent code review (2026-11-15)
 
