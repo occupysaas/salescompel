@@ -98,13 +98,6 @@ func fieldKey(object string, f metadata.Field) string {
 	return strings.ToLower(object + "." + f.Name)
 }
 
-var systemFields = map[string]bool{
-	"id": true, "createddate": true, "createdbyid": true, "lastmodifieddate": true,
-	"lastmodifiedbyid": true, "systemmodstamp": true, "isdeleted": true,
-}
-
 // Permissionable reports whether field-level security can be set on f. It is
 // false for Id, required (non-nillable), name, generated and system fields.
-func Permissionable(f metadata.Field) bool {
-	return f.Nillable && !f.NameField && !f.Options.Generated && !systemFields[strings.ToLower(f.Name)]
-}
+func Permissionable(f metadata.Field) bool { return metadata.Permissionable(f) }

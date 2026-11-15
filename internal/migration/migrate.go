@@ -80,6 +80,12 @@ func manifest() []change {
 	}
 	sum6 := sha256.Sum256(sql6)
 	m = append(m, change{Entry{6, "query locators", hex.EncodeToString(sum6[:]), false}, func(ctx context.Context, tx pgx.Tx) error { _, e := tx.Exec(ctx, string(sql6)); return e }})
+	sql7, s7Err := sources.ReadFile("migrations/0007_users_permissions.sql")
+	if s7Err != nil {
+		panic("migration: embedded 0007_users_permissions.sql unreadable")
+	}
+	sum7 := sha256.Sum256(sql7)
+	m = append(m, change{Entry{7, "users and permissions", hex.EncodeToString(sum7[:]), false}, func(ctx context.Context, tx pgx.Tx) error { _, e := tx.Exec(ctx, string(sql7)); return e }})
 	return m
 
 }

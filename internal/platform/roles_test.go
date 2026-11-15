@@ -249,3 +249,42 @@ func TestRuntimeRejectsAppSecurityColumnGrant(t *testing.T) {
 		t.Fatal("accepted app security write beyond the lock column")
 	}
 }
+
+// Plan 33: the records login executes only the two identity functions, and
+// the identity login reads only the four token-check User columns.
+func TestRuntimeRejectsExtraSetupGrants(t *testing.T) {
+	owner := testStore(t)
+	urls := limitedURLs(t)
+	ctx := context.Background()
+	login := func(dsn string) string {
+		cfg, e := pgxpool.ParseConfig(dsn)
+		if e != nil {
+			t.Fatal(e)
+		}
+		return pgx.Identifier{cfg.ConnConfig.User}.Sanitize()
+	}
+	records, identity := login(urls[0]), login(urls[1])
+	for _, c := range []struct{ grant, revoke string }{
+		{"GRANT EXECUTE ON FUNCTION sc_setup.id_checksum(text) TO " + records, "REVOKE EXECUTE ON FUNCTION sc_setup.id_checksum(text) FROM " + records},
+		{"GRANT EXECUTE ON FUNCTION sc_setup.create_identity(varchar,text,text) TO " + identity, "REVOKE EXECUTE ON FUNCTION sc_setup.create_identity(varchar,text,text) FROM " + identity},
+		{"GRANT SELECT(username) ON sc_setup.users TO " + identity, "REVOKE SELECT(username) ON sc_setup.users FROM " + identity},
+		{"GRANT SELECT ON sc_setup.profiles TO " + identity, "REVOKE SELECT ON sc_setup.profiles FROM " + identity},
+	} {
+		if _, e := owner.pool.Exec(ctx, c.grant); e != nil {
+			t.Fatal(e)
+		}
+		runtime, e := OpenRuntime(ctx, StoreConfig{urls[0], urls[1]})
+		if _, re := owner.pool.Exec(ctx, c.revoke); re != nil {
+			t.Fatal(re)
+		}
+		if e == nil {
+			runtime.Close()
+			t.Fatalf("accepted %s", c.grant)
+		}
+	}
+	runtime, e := OpenRuntime(ctx, StoreConfig{urls[0], urls[1]})
+	if e != nil {
+		t.Fatalf("exact setup grants refused: %v", e)
+	}
+	runtime.Close()
+}
