@@ -132,6 +132,16 @@ func (s Snapshot) Object(name string) (Object, error) {
 	}
 	return Object{}, contract.Invalid("INVALID_TYPE", "Unsupported object")
 }
+
+// ObjectByPrefix finds the object whose record IDs start with prefix.
+func (s Snapshot) ObjectByPrefix(prefix string) (Object, bool) {
+	for _, o := range s.Objects {
+		if o.Prefix != "" && o.Prefix == prefix {
+			return o, true
+		}
+	}
+	return Object{}, false
+}
 func (s Snapshot) Field(object, name string) (Field, error) {
 	o, e := s.Object(object)
 	if e != nil {

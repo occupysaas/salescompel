@@ -157,6 +157,8 @@ Implementation record, 2026-11-13: Plan 29 ships one SOQL engine for REST, the c
 
 **Plan 31 — Composite II and Collections.** Extends Plan 24 with `allOrNone: false`, reads and query subrequests, upsert, and sObject Collections. Composite Graph and Batch are if ready. *E2E:* JSforce collection calls and raw HTTP.
 
+Implementation record, 2026-11-15: Plan 31 adds Composite partial success (optional `allOrNone`, default false, with a savepoint per subrequest), record reads with `fields`, query and query-more, Account `Compat_Key__c` upsert and nested sObject Collections subrequests, and `@{ref.path}` references with field and index steps. The sObject Collections resource serves create, update, upsert, delete and GET/POST retrieve. Unmodified JSforce collection calls and raw HTTP Composite pass candidate acceptance. Composite Graph and Batch, QueryAll subrequests, subrequest headers, general external-ID upsert and the `Location` result header are recorded gaps. [Guide, decisions, gaps and evidence](../../compat/plan-31-composite-collections.md).
+
 **Plan 32 — Bulk API 2.0.** Durable job table, worker process, ingest and query job lifecycles, abort, retries, result downloads, malformed CSV handling. *E2E:* `sf data import bulk`, `sf data export bulk`, JSforce and simple-salesforce bulk. *Full design decides:* where files live, since this is the first use of S3-compatible storage, and how the worker runs.
 
 **Plan 33 — Users, profiles, permission sets.** User records, object and field permissions enforced in REST, Composite, Bulk and SOQL, and user language, locale and timezone settings. *E2E:* the access matrix, with a restricted user denied through real clients and no unexpected grants.

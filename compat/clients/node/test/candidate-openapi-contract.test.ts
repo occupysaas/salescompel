@@ -224,6 +224,36 @@ const expected = [
     "patch",
     "candidateUpsertAccount",
   ],
+  [
+    "/services/data/v65.0/composite/sobjects",
+    "post",
+    "candidateCollectionsCreate",
+  ],
+  [
+    "/services/data/v65.0/composite/sobjects",
+    "patch",
+    "candidateCollectionsUpdate",
+  ],
+  [
+    "/services/data/v65.0/composite/sobjects",
+    "delete",
+    "candidateCollectionsDelete",
+  ],
+  [
+    "/services/data/v65.0/composite/sobjects/{object}",
+    "get",
+    "candidateCollectionsRetrieve",
+  ],
+  [
+    "/services/data/v65.0/composite/sobjects/{object}",
+    "post",
+    "candidateCollectionsRetrievePost",
+  ],
+  [
+    "/services/data/v65.0/composite/sobjects/Account/Compat_Key__c",
+    "patch",
+    "candidateCollectionsUpsertAccount",
+  ],
   ["/services/data/v65.0/query", "get", "candidateQuery"],
   ["/services/data/v65.0/query/{locator}", "get", "candidateQueryMore"],
   ["/services/data/v65.0/openapi.yaml", "get", "candidateOpenAPI"],
@@ -387,30 +417,6 @@ test("candidateContractShapes", async () => {
     undefined,
   );
 });
-test("atomic Composite contract fixes the restricted request and result envelopes", async () => {
-  const d = await doc();
-  const c = d.components.schemas;
-  assert.equal(c.CompositeRequest.properties.allOrNone.const, true);
-  assert.equal(c.CompositeRequest.properties.collateSubrequests.const, false);
-  assert.equal(c.CompositeRequest.properties.compositeRequest.minItems, 1);
-  assert.equal(c.CompositeRequest.properties.compositeRequest.maxItems, 25);
-  assert.equal(c.CompositeEmptyHeaders.maxProperties, 0);
-  assert.equal(c.CompositeEmptyHeaders.additionalProperties, false);
-  assert.equal(c.CompositeReferenceID.maxLength, 80);
-  assert.equal(
-    c.Resources.properties.composite.const,
-    "/services/data/v65.0/composite",
-  );
-  const mutated = structuredClone(d);
-  mutated.components.schemas.AccountRead = {
-    type: "object",
-    properties: {},
-    additionalProperties: false,
-    maxProperties: 0,
-  };
-  await assert.rejects(validateCandidateOpenAPI(mutated, await urls()));
-});
-
 test("candidate foundation ID forms and record errors are documented", async () => {
   const d = await doc();
   for (const object of ["Account", "Contact"]) {

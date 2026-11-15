@@ -308,12 +308,20 @@ test("validates bounded atomic Composite traffic without permissive maps", async
   const req = { allOrNone: true, compositeRequest: [sub] };
   const res = { compositeResponse: [result] };
   valid(v.validate(make(req, res)));
+  // Plan 31: allOrNone may be false or omitted and httpHeaders may be empty.
+  valid(v.validate(make({ ...req, allOrNone: false }, res)));
+  valid(v.validate(make({ compositeRequest: [sub] }, res)));
+  valid(
+    v.validate(
+      make({ ...req, compositeRequest: [{ ...sub, httpHeaders: {} }] }, res),
+    ),
+  );
   for (const request of [
-    { ...req, allOrNone: false },
+    { ...req, allOrNone: "false" },
     { ...req, compositeRequest: [] },
     { ...req, compositeRequest: Array.from({ length: 26 }, () => sub) },
     { ...req, unknown: true },
-    { ...req, compositeRequest: [{ ...sub, httpHeaders: {} }] },
+    { ...req, compositeRequest: [{ ...sub, method: "PUT" }] },
   ])
     assert.ok(
       v.validate(make(request, res)).requestIssues.includes("request-schema"),
@@ -397,7 +405,9 @@ test("validates bounded atomic Composite traffic without permissive maps", async
     ],
   };
   const checked = v.validate(make(invalid, rollback));
-  assert.deepEqual(checked.requestIssues, ["request-schema"]);
+  // Plan 31: subrequest bodies may target any object, so unknown fields are
+  // rejected by the server (INVALID_FIELD above), not by the request schema.
+  assert.deepEqual(checked.requestIssues, []);
   assert.deepEqual(checked.responseIssues, []);
 });
 

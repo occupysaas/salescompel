@@ -287,6 +287,26 @@ func (s *Tx) Read(ctx context.Context, object, id string, fields ...string) (map
 	}
 	return res.Records[0], nil
 }
+
+// SelectFields resolves the fields a Collections retrieve names, through the
+// same permission-aware lookup as Read (D33-03), and adds Id, which retrieve
+// uses to put each row back at its requested position.
+func SelectFields(p Principal, object string, fields []string) ([]string, error) {
+	d, err := Describe(p, object)
+	if err != nil {
+		return nil, err
+	}
+	names, err := readColumns(p, d, fields)
+	if err != nil {
+		return nil, err
+	}
+	for _, n := range names {
+		if n == "Id" {
+			return names, nil
+		}
+	}
+	return append(names, "Id"), nil
+}
 func (s *Tx) UpsertAccount(ctx context.Context, key string, data map[string]any) (string, bool, error) {
 	p := s.principal
 	if _, err := writeAccess(p, "Account", "upsert", data); err != nil {

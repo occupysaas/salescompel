@@ -253,7 +253,9 @@ test(
       "rollback",
       "admin",
       {},
-      ["request-schema"],
+      // Plan 31: subrequest bodies may target any object, so the unknown
+      // field is rejected by the server (INVALID_FIELD), not the schema.
+      [],
     );
     assert.ok(
       rollback.body!.compositeResponse[0].body[0].errorCode ===
@@ -272,7 +274,7 @@ test(
       "rollback",
       "admin",
       {},
-      ["request-schema"],
+      [],
     );
     assert.ok(
       (await candidateRequest(c, "admin", rowPath("Account", aid))).body!
@@ -301,7 +303,8 @@ test(
       ],
       "prevalidation",
       "admin",
-      { allOrNone: false },
+      // Plan 31 accepts allOrNone false; a non-boolean is still rejected.
+      { allOrNone: "false" },
       ["request-schema"],
     );
     completed.add("prevalidation");

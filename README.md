@@ -102,7 +102,7 @@ npm ci --prefix compat/clients/node --ignore-scripts
 npm --prefix compat/clients/node run check
 ```
 
-The candidate supports a [bounded atomic Composite write subset](docs/superpowers/specs/2026-11-04-plan-24-atomic-composite-writes-design.md): Account/Contact POST, PATCH and DELETE with explicit `allOrNone: true`, sequential execution and earlier-create ID references. Partial success, reads, query, upsert and nested Composite subrequests remain deferred.
+The candidate supports [Composite and sObject Collections](docs/compat/plan-31-composite-collections.md) (Plans 24 and 31): Composite runs subrequests in order in one transaction, with optional `allOrNone` (default false, a savepoint per subrequest), record create, read, update, delete, Account `Compat_Key__c` upsert, query and nested Collections subrequests, and `@{ref.path}` references. sObject Collections serves create, update, upsert, delete and retrieve. Composite Graph and Batch, QueryAll subrequests and subrequest headers remain deferred.
 
 The [candidate OpenAPI contract](api/candidate-openapi.yaml) describes the implemented routes and is served through authenticated GET `/services/data/v65.0/openapi.yaml`. The [broader proposed REST contract](api/openapi.yaml) retains future surfaces; see the [Plan 2 implementation guide](docs/compat/plan-2-implementation.md) for the candidate boundary. Official Salesforce schema fixtures retain their own licenses; see [provenance](compat/fixtures/openapi/salesforce/provenance.json). The [Plan 4 pilot baseline](docs/compat/plan-4-reference-baseline.md) records two repeatable live reference captures; no candidate Salesforce compatibility certification has been performed.
 

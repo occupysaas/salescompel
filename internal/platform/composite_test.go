@@ -117,9 +117,15 @@ func TestCompositeAtomic(t *testing.T) {
 	})
 	t.Run("prevalidation", func(t *testing.T) {
 		before := count()
-		r := compReq(compSub("POST", "Account", "", "a", map[string]any{"Name": "Never"}), compSub("GET", "Account", "", "bad", nil))
+		r := compReq(compSub("POST", "Account", "", "a", map[string]any{"Name": "Never"}), compSub("POST", "Account", "", "bad", map[string]any{"Name": "@{a.id"}))
 		if _, e := s.Composite(ctx, a, r); e == nil || count() != before {
 			t.Fatal("prevalidation writes")
+		}
+		// Plan 31: GET on a create URL is an item error (405) and rolls back.
+		r = compReq(compSub("POST", "Account", "", "a", map[string]any{"Name": "Never"}), compSub("GET", "Account", "", "bad", nil))
+		out, e := s.Composite(ctx, a, r)
+		if e != nil || count() != before || out.CompositeResponse[1].HTTPStatusCode != 405 {
+			t.Fatal("wrong-method rollback", e)
 		}
 	})
 	t.Run("25-commits", func(t *testing.T) {
@@ -200,7 +206,7 @@ func TestCompositeInfrastructure(t *testing.T) {
 			if mode == "commit" {
 				req.CompositeRequest = req.CompositeRequest[:1]
 			}
-			out, e := executeComposite(ctx, a, req, begin)
+			out, e := executeComposite(ctx, s, a, req, begin)
 			if e == nil || len(out.CompositeResponse) != 0 {
 				t.Fatal("leaked successes")
 			}
