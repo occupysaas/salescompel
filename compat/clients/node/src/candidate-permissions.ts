@@ -116,7 +116,11 @@ async function sfAs(c: GateContext, env: NodeJS.ProcessEnv, args: string[]) {
     "oauth",
   );
   check("c4", r.complete);
-  const json = remember(JSON.parse(stdout)) as Record<string, any>;
+  // Successful output can carry tokens. Error output never does, and its
+  // "code" field would otherwise become a "secret" that matches ordinary
+  // evidence.
+  const json = JSON.parse(stdout) as Record<string, any>;
+  if (r.exitCode === 0) remember(json);
   const name =
     typeof json.name === "string" && /^[A-Za-z_]{1,64}$/.test(json.name)
       ? json.name
