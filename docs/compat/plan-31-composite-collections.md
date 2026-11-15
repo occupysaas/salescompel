@@ -166,6 +166,27 @@ Not run locally: the full `scripts/check-candidate-acceptance.sh` runner, which
 requires pinned tool versions (Salesforce CLI, Python, Chromium) not installed
 on this machine. The pull request's CI runs it.
 
+### Independent code review (2026-11-15)
+
+A separate model session (Claude Fable 5.2) reviewed the code against the spec.
+It reported no Critical findings and confirmed savepoint handling, tenant
+isolation, field permissions, injection boundaries and unchanged standalone
+routes. Its two Important and five Minor findings were reproduced with failing
+tests (`composite_review_test.go`) and fixed:
+
+| Finding | Fix |
+| --- | --- |
+| A null, empty or non-string reference in a URL value position was used as a literal (an upsert with key `null`) | Such a value is an item error, `INVALID_COMPOSITE_REQUEST`, and nothing runs |
+| A trailing slash (`query/?q=`) failed the whole request | One trailing slash is ignored, as the standalone handler does. This also accepts `sobjects/Account/`, which Plan 24 rejected |
+| A path segment that is not a name (`ui-api/...`) failed the whole request | It is an unsupported route: item 404 |
+| Collections GET and DELETE limits inside Composite were checked only at run time | Literal values are prevalidated; values with references are checked after substitution |
+| Standalone Collections took the first of repeated parameters and ignored trailing JSON | Both are request errors |
+| `account` in an upsert URL was case-sensitive | Matched case-insensitively, as standalone routes are |
+| An empty or non-string `referenceId` returned `INVALID_COMPOSITE_REQUEST` | Returns `JSON_PARSER_ERROR`, as decision 2 intends |
+
+After the fixes, the full Go suite and the live client acceptance set (eight
+tests, cleanup verified with 0 unknown intents) passed again.
+
 ### Gaps
 
 - Composite Graph and Composite Batch (R21).

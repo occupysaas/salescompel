@@ -29,7 +29,7 @@ func collectionsRoute(method string, parts []string) (subRoute, []string) {
 		route.object = parts[2]
 		route.kind = map[string]routeKind{"GET": routeCollRetrieveGet, "POST": routeCollRetrievePost}[method]
 		return route, []string{"GET", "POST"}
-	case len(parts) == 4 && parts[2] == "Account" && strings.EqualFold(parts[3], "Compat_Key__c"):
+	case len(parts) == 4 && strings.EqualFold(parts[2], "Account") && strings.EqualFold(parts[3], "Compat_Key__c"):
 		route.object = "Account"
 		route.kind = map[string]routeKind{"PATCH": routeCollUpsert}[method]
 		return route, []string{"PATCH"}
@@ -63,13 +63,13 @@ func serveCollections(s *Store, ctx context.Context, p Principal, w http.Respons
 		}
 	default:
 		raw, readErr := io.ReadAll(r.Body)
-		if readErr != nil || decodeExact(raw, &data) != nil || data == nil {
+		if readErr != nil || decodeExactOnly(raw, &data) != nil || data == nil {
 			writeError(w, compositeJSONError())
 			return
 		}
 	}
-	for k := range params {
-		if !collectionsParamAllowed(route.kind, k) {
+	for k, v := range params {
+		if !collectionsParamAllowed(route.kind, k) || len(v) != 1 {
 			writeError(w, compositeInvalid())
 			return
 		}
@@ -108,7 +108,43 @@ func validateCollectionsSubrequest(route subRoute, body map[string]any) error {
 	if !route.isCollections() {
 		return nil
 	}
-	return validateCollectionsRequest(route, body, nil)
+	if err := validateCollectionsRequest(route, body, nil); err != nil {
+		return err
+	}
+	// Query values without references are checked now; values that hold a
+	// reference are checked after substitution.
+	literal := func(k string) (string, bool, bool) {
+		t, ok := route.query[k]
+		if !ok {
+			return "", false, true
+		}
+		if t.hasRefs() {
+			return "", true, false
+		}
+		s, _ := renderText(t, nil)
+		return s, true, true
+	}
+	switch route.kind {
+	case routeCollDelete:
+		ids, hasIDs, idsLit := literal("ids")
+		aon, hasAon, aonLit := literal("allOrNone")
+		if !hasIDs {
+			return compositeInvalid()
+		}
+		if idsLit && aonLit {
+			return checkDeleteParams(ids, aon, hasIDs, hasAon)
+		}
+	case routeCollRetrieveGet:
+		ids, hasIDs, idsLit := literal("ids")
+		fields, hasFields, fieldsLit := literal("fields")
+		if !hasIDs || !hasFields {
+			return compositeInvalid()
+		}
+		if idsLit && fieldsLit {
+			return checkRetrieveGetParams(ids, fields, hasIDs, hasFields)
+		}
+	}
+	return nil
 }
 
 // validateCollectionsRequest checks the request shape. params is nil inside

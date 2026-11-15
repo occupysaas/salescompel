@@ -63,6 +63,10 @@ func decodeComposite(r io.Reader) (CompositeRequest, error) {
 		return fail()
 	}
 	for _, rawSub := range subs {
+		var ref string
+		if rawSub != nil && (json.Unmarshal(rawSub["referenceId"], &ref) != nil || ref == "") {
+			return CompositeRequest{}, compositeRefIDError()
+		}
 		sub, ok := decodeSubrequest(rawSub)
 		if !ok {
 			return fail()
@@ -193,6 +197,20 @@ func planComposite(req CompositeRequest) ([]subPlan, error) {
 		earlier[sub.ReferenceID] = true
 	}
 	return plans, nil
+}
+
+// decodeExactOnly is decodeExact that also rejects trailing data.
+func decodeExactOnly(raw []byte, v any) error {
+	d := json.NewDecoder(bytes.NewReader(raw))
+	d.UseNumber()
+	if err := d.Decode(v); err != nil {
+		return err
+	}
+	var trailing any
+	if d.Decode(&trailing) != io.EOF {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
 }
 
 // decodeExact decodes JSON keeping numbers as json.Number, so field values

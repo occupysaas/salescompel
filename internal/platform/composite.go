@@ -194,6 +194,15 @@ func runSubrequest(ctx context.Context, st *Store, p Principal, sub CompositeSub
 		return fail(invalid("INVALID_COMPOSITE_REQUEST", "Unsupported subrequest header"))
 	}
 	route := plan.route
+	if ref, isRef := route.value.single(); isRef {
+		v, ok := resolve(ref, bodies)
+		if !ok {
+			return fail(refHalted())
+		}
+		if s, isString := v.(string); !isString || s == "" {
+			return fail(invalid("INVALID_COMPOSITE_REQUEST", "Reference value cannot be used in the URL"))
+		}
+	}
 	value, ok := renderText(route.value, bodies)
 	if !ok {
 		return fail(refHalted())

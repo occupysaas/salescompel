@@ -69,6 +69,10 @@ func parseSubrequestURL(method, raw string) (subRoute, bool) {
 	if hasQuery && rawQuery == "" {
 		return subRoute{}, false
 	}
+	// Like the standalone handler, one trailing slash is ignored.
+	if len(path) > 1 && strings.HasSuffix(path, "/") {
+		path = path[:len(path)-1]
+	}
 	segs := strings.Split(path, "/")
 	for _, s := range segs {
 		if s == "" || s == "." || s == ".." {
@@ -94,10 +98,15 @@ func parseSubrequestURL(method, raw string) (subRoute, bool) {
 	case len(segs) == 2 && segs[0] == "query":
 		valueSeg = 1
 	}
+	unsupported := false
 	for i, s := range segs {
-		if i != valueSeg && (strings.ContainsAny(s, "%@{}") || !compositeName.MatchString(s)) {
+		if i == valueSeg {
+			continue
+		}
+		if strings.ContainsAny(s, "%@{}") {
 			return subRoute{}, false
 		}
+		unsupported = unsupported || !compositeName.MatchString(s)
 	}
 	if valueSeg >= 0 {
 		t, ok := parseTemplate(segs[valueSeg])
@@ -114,6 +123,9 @@ func parseSubrequestURL(method, raw string) (subRoute, bool) {
 		route.value = t
 	}
 	route.kind = classify(method, segs, query)
+	if unsupported {
+		route.kind = routeUnsupported
+	}
 	if len(segs) >= 2 && segs[0] == "sobjects" {
 		route.object = segs[1]
 	}
@@ -165,7 +177,7 @@ func classify(method string, segs []string, query map[string]refTemplate) routeK
 			return pick(map[string]routeKind{"GET": routeRead}, "fields")
 		}
 		return pick(map[string]routeKind{"PATCH": routeUpdate, "DELETE": routeDelete})
-	case len(segs) == 4 && segs[0] == "sobjects" && segs[1] == "Account" && strings.EqualFold(segs[2], "Compat_Key__c"):
+	case len(segs) == 4 && segs[0] == "sobjects" && strings.EqualFold(segs[1], "Account") && strings.EqualFold(segs[2], "Compat_Key__c"):
 		return pick(map[string]routeKind{"PATCH": routeUpsert})
 	case len(segs) == 1 && segs[0] == "query":
 		if _, ok := query["q"]; !ok && method == "GET" {
@@ -184,7 +196,7 @@ func classify(method string, segs []string, query map[string]refTemplate) routeK
 			return pick(map[string]routeKind{"GET": routeCollRetrieveGet}, "ids", "fields")
 		}
 		return pick(map[string]routeKind{"POST": routeCollRetrievePost})
-	case len(segs) == 4 && segs[0] == "composite" && segs[1] == "sobjects" && segs[2] == "Account" && strings.EqualFold(segs[3], "Compat_Key__c"):
+	case len(segs) == 4 && segs[0] == "composite" && segs[1] == "sobjects" && strings.EqualFold(segs[2], "Account") && strings.EqualFold(segs[3], "Compat_Key__c"):
 		return pick(map[string]routeKind{"PATCH": routeCollUpsert})
 	}
 	return routeUnsupported

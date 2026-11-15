@@ -73,7 +73,7 @@ func TestValidateComposite(t *testing.T) {
 		}
 	}
 	r.CompositeRequest[0].ReferenceID = "a"
-	for _, url := range []string{"https://private_marker.invalid/", "//evil/", "/services/data/v65.0/sobjects/Account/", "/services/data/v65.0/sobjects/Account#x", "/services/data/v65.0/sobjects/%41ccount", "/services/data/v65.0/sobjects/../Account", "/services//data/v65.0/sobjects/Account"} {
+	for _, url := range []string{"https://private_marker.invalid/", "//evil/", "/services/data/v65.0/sobjects/Account//", "/services/data/v65.0/sobjects/Account#x", "/services/data/v65.0/sobjects/%41ccount", "/services/data/v65.0/sobjects/../Account", "/services//data/v65.0/sobjects/Account"} {
 		r.CompositeRequest[0].URL = url
 		if err := validateComposite(r); err == nil {
 			t.Fatal("accepted URL")
@@ -81,7 +81,7 @@ func TestValidateComposite(t *testing.T) {
 	}
 	// Plan 31: well-formed URLs for unsupported routes, versions or objects are
 	// item errors at run time, not request errors.
-	for url, kind := range map[string]routeKind{"/services/data/v65.0/composite": routeUnsupported, "/services/data/v64.0/sobjects/Account": routeUnsupported, "/services/data/v65.0/sobjects/User": routeCreate, "/services/data/v65.0/sobjects/Account?q=1": routeUnsupported} {
+	for url, kind := range map[string]routeKind{"/services/data/v65.0/composite": routeUnsupported, "/services/data/v64.0/sobjects/Account": routeUnsupported, "/services/data/v65.0/sobjects/User": routeCreate, "/services/data/v65.0/sobjects/Account/": routeCreate, "/services/data/v65.0/sobjects/Account?q=1": routeUnsupported} {
 		r.CompositeRequest[0].URL = url
 		plans, err := planComposite(r)
 		if err != nil || plans[0].route.kind != kind {
