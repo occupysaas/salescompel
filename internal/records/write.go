@@ -7,6 +7,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"maps"
+	"salescompel/internal/metadata"
 	"salescompel/internal/recordid"
 	"salescompel/internal/soql"
 	"sort"
@@ -109,7 +110,21 @@ func columns(p Principal, object string, data map[string]any) ([]string, []any, 
 	}
 	return cols, values, casts, nil
 }
+
+// refuseSetupWrite blocks every generic write to a setup object until the
+// setup write rules (Manage Users, revision bumps, system-maintained rows)
+// exist in Task 6. The error is the D33-08 / D33-31 shape: 403
+// INSUFFICIENT_ACCESS_OR_READONLY.
+func refuseSetupWrite(object string) error {
+	if metadata.IsSetupObject(object) {
+		return problem(403, "INSUFFICIENT_ACCESS_OR_READONLY", "insufficient access rights on object id")
+	}
+	return nil
+}
 func create(ctx context.Context, db database, p Principal, object string, data map[string]any) (string, error) {
+	if err := refuseSetupWrite(object); err != nil {
+		return "", err
+	}
 	var err error
 	data, err = canonicalFields(p, object, data)
 	if err != nil {
@@ -162,6 +177,9 @@ func create(ctx context.Context, db database, p Principal, object string, data m
 	return id, dbError(err)
 }
 func update(ctx context.Context, db database, p Principal, object, id string, data map[string]any) error {
+	if err := refuseSetupWrite(object); err != nil {
+		return err
+	}
 	var err error
 	id, err = normalizeID(p, object, id)
 	if err != nil {
@@ -200,6 +218,9 @@ func update(ctx context.Context, db database, p Principal, object, id string, da
 	return nil
 }
 func deleteRecord(ctx context.Context, db database, p Principal, object, id string) error {
+	if err := refuseSetupWrite(object); err != nil {
+		return err
+	}
 	if _, err := Describe(p, object); err != nil {
 		return err
 	}

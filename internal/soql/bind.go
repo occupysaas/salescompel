@@ -108,7 +108,7 @@ func reserveAliases(items []SelectItem) map[string]bool {
 }
 
 func (b *binder) query(q *Query, child bool) (*Bound, error) {
-	obj, err := b.snap.Object(string(q.From))
+	obj, err := b.object(string(q.From))
 	if err != nil {
 		return nil, err
 	}
@@ -315,7 +315,7 @@ func (b *binder) resolveRel(obj metadata.Object, name string) (metadata.Object, 
 		if len(f.ReferenceTo) == 0 {
 			return metadata.Object{}, metadata.Field{}, contract.FieldProblem("INVALID_FIELD", "Field is unavailable", name)
 		}
-		target, err := b.snap.Object(f.ReferenceTo[0])
+		target, err := b.object(f.ReferenceTo[0])
 		if err != nil {
 			return metadata.Object{}, metadata.Field{}, err
 		}
@@ -368,7 +368,7 @@ func (b *binder) bindChild(parent metadata.Object, sub *Query) (BoundChild, erro
 	if !found {
 		return BoundChild{}, contract.FieldProblem("INVALID_FIELD", "Child relationship is unavailable", name)
 	}
-	childObj, err := b.snap.Object(rel.ChildSObject)
+	childObj, err := b.object(rel.ChildSObject)
 	if err != nil {
 		return BoundChild{}, err
 	}

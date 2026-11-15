@@ -178,7 +178,7 @@ func TestInactiveUserHasNoPermissions(t *testing.T) {
 		return e
 	})
 	perms, _ := load(t, p, tenant, user)
-	if perms.System() != (SystemPerms{}) || perms.Object("Account") != (ObjectAccess{}) || perms.Object("Contact") != (ObjectAccess{}) {
+	if perms.System() != (SystemPerms{}) || perms.Object("Account") != (ObjectAccess{}) || perms.Object("Contact") != (ObjectAccess{}) || perms.Object("User").Read {
 		t.Fatalf("inactive user kept access: %+v %+v", perms.System(), perms.Object("Account"))
 	}
 	if missing, _ := load(t, p, tenant, newTestID(t, "005")); missing.Object("Account") != (ObjectAccess{}) {

@@ -176,7 +176,7 @@ func (s *Store) resolveAccess(ctx context.Context, q policy.Querier, p *Principa
 		return e
 	}
 	if p.Location, e = time.LoadLocation(zone); e != nil {
-		return e
+		return errBadZone
 	}
 	perms, ok := s.permsCache().Get(p.Tenant, key, rev)
 	if !ok {
@@ -193,6 +193,8 @@ func (s *Store) resolveAccess(ctx context.Context, q policy.Querier, p *Principa
 	p.Perms = perms
 	return nil
 }
+
+var errBadZone = errors.New("time zone does not load")
 
 func (s *Store) permsCache() *policy.Cache {
 	if s.perms == nil { // a Store built without a constructor (tests)

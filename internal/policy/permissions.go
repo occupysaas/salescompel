@@ -63,11 +63,24 @@ func (p Permissions) Object(object string) ObjectAccess {
 	if p.system.ModifyAllData {
 		return ObjectAccess{true, true, true, true, true, true}
 	}
+	if metadata.IsSetupObject(object) {
+		return setupObjectAccess(p.system, object)
+	}
 	a := p.objects[object]
 	if p.system.ViewAllData {
 		a.Read, a.ViewAll = true, true
 	}
 	return a
+}
+
+// setupObjectAccess is the read rule for setup objects, which never take
+// ObjectPermissions grants: every API-enabled user reads User; the others
+// need Manage Users or View All Data. Empty permissions (an inactive or
+// unknown user) read nothing. Writes are refused by the record path until
+// the setup write rules exist (Task 6).
+func setupObjectAccess(s SystemPerms, object string) ObjectAccess {
+	read := (strings.EqualFold(object, "User") && s.APIEnabled) || s.ManageUsers || s.ViewAllData
+	return ObjectAccess{Read: read, ViewAll: s.ViewAllData}
 }
 
 // FieldRead reports whether the field can be read on the object.
@@ -76,7 +89,8 @@ func (p Permissions) FieldRead(object string, f metadata.Field) bool {
 	if !o.Read {
 		return false
 	}
-	if !Permissionable(f) || p.system.ModifyAllData || p.system.ViewAllData {
+	// Setup-object fields have no field-level security.
+	if !Permissionable(f) || p.system.ModifyAllData || p.system.ViewAllData || metadata.IsSetupObject(object) {
 		return true
 	}
 	return p.fields[fieldKey(object, f)].Read

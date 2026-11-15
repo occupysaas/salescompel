@@ -48,6 +48,9 @@ func LoadPermissions(ctx context.Context, q Querier, tenant, user string) (Permi
 	return Union(sets...), rev, nil
 }
 
+// ErrUnknownRole is returned for a provisioned role with no seeded profile.
+var ErrUnknownRole = errors.New("unknown provisioned role")
+
 // roleProfiles maps a provisioned token's stored role to its seeded profile.
 var roleProfiles = map[string]string{"admin": "System Administrator", "restricted": "Standard User"}
 
@@ -56,7 +59,7 @@ var roleProfiles = map[string]string{"admin": "System Administrator", "restricte
 func RoleProfilePermissions(ctx context.Context, q Querier, tenant, role string) (Permissions, int64, error) {
 	profile, ok := roleProfiles[role]
 	if !ok {
-		return Permissions{}, 0, errors.New("unknown provisioned role")
+		return Permissions{}, 0, ErrUnknownRole
 	}
 	rev, e := Revision(ctx, q, tenant)
 	if e != nil {

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"salescompel/internal/policy"
 )
 
 type TokenGrant struct {
@@ -99,14 +100,19 @@ func (s *Store) AuthenticateAt(ctx context.Context, token string, now time.Time)
 	return Principal{}, problem(401, "INVALID_SESSION_ID", "Invalid session")
 }
 
-// authorized loads a resolved token's permissions; a failure is a server
-// error, never an authenticated principal without permissions.
+// authorized loads a resolved token's permissions. A token whose tenant or
+// role has no setup data to load is an invalid session (fail closed, D33-20);
+// a storage failure is a server error. Either way no principal is returned.
 func (s *Store) authorized(ctx context.Context, p *Principal) error {
-	if e := s.authorize(ctx, p); e != nil {
-		*p = Principal{}
-		return dbError(e)
+	e := s.authorize(ctx, p)
+	if e == nil {
+		return nil
 	}
-	return nil
+	*p = Principal{}
+	if errors.Is(e, pgx.ErrNoRows) || errors.Is(e, policy.ErrUnknownRole) || errors.Is(e, errBadZone) {
+		return problem(401, "INVALID_SESSION_ID", "Invalid session")
+	}
+	return dbError(e)
 }
 
 // Locks always follow app -> user -> code/refresh/access. Admin invalidation locks
