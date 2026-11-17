@@ -35,6 +35,7 @@ type sharer struct {
 	p      *policy.Principal
 	addArg func(any) int
 	user   string
+	tenant string
 }
 
 func (s *sharer) userParam() string {
@@ -44,8 +45,13 @@ func (s *sharer) userParam() string {
 	return s.user
 }
 
-func (s *sharer) principals(alias string) string {
-	return "(SELECT up.principal_id FROM sc_sharing.user_principals up WHERE up.tenant_id=" + alias + ".tenant_id AND up.user_id=" + s.userParam() + ")"
+// principals is uncorrelated (tenant and user are parameters), so the
+// database evaluates it once per statement as a hashed subplan.
+func (s *sharer) principals(string) string {
+	if s.tenant == "" {
+		s.tenant = "$" + itoa(s.addArg(s.p.Tenant))
+	}
+	return "(SELECT up.principal_id FROM sc_sharing.user_principals up WHERE up.tenant_id=" + s.tenant + " AND up.user_id=" + s.userParam() + ")"
 }
 
 func levels(level Level) string {

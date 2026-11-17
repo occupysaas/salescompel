@@ -79,7 +79,7 @@ func TestSharingClauseTerms(t *testing.T) {
 func TestSharingClauseArgs(t *testing.T) {
 	p := sharingPrincipal(crudPerms(), map[string]string{"Account": "None"})
 	got, args := clauseFor(p, "Account", LevelRead)
-	if len(args) != 2 || args[0] != "005u" || args[1] != "obj-Account" || !strings.Contains(got, "user_id=$2") || !strings.Contains(got, "ru.object_id=$3") {
+	if len(args) != 3 || args[0] != "t" || args[1] != "005u" || args[2] != "obj-Account" || !strings.Contains(got, "up.tenant_id=$2 AND up.user_id=$3") || !strings.Contains(got, "ru.object_id=$4") {
 		t.Fatalf("args %v in %s", args, got)
 	}
 }

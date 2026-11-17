@@ -61,11 +61,19 @@ INSERT INTO sc_sharing.user_principals(tenant_id,user_id,principal_id)
 // transaction as any change to roles, groups, members, User.UserRoleId or
 // User.IsActive.
 func RebuildSharing(ctx context.Context, db Executor, tenant string) error {
+	// The closure tables are rewritten wholesale, so their planner
+	// statistics are always stale and a nested loop over them is
+	// quadratic. Hash joins for these statements only; the setting reverts
+	// to the transaction's previous value afterwards.
+	if _, err := db.Exec(ctx, "SET LOCAL enable_nestloop = off"); err != nil {
+		return err
+	}
 	// Parameters need one statement per call.
 	for _, stmt := range strings.Split(closureSQL, ";\n") {
 		if _, err := db.Exec(ctx, stmt, tenant); err != nil {
 			return err
 		}
 	}
-	return nil
+	_, err := db.Exec(ctx, "SET LOCAL enable_nestloop = on")
+	return err
 }
