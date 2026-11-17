@@ -15,6 +15,10 @@ func TestSetupObjectsMatchSpec(t *testing.T) {
 		"Profile": {"00e", false, false, false}, "PermissionSet": {"0PS", true, true, true},
 		"ObjectPermissions": {"110", true, true, true}, "FieldPermissions": {"01k", true, true, true},
 		"PermissionSetAssignment": {"0Pa", true, false, true},
+		// Plan 34 sharing objects.
+		"UserRole": {"00E", true, true, true}, "Group": {"00G", true, true, true},
+		"GroupMember": {"011", true, false, true}, "AccountShare": {"00r", true, true, true},
+		"ContactShare": {"03s", true, true, true},
 	}
 	objects := SetupObjects()
 	if len(objects) != len(want) {

@@ -112,7 +112,7 @@ func TestMigrationFieldTypesUpgrade(t *testing.T) {
 		p.QueryRow(ctx, `SELECT (SELECT jsonb_agg(jsonb_build_array(id,name,compat_key,compat_key_canonical) ORDER BY id) FROM accounts)::text||
 			(SELECT jsonb_agg(jsonb_build_array(id,first_name,last_name,account_id) ORDER BY id) FROM contacts)::text||
 			(SELECT jsonb_agg(jsonb_build_array(id,name,f_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa) ORDER BY id) FROM sc_records.o_0123456789abcdef0123456789abcdef)::text||
-			(SELECT jsonb_agg(jsonb_build_array(tenant_id,id,api_name,physical_column,ordinal) ORDER BY id) FROM sc_catalog.fields WHERE ordinal<4 AND object_id NOT IN (SELECT id FROM sc_catalog.objects WHERE physical_schema='sc_setup'))::text||
+			(SELECT jsonb_agg(jsonb_build_array(tenant_id,id,api_name,physical_column,ordinal) ORDER BY id) FROM sc_catalog.fields WHERE ordinal<4 AND api_name<>'OwnerId' AND object_id NOT IN (SELECT id FROM sc_catalog.objects WHERE physical_schema='sc_setup'))::text||
 			(SELECT jsonb_agg(jsonb_build_array(tenant_id,revision) ORDER BY tenant_id) FROM sc_catalog.revisions)::text`).Scan(&out)
 		return out
 	}
@@ -224,7 +224,7 @@ func TestMigrationChildRelationshipBackfill(t *testing.T) {
 		t.Fatalf("0005 changed values or IDs:\n%s\n%s", before, after)
 	}
 	names := map[string]string{}
-	rows, e := p.Query(ctx, `SELECT o.api_name||'.'||f.api_name, f.definition->'options'->>'childRelationshipName' FROM sc_catalog.fields f JOIN sc_catalog.objects o ON o.tenant_id=f.tenant_id AND o.id=f.object_id WHERE f.tenant_id='t1' AND f.definition->'options'->>'kind' IN ('Lookup','MasterDetail') ORDER BY o.api_name,f.ordinal`)
+	rows, e := p.Query(ctx, `SELECT o.api_name||'.'||f.api_name, f.definition->'options'->>'childRelationshipName' FROM sc_catalog.fields f JOIN sc_catalog.objects o ON o.tenant_id=f.tenant_id AND o.id=f.object_id WHERE f.tenant_id='t1' AND f.api_name<>'OwnerId' AND f.definition->'options'->>'kind' IN ('Lookup','MasterDetail') ORDER BY o.api_name,f.ordinal`)
 	if e != nil {
 		t.Fatal(e)
 	}

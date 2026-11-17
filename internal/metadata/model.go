@@ -226,7 +226,9 @@ func (s Snapshot) ChildRelationships(object string) []ChildRelationship {
 	out := []ChildRelationship{}
 	for _, o := range s.Objects {
 		for _, f := range o.Fields {
-			if !f.Options.Kind.Reference() || !fieldReferences(f, object) {
+			// OwnerId exposes no child relationship on User, and share
+			// objects none on their parent (Plan 34, G34-14).
+			if !f.Options.Kind.Reference() || !fieldReferences(f, object) || f.Name == "OwnerId" || IsShareObject(o.Name) {
 				continue
 			}
 			out = append(out, ChildRelationship{

@@ -99,6 +99,7 @@ func StandardObjects() []Object {
 			fs[i] = Complete(fs[i])
 		}
 	}
+	account, contact = append(account, OwnerField()), append(contact, OwnerField())
 	return append([]Object{
 		{Name: "Account", Label: "Account", PluralLabel: "Accounts", Standard: true, Schema: "public", Table: "accounts", Prefix: "001", Fields: account},
 		{Name: "Contact", Label: "Contact", PluralLabel: "Contacts", Standard: true, Schema: "public", Table: "contacts", Prefix: "003", Fields: contact},
@@ -106,7 +107,11 @@ func StandardObjects() []Object {
 }
 
 func insertField(ctx context.Context, tx pgx.Tx, tenant, obj string, f Field, ordinal int) error {
-	f = Complete(f)
+	if f.Name == "OwnerId" && f.Options.Kind == fieldtype.Lookup {
+		f = OwnerField() // Complete would clear DefaultedOnCreate
+	} else {
+		f = Complete(f)
+	}
 	id := f.ID
 	if id == "" {
 		id = randomID()
@@ -141,7 +146,10 @@ func SeedTenant(ctx context.Context, tx pgx.Tx, tenant string) error {
 			}
 		}
 	}
-	return seedProfiles(ctx, tx, tenant)
+	if e = seedProfiles(ctx, tx, tenant); e != nil {
+		return e
+	}
+	return seedSharing(ctx, tx, tenant)
 }
 
 var systemFields = map[string]bool{

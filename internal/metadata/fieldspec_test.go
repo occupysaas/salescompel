@@ -207,7 +207,7 @@ func TestMasterDetailRequiresEmpty(t *testing.T) {
 	}
 	var n int
 	p.QueryRow(ctx, "SELECT count(*) FROM information_schema.columns WHERE table_name=$1", o.Table).Scan(&n)
-	if n != 3 || revision(t, p, "md") != before {
+	if n != 4 || revision(t, p, "md") != before {
 		t.Fatalf("partial change: %d columns, revision %d→%d", n, before, revision(t, p, "md"))
 	}
 }
@@ -312,7 +312,7 @@ func TestStoredFieldReservesName(t *testing.T) {
 	}
 	var n int
 	p.QueryRow(ctx, "SELECT count(*) FROM information_schema.columns WHERE table_name=$1", o.Table).Scan(&n)
-	if n != 3 {
+	if n != 4 {
 		t.Fatalf("stored definition created a column: %d", n)
 	}
 	var source []byte

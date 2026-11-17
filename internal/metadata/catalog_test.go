@@ -81,7 +81,7 @@ func TestTenantCatalogNames(t *testing.T) {
 		t.Fatal(e)
 	}
 	project, e := snapshot.Object("pRoJeCt__c")
-	if e != nil || project.Name != "Project__c" || len(project.Fields) != 3 {
+	if e != nil || project.Name != "Project__c" || len(project.Fields) != 4 {
 		t.Fatal(project, e)
 	}
 	if snapshot.Revision != 3 {

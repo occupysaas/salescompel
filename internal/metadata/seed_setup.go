@@ -87,7 +87,8 @@ func objectPermissionFields() []Field {
 	}
 }
 
-// SetupObjects returns the seven Plan 33 setup objects, stored in sc_setup.
+// SetupObjects returns the seven Plan 33 setup objects and the five Plan 34
+// sharing objects, stored in sc_setup.
 // Access follows the spec's Objects table; setup objects never receive
 // ObjectPermissions or FieldPermissions grants (D33-32).
 //
@@ -111,6 +112,7 @@ func SetupObjects() []Object {
 		setupField("NamespacePrefix", "Namespace Prefix", "namespace_prefix", fieldtype.Text, 15, true, false),
 		setupField("OrganizationType", "Edition", "organization_type", fieldtype.Text, 40, false, false),
 	}
+	organization = append(organization, orgAccessFields()...)
 	first := setupField("FirstName", "First Name", "first_name", fieldtype.Text, 40, true, true)
 	last := setupField("LastName", "Last Name", "last_name", fieldtype.Text, 80, false, true)
 	first.CompoundFieldName, last.CompoundFieldName = ptr("Name"), ptr("Name")
@@ -126,6 +128,7 @@ func SetupObjects() []Object {
 		setupPicklist("LocaleSidKey", "Locale", "locale_sid_key", LocaleSidKeys, true),
 		setupPicklist("LanguageLocaleKey", "Language", "language_locale_key", LanguageLocaleKeys, true),
 		setupPicklist("EmailEncodingKey", "Email Encoding", "email_encoding_key", EmailEncodingKeys, true),
+		userRoleField(),
 	}
 	user[7].DefaultValue = true // IsActive defaults to true, as the column does
 	profile := append([]Field{id, named(255, false),
@@ -163,10 +166,13 @@ func SetupObjects() []Object {
 		{Name: "FieldPermissions", Label: "Field Permissions", PluralLabel: "Field Permissions", Table: "field_permissions", Prefix: "01k", Fields: fieldPerms, Createable: true, Updateable: true, Deletable: true},
 		{Name: "PermissionSetAssignment", Label: "Permission Set Assignment", PluralLabel: "Permission Set Assignments", Table: "permission_set_assignments", Prefix: "0Pa", Fields: assignment, Createable: true, Deletable: true},
 	}
+	objects = append(objects, sharingObjects()...)
 	for i := range objects {
 		objects[i].Standard, objects[i].Schema, objects[i].Queryable = true, SetupSchema, true
 		for j := range objects[i].Fields {
-			objects[i].Fields[j] = Complete(objects[i].Fields[j])
+			if objects[i].Fields[j].Name != "OwnerId" {
+				objects[i].Fields[j] = Complete(objects[i].Fields[j])
+			}
 		}
 	}
 	return objects
@@ -182,7 +188,7 @@ var setupFlags = func() map[string]Object {
 	return out
 }()
 
-// IsSetupObject reports whether name is one of the seven setup objects.
+// IsSetupObject reports whether name is one of the setup objects.
 func IsSetupObject(name string) bool {
 	_, ok := setupFlags[strings.ToLower(name)]
 	return ok

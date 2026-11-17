@@ -303,7 +303,7 @@ func TestSetupTablesForceRLS(t *testing.T) {
 		tables = append(tables, name)
 	}
 	rows.Close()
-	want := "field_permissions,object_permissions,permission_set_assignments,permission_sets,profiles,revisions,users"
+	want := "field_permissions,group_members,groups,object_permissions,permission_set_assignments,permission_sets,profiles,revisions,user_roles,users"
 	if strings.Join(tables, ",") != want {
 		t.Fatalf("sc_setup tables = %v", tables)
 	}
