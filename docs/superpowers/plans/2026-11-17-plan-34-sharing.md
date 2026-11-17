@@ -3,7 +3,7 @@
 > **For agentic workers:** use superpowers:subagent-driven-development or
 > superpowers:executing-plans, task by task. Steps use checkbox syntax.
 
-**Status:** Draft, 2026-11-17. Waiting on the maintainer's review of the
+**Status:** Tasks 0-1 done, 2026-11-17 ([reference record](../../compat/plan-34-sharing.md)). Waiting on the maintainer's review of the
 spec and the `OwnerId` boundary with Plan 30 (#24).
 
 **Goal:** Record ownership, org-wide defaults, the role hierarchy, groups,
@@ -26,8 +26,9 @@ spec wins and the plan is corrected.
   request. Sharing data is read in that transaction.
 - Plan 33's access matrix (`TestAccessMatrixNoUnexpectedGrants`), Plan 31's
   Composite and Collections tests, and every Plan 24–33 acceptance gate stay
-  green without editing their assertions. Tenants stay at Public Read/Write
-  until a test changes the OWD, so existing tests see no change.
+  green without editing their assertions. Tenants start at Salesforce's new-org
+  OWDs (Account and custom objects Public Read/Write, Contact Controlled by
+  Parent, D34-18), which give today's access, so existing tests see no change.
 - No source file over 500 lines: `sh scripts/check-file-size.sh` before every
   commit. `soql/bind.go` (494), `soql/compile.go` (434), `records/write.go`
   (424) and `metadata/admin.go` (443) are near the limit: new code goes into
@@ -75,33 +76,33 @@ spec wins and the plan is corrected.
 
 **Files:** `openspec/changes/plan-34-sharing/`.
 
-- [ ] `proposal.md`, `design.md` (decisions from the spec's "Calls made"),
+- [x] `proposal.md`, `design.md` (decisions from the spec's "Calls made"),
       `tasks.md` mirroring this plan, and `specs/sharing/spec.md` with one
       requirement per enforced rule (ownership, OWD, hierarchy, groups,
       manual shares, rules, implicit sharing, enforcement points, errors,
       migration). Requirement IDs `shr-NN`, referenced from code comments as
       `// spec: shr-NN`, as Plans 29 and 31 do.
-- [ ] Regenerate digests with `.git/sc-openspec-digest.py
+- [x] Regenerate digests with `.git/sc-openspec-digest.py
       openspec/changes/plan-34-sharing`.
-- [ ] Commit `docs: add Plan 34 OpenSpec change`.
+- [x] Commit `docs: add Plan 34 OpenSpec change`.
 
 ### Task 1: Observation and changelog review
 
 **Files:** `docs/compat/plan-34-sharing.md`, `docs/compat/sources.yaml`.
 
-- [ ] Review Salesforce release notes since the Plan 33 review for sharing,
+- [x] Review Salesforce release notes since the Plan 33 review for sharing,
       roles, groups, share objects and `OwnerId`. Record relevant items.
-- [ ] If a trial-org session is available (CLEAN_ROOM.md), observe: REST GET,
+- [x] If a trial-org session is available (CLEAN_ROOM.md), observe: REST GET,
       PATCH and DELETE on a hidden record and on a read-only record (status,
       `errorCode`, message); `AccountShare` insert by a non-owner;
       `RowCause` values returned by a share query; Account transfer effect on
       the old owner's Contacts; deactivation effect on manual shares and group
       membership; parent fields through a lookup to a hidden record; upsert
       matching a hidden record; `UserRole` delete with members.
-- [ ] Otherwise record each as `documented` with its source, and list it as
+- [x] Otherwise record each as `documented` with its source, and list it as
       a gap. Every "Task 1 confirms" item in the spec gets a row.
-- [ ] Append sources to `docs/compat/sources.yaml` (keep existing bytes).
-- [ ] Commit `docs: record Plan 34 observations and sources`.
+- [x] Append sources to `docs/compat/sources.yaml` (keep existing bytes).
+- [x] Commit `docs: record Plan 34 observations and sources`.
 
 ### Task 2: Migration and upgrade test
 
@@ -112,7 +113,7 @@ spec wins and the plan is corrected.
       with two tenants, admin and standard users, a static principal,
       Accounts, Contacts and a custom object with rows; migrate; assert
       `owner_id` backfilled to the default owner (oldest active System
-      Administrator, else oldest active user), OWD rows Public Read/Write,
+      Administrator, else oldest active user), OWD rows per D34-19,
       one Organization group per tenant with every active user, and each
       user's visible record set unchanged.
 - [ ] `TestMigrationSharingRLS`: every `sc_sharing` table has RLS forced
@@ -153,12 +154,14 @@ spec wins and the plan is corrected.
       or children refused; cycle refused), `TestUserRoleIdOnUser`,
       `TestGroupRegularCRUD`, `TestGroupSystemTypesReadOnly`,
       `TestGroupMemberNestingAndCycle`, `TestClosureRebuild` (direct,
-      nested, Role, RoleAndSubordinates, Organization, deactivation removes
-      memberships and manual shares to the user),
+      nested, Role, both subordinate types, Organization; deactivation keeps
+      role and GroupMember rows, drops the user from the closure and deletes
+      manual shares to them, D34-25),
       `TestSharingRevisionBumps`.
 - [ ] Register UserRole (00E), Group (00G), GroupMember (011) as setup
-      objects with Plan 33's setup-write rules. Role groups are created and
-      deleted with their role.
+      objects with Plan 33's setup-write rules. Role, RoleAndSubordinates and
+      RoleAndSubordinatesInternal groups are created and deleted with their
+      role (D34-12).
 - [ ] Rebuild `user_groups` for the tenant in the writing transaction after
       any change listed in the spec, and bump the sharing revision.
 - [ ] `TestSharingClosureConcurrent`: concurrent role move and queries under
@@ -219,7 +222,8 @@ subqueries), tests.
 - [ ] Failing tests: `TestSharingUpdateDelete` (hidden: unknown ID;
       readable not editable: `INSUFFICIENT_ACCESS_OR_READONLY`; delete needs
       owner-level access), `TestOwnerTransfer` (who may; Transfer Record
-      permission), `TestOwnerTransferDropsManualShares`,
+      permission stored, not enforced, D34-09),
+      `TestOwnerTransferDropsManualShares` (and the Account's Contact shares),
       `TestAccountTransferMovesContacts` (per Task 1),
       `TestLookupToHiddenRecord`, `TestUpsertMatchesHidden`,
       `TestSharingHiddenEqualsMissing` (REST, Composite and Collections
@@ -264,8 +268,8 @@ a SQL view per share object or a compiler source, tests.
 
 **Files:** `soql/sharing.go` terms, `records` tests.
 
-- [ ] Failing tests: `TestContactControlledByParent` (including private
-      contacts with no Account), `TestAccountOwnerContactAccess`
+- [ ] Failing tests: `TestContactControlledByParent` (private contacts
+      with no Account: owner and bypass holders only, D34-23), `TestAccountOwnerContactAccess`
       (`ContactAccessForAccountOwner` Read and Edit),
       `TestImplicitParentRead`, `TestMasterDetailControlledByParent`.
 - [ ] Commit `feat: add Account and Contact implicit sharing`.

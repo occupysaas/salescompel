@@ -6,7 +6,7 @@
     {
       "path": "specs/sharing/spec.md",
       "kind": "normative",
-      "digest": "sha256:b29f9b1552db8f58f299b877bb8d89e7bbaf02fdf929e84cf9ed2ee57f03c15b"
+      "digest": "sha256:aba2d46a6edc2f0bcfee5d35907433e32424ffe7323fb5f22af6990069e8f9a9"
     },
     {
       "path": "proposal.md",
@@ -16,12 +16,12 @@
     {
       "path": "design.md",
       "kind": "normative",
-      "digest": "sha256:16609814a47012945a79c0f93f1d85e6ed30da3e868a512289e993c0340ec80c"
+      "digest": "sha256:cec217531719223d4bf7a9d25da6cccd117a4219b2d713b060ddbf57481841bc"
     },
     {
       "path": "tasks.md",
       "kind": "informative",
-      "digest": "sha256:8529bc45187b617b2d5c0e5d5d3613b5f556d6f39ec6eae394d169024e7564d9"
+      "digest": "sha256:7c34ba0cfda2cb2b19a42d9afef72b43f6290e4d4f692ac7a1b7494af9986c44"
     }
   ],
   "imports": []

@@ -153,22 +153,22 @@ the maintainer and Plan 30's claimant to confirm.
   requires.
 - **Transfer (an update that changes `OwnerId`):** allowed for the owner, a
   user above the owner in the role hierarchy, and holders of Modify All on
-  the object or Modify All Data. The "Transfer Record" system permission is
-  exposed on Profile and PermissionSet and enforced for users who have Edit
-  access to the record but don't own it, as documented (Task 1 confirms). On transfer:
-  - manual shares on the record are deleted, as Salesforce does
-  - for Account, Contacts the old owner owned under it move to the new owner,
-    matching the documented API behaviour (Task 1 confirms; if Salesforce
-    keeps them, the builder follows that and logs it)
+  the object or Modify All Data (D34-09). The "Transfer Record" system
+  permission is stored and not enforced: Salesforce documents it for mass
+  transfer. On transfer:
+  - manual shares on the record are deleted, as Salesforce does; for an
+    Account, the old owner's manual shares on its Contacts too (D34-10)
+  - for Account, Contacts the old owner owned under it move to the new owner
+    (D34-11, assumed from the Mass Transfer documentation)
 - **Static-token principals** (`salescompel provision`) have no User row.
   Records they create are owned by the tenant's **default owner**: the
   oldest active user with System Administrator. A `restricted` static
   principal sees only what OWDs and Organization-group shares and rules
   grant. Recorded as a gap; Plan 33 already notes `provision` may retire.
-- **Deactivating a user** keeps their records owned by them, as on Salesforce.
-  Their group memberships and the manual shares granted to them are removed,
-  as documented (Task 1 confirms), so no access lingers on reactivation
-  beyond what the role gives.
+- **Deactivating a user** keeps their records, role and GroupMember rows, as
+  on Salesforce. They leave the effective closure, so they lose all record
+  access at once, and the manual shares granted to them are deleted in the
+  same transaction (D34-25).
 
 ### Org-wide defaults
 
@@ -195,10 +195,11 @@ the maintainer and Plan 30's claimant to confirm.
 - **Changing an OWD:** `salescompel sharing set-default <Object> <value>`
   until Plan 36 has a setup page. It bumps the tenant's sharing revision.
   Effective immediately.
-- **Defaults:** Salesforce creates new orgs with Account and Contact at
-  Public Read/Write and custom objects at Public Read/Write. New tenants
-  start the same way, and the migration sets every existing object to
-  Public Read/Write, so nobody's access changes on upgrade.
+- **Defaults:** Salesforce creates new orgs with Account at Public
+  Read/Write, Contact Controlled by Parent and custom objects at Public
+  Read/Write (D34-18). New tenants start the same way, and the migration sets
+  existing tenants to the same values, which give exactly today's access
+  (D34-19).
 
 ### Roles
 
@@ -221,7 +222,10 @@ the maintainer and Plan 30's claimant to confirm.
 ### Groups
 
 - **Group** (00G): Name, DeveloperName, Type (`Regular`, `Role`,
-  `RoleAndSubordinates`, `Organization`), RelatedId, DoesIncludeBosses.
+  `RoleAndSubordinates`, `RoleAndSubordinatesInternal` (Winter '26),
+  `Organization`), RelatedId, DoesIncludeBosses (stored, not enforced). Each
+  role gets its Role and both subordinate groups; with no portal users the two
+  subordinate groups have the same members (D34-12).
   Regular groups are createable, updateable and deletable by Manage Users.
   Role and Organization groups are system-maintained and read-only, as on
   Salesforce.
@@ -250,8 +254,9 @@ the maintainer and Plan 30's claimant to confirm.
   presented as the per-object share objects through the catalog. A share
   object exists only for an object whose OWD is not Public Read/Write, as on
   Salesforce; for other objects it isn't describable (INVALID_TYPE).
-- **Levels:** `Read` or `Edit` on create. `All` appears only on computed
-  Owner rows. Edit implies Read.
+- **Levels:** `Read` or `Edit` on create, and more open than the OWD. `All`
+  appears only on computed Owner rows. Edit implies Read. Inserting a share
+  for an existing (record, grantee) pair updates that row (D34-06).
 - **Who can share:** the owner, a user above the owner in the hierarchy, and
   Modify All / Modify All Data holders, as documented. Others get
   `INSUFFICIENT_ACCESS_OR_READONLY` (Task 1 confirms).
@@ -281,12 +286,14 @@ the maintainer and Plan 30's claimant to confirm.
 
 - **Contact ControlledByParent:** a contact is visible or editable exactly
   when its Account is. A contact with no Account is visible only to its
-  owner, users above the owner, and View/Modify All holders, as on
-  Salesforce (private contacts).
+  owner and View/Modify All holders, not through the hierarchy, shares or
+  rules, as on Salesforce (private contacts, D34-23).
 - **Account owner's access to children:** the Account owner's access to
   Contacts under it follows the owner's role setting
   `ContactAccessForAccountOwner` (Read or Edit) when Contact OWD is Private.
-- **Implicit parent:** a user who can see a Contact gets Read on its Account.
+- **Implicit parent:** a user who reaches a Contact through ownership, the
+  hierarchy, a share or a rule gets Read on its Account. View All / Modify All
+  on Contact don't count (D34-21).
 - Opportunity and Case join this list in their own plans.
 - Master-detail custom objects: the detail's access is the master's.
   Lookups give no implicit access.
@@ -362,8 +369,8 @@ the maintainer and Plan 30's claimant to confirm.
   `group_members`, `user_groups`, `shares`, `owner_rules` and `revisions`,
   all tenant-scoped with RLS forced, and grants for the records login.
 - Adds `user_role_id` to `sc_setup.users`.
-- Sets every existing object to Public Read/Write and creates each tenant's
-  Organization group.
+- Sets Account and custom objects to Public Read/Write and Contact to
+  Controlled by Parent, and creates each tenant's Organization group.
 - Registers the new setup objects and share objects in each tenant catalog.
 - The upgrade test runs the migration on a Plan 33 database with data and
   shows every user's visible records are unchanged.
@@ -413,8 +420,9 @@ the maintainer and Plan 30's claimant to confirm.
   recalculates some changes asynchronously.
 - Computed Owner and Rule rows appear in share-object queries; implicit
   rows don't.
-- Existing tenants and new tenants start at Public Read/Write everywhere, so
-  the upgrade changes nobody's access.
+- Tenants start with Salesforce's new-org defaults (Account and custom
+  objects Public Read/Write, Contact Controlled by Parent), so the upgrade
+  changes nobody's access.
 - Static-token principals own nothing; their records go to the default owner.
 - Owner-based sharing rules are managed by an operator command until Plan 35.
 - OWDs are set by an operator command until a setup UI exists.
@@ -422,5 +430,7 @@ the maintainer and Plan 30's claimant to confirm.
 - Account transfer moves the old owner's Contacts under it (pending Task 1).
 - Query locator pages drop records that lost visibility after capture.
 - A hidden parent behaves as null in relationship paths.
-- Deactivation removes the user's group memberships and manual shares to
-  them.
+- Deactivation keeps the user's role and memberships but removes them from
+  the closure and deletes manual shares to them.
+- Transfer Record is stored, not enforced.
+- Task 1 record: `docs/compat/plan-34-sharing.md` (D34-01 to D34-31).

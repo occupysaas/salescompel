@@ -33,7 +33,8 @@ are the implementation order.
    materialized share rows.
 3. Share-object queries return stored Manual rows plus computed Owner and Rule
    rows; implicit rows are not returned.
-4. Existing and new tenants start at Public Read/Write on every object.
+4. Tenants start with Salesforce's new-org OWDs: Account and custom objects
+   Public Read/Write, Contact Controlled by Parent.
 5. Static-token principals own nothing; records they create go to the
    tenant's default owner (oldest active System Administrator).
 6. OWDs and owner-based sharing rules are set with `salescompel sharing`
@@ -44,8 +45,11 @@ are the implementation order.
    lost visibility after capture.
 10. A hidden parent in a relationship path behaves as null in results and
     filters.
-11. Deactivating a user removes their group memberships and the manual shares
-    granted to them.
+11. Deactivating a user keeps their role and memberships, removes them from
+    the closure and deletes the manual shares granted to them.
+12. Transfer Record is stored, not enforced; single transfers follow owner,
+    hierarchy and Modify All (D34-09).
+13. Task 1 decisions and gaps live in `docs/compat/plan-34-sharing.md`.
 
 ## Risks / Trade-offs
 

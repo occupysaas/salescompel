@@ -415,3 +415,183 @@ sources:
     version: Public mutable REST guide read 2026-11-15
     claim: Collections delete across objects
     extraction: documentation-reviewed
+  - id: sharing-plan34-r1
+    url: https://developer.salesforce.com/docs/platform/api-rest/guide/errorcodes.html
+    accessedAt: 2026-11-17
+    version: Public mutable documentation read 2026-11-17 (search extract)
+    claim: REST status codes; 404 hints at sharing
+    extraction: reverify
+  - id: sharing-plan34-r2
+    url: https://developer.salesforce.com/docs/platform/api-rest/guide/resources-composite-sobjects-collections-retrieve.html
+    accessedAt: 2026-11-17
+    version: Public mutable documentation read 2026-11-17 (search extract)
+    claim: Collections retrieve null for inaccessible IDs
+    extraction: reverify
+  - id: sharing-plan34-r3
+    url: https://developer.salesforce.com/docs/platform/api/guide/sforce-api-calls-concepts-core-data-objects.html
+    accessedAt: 2026-11-17
+    version: Public mutable documentation read 2026-11-17 (search extract)
+    claim: StatusCode list, INSUFFICIENT_ACCESS_OR_READONLY
+    extraction: reverify
+  - id: sharing-plan34-o1
+    url: https://developer.salesforce.com/docs/atlas.en-us.object_reference.meta/object_reference/sforce_api_objects_accountshare.htm
+    accessedAt: 2026-11-17
+    version: Public mutable documentation read 2026-11-17 (search extract)
+    claim: AccountShare fields, levels, Manual RowCause
+    extraction: reverify
+  - id: sharing-plan34-o2
+    url: https://developer.salesforce.com/docs/platform/object-reference/references/standard-objects/object-group.html
+    accessedAt: 2026-11-17
+    version: Public mutable documentation read 2026-11-17 (search extract)
+    claim: Group types, DoesIncludeBosses, RelatedId
+    extraction: reverify
+  - id: sharing-plan34-o3
+    url: https://developer.salesforce.com/docs/atlas.en-us.object_reference.meta/object_reference/sforce_api_objects_groupmember.htm
+    accessedAt: 2026-11-17
+    version: Public mutable documentation read 2026-11-17 (search extract)
+    claim: GroupMember fields and nesting
+    extraction: reverify
+  - id: sharing-plan34-o4
+    url: https://developer.salesforce.com/docs/platform/object-reference/references/standard-objects/object-organization.html
+    accessedAt: 2026-11-17
+    version: Public mutable documentation read 2026-11-17 (search extract)
+    claim: Organization DefaultAccountAccess and DefaultContactAccess
+    extraction: reverify
+  - id: sharing-plan34-f1
+    url: https://developer.salesforce.com/docs/platform/field-reference/references/field-reference/salesforce-field-reference-userrole.html
+    accessedAt: 2026-11-17
+    version: Public mutable documentation read 2026-11-17 (search extract)
+    claim: UserRole fields
+    extraction: reverify
+  - id: sharing-plan34-a1
+    url: https://developer.salesforce.com/docs/platform/apex-dev/references/apex-dev/apex-bulk-sharing-understanding.html
+    accessedAt: 2026-11-17
+    version: Public mutable documentation read 2026-11-17 (search extract)
+    claim: Custom __Share fields and rules
+    extraction: reverify
+  - id: sharing-plan34-a2
+    url: https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_classes_enforce_usermode.htm
+    accessedAt: 2026-11-17
+    version: Public mutable documentation read 2026-11-17 (search extract)
+    claim: WITH USER_MODE and SYSTEM_MODE (Apex)
+    extraction: reverify
+  - id: sharing-plan34-h1
+    url: https://help.salesforce.com/s/articleView?id=platform.granting_access_to_records.htm
+    accessedAt: 2026-11-17
+    version: Public mutable documentation read 2026-11-17 (search extract)
+    claim: Who can grant manual shares
+    extraction: reverify
+  - id: sharing-plan34-h2
+    url: https://help.salesforce.com/s/articleView?language=en_US&id=platform.security_sharing_considerations.htm
+    accessedAt: 2026-11-17
+    version: Public mutable documentation read 2026-11-17 (search extract)
+    claim: Sharing considerations
+    extraction: reverify
+  - id: sharing-plan34-h3
+    url: https://help.salesforce.com/s/articleView?id=000385539&language=en_US&type=1
+    accessedAt: 2026-11-17
+    version: Public mutable documentation read 2026-11-17 (search extract)
+    claim: Ownership transfer permissions and manual shares
+    extraction: reverify
+  - id: sharing-plan34-h4
+    url: https://help.salesforce.com/s/articleView?language=en_US&id=sf.account_owner.htm&type=5
+    accessedAt: 2026-11-17
+    version: Public mutable documentation read 2026-11-17 (search extract)
+    claim: Account owner change
+    extraction: reverify
+  - id: sharing-plan34-h5
+    url: https://help.salesforce.com/s/articleView?language=en_US&id=platform.admin_transfer.htm&type=5
+    accessedAt: 2026-11-17
+    version: Public mutable documentation read 2026-11-17 (search extract)
+    claim: Mass transfer related records
+    extraction: reverify
+  - id: sharing-plan34-h6
+    url: https://help.salesforce.com/s/articleView?id=000381884&language=en_US&type=1
+    accessedAt: 2026-11-17
+    version: Public mutable documentation read 2026-11-17 (search extract)
+    claim: Nested public groups as GroupMember
+    extraction: reverify
+  - id: sharing-plan34-h7
+    url: https://help.salesforce.com/s/articleView?id=platform.user_role_fields.htm&language=en_US&type=5
+    accessedAt: 2026-11-17
+    version: Public mutable documentation read 2026-11-17 (search extract)
+    claim: Role access fields for account owners
+    extraction: reverify
+  - id: sharing-plan34-h8
+    url: https://help.salesforce.com/s/articleView?id=sf.admin_sharing.htm&language=en_US&type=5
+    accessedAt: 2026-11-17
+    version: Public mutable documentation read 2026-11-17 (search extract)
+    claim: Org-wide default values
+    extraction: reverify
+  - id: sharing-plan34-h9
+    url: https://help.salesforce.com/s/articleView?id=sf.sharing_model_fields.htm&language=en_US&type=5
+    accessedAt: 2026-11-17
+    version: Public mutable documentation read 2026-11-17 (search extract)
+    claim: Sharing model fields and Account/Contact pairing
+    extraction: reverify
+  - id: sharing-plan34-h10
+    url: https://help.salesforce.com/s/articleView?id=security_sharing_owd_default_settings.htm&language=en_US&type=5
+    accessedAt: 2026-11-17
+    version: Public mutable documentation read 2026-11-17 (search extract)
+    claim: New-org default OWDs
+    extraction: reverify
+  - id: sharing-plan34-h11
+    url: https://help.salesforce.com/s/articleView?language=en_US&id=sf.sharing_across_objects.htm&type=5
+    accessedAt: 2026-11-17
+    version: Public mutable documentation read 2026-11-17 (search extract)
+    claim: Implicit sharing and private contacts
+    extraction: reverify
+  - id: sharing-plan34-h12
+    url: https://help.salesforce.com/s/articleView?id=platform.setup_roles_guidelines.htm&language=en_US&type=5
+    accessedAt: 2026-11-17
+    version: Public mutable documentation read 2026-11-17 (search extract)
+    claim: Grant Access Using Hierarchies
+    extraction: reverify
+  - id: sharing-plan34-h13
+    url: https://help.salesforce.com/s/articleView?language=en_US&id=platform.users_deactivate_considerations.htm&type=5
+    accessedAt: 2026-11-17
+    version: Public mutable documentation read 2026-11-17 (search extract)
+    claim: User deactivation effects
+    extraction: reverify
+  - id: sharing-plan34-h14
+    url: https://help.salesforce.com/s/articleView?id=security_sharing_delete_obsolete_shares.htm&language=en_US&type=5
+    accessedAt: 2026-11-17
+    version: Public mutable documentation read 2026-11-17 (search extract)
+    claim: Obsolete share deletion
+    extraction: reverify
+  - id: sharing-plan34-h15
+    url: https://help.salesforce.com/s/articleView?id=sf.security_about_sharing_rules.htm&language=en_US&type=5
+    accessedAt: 2026-11-17
+    version: Public mutable documentation read 2026-11-17 (search extract)
+    claim: Owner-based sharing rules
+    extraction: reverify
+  - id: sharing-plan34-n1
+    url: https://help.salesforce.com/s/articleView?id=005103630&language=en_US&type=1
+    accessedAt: 2026-11-17
+    version: Public mutable documentation read 2026-11-17 (search extract)
+    claim: Asynchronous sharing recalculation
+    extraction: reverify
+  - id: sharing-plan34-n2
+    url: https://help.salesforce.com/s/articleView?id=release-notes.rn_customization_apex_sharing_ru.htm&release=260&type=5&language=en_US
+    accessedAt: 2026-11-17
+    version: Public mutable documentation read 2026-11-17 (search extract)
+    claim: Apex sharing recalculation release update
+    extraction: reverify
+  - id: sharing-plan34-n3
+    url: https://help.salesforce.com/s/articleView?id=002628970&language=en_US&type=1
+    accessedAt: 2026-11-17
+    version: Public mutable documentation read 2026-11-17 (search extract)
+    claim: RoleAndSubordinatesInternal group type
+    extraction: reverify
+  - id: sharing-plan34-n4
+    url: https://help.salesforce.com/s/articleView?id=release-notes.rn_sharing_account_sharing_update.htm&language=en_US&release=244&type=5
+    accessedAt: 2026-11-17
+    version: Public mutable documentation read 2026-11-17 (search extract)
+    claim: Implicit child shares computed at access time
+    extraction: reverify
+  - id: sharing-plan34-k1
+    url: https://help.salesforce.com/s/issue?id=a028c00000qPwqsAAC&language=en_US
+    accessedAt: 2026-11-17
+    version: Public mutable documentation read 2026-11-17 (search extract)
+    claim: "Known issue, external ID lookup without View All Data"
+    extraction: reverify

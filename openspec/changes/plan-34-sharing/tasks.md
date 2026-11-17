@@ -7,7 +7,7 @@ Tasks 0-15. Each step is TDD and commits with DCO sign-off.
 - [x] 0.1 Proposal, design, tasks and the `sharing` spec
 
 ## 1. Observation
-- [ ] 1.1 Release-note review and documented behaviour with gaps
+- [x] 1.1 Release-note review and documented behaviour with gaps
 
 ## 2. Migration
 - [ ] 2.1 `owner_id`, `sc_sharing`, `user_role_id`, defaults, upgrade test

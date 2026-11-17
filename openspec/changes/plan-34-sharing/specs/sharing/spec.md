@@ -29,8 +29,8 @@ owned by the tenant's default owner, the oldest active System Administrator.
 <!-- id: shr-02 -->
 An update that changes `OwnerId` SHALL be allowed only for the owner, a user
 above the owner in the role hierarchy, holders of Modify All on the object or
-Modify All Data, and holders of Transfer Record who have Edit access to the
-record. A transfer SHALL delete the record's manual shares in the same
+Modify All Data. The new owner SHALL have Read on the object. Transfer Record
+SHALL be stored and not enforced. A transfer SHALL delete the record's manual shares in the same
 transaction. An Account transfer SHALL move Contacts under it that the old
 owner owned, unless Task 1 shows Salesforce does not.
 
@@ -43,7 +43,8 @@ owner owned, unless Task 1 shows Salesforce does not.
 Each object SHALL have an internal OWD: `None` (Private), `Read`, `Edit`, or
 `ControlledByParent` where allowed (Contact; master-detail details always). A
 child's OWD SHALL NOT be more open than its parent's where Salesforce pairs
-them. New and migrated tenants SHALL start at `Edit` on every object. OWDs
+them. New and migrated tenants SHALL start with Account and custom objects at
+`Edit` and Contact at `ControlledByParent`. OWDs
 SHALL be set with `salescompel sharing set-default`, take effect immediately,
 and be returned read-only as `Organization.DefaultAccountAccess` and
 `Organization.DefaultContactAccess`.
@@ -67,8 +68,8 @@ SHALL gain nothing through the hierarchy.
 
 ### Requirement: Groups and closure
 <!-- id: shr-05 -->
-`Group` (00G) of type `Regular`, `Role`, `RoleAndSubordinates` and
-`Organization`, and `GroupMember` (011), SHALL be available through the API.
+`Group` (00G) of type `Regular`, `Role`, `RoleAndSubordinates`,
+`RoleAndSubordinatesInternal` and `Organization`, and `GroupMember` (011), SHALL be available through the API.
 Regular groups and their members SHALL be writable by Manage Users; the other
 types SHALL be system-maintained and read-only. Nested group cycles SHALL be
 refused. Each tenant SHALL have one Organization group containing every active
@@ -108,11 +109,12 @@ Plan 35 can deploy `SharingRules`. Criteria-based rules SHALL grant nothing.
 ### Requirement: Implicit sharing
 <!-- id: shr-08 -->
 A Contact with `ControlledByParent` SHALL be visible or editable exactly when
-its Account is; a Contact with no Account SHALL be visible only through
-ownership, the hierarchy and bypasses. With Contact OWD Private, an Account
+its Account is; a Contact with no Account SHALL be visible only to its owner
+and View All / Modify All holders. With Contact OWD Private, an Account
 owner's access to Contacts under it SHALL follow their role's
-`ContactAccessForAccountOwner`. A user who can see a Contact SHALL have Read on
-its Account. A master-detail detail SHALL take its master's access; lookups
+`ContactAccessForAccountOwner`. A user who reaches a Contact through
+ownership, the hierarchy, a share or a rule SHALL have Read on its Account;
+View All / Modify All on Contact SHALL NOT count. A master-detail detail SHALL take its master's access; lookups
 SHALL give no implicit access.
 
 #### Scenario: implicit parent read
@@ -160,19 +162,19 @@ only admitted records.
 <!-- id: shr-12 -->
 An OWD value, group type, row cause or rule the candidate cannot evaluate
 SHALL grant nothing. A share to an inactive user or deleted group SHALL grant
-nothing. Deactivating a user SHALL remove their group memberships and the
-manual shares granted to them.
+nothing. Deactivating a user SHALL keep their role and GroupMember rows, remove
+them from the closure, and delete the manual shares granted to them.
 
 #### Scenario: deactivated grantee
 - **WHEN** a user with a manual share is deactivated and reactivated
-- **THEN** the share is gone and they have only what their role gives
+- **THEN** the share is gone and they have only what their role and groups give
 
 ### Requirement: Migration
 <!-- id: shr-13 -->
 A forward-only migration SHALL add `owner_id` to every record table, backfilled
 to the tenant's default owner; create the sharing storage with RLS forced;
-add `user_role_id` to users; set every object's OWD to `Edit`; and create each
-tenant's Organization group. After it, every user's visible record set SHALL
+add `user_role_id` to users; set Account and custom objects to `Edit` and
+Contact to `ControlledByParent`; and create each tenant's Organization group. After it, every user's visible record set SHALL
 be unchanged.
 
 #### Scenario: upgrade keeps access
