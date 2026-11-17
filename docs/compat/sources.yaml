@@ -595,3 +595,9 @@ sources:
     version: Public mutable documentation read 2026-11-17 (search extract)
     claim: "Known issue, external ID lookup without View All Data"
     extraction: reverify
+  - id: sharing-plan34-spec
+    url: https://github.com/occupysaas/salescompel/blob/ace43b2/docs/superpowers/specs/2026-11-17-plan-34-sharing-design.md
+    accessedAt: 2026-11-17
+    version: Plan 34 design at ace43b2
+    claim: Sharing objects, OwnerId and record-level access
+    extraction: documentation-reviewed

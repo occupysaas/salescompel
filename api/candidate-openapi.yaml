@@ -1978,6 +1978,722 @@ paths:
           schema:
             type: string
             pattern: ^[A-Za-z][A-Za-z0-9_]*$
+  /services/data/v65.0/sobjects/UserRole/describe:
+    get:
+      operationId: candidateDescribeUserRole
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/ace43b2/docs/superpowers/specs/2026-11-17-plan-34-sharing-design.md"
+      responses:
+        "200":
+          description: "Current candidate response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObjectDescribe"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+  /services/data/v65.0/sobjects/UserRole:
+    post:
+      operationId: candidateCreateUserRole
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/ace43b2/docs/superpowers/specs/2026-11-17-plan-34-sharing-design.md"
+      responses:
+        "201":
+          description: "Current candidate response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateResult"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserRoleCreate"
+      description: "Plan 34 setup object: Manage Users or Modify All Data write; every API user reads."
+  /services/data/v65.0/sobjects/UserRole/{recordId}:
+    get:
+      operationId: candidateReadUserRole
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/ace43b2/docs/superpowers/specs/2026-11-17-plan-34-sharing-design.md"
+      responses:
+        "200":
+          description: "Current candidate response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserRoleRead"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: recordId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            minLength: 1
+    patch:
+      operationId: candidateUpdateUserRole
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/ace43b2/docs/superpowers/specs/2026-11-17-plan-34-sharing-design.md"
+      responses:
+        "204":
+          description: "Current candidate response"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserRolePatch"
+      parameters:
+        - name: recordId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            minLength: 1
+    delete:
+      operationId: candidateDeleteUserRole
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/ace43b2/docs/superpowers/specs/2026-11-17-plan-34-sharing-design.md"
+      responses:
+        "204":
+          description: "Current candidate response"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: recordId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            minLength: 1
+  /services/data/v65.0/sobjects/Group/describe:
+    get:
+      operationId: candidateDescribeGroup
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/ace43b2/docs/superpowers/specs/2026-11-17-plan-34-sharing-design.md"
+      responses:
+        "200":
+          description: "Current candidate response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObjectDescribe"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+  /services/data/v65.0/sobjects/Group:
+    post:
+      operationId: candidateCreateGroup
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/ace43b2/docs/superpowers/specs/2026-11-17-plan-34-sharing-design.md"
+      responses:
+        "201":
+          description: "Current candidate response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateResult"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GroupCreate"
+      description: "Plan 34 setup object: only Regular groups are written, by Manage Users or Modify All Data."
+  /services/data/v65.0/sobjects/Group/{recordId}:
+    get:
+      operationId: candidateReadGroup
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/ace43b2/docs/superpowers/specs/2026-11-17-plan-34-sharing-design.md"
+      responses:
+        "200":
+          description: "Current candidate response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroupRead"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: recordId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            minLength: 1
+    patch:
+      operationId: candidateUpdateGroup
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/ace43b2/docs/superpowers/specs/2026-11-17-plan-34-sharing-design.md"
+      responses:
+        "204":
+          description: "Current candidate response"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GroupPatch"
+      parameters:
+        - name: recordId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            minLength: 1
+    delete:
+      operationId: candidateDeleteGroup
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/ace43b2/docs/superpowers/specs/2026-11-17-plan-34-sharing-design.md"
+      responses:
+        "204":
+          description: "Current candidate response"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: recordId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            minLength: 1
+  /services/data/v65.0/sobjects/GroupMember/describe:
+    get:
+      operationId: candidateDescribeGroupMember
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/ace43b2/docs/superpowers/specs/2026-11-17-plan-34-sharing-design.md"
+      responses:
+        "200":
+          description: "Current candidate response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObjectDescribe"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+  /services/data/v65.0/sobjects/GroupMember:
+    post:
+      operationId: candidateCreateGroupMember
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/ace43b2/docs/superpowers/specs/2026-11-17-plan-34-sharing-design.md"
+      responses:
+        "201":
+          description: "Current candidate response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateResult"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GroupMemberCreate"
+      description: "Plan 34 setup object: members of Regular groups, written by Manage Users or Modify All Data."
+  /services/data/v65.0/sobjects/GroupMember/{recordId}:
+    get:
+      operationId: candidateReadGroupMember
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/ace43b2/docs/superpowers/specs/2026-11-17-plan-34-sharing-design.md"
+      responses:
+        "200":
+          description: "Current candidate response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroupMemberRead"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: recordId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            minLength: 1
+    delete:
+      operationId: candidateDeleteGroupMember
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/ace43b2/docs/superpowers/specs/2026-11-17-plan-34-sharing-design.md"
+      responses:
+        "204":
+          description: "Current candidate response"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: recordId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            minLength: 1
+  /services/data/v65.0/sobjects/AccountShare/describe:
+    get:
+      operationId: candidateDescribeAccountShare
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/ace43b2/docs/superpowers/specs/2026-11-17-plan-34-sharing-design.md"
+      responses:
+        "200":
+          description: "Current candidate response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObjectDescribe"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+  /services/data/v65.0/sobjects/AccountShare:
+    post:
+      operationId: candidateCreateAccountShare
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/ace43b2/docs/superpowers/specs/2026-11-17-plan-34-sharing-design.md"
+      responses:
+        "201":
+          description: "Current candidate response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateResult"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountShareCreate"
+      description: "Plan 34 share object: available while Account is Private or Public Read Only; the owner, users above the owner and Modify All holders write Manual rows. OpportunityAccessLevel and CaseAccessLevel are stored, not enforced."
+  /services/data/v65.0/sobjects/AccountShare/{recordId}:
+    get:
+      operationId: candidateReadAccountShare
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/ace43b2/docs/superpowers/specs/2026-11-17-plan-34-sharing-design.md"
+      responses:
+        "200":
+          description: "Current candidate response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountShareRead"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: recordId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            minLength: 1
+    patch:
+      operationId: candidateUpdateAccountShare
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/ace43b2/docs/superpowers/specs/2026-11-17-plan-34-sharing-design.md"
+      responses:
+        "204":
+          description: "Current candidate response"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountSharePatch"
+      parameters:
+        - name: recordId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            minLength: 1
+    delete:
+      operationId: candidateDeleteAccountShare
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/ace43b2/docs/superpowers/specs/2026-11-17-plan-34-sharing-design.md"
+      responses:
+        "204":
+          description: "Current candidate response"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: recordId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            minLength: 1
+  /services/data/v65.0/sobjects/ContactShare/describe:
+    get:
+      operationId: candidateDescribeContactShare
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/ace43b2/docs/superpowers/specs/2026-11-17-plan-34-sharing-design.md"
+      responses:
+        "200":
+          description: "Current candidate response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObjectDescribe"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+  /services/data/v65.0/sobjects/ContactShare:
+    post:
+      operationId: candidateCreateContactShare
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/ace43b2/docs/superpowers/specs/2026-11-17-plan-34-sharing-design.md"
+      responses:
+        "201":
+          description: "Current candidate response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateResult"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContactShareCreate"
+      description: "Plan 34 share object: available while Contact is Private or Public Read Only; the owner, users above the owner and Modify All holders write Manual rows."
+  /services/data/v65.0/sobjects/ContactShare/{recordId}:
+    get:
+      operationId: candidateReadContactShare
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/ace43b2/docs/superpowers/specs/2026-11-17-plan-34-sharing-design.md"
+      responses:
+        "200":
+          description: "Current candidate response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContactShareRead"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: recordId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            minLength: 1
+    patch:
+      operationId: candidateUpdateContactShare
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/ace43b2/docs/superpowers/specs/2026-11-17-plan-34-sharing-design.md"
+      responses:
+        "204":
+          description: "Current candidate response"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContactSharePatch"
+      parameters:
+        - name: recordId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            minLength: 1
+    delete:
+      operationId: candidateDeleteContactShare
+      x-source:
+        - "https://github.com/occupysaas/salescompel/blob/ace43b2/docs/superpowers/specs/2026-11-17-plan-34-sharing-design.md"
+      responses:
+        "204":
+          description: "Current candidate response"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "405":
+          $ref: "#/components/responses/MethodError"
+        "500":
+          $ref: "#/components/responses/Error"
+      parameters:
+        - name: recordId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            minLength: 1
   /services/data/v65.0/sobjects/{object}/describe:
     get:
       operationId: candidateDescribeDynamic
@@ -2240,6 +2956,9 @@ components:
       required:
         - Name
       properties:
+        OwnerId:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
         Name:
           type: string
           maxLength: 255
@@ -2354,6 +3073,9 @@ components:
       additionalProperties: false
       required: []
       properties:
+        OwnerId:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
         Name:
           type: string
           maxLength: 255
@@ -2485,6 +3207,9 @@ components:
       required:
         - LastName
       properties:
+        OwnerId:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
         FirstName:
           type:
             - string
@@ -2572,6 +3297,9 @@ components:
       additionalProperties: false
       required: []
       properties:
+        OwnerId:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
         FirstName:
           type:
             - string
@@ -2718,6 +3446,11 @@ components:
         - Name
         - Compat_Key__c
       properties:
+        OwnerId:
+          anyOf:
+            - type: string
+              pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+            - type: "null"
         attributes:
           $ref: "#/components/schemas/AccountAttributes"
         Id:
@@ -2841,6 +3574,11 @@ components:
         - LastName
         - AccountId
       properties:
+        OwnerId:
+          anyOf:
+            - type: string
+              pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+            - type: "null"
         attributes:
           $ref: "#/components/schemas/ContactAttributes"
         Id:
@@ -2940,6 +3678,11 @@ components:
       required:
         - attributes
       properties:
+        OwnerId:
+          anyOf:
+            - type: string
+              pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+            - type: "null"
         attributes:
           $ref: "#/components/schemas/AccountAttributes"
         Id:
@@ -3068,6 +3811,11 @@ components:
       required:
         - attributes
       properties:
+        OwnerId:
+          anyOf:
+            - type: string
+              pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+            - type: "null"
         attributes:
           $ref: "#/components/schemas/ContactAttributes"
         Id:
@@ -4438,6 +5186,18 @@ components:
       required:
         - attributes
       properties:
+        DefaultAccountAccess:
+          enum:
+            - None
+            - Read
+            - Edit
+            - ControlledByParent
+        DefaultContactAccess:
+          enum:
+            - None
+            - Read
+            - Edit
+            - ControlledByParent
         attributes:
           $ref: "#/components/schemas/OrganizationAttributes"
         Id:
@@ -4485,6 +5245,18 @@ components:
         - attributes
         - Id
       properties:
+        DefaultAccountAccess:
+          enum:
+            - None
+            - Read
+            - Edit
+            - ControlledByParent
+        DefaultContactAccess:
+          enum:
+            - None
+            - Read
+            - Edit
+            - ControlledByParent
         attributes:
           $ref: "#/components/schemas/OrganizationAttributes"
         Id:
@@ -4540,6 +5312,11 @@ components:
       required:
         - attributes
       properties:
+        UserRoleId:
+          anyOf:
+            - type: string
+              pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+            - type: "null"
         attributes:
           $ref: "#/components/schemas/UserAttributes"
         Id:
@@ -4598,6 +5375,11 @@ components:
         - attributes
         - Id
       properties:
+        UserRoleId:
+          anyOf:
+            - type: string
+              pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+            - type: "null"
         attributes:
           $ref: "#/components/schemas/UserAttributes"
         Id:
@@ -4644,6 +5426,11 @@ components:
       type: object
       additionalProperties: false
       properties:
+        UserRoleId:
+          anyOf:
+            - type: string
+              pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+            - type: "null"
         Username:
           type: string
           maxLength: 80
@@ -4692,6 +5479,11 @@ components:
       type: object
       additionalProperties: false
       properties:
+        UserRoleId:
+          anyOf:
+            - type: string
+              pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+            - type: "null"
         Username:
           type: string
           maxLength: 80
@@ -5226,6 +6018,466 @@ components:
       required:
         - AssigneeId
         - PermissionSetId
+    UserRoleAttributes:
+      type: object
+      additionalProperties: false
+      required:
+        - type
+      properties:
+        type:
+          const: UserRole
+        url:
+          type: string
+    UserRoleRead:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+        - Id
+      properties:
+        attributes:
+          $ref: "#/components/schemas/UserRoleAttributes"
+        Id:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        Name:
+          type: string
+          maxLength: 80
+        DeveloperName:
+          type: string
+          maxLength: 80
+        ParentRoleId:
+          anyOf:
+            - type: string
+              pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+            - type: "null"
+        RollupDescription:
+          anyOf:
+            - type: string
+              maxLength: 80
+            - type: "null"
+        ContactAccessForAccountOwner:
+          anyOf:
+            - enum:
+                - None
+                - Read
+                - Edit
+            - type: "null"
+        OpportunityAccessForAccountOwner:
+          anyOf:
+            - enum:
+                - None
+                - Read
+                - Edit
+            - type: "null"
+        CaseAccessForAccountOwner:
+          anyOf:
+            - enum:
+                - None
+                - Read
+                - Edit
+            - type: "null"
+    UserRoleCreate:
+      type: object
+      additionalProperties: false
+      required:
+        - Name
+        - DeveloperName
+      properties:
+        Name:
+          type: string
+          maxLength: 80
+        DeveloperName:
+          type: string
+          maxLength: 80
+        ParentRoleId:
+          anyOf:
+            - type: string
+              pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+            - type: "null"
+        RollupDescription:
+          anyOf:
+            - type: string
+              maxLength: 80
+            - type: "null"
+        ContactAccessForAccountOwner:
+          anyOf:
+            - enum:
+                - None
+                - Read
+                - Edit
+            - type: "null"
+        OpportunityAccessForAccountOwner:
+          anyOf:
+            - enum:
+                - None
+                - Read
+                - Edit
+            - type: "null"
+        CaseAccessForAccountOwner:
+          anyOf:
+            - enum:
+                - None
+                - Read
+                - Edit
+            - type: "null"
+    UserRolePatch:
+      type: object
+      additionalProperties: false
+      properties:
+        Name:
+          type: string
+          maxLength: 80
+        DeveloperName:
+          type: string
+          maxLength: 80
+        ParentRoleId:
+          anyOf:
+            - type: string
+              pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+            - type: "null"
+        RollupDescription:
+          anyOf:
+            - type: string
+              maxLength: 80
+            - type: "null"
+        ContactAccessForAccountOwner:
+          anyOf:
+            - enum:
+                - None
+                - Read
+                - Edit
+            - type: "null"
+        OpportunityAccessForAccountOwner:
+          anyOf:
+            - enum:
+                - None
+                - Read
+                - Edit
+            - type: "null"
+        CaseAccessForAccountOwner:
+          anyOf:
+            - enum:
+                - None
+                - Read
+                - Edit
+            - type: "null"
+    GroupAttributes:
+      type: object
+      additionalProperties: false
+      required:
+        - type
+      properties:
+        type:
+          const: Group
+        url:
+          type: string
+    GroupRead:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+        - Id
+      properties:
+        attributes:
+          $ref: "#/components/schemas/GroupAttributes"
+        Id:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        Name:
+          type: string
+          maxLength: 40
+        DeveloperName:
+          anyOf:
+            - type: string
+              maxLength: 80
+            - type: "null"
+        Type:
+          enum:
+            - Regular
+            - Role
+            - RoleAndSubordinates
+            - RoleAndSubordinatesInternal
+            - Organization
+        RelatedId:
+          anyOf:
+            - type: string
+              pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+            - type: "null"
+        DoesIncludeBosses:
+          type: boolean
+    GroupCreate:
+      type: object
+      additionalProperties: false
+      required:
+        - Name
+      properties:
+        Name:
+          type: string
+          maxLength: 40
+        DeveloperName:
+          anyOf:
+            - type: string
+              maxLength: 80
+            - type: "null"
+        Type:
+          const: Regular
+        DoesIncludeBosses:
+          type: boolean
+    GroupPatch:
+      type: object
+      additionalProperties: false
+      properties:
+        Name:
+          type: string
+          maxLength: 40
+        DeveloperName:
+          anyOf:
+            - type: string
+              maxLength: 80
+            - type: "null"
+        DoesIncludeBosses:
+          type: boolean
+    GroupMemberAttributes:
+      type: object
+      additionalProperties: false
+      required:
+        - type
+      properties:
+        type:
+          const: GroupMember
+        url:
+          type: string
+    GroupMemberRead:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+        - Id
+      properties:
+        attributes:
+          $ref: "#/components/schemas/GroupMemberAttributes"
+        Id:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        GroupId:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        UserOrGroupId:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+    GroupMemberCreate:
+      type: object
+      additionalProperties: false
+      required:
+        - GroupId
+        - UserOrGroupId
+      properties:
+        GroupId:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        UserOrGroupId:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+    AccountShareAttributes:
+      type: object
+      additionalProperties: false
+      required:
+        - type
+      properties:
+        type:
+          const: AccountShare
+        url:
+          type: string
+    AccountShareRead:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+        - Id
+      properties:
+        attributes:
+          $ref: "#/components/schemas/AccountShareAttributes"
+        Id:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        AccountId:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        UserOrGroupId:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        AccountAccessLevel:
+          enum:
+            - Read
+            - Edit
+            - All
+        ContactAccessLevel:
+          anyOf:
+            - enum:
+                - None
+                - Read
+                - Edit
+            - type: "null"
+        OpportunityAccessLevel:
+          anyOf:
+            - enum:
+                - None
+                - Read
+                - Edit
+            - type: "null"
+        CaseAccessLevel:
+          anyOf:
+            - enum:
+                - None
+                - Read
+                - Edit
+            - type: "null"
+        RowCause:
+          enum:
+            - Owner
+            - Manual
+            - Rule
+            - ImplicitChild
+            - ImplicitParent
+    AccountShareCreate:
+      type: object
+      additionalProperties: false
+      required:
+        - AccountId
+        - UserOrGroupId
+        - AccountAccessLevel
+      properties:
+        AccountId:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        UserOrGroupId:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        AccountAccessLevel:
+          enum:
+            - Read
+            - Edit
+        ContactAccessLevel:
+          anyOf:
+            - enum:
+                - None
+                - Read
+                - Edit
+            - type: "null"
+        OpportunityAccessLevel:
+          anyOf:
+            - enum:
+                - None
+                - Read
+                - Edit
+            - type: "null"
+        CaseAccessLevel:
+          anyOf:
+            - enum:
+                - None
+                - Read
+                - Edit
+            - type: "null"
+        RowCause:
+          const: Manual
+    AccountSharePatch:
+      type: object
+      additionalProperties: false
+      properties:
+        AccountAccessLevel:
+          enum:
+            - Read
+            - Edit
+        ContactAccessLevel:
+          anyOf:
+            - enum:
+                - None
+                - Read
+                - Edit
+            - type: "null"
+        OpportunityAccessLevel:
+          anyOf:
+            - enum:
+                - None
+                - Read
+                - Edit
+            - type: "null"
+        CaseAccessLevel:
+          anyOf:
+            - enum:
+                - None
+                - Read
+                - Edit
+            - type: "null"
+    ContactShareAttributes:
+      type: object
+      additionalProperties: false
+      required:
+        - type
+      properties:
+        type:
+          const: ContactShare
+        url:
+          type: string
+    ContactShareRead:
+      type: object
+      additionalProperties: false
+      required:
+        - attributes
+        - Id
+      properties:
+        attributes:
+          $ref: "#/components/schemas/ContactShareAttributes"
+        Id:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        ContactId:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        UserOrGroupId:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        ContactAccessLevel:
+          enum:
+            - Read
+            - Edit
+            - All
+        RowCause:
+          enum:
+            - Owner
+            - Manual
+            - Rule
+            - ImplicitChild
+            - ImplicitParent
+    ContactShareCreate:
+      type: object
+      additionalProperties: false
+      required:
+        - ContactId
+        - UserOrGroupId
+        - ContactAccessLevel
+      properties:
+        ContactId:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        UserOrGroupId:
+          type: string
+          pattern: "^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$"
+        ContactAccessLevel:
+          enum:
+            - Read
+            - Edit
+        RowCause:
+          const: Manual
+    ContactSharePatch:
+      type: object
+      additionalProperties: false
+      properties:
+        ContactAccessLevel:
+          enum:
+            - Read
+            - Edit
     DynamicAttributes:
       type: object
       additionalProperties: false
