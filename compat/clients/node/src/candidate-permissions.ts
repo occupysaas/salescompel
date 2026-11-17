@@ -289,7 +289,8 @@ async function timezoneToday(
     c,
     "p33-timezone",
     "Contact",
-    { LastName: name, Birthdate: kiritimati },
+    // Under an Account: Account-less contacts are private (Plan 34, D34-23).
+    { LastName: name, Birthdate: kiritimati, AccountId: o.account },
     [name],
   );
   const conn = connectionFor(c, user.token);
