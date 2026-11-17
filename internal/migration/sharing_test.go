@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"salescompel/internal/metadata"
 	"salescompel/internal/fieldtype"
+	"salescompel/internal/metadata"
 )
 
 // A Plan 33 database with users and records upgrades to Plan 34 storage:

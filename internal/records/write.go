@@ -119,6 +119,10 @@ func create(ctx context.Context, db database, p Principal, object string, data m
 	if metadata.IsSetupObject(o.Name) {
 		return setupWrite(ctx, db, p, "create", o.Name, "", data)
 	}
+	data = maps.Clone(data)
+	if err := ownerOnCreate(ctx, db, p, o, data); err != nil {
+		return "", err
+	}
 	return insertRecord(ctx, db, p, o.Name, data, "", nil)
 }
 
@@ -141,6 +145,11 @@ func insertRecord(ctx context.Context, db database, p Principal, object string, 
 	applyDefaults(o, data)
 	if err := Validate(p, object, data, true); err != nil {
 		return "", err
+	}
+	if owner, ok := data["OwnerId"].(string); ok && hasOwner(o) {
+		if err := checkOwner(ctx, db, p, object, owner); err != nil {
+			return "", err
+		}
 	}
 	if id == "" {
 		if id, err = recordid.New(o.Prefix); err != nil {
@@ -211,6 +220,11 @@ func updateRecord(ctx context.Context, db database, p Principal, object, id stri
 	}
 	if err := Validate(p, object, data, false); err != nil {
 		return err
+	}
+	if owner, ok := data["OwnerId"].(string); ok {
+		if err := checkOwner(ctx, db, p, object, owner); err != nil {
+			return err
+		}
 	}
 	cols, values, casts, err := columns(p, object, data)
 	if err != nil {

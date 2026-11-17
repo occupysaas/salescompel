@@ -338,7 +338,8 @@ func TestToLabelAndFields(t *testing.T) {
 		}
 		for _, rec := range res.Records {
 			keys := aggKeys(rec)
-			if len(keys) != 2 || !keys["Id"] || !keys["Name"] {
+			// OwnerId is a standard field on custom objects (Plan 34).
+			if len(keys) != 3 || !keys["Id"] || !keys["Name"] || !keys["OwnerId"] {
 				t.Fatalf("FIELDS(STANDARD) keys = %#v", keys)
 			}
 		}

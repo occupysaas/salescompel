@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"salescompel/internal/metadata"
 	"salescompel/internal/recordid"
+	"salescompel/internal/records"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -110,6 +111,9 @@ func (s *Store) CreateUserWithProfile(ctx context.Context, tenant, username, pas
 		return "", errors.New("user could not be created; username may already exist")
 	}
 	if e = createSetupUser(ctx, tx, id, tenant, profile); e != nil {
+		return "", e
+	}
+	if e = records.RebuildSharing(ctx, tx, tenant); e != nil {
 		return "", e
 	}
 	return id, tx.Commit(ctx)
