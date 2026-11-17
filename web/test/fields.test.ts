@@ -9,6 +9,7 @@ import {
   toApiValue,
   fromApiValue,
   changedFields,
+  isRequired,
   type FieldInfo,
 } from "../src/connected/fields.ts";
 
@@ -126,4 +127,13 @@ test("updates send only the fields the user changed", () => {
     ["M__c"],
   );
   assert.deepEqual(changedFields(fields, original, { ...original }), []);
+});
+
+test("fields the server defaults on create are not required", () => {
+  assert.equal(isRequired(f("string", { nillable: false })), true);
+  assert.equal(isRequired(f("string")), false);
+  // OwnerId: not nillable, but the server picks the owner when it is blank.
+  const owner = f("reference", { nillable: false, defaultedOnCreate: true });
+  assert.equal(isRequired(owner), false);
+  assert.equal(toApiValue(owner, ""), null);
 });

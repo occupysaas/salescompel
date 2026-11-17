@@ -5,6 +5,7 @@ import {
   bounds,
   formatValue,
   isNumeric,
+  isRequired,
   validateDecimal,
   type ControlValue,
 } from "./fields";
@@ -59,6 +60,7 @@ const lookups = computed(() => {
 // Stable element ids for the datalist and the described-by hint.
 const listId = `lookup-${props.field.name}`;
 const hintId = `hint-${props.field.name}`;
+const required = computed(() => isRequired(props.field));
 const textArea = computed(() => props.field.type === "textarea");
 const inputType = computed(
   () =>
@@ -130,7 +132,7 @@ function checkDecimal(event: Event) {
     }}<select
       v-model="text"
       :aria-label="label"
-      :required="!field.nillable"
+      :required="required"
       :disabled="disabled"
     >
       <option v-if="field.nillable" value="">{{ t("field.none") }}</option>
@@ -151,7 +153,7 @@ function checkDecimal(event: Event) {
         type="text"
         autocomplete="off"
         :list="listId"
-        :required="!field.nillable"
+        :required="required"
         :placeholder="t('field.lookupManual')"
         :disabled="disabled" /></label
     ><datalist :id="listId">
@@ -169,7 +171,7 @@ function checkDecimal(event: Event) {
         inputmode="decimal"
         autocomplete="off"
         :aria-describedby="preview ? hintId : undefined"
-        :required="!field.nillable"
+        :required="required"
         :disabled="disabled"
         @input="checkDecimal" /></label
     ><small
@@ -184,7 +186,7 @@ function checkDecimal(event: Event) {
     >{{ label
     }}<textarea
       v-model="text"
-      :required="!field.nillable"
+      :required="required"
       :maxlength="field.length || undefined"
       :disabled="disabled"
     ></textarea>
@@ -197,7 +199,7 @@ function checkDecimal(event: Event) {
         :type="inputType"
         :inputmode="field.type === 'url' ? 'url' : undefined"
         :aria-describedby="field.type === 'datetime' ? hintId : undefined"
-        :required="!field.nillable"
+        :required="required"
         :maxlength="field.length || undefined"
         :disabled="disabled" /></label
     ><small

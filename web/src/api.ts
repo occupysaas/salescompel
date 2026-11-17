@@ -10,6 +10,7 @@ export interface Field {
   label?: string;
   type: string;
   nillable: boolean;
+  defaultedOnCreate?: boolean;
   createable: boolean;
   updateable: boolean;
   length: number;
