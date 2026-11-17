@@ -8,6 +8,7 @@ import (
 	"salescompel/internal/contract"
 	"salescompel/internal/fieldtype"
 	"salescompel/internal/metadata"
+	"salescompel/internal/policy"
 )
 
 // Statement is a parameterized SQL query safe to log: SQL contains $n
@@ -41,6 +42,7 @@ type compiler struct {
 	joinMap map[string]string
 	args    []any
 	nJoin   int
+	access  *policy.Principal // nil compiles without sharing (catalog-only callers)
 }
 
 // Compile turns a bound query into a parameterized SQL statement.
@@ -49,7 +51,7 @@ func Compile(b *Bound) (*Plan, error) {
 	if b == nil {
 		return nil, malformed("empty bound query")
 	}
-	c := &compiler{joinMap: map[string]string{}}
+	c := &compiler{joinMap: map[string]string{}, access: b.Access}
 	return c.compile(b)
 }
 
@@ -71,6 +73,9 @@ func (c *compiler) compile(b *Bound) (*Plan, error) {
 	if b.PageIDs != nil {
 		where += fmt.Sprintf(" AND %s.id = ANY($%d::text[])", root, pageArg)
 	}
+	// Locator pages re-apply sharing too: a record hidden since capture is
+	// dropped (fail closed, D34 spec Enforcement).
+	where += c.shareAnd(root, b.Object)
 	var order string
 	if b.PageIDs != nil {
 		// Stored membership order wins; the binder already validated ORDER BY,
@@ -227,11 +232,12 @@ func compileChildPlan(child BoundChild, parentIDs []string) (*childPlan, error) 
 		return nil, contract.FieldProblem("INVALID_FIELD", "Field is unavailable", child.Relationship.Field)
 	}
 	root := "r"
-	c := &compiler{joinMap: map[string]string{}}
+	c := &compiler{joinMap: map[string]string{}, access: b.Access}
 	tenantArg := c.addArg(b.Object.Tenant)
 	parentsArg := c.addArg(parentIDs)
 	ref := root + "." + pgx.Identifier{refField.Column}.Sanitize()
 	where := fmt.Sprintf("%s.tenant_id=$%d AND %s = ANY($%d::text[])", root, tenantArg, ref, parentsArg)
+	where += c.shareAnd(root, b.Object)
 	if b.Where != nil {
 		w, err := c.compileExpr(b.Where, root, b.Object)
 		if err != nil {
@@ -421,6 +427,8 @@ func (c *compiler) ensureJoin(root string, path []PathStep) (string, error) {
 		alias := fmt.Sprintf("p%d", c.nJoin)
 		refCol := pgx.Identifier{step.Via.Column}.Sanitize()
 		on := fmt.Sprintf("%s.tenant_id = %s.tenant_id AND %s.id = %s.%s", alias, root, alias, prev, refCol)
+		// A parent the user can't read joins as null (D34-26).
+		on += c.shareAnd(alias, step.Object)
 		c.joins = append(c.joins, joinSpec{alias: alias, table: step.Object.TableSQL(), on: on})
 		c.joinMap[prefix] = alias
 		prev = alias

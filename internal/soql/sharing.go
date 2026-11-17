@@ -194,3 +194,14 @@ func firstOf(v []string) string {
 	}
 	return v[0]
 }
+
+// shareAnd is " AND <predicate>" for alias's rows of obj at Read, or "".
+func (c *compiler) shareAnd(alias string, obj metadata.Object) string {
+	if c.access == nil {
+		return ""
+	}
+	if s := SharingClause(c.access, alias, obj, LevelRead, c.addArg); s != "" {
+		return " AND " + s
+	}
+	return ""
+}

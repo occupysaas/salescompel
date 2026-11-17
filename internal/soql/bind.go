@@ -172,6 +172,7 @@ func (b *binder) queryObj(q *Query, obj metadata.Object, child bool) (*Bound, er
 		Where: where, GroupBy: group, Having: having, Order: order,
 		Limit: q.Limit, Offset: q.Offset,
 		Source: CanonicalQuery(q), Revision: b.snap.Revision,
+		Access: &b.p,
 	}
 	if err := b.finishAggregates(q, out, child); err != nil {
 		return nil, err

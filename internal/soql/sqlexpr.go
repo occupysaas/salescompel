@@ -204,12 +204,13 @@ func (c *compiler) compileSemi(in *BoundIn, left, root string) (string, error) {
 	sub := in.Semi
 	// Sub-compiler continues the outer arg numbering so placeholder
 	// positions in the sub-SQL match the combined args slice.
-	sc := &compiler{joinMap: map[string]string{}, args: c.args}
+	sc := &compiler{joinMap: map[string]string{}, args: c.args, access: c.access}
 	subRoot := "s"
 	tenantArg := sc.addArg(sub.Object.Tenant)
 	col := subRoot + "." + pgx.Identifier{sub.Columns[0].Field.Column}.Sanitize()
 	from := sub.Object.TableSQL() + " " + subRoot
 	where := subRoot + ".tenant_id=$" + itoa(tenantArg)
+	where += sc.shareAnd(subRoot, sub.Object)
 	if sub.Where != nil {
 		w, err := sc.compileExpr(sub.Where, subRoot, sub.Object)
 		if err != nil {
