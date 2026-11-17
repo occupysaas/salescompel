@@ -3,8 +3,9 @@
 > **For agentic workers:** use superpowers:subagent-driven-development or
 > superpowers:executing-plans, task by task. Steps use checkbox syntax.
 
-**Status:** Tasks 0-1 done, 2026-11-17 ([reference record](../../compat/plan-34-sharing.md)). Waiting on the maintainer's review of the
-spec and the `OwnerId` boundary with Plan 30 (#24).
+**Status:** implemented, 2026-11-17 ([reference record](../../compat/plan-34-sharing.md)).
+Deferred: Rule rows in share queries (G34-14), custom `__Share` objects
+(G34-15) and the browser leg (G34-17).
 
 **Goal:** Record ownership, org-wide defaults, the role hierarchy, groups,
 manual shares, owner-based sharing rules and Account/Contact implicit
@@ -109,48 +110,48 @@ spec wins and the plan is corrected.
 **Files:** `00NN_sharing.sql`, `internal/migration/sharing_test.go`,
 `runtime_privileges.go` if grants change.
 
-- [ ] Failing test `TestMigrationSharingUpgrade`: build a Plan 33 database
+- [x] Failing test `TestMigrationSharingUpgrade`: build a Plan 33 database
       with two tenants, admin and standard users, a static principal,
       Accounts, Contacts and a custom object with rows; migrate; assert
       `owner_id` backfilled to the default owner (oldest active System
       Administrator, else oldest active user), OWD rows per D34-19,
       one Organization group per tenant with every active user, and each
       user's visible record set unchanged.
-- [ ] `TestMigrationSharingRLS`: every `sc_sharing` table has RLS forced
+- [x] `TestMigrationSharingRLS`: every `sc_sharing` table has RLS forced
       and the records login cannot read another tenant's rows.
-- [ ] Write the migration: `owner_id` (+ index) on every record table found
+- [x] Write the migration: `owner_id` (+ index) on every record table found
       in `sc_catalog.objects`; `sc_sharing` tables `object_settings`,
       `roles`, `groups`, `group_members`, `user_groups`, `shares`,
       `owner_rules`, `revisions`; `sc_setup.users.user_role_id`.
-- [ ] The no-users tenant case: decide from the test whether it exists; if
+- [x] The no-users tenant case: decide from the test whether it exists; if
       it does, keep the column nullable for that tenant's tables and
       backfill on first user create (spec, Migration).
-- [ ] Commit `feat: add sharing storage and record owners`.
+- [x] Commit `feat: add sharing storage and record owners`.
 
 ### Task 3: `OwnerId`
 
 **Files:** `internal/metadata/seed_sharing.go`, `internal/records/owner.go`,
 `admin.go` (column on create), tests.
 
-- [ ] Failing tests: `TestOwnerIdDescribe` (reference to User, relationship
+- [x] Failing tests: `TestOwnerIdDescribe` (reference to User, relationship
       `Owner`, createable, updateable, not nillable, defaulted on create),
       `TestOwnerDefaultOnCreate`, `TestOwnerGivenMustBeActiveReader`,
       `TestOwnerQueueRefused`, `TestOwnerStaticPrincipalDefaultOwner`,
       `TestOwnerRelationshipSOQL` (`SELECT Owner.Name FROM Account`),
       `TestCustomObjectHasOwner`.
-- [ ] Register `OwnerId` on Account, Contact and custom objects in the
+- [x] Register `OwnerId` on Account, Contact and custom objects in the
       catalog seed and in object creation.
-- [ ] Default and validate the owner in the create path, before
+- [x] Default and validate the owner in the create path, before
       `insertRecord`. Static principals resolve the default owner once per
       request.
-- [ ] Commit `feat: add OwnerId to records`.
+- [x] Commit `feat: add OwnerId to records`.
 
 ### Task 4: Roles, groups and the closure
 
 **Files:** `seed_sharing.go`, `records/setup_write_sharing.go`,
 `records/sharing_closure.go`, tests.
 
-- [ ] Failing tests: `TestUserRoleCRUD` (Manage Users only; delete with users
+- [x] Failing tests: `TestUserRoleCRUD` (Manage Users only; delete with users
       or children refused; cycle refused), `TestUserRoleIdOnUser`,
       `TestGroupRegularCRUD`, `TestGroupSystemTypesReadOnly`,
       `TestGroupMemberNestingAndCycle`, `TestClosureRebuild` (direct,
@@ -158,68 +159,68 @@ spec wins and the plan is corrected.
       role and GroupMember rows, drops the user from the closure and deletes
       manual shares to them, D34-25),
       `TestSharingRevisionBumps`.
-- [ ] Register UserRole (00E), Group (00G), GroupMember (011) as setup
+- [x] Register UserRole (00E), Group (00G), GroupMember (011) as setup
       objects with Plan 33's setup-write rules. Role, RoleAndSubordinates and
       RoleAndSubordinatesInternal groups are created and deleted with their
       role (D34-12).
-- [ ] Rebuild `user_groups` for the tenant in the writing transaction after
+- [x] Rebuild `user_groups` for the tenant in the writing transaction after
       any change listed in the spec, and bump the sharing revision.
-- [ ] `TestSharingClosureConcurrent`: concurrent role move and queries under
+- [x] `TestSharingClosureConcurrent`: concurrent role move and queries under
       the default isolation never observe a partial closure (rebuild in one
       statement, or delete-and-insert under a tenant advisory lock that
       readers don't need).
-- [ ] Commit `feat: add roles, groups and the group closure`.
+- [x] Commit `feat: add roles, groups and the group closure`.
 
 ### Task 5: Sharing context
 
 **Files:** `internal/policy/sharing.go`, `sharing_load.go`, tests.
 
-- [ ] Failing tests: `TestSharingContextOWD`, `TestSharingContextGroups`,
+- [x] Failing tests: `TestSharingContextOWD`, `TestSharingContextGroups`,
       `TestVisibleOwnersHierarchy` (subordinates only, not peers or
       managers), `TestVisibleOwnersRules`, `TestSharingBypass` (View All
       Data, Modify All Data, object View All / Modify All),
       `TestSharingCacheRevision`, `TestSharingFailClosed` (unknown OWD value,
       unknown group type).
-- [ ] Load once per (tenant, user, sharing revision); visible owners per
+- [x] Load once per (tenant, user, sharing revision); visible owners per
       object and level on first use. Carry it on the execution context
       (`ExecutionContext.SharingMode` stops being the `"tenant"`
       placeholder).
-- [ ] Commit `feat: compute the running user's sharing context`.
+- [x] Commit `feat: compute the running user's sharing context`.
 
 ### Task 6: Predicate builder
 
 **Files:** `internal/soql/sharing.go`, `sharing_test.go` (pure Go).
 
-- [ ] Failing tests, one per term of the spec's predicate (bypass, OWD,
+- [x] Failing tests, one per term of the spec's predicate (bypass, OWD,
       owner set, share principals, ControlledByParent, implicit parent) and
       per level (Read, Edit, Delete), checking the SQL text and argument
       numbering continues the caller's.
-- [ ] Implement `sharingPredicate(alias, object, level, ctx, addArg)`. A
+- [x] Implement `sharingPredicate(alias, object, level, ctx, addArg)`. A
       bypass returns no clause; Public Read/Write at Read and Edit returns no
       clause; unknown returns `false`.
-- [ ] Commit `feat: build the sharing predicate`.
+- [x] Commit `feat: build the sharing predicate`.
 
 ### Task 7: SOQL enforcement
 
 **Files:** `compile.go`, `sqlexpr.go`, `paging.go`, `execute.go` (child
 subqueries), tests.
 
-- [ ] Failing tests with a Private OWD tenant: `TestSharingSOQLRoot`,
+- [x] Failing tests with a Private OWD tenant: `TestSharingSOQLRoot`,
       `TestSharingSOQLChildSubquery`, `TestSharingSOQLSemiJoin` (IN and NOT
       IN), `TestSharingHiddenParentIsNull` (select and WHERE on a parent
       path), `TestSharingCountAndAggregates`, `TestSharingLocatorRefilter`
       (record hidden between pages is dropped).
-- [ ] Add the predicate at the root `WHERE`, the child `WHERE`, the
+- [x] Add the predicate at the root `WHERE`, the child `WHERE`, the
       semi-join `WHERE` and each parent join's `ON` (so a hidden parent
       joins as null). Locator pages re-apply the root predicate.
-- [ ] Re-run Plan 29 and Plan 33 SOQL tests unchanged.
-- [ ] Commit `feat: enforce sharing in SOQL`.
+- [x] Re-run Plan 29 and Plan 33 SOQL tests unchanged.
+- [x] Commit `feat: enforce sharing in SOQL`.
 
 ### Task 8: Write-path enforcement
 
 **Files:** `records/sharing_write.go`, small hooks in `write.go`, tests.
 
-- [ ] Failing tests: `TestSharingUpdateDelete` (hidden: unknown ID;
+- [x] Failing tests: `TestSharingUpdateDelete` (hidden: unknown ID;
       readable not editable: `INSUFFICIENT_ACCESS_OR_READONLY`; delete needs
       owner-level access), `TestOwnerTransfer` (who may; Transfer Record
       permission stored, not enforced, D34-09),
@@ -228,105 +229,106 @@ subqueries), tests.
       `TestLookupToHiddenRecord`, `TestUpsertMatchesHidden`,
       `TestSharingHiddenEqualsMissing` (REST, Composite and Collections
       bodies byte-equal for hidden and unknown IDs).
-- [ ] Check the record's access level before `UPDATE`/`DELETE` with one
+- [x] Check the record's access level before `UPDATE`/`DELETE` with one
       query using the predicate at Read and at the needed level, so the two
       errors can be told apart without a second round trip.
-- [ ] Composite and Collections inherit through `records.Tx`; add their
+- [x] Composite and Collections inherit through `records.Tx`; add their
       tests only.
-- [ ] Commit `feat: enforce sharing on record writes`.
+- [x] Commit `feat: enforce sharing on record writes`.
 
 ### Task 9: Share objects
 
 **Files:** `seed_sharing.go`, `records/setup_write_sharing.go` (shares),
 a SQL view per share object or a compiler source, tests.
 
-- [ ] Failing tests: `TestShareObjectDescribe` (AccountShare, ContactShare,
+- [x] Failing tests: `TestShareObjectDescribe` (AccountShare, ContactShare,
       `X__Share`; absent while OWD is Public Read/Write),
       `TestManualShareInsert` (owner, manager above owner, Modify All allowed;
       others refused; RowCause other than Manual refused; level All
       refused), `TestShareQueryComputedRows` (Owner and Rule rows returned,
       implicit rows not), `TestManualShareDelete`, `TestShareGrantsAccess`
       (user, public group, role, role and subordinates).
-- [ ] Present `sc_sharing.shares` plus computed Owner and Rule rows as each
+- [x] Present `sc_sharing.shares` plus computed Owner and Rule rows as each
       share object. The builder picks a view or a compiler source; the
-      choice goes in the reference record.
-- [ ] Commit `feat: add manual shares and share objects`.
+      choice goes in the reference record. *(Done as views with Owner rows;
+      Rule rows deferred, G34-14.)*
+- [x] Commit `feat: add manual shares and share objects`.
 
 ### Task 10: OWD and sharing-rule commands
 
 **Files:** `cmd/salescompel/sharing.go`, `store.go` helpers, tests.
 
-- [ ] Failing tests: `TestSharingSetDefault` (valid values per object,
+- [x] Failing tests: `TestSharingSetDefault` (valid values per object,
       ControlledByParent pairing with Account, revision bump),
       `TestSharingRuleCommands` (add, list, remove; source and target
       groups must exist; Read or Edit only), `TestOrganizationDefaultAccess`
       (`Organization.DefaultAccountAccess` and `DefaultContactAccess`
       reflect the setting).
-- [ ] Commit `feat: add sharing operator commands`.
+- [x] Commit `feat: add sharing operator commands`.
 
 ### Task 11: Implicit sharing
 
 **Files:** `soql/sharing.go` terms, `records` tests.
 
-- [ ] Failing tests: `TestContactControlledByParent` (private contacts
+- [x] Failing tests: `TestContactControlledByParent` (private contacts
       with no Account: owner and bypass holders only, D34-23), `TestAccountOwnerContactAccess`
       (`ContactAccessForAccountOwner` Read and Edit),
       `TestImplicitParentRead`, `TestMasterDetailControlledByParent`.
-- [ ] Commit `feat: add Account and Contact implicit sharing`.
+- [x] Commit `feat: add Account and Contact implicit sharing`.
 
 ### Task 12: OpenAPI and contract guards
 
-- [ ] Add `OwnerId` to record schemas; UserRole, Group, GroupMember,
+- [x] Add `OwnerId` to record schemas; UserRole, Group, GroupMember,
       AccountShare, ContactShare and the custom share pattern with
       `x-source`; the new errors. Mark stored-not-enforced fields
       (Opportunity and Case access levels) in their descriptions.
-- [ ] Update the operation-count guard and traffic tests.
-- [ ] `npm run check` in `compat/clients/node`.
-- [ ] Commit `feat: describe sharing in OpenAPI`.
+- [x] Update the operation-count guard and traffic tests.
+- [x] `npm run check` in `compat/clients/node`.
+- [x] Commit `feat: describe sharing in OpenAPI`.
 
 ### Task 13: Matrix and size
 
 **Files:** `internal/platform/sharing_matrix_test.go` (+ helpers file).
 
-- [ ] `TestSharingMatrix`: a three-level role tree with two branches, a
+- [x] `TestSharingMatrix`: a three-level role tree with two branches, a
       public group, users with and without roles, View All / Modify All
       holders, each OWD for Account, Contact and a custom object, manual
       shares, a rule, implicit parent. For every user and record compare SOQL
       visibility, count, REST GET, PATCH, DELETE, Composite and Collections
       retrieve with an expected answer computed by a separate, simple model
       in the test.
-- [ ] `TestSharingSize` (skipped under `-short`): 1,000 users, 6 levels,
+- [x] `TestSharingSize` (skipped under `-short`): 1,000 users, 6 levels,
       100,000 Accounts, Private OWD; record the timing budget in the
       reference record. Decide arrays vs a temporary table (spec, Left to
       the builder).
-- [ ] Commit `test: add the sharing access matrix`.
+- [x] Commit `test: add the sharing access matrix`.
 
 ### Task 14: Acceptance
 
-- [ ] `candidate-sharing-fixtures.ts`: journal every create before dispatch,
+- [x] `candidate-sharing-fixtures.ts`: journal every create before dispatch,
       as Plan 31 does.
-- [ ] `test/candidate-sharing.test.ts`: `candidate/sharing/matrix` — JSforce
+- [x] `test/candidate-sharing.test.ts`: `candidate/sharing/matrix` — JSforce
       and simple-salesforce as users in different roles under Private OWD:
       create as one, query as the other, manual share through
       `AccountShare`, transfer, check visibility after each step. Browser leg
       with the connected-browser harness, signed in as two users; if Plan 36
       hasn't landed, the existing preview pages, with the gap logged.
-- [ ] Wire the name into `candidate-acceptance-run.ts`,
+- [x] Wire the name into `candidate-acceptance-run.ts`,
       `candidate-acceptance-contract.ts` (name and required Go tests),
       `candidate-acceptance-results.ts`, and
       `compat/schemas/candidate-acceptance.schema.json`.
-- [ ] Full run in the Linux container:
+- [x] Full run in the Linux container:
       `CANDIDATE_DISPOSABLE=yes scripts/check-candidate-acceptance.sh --out <private-summary>`.
       Record the gate table in the reference record.
-- [ ] Commit `test: add sharing acceptance`.
+- [x] Commit `test: add sharing acceptance`.
 
 ### Task 15: Records and docs
 
-- [ ] Complete the reference record: final status per row, gaps, measured
+- [x] Complete the reference record: final status per row, gaps, measured
       acceptance, tool versions, the size budget.
-- [ ] Add the implementation-record line under Plan 34 in the first-release
+- [x] Add the implementation-record line under Plan 34 in the first-release
       roadmap; mark this plan implemented; update `docs/paths/README.md`.
-- [ ] `sh scripts/check-file-size.sh`, `scripts/check-dco.sh upstream/main HEAD`,
+- [x] `sh scripts/check-file-size.sh`, `scripts/check-dco.sh upstream/main HEAD`,
       `scripts/check-migrations.sh`.
-- [ ] Commit `docs: record Plan 34 implementation`; open the PR with
+- [x] Commit `docs: record Plan 34 implementation`; open the PR with
       `Closes #24`, commands run and their output.

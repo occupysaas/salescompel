@@ -1,6 +1,6 @@
 # Plan 34 - Sharing: observations and decisions
 
-Status: decisions recorded, 2026-11-17; no Salesforce compatibility
+Status: implemented, 2026-11-17; no Salesforce compatibility
 certification. Later tasks cite rows here by ID (`D34-01` and so on). A row's
 decision is what SalesCompel does; its status says how well a public source
 backs it.
@@ -57,7 +57,7 @@ No change to `OwnerId`, manual shares or OWD values was found for Winter '27.
 | D34-04 | Who may create a manual share | Owner, users above the owner in the role hierarchy, Modify All on the object, Modify All Data. Full Access can't be granted. | documented | [Granting access][h1], [sharing considerations][h2]. |
 | D34-05 | Refused manual share | HTTP 403, `INSUFFICIENT_ACCESS_OR_READONLY` | assumed | No source for the error. |
 | D34-06 | AccountShare fields and levels | AccountId, UserOrGroupId, AccountAccessLevel (Read, Edit; All only on Owner rows), ContactAccessLevel, OpportunityAccessLevel, CaseAccessLevel, RowCause. Inserts take RowCause `Manual` (the default); other causes are read-only. The level must be more open than the OWD. Inserting a share for an existing (record, grantee) pair updates that row. | implied | [AccountShare][o1]. Opportunity and Case levels are stored, not enforced. |
-| D34-07 | `<Object>__Share` | ParentId (not updatable), UserOrGroupId, AccessLevel, RowCause; same rules as D34-06 | documented | [Apex sharing][a1]. |
+| D34-07 | `<Object>__Share` | ParentId (not updatable), UserOrGroupId, AccessLevel, RowCause; same rules as D34-06 | documented | [Apex sharing][a1]. Not built in this plan: custom objects have no share object yet (G34-15). |
 | D34-08 | Share objects under Public Read/Write | The share object isn't available (`INVALID_TYPE` / 404) while the OWD is Public Read/Write | implied | A share can't be more open than the OWD; Apex sharing reasons need a non-maximal OWD ([Apex sharing][a1]). |
 | D34-09 | Who may transfer ownership | Owner, users above the owner, Modify All on the object, Modify All Data. The new owner needs Read on the object. Transfer Record is stored and not enforced (it governs mass transfer). | documented | [Transfer][h3], [account owner][h4]. Spec revised: Transfer Record no longer gates single-record transfers. |
 | D34-10 | Manual shares on transfer | Deleted in the same transaction. For an Account, the old owner's manual shares on its Contacts are deleted too. The "keep manual shares" org setting isn't offered. | documented | [Transfer][h3]; setting logged as G34-03. |
@@ -80,15 +80,19 @@ No change to `OwnerId`, manual shares or OWD values was found for Winter '27.
 | D34-27 | Sharing in `WITH` clauses over the API | Sharing applies in every mode; `SYSTEM_MODE` grants nothing extra | assumed | The modes are documented for Apex only ([user mode][a2]). G34-09. |
 | D34-28 | `COUNT()` and aggregates | Count admitted rows only | assumed | No source found; anything else would leak existence. |
 | D34-29 | Upsert by external ID matching a hidden record | Fails as a duplicate external ID (`DUPLICATE_VALUE`); doesn't update or create | assumed | Not documented; a known issue shows non-unique external-ID lookups returning 404 without View All Data ([known issue][k1]). G34-10. |
-| D34-30 | Owner-based sharing rules | Records owned by members of a source group or role shared with a target group or role at Read or Edit; never more restrictive than the OWD; at most 300 per object. Rule rows appear in share queries with RowCause `Rule`. Managed by `salescompel sharing rule` until Plan 35. | documented | [Sharing rules][h15]. |
-| D34-31 | Static-token principals | Own nothing; records they create go to the default owner (oldest active System Administrator) | assumed | No Salesforce equivalent; G34-02. |
+| D34-30 | Owner-based sharing rules | Records owned by members of a source group or role shared with a target group or role at Read or Edit; never more restrictive than the OWD; at most 300 per object. Managed by `salescompel sharing rule` until Plan 35. | documented | [Sharing rules][h15]. Rule rows aren't returned by share queries yet (G34-14). |
+| D34-31 | Static-token principals | Own nothing; records they create go to the default owner (the first active System Administrator by ID) | assumed | No Salesforce equivalent; G34-02. The migration backfills existing records to the same user. |
+| D34-32 | Delete under Public Read/Write | Needs owner-level access: the owner, a user above the owner, Modify All on the object or Modify All Data. Edit access alone isn't enough. | documented | [Record access levels][h1]. Behaviour change: before this plan, any user with Delete on the object could delete any record. |
+| D34-33 | Contacts with no Account after migration | Owned by the default owner (D34-31) and, under the new-tenant Contact default, visible only to that owner and View All / Modify All holders (D34-23) | documented (rule); assumed (migration) | Behaviour change for existing tenants: Standard Users lose access to Account-less contacts until an admin sets Contact to Read or Edit. |
+| D34-34 | Share objects in the catalog | AccountShare and ContactShare appear in describe and SOQL only while the parent's default is None or Read. Every share query returns the computed `Owner` row plus `Manual` rows. Any API user can create a share; the record-level rule (D34-04) decides. | implied | Extends D34-08. |
+| D34-35 | Sharing setup objects | UserRole, Group and GroupMember are readable by every API user; writes need Manage Users. Changing a role, group, membership or user rebuilds the tenant's sharing closure in the same transaction. | assumed | Read access mirrors the Setup UI; G34-16. |
 
 ## Gaps
 
 | ID | Gap | Detail |
 | --- | --- | --- |
 | G34-01 | No observation | Every row is documentation or assumption. Rows marked `assumed` are first to check when a session is available. |
-| G34-02 | Static principals | `provision` tokens have no User row, own nothing, and see only what OWDs and Organization-group shares and rules give. |
+| G34-02 | Static principals | `provision` tokens have no User row, own nothing, and see only what OWDs and Organization-group shares and rules give. Because delete needs owner-level access (D34-32), a static `restricted` token can't delete records it created; the JSforce fixture cleanup now deletes as the admin. |
 | G34-03 | Keep manual shares on transfer | The org setting that keeps manual shares on owner change isn't offered. |
 | G34-04 | Account transfer cascade | D34-11 follows the Mass Transfer documentation; the plain API behaviour is unconfirmed. |
 | G34-05 | Group types | Personal, Queue, Territory, Manager and DataAnalytics groups aren't modeled. Sources disagree on which types are API-creatable. |
@@ -99,7 +103,70 @@ No change to `OwnerId`, manual shares or OWD values was found for Winter '27.
 | G34-10 | Upsert onto a hidden match | D34-29 is a candidate choice. |
 | G34-11 | Teams, territories, restriction rules, criteria rules, queues as owners, external OWDs | Out of scope; fail closed. |
 | G34-12 | Opportunity and Case access levels | Stored on AccountShare and UserRole, enforced when those objects arrive. |
-| G34-13 | Key prefixes | Prefixes for AccountShare, ContactShare, UserRole, Group and GroupMember weren't found in a readable page; the builder takes them from the Object Reference or a session and records them here. |
+| G34-13 | Key prefixes | Not confirmed by a readable page. Chosen: AccountShare `00r`, ContactShare `03s`, UserRole `00E`, Group `00G`, GroupMember `011`, sharing rules `02c`. A session should confirm them. |
+| G34-14 | Rule rows in share queries | Sharing rules grant access but AccountShare and ContactShare queries don't list `Rule` rows. |
+| G34-15 | Custom `__Share` objects | Only AccountShare and ContactShare exist. Custom objects get OWDs, ownership and hierarchy access but no manual shares. |
+| G34-16 | Setup-object visibility | Every API user can read UserRole, Group and GroupMember. Salesforce's exact read rule wasn't found. |
+| G34-17 | Browser leg | The access matrix runs through JSforce and simple-salesforce. The web app has no record pages for a browser check yet; it follows when it does. |
+| G34-18 | Transfer Record permission | Stored, not enforced (D34-09). |
+
+## Implementation and verification
+
+- **Ownership (Tasks 2-3):** migration 0008 adds `owner_id` to Accounts,
+  Contacts and custom objects and backfills it to the default owner
+  (D34-31). `OwnerId` is a lookup to User with relationship `Owner`, not
+  nillable and defaulted on create; the web editor no longer requires a
+  value for fields the server defaults.
+- **Roles and groups (Task 4):** UserRole, Group and GroupMember are setup
+  objects. Every role, group, membership or user write rebuilds the tenant's
+  `sc_sharing.user_groups` and `user_principals` closure in the same
+  transaction (D34-17, D34-35).
+- **Access check (Tasks 5-7):** one SQL predicate per object and level is
+  added to every SOQL root, child subquery, semi-join, parent join and
+  locator page, and to REST reads. Owner in the caller's principals, manual
+  shares, owner-based rules, Controlled by Parent, the account owner's
+  contact access (D34-22, honouring a `None` role setting) and implicit
+  parent read (D34-21) are its terms. View All, Modify All and Modify All
+  Data bypass it.
+- **Writes (Task 8):** update needs Edit, delete needs owner-level access
+  (D34-32), transfer deletes manual shares (D34-10) and moves the old
+  owner's Contacts (D34-11), lookups need Read on the target, and an upsert
+  onto a hidden match is `DUPLICATE_VALUE` (D34-29).
+- **Share objects (Task 9):** AccountShare and ContactShare are views over
+  manual shares plus a computed Owner row, readable by the records login
+  (`TestRuntimeReadsShareViews`).
+- **Commands (Task 10):** `salescompel sharing set-default` and
+  `salescompel sharing rule add|list|remove`.
+- **Matrix and size (Task 13):** `TestSharingMatrix` checks 7 users x 4
+  Accounts x 3 defaults x {SOQL, REST read, update, delete} against a plain
+  Go model and finds no unexpected grant or denial. `go test -tags
+  sharingsize ./internal/platform -run TestSharingSize` (1,000 users in a
+  six-level tree of 364 roles, 100,000 Accounts, Private): seeding about
+  2.5 s, closure rebuild 1.2 s, top-role user 59 ms for `COUNT()` and 92 ms
+  for a 200-row page, leaf user 94 ms and 120 ms, against a 5 s budget.
+- **Real clients (Task 14):** the OAuth gate runs
+  `sharing/jsforce-private-share` (under a Private Account default, a peer
+  can't query or retrieve the owner's Account until the owner creates an
+  AccountShare at Read, then reads but gets 403 on update; the share query
+  returns Owner and Manual rows), `sharing/jsforce-transfer` (transfer to
+  the peer removes the owner's access and the manual share) and
+  `sharing/python-hierarchy` (simple-salesforce: a manager above the owner's
+  role reads and edits; a peer outside the hierarchy gets an empty query
+  and 404). The default goes back to Public Read/Write afterwards.
+- **Existing suites adjusted for the new rules:** fixture cleanup deletes
+  records made by the static `restricted` token as the admin (G34-02), and
+  the Plan 33 time-zone Contact sits under an Account (D34-33).
+
+| Full attempt | Revision | UTC interval | Outcome | Run ID | Summary SHA-256 |
+| --- | --- | --- | --- | --- | --- |
+| A | `882a74992c9f34859fe17ee983eef70067df804d` | 2026-11-17T08:51:26.195Z → 2026-11-17T08:59:03.995Z | passed / 0 | `0c8906da32021327ecc45cc3` | `517f1ef26f5f3e705a6f70cccaa28a95b4751007b9d29137fc068f094e4a8a56` |
+
+The run used a disposable PostgreSQL 17 database in a Linux container with
+the Playwright Chromium build. Earlier attempts on this branch failed and
+led to fixes: the skipped size test (now behind a build tag), the OpenAPI
+object-name pattern, the static-token cleanup, the share views calling a
+function the records login can't execute, the web editor requiring
+`OwnerId`, and a duplicate fixture-journal operation ID.
 
 ## Evidence and Sources
 
