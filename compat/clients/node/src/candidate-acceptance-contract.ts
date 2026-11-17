@@ -109,6 +109,9 @@ export const requiredCoverage: Record<GateID, readonly string[]> = {
     "TestHTTPDynamicCatalog",
     "TestTenantTxCleanup",
     "TestExecutionContextFailsClosed",
+    "TestSharingMatrix",
+    "TestSharingHiddenEqualsMissing",
+    "TestSharingSOQLRoot",
     "database/vet",
   ],
   lab: [
@@ -165,6 +168,9 @@ export const requiredCoverage: Record<GateID, readonly string[]> = {
     "permissions/jsforce-permset",
     "permissions/python-readonly",
     "permissions/timezone-today",
+    "sharing/jsforce-private-share",
+    "sharing/jsforce-transfer",
+    "sharing/python-hierarchy",
   ],
   schema: [
     "schema/provision",

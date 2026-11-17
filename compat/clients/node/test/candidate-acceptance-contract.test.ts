@@ -297,6 +297,9 @@ test("OAuth acceptance requires every client and policy proof before restart", a
     "permissions/jsforce-permset",
     "permissions/python-readonly",
     "permissions/timezone-today",
+    "sharing/jsforce-private-share",
+    "sharing/jsforce-transfer",
+    "sharing/python-hierarchy",
   ];
   const base: ParsedResult = {
     schemaVersion: 1,
