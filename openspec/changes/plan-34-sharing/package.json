@@ -1,0 +1,28 @@
+{
+  "schema_version": "devgate.openspec.package/v1",
+  "package_id": "salescompel.plan-34-sharing",
+  "package_version": "1.0.0",
+  "normative_inventory": [
+    {
+      "path": "specs/sharing/spec.md",
+      "kind": "normative",
+      "digest": "sha256:b29f9b1552db8f58f299b877bb8d89e7bbaf02fdf929e84cf9ed2ee57f03c15b"
+    },
+    {
+      "path": "proposal.md",
+      "kind": "normative",
+      "digest": "sha256:09e6fe13ba80fa1ee3a3194c2e2428b8252f94ad2eb6bd4fc43e7885e9a21d8f"
+    },
+    {
+      "path": "design.md",
+      "kind": "normative",
+      "digest": "sha256:16609814a47012945a79c0f93f1d85e6ed30da3e868a512289e993c0340ec80c"
+    },
+    {
+      "path": "tasks.md",
+      "kind": "informative",
+      "digest": "sha256:8529bc45187b617b2d5c0e5d5d3613b5f556d6f39ec6eae394d169024e7564d9"
+    }
+  ],
+  "imports": []
+}
