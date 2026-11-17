@@ -76,6 +76,10 @@ func TestAccountOwnerContactAccess(t *testing.T) {
 	if e := updateAs(t, f, a, "Contact", contact, map[string]any{"Title": "Edited"}); e != nil {
 		t.Fatalf("edit with Edit role setting: %v", e)
 	}
+	f.do("PATCH", "sobjects/UserRole/"+role, `{"ContactAccessForAccountOwner":"None"}`, false)
+	if got := queryAs(t, f, a, "SELECT Id FROM Contact WHERE Id = '"+contact+"'").TotalSize; got != 0 {
+		t.Fatal("account owner reads the contact with the None role setting")
+	}
 }
 
 // D34-21: reaching a Contact gives Read on its Account.

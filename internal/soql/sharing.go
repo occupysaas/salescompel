@@ -181,7 +181,8 @@ func (s *sharer) accountOwnerChild(alias string, contact metadata.Object, level 
 	if !ok || col == "" || level == LevelDelete {
 		return nil
 	}
-	roleLevel := ""
+	// A role set to None gives nothing; no role or no setting reads.
+	roleLevel := " AND coalesce(ro.contact_access_for_account_owner,'Read')<>'None'"
 	if level == LevelEdit {
 		roleLevel = " AND ro.contact_access_for_account_owner='Edit'"
 	}

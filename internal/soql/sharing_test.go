@@ -53,6 +53,7 @@ func TestSharingClauseTerms(t *testing.T) {
 		{"contact follows a private account", std, map[string]string{"Account": "None"}, "Contact", LevelEdit, []string{"EXISTS(SELECT 1 FROM \"public\".\"accounts\" sp1", "r.\"account_id\" IS NULL AND r.owner_id="}, nil},
 		{"contact under public account", std, nil, "Contact", LevelRead, []string{"r.\"account_id\" IS NOT NULL OR"}, nil},
 		{"private contact own OWD", std, map[string]string{"Account": "None", "Contact": "None"}, "Contact", LevelEdit, []string{"contact_access_for_account_owner='Edit'", "cs.contact_access_level IN ('Edit')"}, nil},
+		{"private contact read honours None", std, map[string]string{"Account": "None", "Contact": "None"}, "Contact", LevelRead, []string{"coalesce(ro.contact_access_for_account_owner,'Read')<>'None'"}, nil},
 		{"share rows follow the parent", std, map[string]string{"Account": "None"}, "AccountShare", LevelRead, []string{"EXISTS(SELECT 1 FROM \"public\".\"accounts\" sp1"}, nil},
 		{"setup objects unaffected", std, map[string]string{"Account": "None"}, "User", LevelRead, nil, nil},
 	}
