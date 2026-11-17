@@ -17,6 +17,7 @@ import { stepResult } from "./candidate-acceptance-clients.ts";
 import { createFixture } from "./candidate-acceptance-fixtures.ts";
 import { redactOAuthEvidence } from "./candidate-oauth.ts";
 import { permissionFlows } from "./candidate-permissions.ts";
+import { sharingFlows } from "./candidate-sharing.ts";
 import { createCandidateTrafficValidator } from "./candidate-openapi-traffic.ts";
 import {
   addSecret,
@@ -312,8 +313,8 @@ async function main(c: GateContext) {
   setCandidateOrigin(c.url);
   const steps: string[] = [];
   for (const token of Object.values(c.tokens)) addSecret(token);
-  const passed = (id: string, permissions = false) => {
-    const step = (permissions ? "permissions/" : "oauth/") + id;
+  const passed = (id: string, group: boolean | string = false) => {
+    const step = (group === true ? "permissions" : group || "oauth") + "/" + id;
     steps.push(step);
     console.error("OAuth passed: " + step);
   };
@@ -398,17 +399,10 @@ async function main(c: GateContext) {
       accessToken: connection.accessToken!,
       passed,
     });
-    await permissionFlows(c, {
-      admin: connection,
-      sfEnv,
-      account,
-      password,
-      restricted: users.restricted,
-      app,
-      redirect,
-      command,
-      passed,
-    });
+    const flows = { admin: connection, password, app, redirect, command };
+    const restricted = users.restricted;
+    await permissionFlows(c, { ...flows, sfEnv, account, restricted, passed });
+    await sharingFlows(c, { ...flows, passed });
     await evidenceScan(c);
     const result = stepResult(c, "oauth", steps);
     ensure(

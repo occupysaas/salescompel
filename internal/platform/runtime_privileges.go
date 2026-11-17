@@ -17,7 +17,7 @@ func runtimeTablesSafe(ctx context.Context, p *pgxpool.Pool, group string) (bool
  ARRAY[has_any_column_privilege(current_user,c.oid,'SELECT'),has_any_column_privilege(current_user,c.oid,'INSERT'),has_any_column_privilege(current_user,c.oid,'UPDATE'),has_any_column_privilege(current_user,c.oid,'REFERENCES')],
  ARRAY[has_table_privilege(current_user,c.oid,'SELECT'),has_table_privilege(current_user,c.oid,'INSERT'),has_table_privilege(current_user,c.oid,'UPDATE'),has_table_privilege(current_user,c.oid,'DELETE'),has_table_privilege(current_user,c.oid,'TRUNCATE'),has_table_privilege(current_user,c.oid,'REFERENCES'),has_table_privilege(current_user,c.oid,'TRIGGER'),has_table_privilege(current_user,c.oid,'MAINTAIN')],
  c.relkind='v' AND coalesce('security_invoker=true'=ANY(c.reloptions),false)
- FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname IN ('public','sc_catalog','sc_records','sc_query','sc_control','sc_setup') AND c.relkind IN ('r','p','v','m')`, "(tenant_id = NULLIF(current_setting('salescompel.tenant_id'::text, true), ''::text))")
+ FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname IN ('public','sc_catalog','sc_records','sc_query','sc_control','sc_setup','sc_sharing') AND c.relkind IN ('r','p','v','m')`, "(tenant_id = NULLIF(current_setting('salescompel.tenant_id'::text, true), ''::text))")
 	if e != nil {
 		return false, e
 	}
@@ -25,7 +25,9 @@ func runtimeTablesSafe(ctx context.Context, p *pgxpool.Pool, group string) (bool
 	catalog := map[string]bool{"objects": true, "fields": true, "revisions": true, "artifacts": true, "settings": true, "auto_numbers": true}
 	identityRead := map[string]bool{"principals": true, "oauth_apps": true, "oauth_app_jwt_users": true}
 	identityWrite := map[string]bool{"oauth_requests": true, "oauth_codes": true, "oauth_refresh_tokens": true, "oauth_access_tokens": true, "oauth_jwt_ids": true}
-	setupTables := map[string]bool{"users": true, "profiles": true, "permission_sets": true, "object_permissions": true, "field_permissions": true, "permission_set_assignments": true, "revisions": true}
+	setupTables := map[string]bool{"users": true, "profiles": true, "permission_sets": true, "object_permissions": true, "field_permissions": true, "permission_set_assignments": true, "revisions": true,
+		"user_roles": true, "groups": true, "group_members": true}
+	sharingTables := map[string]bool{"object_settings": true, "shares": true, "owner_rules": true, "user_groups": true, "user_principals": true}
 	for rows.Next() {
 		var schema, table string
 		var rls, force, closed, invoker bool
@@ -38,7 +40,7 @@ func runtimeTablesSafe(ctx context.Context, p *pgxpool.Pool, group string) (bool
 		record := (schema == "public" && (table == "accounts" || table == "contacts")) || (schema == "sc_records" && regexp.MustCompile(`^o_[a-f0-9]{32}$`).MatchString(table))
 		meta := schema == "sc_catalog" && catalog[table]
 		locator := schema == "sc_query" && table == "locators"
-		setup := schema == "sc_setup" && setupTables[table]
+		setup := (schema == "sc_setup" && setupTables[table]) || (schema == "sc_sharing" && sharingTables[table])
 		if (record || meta || locator || setup) && (!rls || !force || !closed) {
 			return false, nil
 		}
@@ -47,7 +49,8 @@ func runtimeTablesSafe(ctx context.Context, p *pgxpool.Pool, group string) (bool
 		}
 		// Organization is a view over the settings; it must run as the
 		// caller so the settings table's RLS applies.
-		organization := schema == "sc_setup" && table == "organization"
+		// The Plan 34 share views likewise run as the caller.
+		organization := schema == "sc_setup" && (table == "organization" || table == "account_shares" || table == "contact_shares")
 		if organization && !invoker {
 			return false, nil
 		}
@@ -84,7 +87,7 @@ func runtimeTablesSafe(ctx context.Context, p *pgxpool.Pool, group string) (bool
 			return false, nil
 		}
 		// Token and login checks read exactly these User columns, nothing secret.
-		identityUser := group == "salescompel_identity" && setup && table == "users"
+		identityUser := group == "salescompel_identity" && schema == "sc_setup" && table == "users"
 		if identityUser && strings.Join(readable, ",") != "id,tenant_id,is_active,profile_id" {
 			return false, nil
 		}
@@ -110,7 +113,7 @@ func runtimeTablesSafe(ctx context.Context, p *pgxpool.Pool, group string) (bool
 func runtimeFunctionsSafe(ctx context.Context, p *pgxpool.Pool, group string) (bool, error) {
 	rows, e := p.Query(ctx, `SELECT n.nspname||'.'||p.proname||'('||pg_get_function_identity_arguments(p.oid)||')',p.prosecdef,coalesce(p.proconfig,'{}'),pg_get_userbyid(p.proowner)
  FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
- WHERE n.nspname IN ('public','sc_catalog','sc_records','sc_query','sc_control','sc_setup') AND has_function_privilege(current_user,p.oid,'EXECUTE')`)
+ WHERE n.nspname IN ('public','sc_catalog','sc_records','sc_query','sc_control','sc_setup','sc_sharing') AND has_function_privilege(current_user,p.oid,'EXECUTE')`)
 	if e != nil {
 		return false, e
 	}

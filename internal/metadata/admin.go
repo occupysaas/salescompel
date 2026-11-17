@@ -144,8 +144,11 @@ func CreateObject(ctx context.Context, p *pgxpool.Pool, tenant string, in Object
 		}
 		const alphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 		id := randomID()
-		o = Object{ID: id, Tenant: tenant, Name: in.Name, Label: in.Label, PluralLabel: in.PluralLabel, Schema: "sc_records", Table: "o_" + id, Prefix: "a" + string(alphabet[n/62]) + string(alphabet[n%62]), Createable: true, Updateable: true, Deletable: true, Queryable: true, Fields: []Field{Complete(Field{Name: "Id", Column: "id", Options: Options{Kind: fieldtype.Id}}), name}}
-		if _, e := tx.Exec(ctx, "CREATE TABLE "+o.TableSQL()+"(tenant_id text NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,id varchar(18) NOT NULL,"+nameColumn+",PRIMARY KEY(tenant_id,id))"); e != nil {
+		o = Object{ID: id, Tenant: tenant, Name: in.Name, Label: in.Label, PluralLabel: in.PluralLabel, Schema: "sc_records", Table: "o_" + id, Prefix: "a" + string(alphabet[n/62]) + string(alphabet[n%62]), Createable: true, Updateable: true, Deletable: true, Queryable: true, Fields: []Field{Complete(Field{Name: "Id", Column: "id", Options: Options{Kind: fieldtype.Id}}), name, OwnerField()}}
+		if _, e := tx.Exec(ctx, "CREATE TABLE "+o.TableSQL()+"(tenant_id text NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,id varchar(18) NOT NULL,"+nameColumn+","+ownerColumnSQL+",PRIMARY KEY(tenant_id,id))"); e != nil {
+			return e
+		}
+		if _, e := tx.Exec(ctx, "CREATE INDEX ON "+o.TableSQL()+"(tenant_id,owner_id)"); e != nil {
 			return e
 		}
 		if _, e := tx.Exec(ctx, `INSERT INTO sc_catalog.objects(id,tenant_id,api_name,label,plural_label,standard,physical_schema,physical_table,prefix) VALUES($1,$2,$3,$4,$5,false,$6,$7,$8)`, id, tenant, in.Name, in.Label, in.PluralLabel, o.Schema, o.Table, o.Prefix); e != nil {

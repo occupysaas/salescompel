@@ -205,6 +205,51 @@ export const candidateOperations: readonly (readonly [
     "candidateDeletePermissionSetAssignment",
     ["204"],
   ],
+  // Plan 34 sharing objects: describe, create, read, then update/delete as
+  // each object allows.
+  ...(
+    [
+      ["UserRole", true, true],
+      ["Group", true, true],
+      ["GroupMember", false, true],
+      ["AccountShare", true, true],
+      ["ContactShare", true, true],
+    ] as const
+  ).flatMap(([o, update, remove]) => [
+    [
+      base + "/sobjects/" + o + "/describe",
+      "get",
+      "candidateDescribe" + o,
+      ["200"],
+    ] as const,
+    [base + "/sobjects/" + o, "post", "candidateCreate" + o, ["201"]] as const,
+    [
+      base + "/sobjects/" + o + "/{recordId}",
+      "get",
+      "candidateRead" + o,
+      ["200"],
+    ] as const,
+    ...(update
+      ? [
+          [
+            base + "/sobjects/" + o + "/{recordId}",
+            "patch",
+            "candidateUpdate" + o,
+            ["204"],
+          ] as const,
+        ]
+      : []),
+    ...(remove
+      ? [
+          [
+            base + "/sobjects/" + o + "/{recordId}",
+            "delete",
+            "candidateDelete" + o,
+            ["204"],
+          ] as const,
+        ]
+      : []),
+  ]),
   [base + "/sobjects/User/{userId}", "patch", "candidateUpdateUser", ["204"]],
   [
     base + "/candidate/sobjects/{object}/storedFields",

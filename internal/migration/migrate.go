@@ -86,6 +86,12 @@ func manifest() []change {
 	}
 	sum7 := sha256.Sum256(sql7)
 	m = append(m, change{Entry{7, "users and permissions", hex.EncodeToString(sum7[:]), false}, func(ctx context.Context, tx pgx.Tx) error { _, e := tx.Exec(ctx, string(sql7)); return e }})
+	sql8, s8Err := sources.ReadFile("migrations/0008_sharing.sql")
+	if s8Err != nil {
+		panic("migration: embedded 0008_sharing.sql unreadable")
+	}
+	sum8 := sha256.Sum256(sql8)
+	m = append(m, change{Entry{8, "sharing", hex.EncodeToString(sum8[:]), false}, func(ctx context.Context, tx pgx.Tx) error { _, e := tx.Exec(ctx, string(sql8)); return e }})
 	return m
 
 }

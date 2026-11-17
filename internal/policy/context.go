@@ -18,6 +18,8 @@ type Principal struct {
 	Perms                               Permissions        `json:"-"`
 	Location                            *time.Location     `json:"-"`
 	Catalog                             *metadata.Snapshot `json:"-"`
+	// Sharing holds the org-wide defaults (Plan 34); nil means defaults.
+	Sharing *Sharing `json:"-"`
 }
 type ExecutionContext struct {
 	Principal                              Principal

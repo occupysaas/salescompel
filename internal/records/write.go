@@ -119,6 +119,10 @@ func create(ctx context.Context, db database, p Principal, object string, data m
 	if metadata.IsSetupObject(o.Name) {
 		return setupWrite(ctx, db, p, "create", o.Name, "", data)
 	}
+	data = maps.Clone(data)
+	if err := ownerOnCreate(ctx, db, p, o, data); err != nil {
+		return "", err
+	}
 	return insertRecord(ctx, db, p, o.Name, data, "", nil)
 }
 
@@ -140,6 +144,14 @@ func insertRecord(ctx context.Context, db database, p Principal, object string, 
 	}
 	applyDefaults(o, data)
 	if err := Validate(p, object, data, true); err != nil {
+		return "", err
+	}
+	if owner, ok := data["OwnerId"].(string); ok && hasOwner(o) {
+		if err := checkOwner(ctx, db, p, object, owner); err != nil {
+			return "", err
+		}
+	}
+	if err := checkLookups(ctx, db, p, object, data); err != nil {
 		return "", err
 	}
 	if id == "" {
@@ -191,7 +203,14 @@ func update(ctx context.Context, db database, p Principal, object, id string, da
 		_, err = setupWrite(ctx, db, p, "update", o.Name, id, data)
 		return err
 	}
-	return updateRecord(ctx, db, p, o.Name, id, data, nil)
+	transfer, err := checkUpdate(ctx, db, p, o, id, data)
+	if err != nil {
+		return err
+	}
+	if err = updateRecord(ctx, db, p, o.Name, id, data, nil); err != nil || transfer == nil {
+		return err
+	}
+	return transfer()
 }
 
 // updateRecord changes one row; extra is as for insertRecord.
@@ -210,6 +229,14 @@ func updateRecord(ctx context.Context, db database, p Principal, object, id stri
 		return err
 	}
 	if err := Validate(p, object, data, false); err != nil {
+		return err
+	}
+	if owner, ok := data["OwnerId"].(string); ok {
+		if err := checkOwner(ctx, db, p, object, owner); err != nil {
+			return err
+		}
+	}
+	if err := checkLookups(ctx, db, p, object, data); err != nil {
 		return err
 	}
 	cols, values, casts, err := columns(p, object, data)
@@ -243,7 +270,14 @@ func deleteRecord(ctx context.Context, db database, p Principal, object, id stri
 		_, err = setupWrite(ctx, db, p, "delete", o.Name, id, nil)
 		return err
 	}
-	return removeRecord(ctx, db, p, o.Name, id)
+	nid, err := checkDelete(ctx, db, p, o, id)
+	if err != nil {
+		return err
+	}
+	if err = removeRecord(ctx, db, p, o.Name, id); err != nil {
+		return err
+	}
+	return dropShares(ctx, db, p, nid)
 }
 func removeRecord(ctx context.Context, db database, p Principal, object, id string) error {
 	id, err := normalizeID(p, object, id)
@@ -347,6 +381,16 @@ func (s *Tx) UpsertAccount(ctx context.Context, key string, data map[string]any)
 	var id string
 	err = tx.QueryRow(ctx, "SELECT id FROM accounts WHERE tenant_id=$1 AND compat_key_canonical=$2 FOR UPDATE", p.Tenant, canonical).Scan(&id)
 	created := errors.Is(err, pgx.ErrNoRows)
+	if err == nil {
+		// A match the caller can't read is a duplicate, never an update
+		// (D34-29).
+		account, _ := p.Catalog.Object("Account")
+		if read, _, aerr := recordAccess(ctx, tx, p, account, id, soql.LevelRead); aerr != nil {
+			return "", false, aerr
+		} else if !read {
+			return "", false, fieldProblem("DUPLICATE_VALUE", "External ID already exists", "Compat_Key__c")
+		}
+	}
 	if created {
 		id, err = create(ctx, tx, p, "Account", copyData)
 	} else if err == nil {

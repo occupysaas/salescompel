@@ -6,6 +6,7 @@ export interface FieldInfo {
   name: string;
   type: string;
   nillable: boolean;
+  defaultedOnCreate?: boolean;
   createable: boolean;
   updateable: boolean;
   length: number;
@@ -92,6 +93,10 @@ export function fromApiValue(f: FieldInfo, raw: unknown): ControlValue {
   }
   return String(raw);
 }
+
+/** A value is required when the field can't be null and the server
+ * doesn't fill it in on create (OwnerId, for example). */
+export const isRequired = (f: FieldInfo) => !f.nillable && !f.defaultedOnCreate;
 
 /** Convert an editor control value to the request value. */
 export function toApiValue(f: FieldInfo, input: ControlValue): unknown {

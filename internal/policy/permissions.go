@@ -79,7 +79,13 @@ func (p Permissions) Object(object string) ObjectAccess {
 // permissions (an inactive or unknown user) read nothing. Writes follow the
 // setup write rules in internal/records.
 func setupObjectAccess(s SystemPerms, object string) ObjectAccess {
-	everyone := strings.EqualFold(object, "User") || strings.EqualFold(object, "Organization")
+	everyone := strings.EqualFold(object, "User") || strings.EqualFold(object, "Organization") || metadata.IsSharingSetupObject(object)
+	if metadata.IsShareObject(object) {
+		// Every API user reads and writes share rows; the share rules
+		// (internal/records) decide which rows and writes (D34-04).
+		api := s.APIEnabled || s.ManageUsers || s.ViewAllData
+		return ObjectAccess{Read: api, Create: api, Edit: api, Delete: api}
+	}
 	read := (everyone && s.APIEnabled) || s.ManageUsers || s.ViewAllData
 	return ObjectAccess{Read: read, ViewAll: s.ViewAllData}
 }

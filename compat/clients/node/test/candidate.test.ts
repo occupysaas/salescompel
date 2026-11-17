@@ -65,8 +65,12 @@ function fixture(label: string) {
       (a, b) =>
         (a.object === "Contact" ? 0 : 1) - (b.object === "Contact" ? 0 : 1),
     )) {
+      // The restricted static token owns nothing, and delete needs
+      // owner-level access (Plan 34, D34-31 and D34-32): its tenant's admin
+      // deletes for it.
+      const deleter = r.conn === restricted ? admin : r.conn;
       assert.equal(
-        (await r.conn.sobject(r.object).destroy(r.id)).success,
+        (await deleter.sobject(r.object).destroy(r.id)).success,
         true,
       );
       await assert.rejects(r.conn.sobject(r.object).retrieve(r.id), {

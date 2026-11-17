@@ -14,7 +14,8 @@ import {
 import { revoke } from "./candidate-oauth-worker-http.ts";
 
 /** Records a passed step: oauth/<id>, or permissions/<id> for Plan 33. */
-export type Passed = (id: string, permissions?: boolean) => void;
+/** Records a passed step; true means "permissions/", a string names the group. */
+export type Passed = (id: string, group?: boolean | string) => void;
 
 export type SalesforceCli = (
   args: string[],

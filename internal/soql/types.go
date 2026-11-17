@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"salescompel/internal/metadata"
+	"salescompel/internal/policy"
 )
 
 // Clock reports the query's evaluation instant. Tests inject a fixed clock.
@@ -98,6 +99,9 @@ type Bound struct {
 	// PageIDs restricts execution to one stored locator page, in stored order.
 	// It is a server-side constraint, never derived from user text.
 	PageIDs []string
+	// Access is the running principal; the compiler adds its sharing
+	// predicate to every table the query reads (Plan 34, shr-10).
+	Access *policy.Principal
 }
 
 // BoundExpr is the typed boolean tree of a WHERE or HAVING clause.

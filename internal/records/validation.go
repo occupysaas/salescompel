@@ -97,7 +97,9 @@ func Validate(p Principal, object string, data map[string]any, create bool) erro
 	}
 	if create {
 		for _, f := range fieldsFor(p, object) {
-			if f.Name != "Id" && !f.Nillable && f.Createable && f.Kind() != fieldtype.Checkbox {
+			// OwnerId is defaulted by create; it is absent only when the
+			// tenant has no user to own the record.
+			if f.Name != "Id" && f.Name != "OwnerId" && !f.Nillable && f.Createable && f.Kind() != fieldtype.Checkbox {
 				if v, ok := data[f.Name]; !ok || v == nil {
 					return fieldProblem("REQUIRED_FIELD_MISSING", "Required value is missing", f.Name)
 				}

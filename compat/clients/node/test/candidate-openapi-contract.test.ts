@@ -167,6 +167,44 @@ const expected = [
     "delete",
     "candidateDeletePermissionSetAssignment",
   ],
+  // Plan 34 sharing objects.
+  ...[
+    ["UserRole", true, true],
+    ["Group", true, true],
+    ["GroupMember", false, true],
+    ["AccountShare", true, true],
+    ["ContactShare", true, true],
+  ].flatMap(([o, update, remove]) => [
+    [
+      `/services/data/v65.0/sobjects/${o}/describe`,
+      "get",
+      `candidateDescribe${o}`,
+    ],
+    [`/services/data/v65.0/sobjects/${o}`, "post", `candidateCreate${o}`],
+    [
+      `/services/data/v65.0/sobjects/${o}/{recordId}`,
+      "get",
+      `candidateRead${o}`,
+    ],
+    ...(update
+      ? [
+          [
+            `/services/data/v65.0/sobjects/${o}/{recordId}`,
+            "patch",
+            `candidateUpdate${o}`,
+          ],
+        ]
+      : []),
+    ...(remove
+      ? [
+          [
+            `/services/data/v65.0/sobjects/${o}/{recordId}`,
+            "delete",
+            `candidateDelete${o}`,
+          ],
+        ]
+      : []),
+  ]),
   [
     "/services/data/v65.0/sobjects/User/{userId}",
     "patch",
