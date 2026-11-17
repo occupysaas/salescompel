@@ -104,7 +104,8 @@ async function accountAs(
     {
       schemaVersion: 1,
       runId: c.runId,
-      operationId: "p34-sharing",
+      // One journal intent per operation ID.
+      operationId: "p34-sharing-" + name.slice(name.lastIndexOf("-") + 1),
       principal: "admin",
       object: "Account",
       names: [name],
