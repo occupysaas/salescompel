@@ -48,6 +48,8 @@ func dispatch(args []string, out io.Writer) error {
 	switch args[0] {
 	case "user", "oauth-app", "org":
 		return adminCommand(ctx, s, args, out)
+	case "sharing":
+		return sharingCommand(ctx, s, args, out)
 	case "provision":
 		tenant := os.Getenv("SALESCOMPEL_TENANT")
 		if e := s.Provision(ctx, os.Getenv("SALESCOMPEL_TOKEN"), platform.Principal{Tenant: tenant, User: os.Getenv("SALESCOMPEL_USER"), Role: os.Getenv("SALESCOMPEL_ROLE")}); e != nil {
