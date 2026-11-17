@@ -115,6 +115,7 @@ func (s *Store) within(ctx context.Context, p Principal, fn func(*Store, Princip
 		if p.Sharing, e = policy.LoadSharing(ctx, tx, p.Tenant); e != nil {
 			return e
 		}
+		catalog = p.Sharing.WithShareObjects(catalog)
 		clone := *s
 		clone.tx = tx
 		return fn(&clone, p)

@@ -89,3 +89,21 @@ func (p Permissions) Bypass(object string, write bool) bool {
 	}
 	return p.system.ModifyAllData || p.system.ViewAllData || a.ViewAll || a.ModifyAll
 }
+
+// WithShareObjects returns snap without the share objects whose record
+// object is Public Read/Write or Controlled by Parent: Salesforce offers a
+// share object only for a Private or Public Read Only object (D34-08).
+func (s *Sharing) WithShareObjects(snap metadata.Snapshot) metadata.Snapshot {
+	out := snap
+	out.Objects = make([]metadata.Object, 0, len(snap.Objects))
+	for _, o := range snap.Objects {
+		if parent, ok := metadata.ShareParent(o.Name); ok {
+			po, err := snap.Object(parent)
+			if access := s.Access(po); err != nil || access != metadata.AccessNone && access != metadata.AccessRead {
+				continue
+			}
+		}
+		out.Objects = append(out.Objects, o)
+	}
+	return out
+}

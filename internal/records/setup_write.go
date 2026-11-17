@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/jackc/pgx/v5"
+	"salescompel/internal/metadata"
 	"salescompel/internal/recordid"
 )
 
@@ -22,6 +23,19 @@ type setupWriter struct {
 // delete; id is empty on create. writeAccess has already refused hidden
 // objects and unsupported operations. It returns the record ID.
 func setupWrite(ctx context.Context, db database, p Principal, op, object, id string, data map[string]any) (string, error) {
+	if metadata.IsShareObject(object) {
+		// Owners share their records: no Manage Users gate (D34-04).
+		var err error
+		if op != "create" {
+			if id, err = normalizeID(p, object, id); err != nil {
+				return "", dbError(pgx.ErrNoRows)
+			}
+		}
+		if data, err = canonicalFields(p, object, data); err != nil {
+			return "", err
+		}
+		return shareWrite(setupWriter{ctx: ctx, db: db, p: p}, op, object, id, data)
+	}
 	if s := p.Perms.System(); !s.ManageUsers && !s.ModifyAllData {
 		return "", errInsufficientAccess // D33-08
 	}
