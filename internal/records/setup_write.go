@@ -48,7 +48,18 @@ func setupWrite(ctx context.Context, db database, p Principal, op, object, id st
 	}
 	switch object {
 	case "User":
-		id, err = w.user(op, id, data)
+		if _, err = w.reference(data, "UserRoleId", "UserRole"); err != nil {
+			return "", err
+		}
+		if id, err = w.user(op, id, data); err == nil {
+			err = w.afterUser(op, id, data)
+		}
+	case "UserRole":
+		id, err = w.userRole(op, id, data)
+	case "Group":
+		id, err = w.group(op, id, data)
+	case "GroupMember":
+		id, err = w.groupMember(op, id, data)
 	case "PermissionSet":
 		id, err = w.permissionSet(op, id, data)
 	case "ObjectPermissions":

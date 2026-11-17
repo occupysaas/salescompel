@@ -48,6 +48,10 @@ func (p *parser) query() (*Query, error) {
 		return nil, err
 	}
 	name, ok := p.acceptName()
+	if !ok && p.atKeyword("group") && !(p.i+1 < len(p.toks) && strings.EqualFold(p.toks[p.i+1].Text, "by")) {
+		// Group is an object name (Plan 34, D34-12) as well as GROUP BY.
+		name, ok = p.next(), true
+	}
 	if !ok {
 		return nil, malformed("expected object or relationship name")
 	}

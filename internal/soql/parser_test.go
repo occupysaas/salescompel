@@ -262,3 +262,17 @@ func parseErrorMessage(t *testing.T, query string) string {
 	}
 	return ae.Message
 }
+
+// Group is both an object (Plan 34) and the GROUP BY keyword.
+func TestParseFromGroup(t *testing.T) {
+	q, err := Parse("SELECT Id FROM Group WHERE Type = 'Regular'")
+	if err != nil || q.From != "Group" {
+		t.Fatalf("FROM Group: %+v %v", q, err)
+	}
+	if _, err = Parse("SELECT Type, COUNT(Id) FROM Group GROUP BY Type"); err != nil {
+		t.Fatalf("FROM Group GROUP BY: %v", err)
+	}
+	if _, err = Parse("SELECT Name FROM GROUP BY Name"); err == nil {
+		t.Fatal("GROUP BY accepted as an object name")
+	}
+}

@@ -76,8 +76,11 @@ func TestAccessMatrixNoUnexpectedGrants(t *testing.T) {
 				want := sub.objects[obj.Name]
 				if sub.admin {
 					want = [4]bool{true, true, true, true}
-				} else if sub.api && (obj.Name == "User" || obj.Name == "Organization") {
+				} else if sub.api && (obj.Name == "User" || obj.Name == "Organization" || metadata.IsSharingSetupObject(obj.Name)) {
 					want = [4]bool{true}
+				} else if sub.api && metadata.IsShareObject(obj.Name) {
+					// Plan 34: share rows are filtered by the share rules.
+					want = [4]bool{true, true, true, true}
 				}
 				a := p.Perms.Object(obj.Name)
 				if got := [4]bool{a.Read, a.Create, a.Edit, a.Delete}; got != want {
