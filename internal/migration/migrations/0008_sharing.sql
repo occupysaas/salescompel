@@ -168,18 +168,21 @@ END $$;
 -- Share objects: stored Manual rows plus one computed Owner row per owned
 -- record (D34-06). The Owner row ID is the 00r/03s prefix, twelve hex digits
 -- of md5(record id) and the checksum.
+-- Owner rows get a stable ID from the record ID. The prefix and md5 hex
+-- have no capital letters, so the case checksum is always AAA; the runtime
+-- role may not execute sc_setup.id_checksum.
 CREATE VIEW sc_setup.account_shares WITH (security_invoker=true) AS
  SELECT s.tenant_id,s.id,s.record_id AS account_id,s.user_or_group_id,s.access_level AS account_access_level,
   s.contact_access_level,s.opportunity_access_level,s.case_access_level,s.row_cause
  FROM sc_sharing.shares s JOIN sc_catalog.objects o ON o.tenant_id=s.tenant_id AND o.id=s.object_id AND o.api_name='Account'
  UNION ALL
- SELECT a.tenant_id,('00r'||left(md5(a.id),12)||sc_setup.id_checksum('00r'||left(md5(a.id),12)))::varchar(18),a.id,a.owner_id,'All','Edit','Edit','Edit','Owner'
+ SELECT a.tenant_id,('00r'||left(md5(a.id),12)||'AAA')::varchar(18),a.id,a.owner_id,'All','Edit','Edit','Edit','Owner'
  FROM public.accounts a WHERE a.owner_id IS NOT NULL;
 CREATE VIEW sc_setup.contact_shares WITH (security_invoker=true) AS
  SELECT s.tenant_id,s.id,s.record_id AS contact_id,s.user_or_group_id,s.access_level AS contact_access_level,s.row_cause
  FROM sc_sharing.shares s JOIN sc_catalog.objects o ON o.tenant_id=s.tenant_id AND o.id=s.object_id AND o.api_name='Contact'
  UNION ALL
- SELECT c.tenant_id,('03s'||left(md5(c.id),12)||sc_setup.id_checksum('03s'||left(md5(c.id),12)))::varchar(18),c.id,c.owner_id,'All','Owner'
+ SELECT c.tenant_id,('03s'||left(md5(c.id),12)||'AAA')::varchar(18),c.id,c.owner_id,'All','Owner'
  FROM public.contacts c WHERE c.owner_id IS NOT NULL;
 ALTER VIEW sc_setup.account_shares OWNER TO salescompel_owner;
 ALTER VIEW sc_setup.contact_shares OWNER TO salescompel_owner;
