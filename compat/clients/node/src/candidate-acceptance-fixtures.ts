@@ -174,7 +174,10 @@ export async function cleanupFixtures(
           ] as string | undefined;
           if (r.status !== 200 || !e.names.some((n) => n === nameValue))
             throw new Error("FIXTURES");
-          r = await request(c, e.principal, path, "DELETE");
+          // Static restricted tokens own nothing, so they can't delete
+          // (Plan 34, D34-32); the tenant's admin token can.
+          const deleter = e.principal === "restricted" ? "admin" : e.principal;
+          r = await request(c, deleter, path, "DELETE");
           if (![204, 404].includes(r.status)) throw new Error("CLEANUP");
           await recordFixtureEvent(c.fixtureJournal, { ...e, kind: "deleted" });
         }

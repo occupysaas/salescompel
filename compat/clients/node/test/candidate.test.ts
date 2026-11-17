@@ -65,10 +65,9 @@ function fixture(label: string) {
       (a, b) =>
         (a.object === "Contact" ? 0 : 1) - (b.object === "Contact" ? 0 : 1),
     )) {
-      assert.equal(
-        (await r.conn.sobject(r.object).destroy(r.id)).success,
-        true,
-      );
+      // The admin deletes: static tokens own nothing, and delete needs
+      // owner-level access (Plan 34, D34-31 and D34-32).
+      assert.equal((await admin.sobject(r.object).destroy(r.id)).success, true);
       await assert.rejects(r.conn.sobject(r.object).retrieve(r.id), {
         errorCode: "NOT_FOUND",
       });

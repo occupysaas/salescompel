@@ -4175,7 +4175,7 @@ components:
       properties:
         childSObject:
           type: string
-          pattern: ^(Account|Contact|Organization|User|Profile|PermissionSet|ObjectPermissions|FieldPermissions|PermissionSetAssignment|[A-Za-z][A-Za-z0-9_]*__c)$
+          pattern: ^(Account|Contact|Organization|User|Profile|PermissionSet|ObjectPermissions|FieldPermissions|PermissionSetAssignment|UserRole|Group|GroupMember|AccountShare|ContactShare|[A-Za-z][A-Za-z0-9_]*__c)$
         field:
           type: string
           minLength: 1
@@ -4643,7 +4643,7 @@ components:
       properties:
         name:
           type: string
-          pattern: ^(Account|Contact|Organization|User|Profile|PermissionSet|ObjectPermissions|FieldPermissions|PermissionSetAssignment|[A-Za-z][A-Za-z0-9_]*__c)$
+          pattern: ^(Account|Contact|Organization|User|Profile|PermissionSet|ObjectPermissions|FieldPermissions|PermissionSetAssignment|UserRole|Group|GroupMember|AccountShare|ContactShare|[A-Za-z][A-Za-z0-9_]*__c)$
         label:
           type: string
           minLength: 1
