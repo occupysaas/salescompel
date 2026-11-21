@@ -17,6 +17,13 @@ import (
 
 func testPool(t *testing.T) *pgxpool.Pool {
 	t.Helper()
+	return testPoolWith(t, "")
+}
+
+// testPoolWith creates a disposable database with the given CREATE DATABASE
+// options, for example a locale.
+func testPoolWith(t *testing.T, options string) *pgxpool.Pool {
+	t.Helper()
 	ctx := context.Background()
 	url := os.Getenv("TEST_DATABASE_URL")
 	if url == "" {
@@ -28,7 +35,7 @@ func testPool(t *testing.T) *pgxpool.Pool {
 	}
 	defer root.Close()
 	name := fmt.Sprintf("migration_%d", time.Now().UnixNano())
-	if _, e = root.Exec(ctx, "CREATE DATABASE "+name); e != nil {
+	if _, e = root.Exec(ctx, strings.TrimSpace("CREATE DATABASE "+name+" "+options)); e != nil {
 		t.Fatal(e)
 	}
 	cfg, _ := pgxpool.ParseConfig(url)
