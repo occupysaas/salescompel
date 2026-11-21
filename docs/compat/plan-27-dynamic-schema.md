@@ -69,8 +69,19 @@ parents and pass in the JSforce gate.
 
 ## Operator setup and upgrade
 
-PostgreSQL 17 is the tested database. Stop old instances and take a complete
-backup before upgrading. Do not run old and new writers together. A DBA creates
+PostgreSQL 17 is the tested database. The database needs a linguistic default
+collation, for example ICU `en-US` or glibc `en_US.UTF-8`. Byte-order
+collations (`C`, `POSIX` and the builtin `C.UTF-8`) are not supported:
+migration 1 refuses them with a collation error before changing anything
+(issue #43). To create a suitable database on a cluster whose default is
+byte order:
+
+```sql
+CREATE DATABASE your_database TEMPLATE template0 ENCODING 'UTF8'
+  LOCALE_PROVIDER icu ICU_LOCALE 'en-US' LOCALE 'C';
+```
+
+Stop old instances and take a complete backup before upgrading. Do not run old and new writers together. A DBA creates
 these NOLOGIN privilege groups once per cluster and grants the operator login
 membership in `salescompel_owner`:
 

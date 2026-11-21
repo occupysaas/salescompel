@@ -54,7 +54,7 @@ func manifest() []change {
 		panic("migration: embedded 0002_tenant_catalog.sql unreadable")
 	}
 	sum := sha256.Sum256(sql)
-	m := []change{{Entry{1, "legacy baseline", hex.EncodeToString(hash.Sum(nil)), false}, adopt}, {Entry{2, "tenant catalog", hex.EncodeToString(sum[:]), false}, func(ctx context.Context, tx pgx.Tx) error { _, e := tx.Exec(ctx, string(sql)); return e }}}
+	m := []change{{Entry{1, "legacy baseline", hex.EncodeToString(hash.Sum(nil)), false}, adoptChecked}, {Entry{2, "tenant catalog", hex.EncodeToString(sum[:]), false}, func(ctx context.Context, tx pgx.Tx) error { _, e := tx.Exec(ctx, string(sql)); return e }}}
 
 	sql3, s3Err := sources.ReadFile("migrations/0003_tenant_rls.sql")
 	if s3Err != nil {
